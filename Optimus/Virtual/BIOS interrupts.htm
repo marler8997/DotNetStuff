@@ -1,0 +1,519 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0075)http://en.wikipedia.org/w/index.php?title=BIOS_interrupt_call&printable=yes -->
+<html lang="en" dir="ltr" class="client-js" xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>BIOS interrupt call - Wikipedia, the free encyclopedia</title>
+
+<body>
+<h2> <span class="mw-headline" id="Invoking_an_interrupt">Invoking an interrupt</span></h2>
+<p>Invoking an interrupt can be done using the <a href="http://en.wikipedia.org/wiki/INT_(x86_instruction)" title="INT (x86 instruction)">INT</a> <a href="http://en.wikipedia.org/wiki/X86" title="X86">x86</a> <a href="http://en.wikipedia.org/wiki/Assembly_language" title="Assembly language">assembly language</a> instruction. For example, to print a character to the screen using BIOS interrupt 0x10, the following x86 assembly language instructions would be executed:</p>
+<pre><code>mov ah, 0x0e
+mov al, '!'
+int 0x10
+</code>
+</pre>
+<h2> <span class="mw-headline" id="Interrupt_table">Interrupt table</span></h2>
+<p>A list of common BIOS interrupts can be found below. Note that some BIOSes (particularly old ones) will not support all of these interrupts.</p>
+<table class="wikitable" border="1">
+<tbody><tr>
+<th>Interrupt vector</th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​00h​</span></code></td>
+<td>CPU: Executed after an attempt to <a href="http://en.wikipedia.org/wiki/Division_by_zero" title="Division by zero">divide by zero</a> or when the quotient does not fit in the destination</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​01h​</span></code></td>
+<td>CPU: Executed after every instruction while the trace flag is set</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​02h​</span></code></td>
+<td>CPU: <a href="http://en.wikipedia.org/wiki/Non-maskable_interrupt" title="Non-maskable interrupt">NMI</a>, used e.g. by <a href="http://en.wikipedia.org/wiki/Power-on_self-test" title="Power-on self-test">POST</a> for memory errors</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​03h​</span></code></td>
+<td>CPU: The lowest non-reserved interrupt, it is used exclusively for debugging, and the <code><span class="mw-geshi text source-text">​INT 03​</span></code> handler is always implemented by a debugging program</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​04h​</span></code></td>
+<td>CPU: Numeric Overflow. Usually caused by the <code><span class="mw-geshi text source-text">​INTO​</span></code> instruction when the overflow flag is set.</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​05h​</span></code></td>
+<td>Executed when Shift-<a href="http://en.wikipedia.org/wiki/Print_screen" title="Print screen">Print screen</a> is pressed, as well as when the <code><span class="mw-geshi text source-text">​BOUND​</span></code> instruction detects a bound failure.</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​06h​</span></code></td>
+<td>CPU: Called when the Undefined Opcode (invalid instruction) exception occurs. Usually installed by the operating system.</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​07h​</span></code></td>
+<td>CPU: Called when an attempt was made to execute a floating-point instruction and no numeric coprocessor was available.</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​08h​</span></code></td>
+<td><a href="http://en.wikipedia.org/wiki/IRQ" title="IRQ" class="mw-redirect">IRQ</a>0: Implemented by the system timing component; called 18.2 times per second (once every 55 ms) by the <a href="http://en.wikipedia.org/wiki/Programmable_interval_timer" title="Programmable interval timer">PIC</a></td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​09h​</span></code></td>
+<td>IRQ1: Called after every key press and release (as well as during the time when a key is being held)</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Bh​</span></code></td>
+<td>IRQ3: Called by <a href="http://en.wikipedia.org/wiki/Serial_port" title="Serial port">serial ports</a> 2 and 4 (COM2/4) when in need of attention</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Ch​</span></code></td>
+<td>IRQ4: Called by serial ports 1 and 3 (COM1/3) when in need of attention</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Dh​</span></code></td>
+<td>IRQ5: Called by hard disk controller (PC/XT) or 2nd <a href="http://en.wikipedia.org/wiki/Parallel_port" title="Parallel port">parallel port</a> LPT2 (AT) when in need of attention</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Eh​</span></code></td>
+<td>IRQ6: Called by <a href="http://en.wikipedia.org/wiki/Floppy_disk_controller" title="Floppy disk controller">floppy disk controller</a> when in need of attention</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Fh​</span></code></td>
+<td>IRQ7: Called by 1st parallel port LPT1 (printer) when in need of attention</td>
+</tr>
+<tr>
+<td><a href="http://en.wikipedia.org/wiki/INT_10H" title="INT 10H"><code><span class="mw-geshi text source-text">​10h​</span></code></a></td>
+<td>Video Services - installed by the BIOS or operating system; called by software programs
+<table class="wikitable" border="1" style="margin-left:1em">
+<tbody><tr>
+<th><code><span class="mw-geshi text source-text">​AH​</span></code></th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​00h​</span></code></td>
+<td>Set Video Mode</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​01h​</span></code></td>
+<td>Set Cursor Shape</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​02h​</span></code></td>
+<td>Set Cursor Position</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​03h​</span></code></td>
+<td>Get Cursor Position And Shape</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​04h​</span></code></td>
+<td>Get Light Pen Position</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​05h​</span></code></td>
+<td>Set Display Page</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​06h​</span></code></td>
+<td>Clear/Scroll Screen Up</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​07h​</span></code></td>
+<td>Clear/Scroll Screen Down</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​08h​</span></code></td>
+<td>Read Character and Attribute at Cursor</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​09h​</span></code></td>
+<td>Write Character and Attribute at Cursor</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Ah​</span></code></td>
+<td>Write Character at Cursor</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Bh​</span></code></td>
+<td>Set Border Color</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Ch​</span></code></td>
+<td>Write Graphics Pixel</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Dh​</span></code></td>
+<td>Read Graphics Pixel</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Eh​</span></code></td>
+<td>Write Character in TTY Mode</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Fh​</span></code></td>
+<td>Get Video Mode</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​13h​</span></code></td>
+<td>Write String</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​11h​</span></code></td>
+<td>Installed by the BIOS; returns equipment list</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​12h​</span></code></td>
+<td>Installed by the BIOS or operating system; returns Conventional Memory Size</td>
+</tr>
+<tr>
+<td><a href="http://en.wikipedia.org/wiki/INT_13H" title="INT 13H"><code><span class="mw-geshi text source-text">​13h​</span></code></a></td>
+<td>Low Level Disk Services; installed by the BIOS or operating system; called by software programs
+<table class="wikitable" border="1" style="margin-left:1em">
+<tbody><tr>
+<th><code><span class="mw-geshi text source-text">​AH​</span></code></th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​00h​</span></code></td>
+<td>Reset Disk Drives</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​01h​</span></code></td>
+<td>Check Drive Status</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​02h​</span></code></td>
+<td>Read Sectors From Drive</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​03h​</span></code></td>
+<td>Write Sectors To Drive</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​04h​</span></code></td>
+<td>Verify Sectors On Drive</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​05h​</span></code></td>
+<td>Format Track On Drive</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​08h​</span></code></td>
+<td>Get Drive Parameters</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​09h​</span></code></td>
+<td>Init Fixed Drive Parameters</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Ch​</span></code></td>
+<td>Seek To Specified Track</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​0Dh​</span></code></td>
+<td>Reset Fixed Disk Controller</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​15h​</span></code></td>
+<td>Get Drive Type</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​16h​</span></code></td>
+<td>Get Floppy Drive Media Change Status</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+<tr>
+<td><a href="http://en.wikipedia.org/wiki/INT_14H" title="INT 14H"><code><span class="mw-geshi text source-text">​14h​</span></code></a></td>
+<td>Routines for communicating via the serial port. Used by software programs.
+<table class="wikitable" border="1" style="margin-left:1em">
+<tbody><tr>
+<th><code><span class="mw-geshi text source-text">​AH​</span></code></th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​00h​</span></code></td>
+<td>Serial Port Initialization</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​01h​</span></code></td>
+<td>Transmit Character</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​02h​</span></code></td>
+<td>Receive Character</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​03h​</span></code></td>
+<td>Status</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​15h​</span></code></td>
+<td>Miscellaneous (System services support routines)
+<table class="wikitable" border="1" style="margin-left:1em">
+<tbody><tr>
+<th><code><span class="mw-geshi text source-text">​AH​</span></code></th>
+<th><code><span class="mw-geshi text source-text">​AL​</span></code></th>
+<th><code><span class="mw-geshi text source-text">​AX​</span></code></th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​4Fh​</span></code></td>
+<td></td>
+<td></td>
+<td>Keyboard Intercept</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​83h​</span></code></td>
+<td></td>
+<td></td>
+<td>Event Wait</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​84h​</span></code></td>
+<td></td>
+<td></td>
+<td>Read Joystick</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​85h​</span></code></td>
+<td></td>
+<td></td>
+<td>Sysreq Key Callout</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​86h​</span></code></td>
+<td></td>
+<td></td>
+<td>Wait</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​87h​</span></code></td>
+<td></td>
+<td></td>
+<td>Move Block</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​88h​</span></code></td>
+<td></td>
+<td></td>
+<td>Get Extended Memory Size</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​C0h​</span></code></td>
+<td></td>
+<td></td>
+<td>Get System Parameters</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​C1h​</span></code></td>
+<td></td>
+<td></td>
+<td>Get Extended BIOS Data Area Segment</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​C2h​</span></code></td>
+<td></td>
+<td></td>
+<td>Pointing Device Functions</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​E8h​</span></code></td>
+<td><code><span class="mw-geshi text source-text">​01h​</span></code></td>
+<td><code><span class="mw-geshi text source-text">​E801h​</span></code></td>
+<td>Get Extended Memory Size (Newer function, since 1994). Gives results for memory size above 64 Mb.</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​E8h​</span></code></td>
+<td><code><span class="mw-geshi text source-text">​20h​</span></code></td>
+<td><code><span class="mw-geshi text source-text">​E820h​</span></code></td>
+<td>Query System Address Map. The information returned from <a href="http://en.wikipedia.org/wiki/E820" title="E820">e820</a> supersedes what is returned from the older <code>AX=E801h</code> and <code>AH=88h</code> interfaces.</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​16h​</span></code></td>
+<td>Implemented by the BIOS or operating system. Provides routines to be called by software programs which communicate with the keyboard.
+<table class="wikitable" border="1" style="margin-left:1em">
+<tbody><tr>
+<th><code><span class="mw-geshi text source-text">​AH​</span></code></th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​00h​</span></code></td>
+<td>Read Character</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​01h​</span></code></td>
+<td>Read Input Status</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​02h​</span></code></td>
+<td>Read Keyboard Shift Status</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​10h​</span></code></td>
+<td>Read Character Extended</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​11h​</span></code></td>
+<td>Read Input Status Extended</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​12h​</span></code></td>
+<td>Read Keyboard Shift Status Extended</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​17h​</span></code></td>
+<td>Print Services - used by software programs to communicate with the printer
+<table class="wikitable" border="1" style="margin-left:1em">
+<tbody><tr>
+<th><code><span class="mw-geshi text source-text">​AH​</span></code></th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​00h​</span></code></td>
+<td>Print Character to Printer</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​01h​</span></code></td>
+<td>Initialize Printer</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​02h​</span></code></td>
+<td>Check Printer Status</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​18h​</span></code></td>
+<td>Execute Cassette BASIC: True IBM computers contain BASIC in the ROM to be interpreted and executed by this routine in the event of a boot failure (called by the BIOS)</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​19h​</span></code></td>
+<td>After POST this interrupt is used by BIOS to load the operating system.</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​1Ah​</span></code></td>
+<td>Real Time Clock Services - called by software programs to communicate with the <a href="http://en.wikipedia.org/wiki/Real_time_clock" title="Real time clock" class="mw-redirect">RTC</a>
+<table class="wikitable" border="1" style="margin-left:1em">
+<tbody><tr>
+<th><code><span class="mw-geshi text source-text">​AH​</span></code></th>
+<th>Description</th>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​00h​</span></code></td>
+<td>Read RTC</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​01h​</span></code></td>
+<td>Set RTC</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​02h​</span></code></td>
+<td>Read RTC Time</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​03h​</span></code></td>
+<td>Set RTC Time</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​04h​</span></code></td>
+<td>Read RTC Date</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​05h​</span></code></td>
+<td>Set RTC Date</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​06h​</span></code></td>
+<td>Set <a href="http://en.wikipedia.org/wiki/RTC_Alarm" title="RTC Alarm" class="mw-redirect">RTC Alarm</a></td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​07h​</span></code></td>
+<td>Reset RTC Alarm</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​1Bh​</span></code></td>
+<td>Installed by the operating system; automatically called by <code><span class="mw-geshi text source-text">​INT 9​</span></code> when Ctrl-<a href="http://en.wikipedia.org/wiki/Break_key" title="Break key">Break</a> has been pressed</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​1Ch​</span></code></td>
+<td>Called automatically by <code><span class="mw-geshi text source-text">​INT 08​</span></code>; available for use by software programs when a routine needs to be executed regularly</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​1Dh​</span></code></td>
+<td>Not to be called; simply a pointer to the VPT (Video Parameter Table), which contains data on video modes</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​1Eh​</span></code></td>
+<td>Not to be called; simply a pointer to the DPT (Diskette Parameter Table), containing a variety of information concerning the diskette drives</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​1Fh​</span></code></td>
+<td>Not to be called; simply a pointer to the VGCT (Video Graphics Character Table), which contains the data for ASCII characters <code><span class="mw-geshi text source-text">​80h​</span></code> to <code><span class="mw-geshi text source-text">​FFh​</span></code></td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​41h​</span></code></td>
+<td>Address pointer: FDPT = Fixed Disk Parameter Table (1st hard drive)</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​46h​</span></code></td>
+<td>Address pointer: FDPT = Fixed Disk Parameter Table (2nd hard drive)</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​4Ah​</span></code></td>
+<td>Called by RTC for alarm</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​70h​</span></code></td>
+<td>IRQ8: Called by RTC</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​74h​</span></code></td>
+<td>IRQ12: Called by mouse</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​75h​</span></code></td>
+<td>IRQ13: Called by math coprocessor</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​76h​</span></code></td>
+<td>IRQ14: Called by primary IDE controller</td>
+</tr>
+<tr>
+<td><code><span class="mw-geshi text source-text">​77h​</span></code></td>
+<td>IRQ15: Called by secondary IDE controller</td>
+</tr>
+</tbody></table>
+<h2> <span class="mw-headline" id="DOS_hooks">DOS hooks</span></h2>
+<p>On MS-DOS systems IO.SYS hooks INT 13 for floppy disc change detection, tracking formatting calls, correcting DMA boundary errors, working around problems in IBM's ROM BIOS "01/10/84" with model code 0xFC before the first call. The interrupt vector 0x13 may point to a software hook rather than the BIOS routine, which some Bulgarian viruses are known to use against virus monitoring software. <sup id="cite_ref-www2_informatik_uni-halle_de-interrupt_d_0-0" class="reference"><a href="http://en.wikipedia.org/w/index.php?title=BIOS_interrupt_call&printable=yes#cite_note-www2_informatik_uni-halle_de-interrupt_d-0"><span>[</span>1<span>]</span></a></sup></p>
+<h2> <span class="mw-headline" id=".E2.80.8BINT_18h.E2.80.8B:_execute_BASIC"><code><span class="mw-geshi text source-text">​INT 18h​</span></code>: execute BASIC</span></h2>
+<p><code><span class="mw-geshi text source-text">​INT 18h​</span></code> traditionally jumped to an implementation of <a href="http://en.wikipedia.org/wiki/BASIC" title="BASIC">BASIC</a> stored in <a href="http://en.wikipedia.org/wiki/Read-only_memory" title="Read-only memory">ROM</a>. This call would typically be invoked if the BIOS was unable to identify any bootable volumes on startup. (At the time the original IBM PC was released in 1981, the BASIC in ROM was a key feature.) As time went on and BASIC was no longer shipped on all PCs, this interrupt would simply display an error message indicating that no bootable volume was found (famously, "No ROM BASIC", or more explanatory messages in later BIOS versions); in other BIOS versions it would prompt the user to insert a bootable volume and press a key, and then after the user did so it would loop back to the bootstrap loader to try booting again.</p>
+<script type="text/javascript" src="./BIOS interrupt call - Wikipedia, the free encyclopedia_files/load(6).php"></script><div id="mw-moodBar-overlayWrap" style="width: 360px; display: none; "><div id="mw-moodBar-overlay">					<div id="mw-moodBar-pokey"></div>					<span class="mw-moodBar-overlayClose"><a href="http://en.wikipedia.org/w/index.php?title=BIOS_interrupt_call&printable=yes#">(close)</a></span>					<div class="mw-moodBar-overlayContent">					<div class="mw-moodBar-overlayTitle"><span>Editing Wikipedia made me...</span></div>					<div class="mw-moodBar-types-container">						<div class="mw-moodBar-types"><span class="mw-moodBar-type mw-moodBar-type-happy" rel="happy">					<span class="mw-moodBar-typeTitle">Happy</span>				</span><span class="mw-moodBar-type mw-moodBar-type-sad" rel="sad">					<span class="mw-moodBar-typeTitle">Sad</span>				</span><span class="mw-moodBar-type mw-moodBar-type-confused" rel="confused">					<span class="mw-moodBar-typeTitle">Confused</span>				</span></div>					</div>					<div class="mw-moodBar-form">						<div class="mw-moodBar-formTitle">							<span class="mw-moodBar-formNote"><span id="mw-moodBar-charCount"></span> characters remaining</span>							Because...						</div>						<div class="mw-moodBar-formInputs">							<textarea rows="3" maxlength="140" id="mw-moodBar-feedbackInput" class="mw-moodBar-formInput"></textarea>							<div class="mw-moodBar-privacy">By submitting, you agree to transparency under these <a href="http://wikimediafoundation.org/wiki/Feedback_policy" title="terms">terms</a>.</div>							<input type="button" class="mw-moodBar-formSubmit" disabled="disabled" value="Share Feedback">						</div>					</div>					<span class="mw-moodBar-overlayWhat">						<a href="http://en.wikipedia.org/w/index.php?title=BIOS_interrupt_call&printable=yes#" title="Learn more about this feature">							<span class="mw-moodBar-overlayWhatTrigger">▶</span>							<span class="mw-moodBar-overlayWhatLabel">What is this?</span>						</a>						<div class="mw-moodBar-overlayWhatContent"><p>This feature is designed to help the community understand the experience of people editing the site.
+For more information, please visit the <a href="http://en.wikipedia.org/wiki/Wikipedia:New_editor_feedback" title="feature page">feature page</a>.</p><p><a href="http://en.wikipedia.org/w/index.php?title=BIOS_interrupt_call&printable=yes#" class="mw-moodBar-disable">I'm not interested. Please disable this feature.</a></p></div>					</span></div>				</div></div><script type="text/javascript" src="./BIOS interrupt call - Wikipedia, the free encyclopedia_files/load(7).php"></script>
+<script src="./BIOS interrupt call - Wikipedia, the free encyclopedia_files/index(1).php" type="text/javascript"></script>
+<script src="./BIOS interrupt call - Wikipedia, the free encyclopedia_files/load(8).php" type="text/javascript"></script><script type="text/javascript" src="./BIOS interrupt call - Wikipedia, the free encyclopedia_files/index(2).php"></script>
+<script type="text/javascript">if ( window.mediaWiki ) {
+	mw.user.options.set({"ccmeonemails":0,"cols":80,"date":"default","diffonly":0,"disablemail":0,"disablesuggest":0,"editfont":"default","editondblclick":0,"editsection":1,"editsectiononrightclick":0,"enotifminoredits":0,"enotifrevealaddr":0,"enotifusertalkpages":1,"enotifwatchlistpages":0,"extendwatchlist":0,"externaldiff":0,"externaleditor":0,"fancysig":0,"forceeditsummary":0,"gender":"unknown","hideminor":0,"hidepatrolled":0,"highlightbroken":1,"imagesize":2,"justify":0,"math":1,"minordefault":0,"newpageshidepatrolled":0,"nocache":0,"noconvertlink":0,"norollbackdiff":0,"numberheadings":0,"previewonfirst":0,"previewontop":1,"quickbar":5,"rcdays":7,"rclimit":50,"rememberpassword":"1","rows":25,"searchlimit":20,"showhiddencats":false,"showjumplinks":1,"shownumberswatching":1,"showtoc":1,"showtoolbar":1,"skin":"vector","stubthreshold":0,"thumbsize":4,"underline":2,"uselivepreview":0,"usenewrc":0,"watchcreations":1,"watchdefault":0,"watchdeletion":0,"watchlistdays":3,"watchlisthideanons":0,
+	"watchlisthidebots":0,"watchlisthideliu":0,"watchlisthideminor":0,"watchlisthideown":0,"watchlisthidepatrolled":0,"watchmoves":0,"wllimit":250,"flaggedrevssimpleui":1,"flaggedrevsstable":0,"flaggedrevseditdiffs":true,"flaggedrevsviewdiffs":false,"vector-simplesearch":1,"useeditwarning":1,"vector-collapsiblenav":1,"usebetatoolbar":1,"usebetatoolbar-cgd":1,"wikilove-enabled":1,"variant":"en","language":"en","searchNs0":true,"searchNs1":false,"searchNs2":false,"searchNs3":false,"searchNs4":false,"searchNs5":false,"searchNs6":false,"searchNs7":false,"searchNs8":false,"searchNs9":false,"searchNs10":false,"searchNs11":false,"searchNs12":false,"searchNs13":false,"searchNs14":false,"searchNs15":false,"searchNs100":false,"searchNs101":false,"searchNs108":false,"searchNs109":false,"gadget-wmfFR2011Style":1,"watchlisttoken":"815f48b3f5925eef60d6f57feceecedb5f6c9b24"});;mw.user.tokens.set({"editToken":"af5ca84b24e71b666ab9b07054fe0d46+\\","watchToken":"9140c47e41a0bc804ee24340449287b8+\\"});;mw.
+	loader.state({"user.options":"ready","user.tokens":"ready"});
+	
+	/* cache key: enwiki:resourceloader:filter:minify-js:4:aae7496a460290ef9bc48c5c3ee92d09 */
+}
+</script><script src="./BIOS interrupt call - Wikipedia, the free encyclopedia_files/saved_resource" type="text/javascript"></script><!-- Served by srv259 in 0.067 secs. -->
+	
+
+<div style="top: 6px; width: 4px; display: none; left: auto; right: 1167px; " class="suggestions"><div class="suggestions-results"></div><div class="suggestions-special"></div></div></body></html>

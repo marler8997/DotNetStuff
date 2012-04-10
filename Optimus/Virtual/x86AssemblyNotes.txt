@@ -1,0 +1,34 @@
+
+
+Quick Reference
+
+General Purpose Registers: AX, BX, CX, DX
+	Note: These 16-bit registers can be split into 8-bit registers such as AH/AL, BH/BL
+SI, DI	Source and destination data index registers. These point to places in memory for retrieving and storing data.
+SP	The Stack Pointer
+IP The Instruction Pointer.
+
+Common Instructions
+mov	Copies memory from one location or register to another. 
+	Example: mov ax, 30 places the number 30 into the AX register.
+	Note: Using square brackets, you can get the number at the memory location pointed to by the register. 
+		Example: If BX contains 80, then mov ax, [bx] means "get the number in memory location 80, and put it into AX".
+
+add/sub	Adds a number to a register. 
+	Example: add ax, FFh adds FF to the AX register. You can use sub in the same way: sub dx, 50.
+
+cmp	Compares a register with a number.
+	Example: cmp cx, 12 compares the CX register with the number 12. It then updates a special register on the CPU called FLAGS - a special register that contains information about the last operation. In this case, if the number 12 is bigger than the value in CX, it generates a negative result, and notes that negative in the FLAGS register. We can use this in the following instructions...
+
+jmp / jg / jl...	Jump to a different part of the code. jmp label jumps (GOTOs) to the part of our source code where we have label: written. But there's more - you can jump conditionally, based on the CPU flags set in the previous command. For instance, if a cmp instruction determined that a register held a smaller value than the one with which it was compared, you can act on that with jl label (jump if less-than to label). Similarly, jge label jumps to 'label' in the code if the value in the cmp was greater-than or equal to its compared number.
+
+int	Interrupt the program and jump to a specified place in memory. Operating systems set up interrupts which are analogous to subroutines in high-level languages. For instance, in MS-DOS, the 21h interrupt provides DOS services (eg as opening a file). Typically, you put a value in the AX register, then call an interrupt and wait for a result (passed back in a register). When you're writing an OS from scratch, you can call the BIOS with int 10h, int 13h, int 14h or int 16h to perform tasks like printing strings, reading sectors from a floppy disk etc.
+
+
+In the Boot Loader
+
+http://en.wikipedia.org/wiki/BIOS_interrupt_call
+http://www.emu8086.com/assembler_tutorial/8086_bios_and_dos_interrupts.html
+
+http://ece425web.groups.et.byu.net/stable/labs/8086Assembly.html
+

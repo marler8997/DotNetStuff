@@ -1,0 +1,1 @@
+rm simple.bin simple.img

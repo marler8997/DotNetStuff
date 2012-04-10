@@ -1,0 +1,1 @@
+rm bootstrap.bin bootstrap.img

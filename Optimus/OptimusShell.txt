@@ -1,0 +1,23 @@
+
+
+A Normal Shell Allows a human to construct a string of the following form:
+
+ProgramName Command Line Arguments
+
+Instead of only allowing the shell to execute programs, who have a single entry point, every program will have as many entry points as they like.  To identify a program, one can use the programs namespace.  Much like the PATH environment variables, the optimus shell will have a USING environment variables which specifies which namespaces are currently being used.  Or one could type the entire namespace.
+
+Let's say you made a program called Sockets in the system.network namespace.  Let's also say that the Sockets program exposed the following functions:
+
+socket, bind, connect, send, recv, close
+
+Now let's say you want to create a socket.  You could do so from the shell like this:
+
+system.network.socket (inputs) (outputs)
+system.network.bind (inputs) (outputs)
+system.network.connect (inputs) (outputs)
+system.network.send (inputs) (outputs)
+system.network.recv (inputs) (outputs)
+system.network.close (inputs) (outputs)
+
+
+

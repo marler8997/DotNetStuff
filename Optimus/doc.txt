@@ -1,0 +1,96 @@
+Amazing Ideas:
+
+
+A Program To run Dynamic Linked Libraries.
+
+From the command line you specify
+1. A Dynamic Linked Library
+2. The Entry Point (Default is Main)
+3. Function Arguments
+4. Where to store the function outputs
+
+Notes:
+	A Dynamic Linked Library can specify types.  The program runnning the dll can understand the types, and there are special types as well.  A very special type is a "Text-Representable" type.  A Text-Representable type is a type that can understand how to assign it's type value based on a text input. 
+
+Examples of "Text-Representable" types:
+	1. Byte
+		0 to 255
+		0x00 to 0xFF
+		00000000b to 11111111b
+	2. Signed Byte
+		-128 to 127
+		-0x80 to 0x7F
+		-10000000b to 01111111b
+	
+
+
+Packages can Expose the Following:
+
+1. Functions
+2. Types
+3. Code Plugs
+4. Addresses of ReadOnly Variables
+5. Addresses of Read/Write Variables
+
+
+Functions:
+
+	Thinking in machine code, a function is a segment of code that performs some type of operation based on the context setup by the function caller.
+	
+	Function Signature:
+		In order to optimize function calls, a function must always expose as much information about it as possible.  The following information about a function should be exposed if possible:
+			1. The set of registers that won't every be modified by the function
+				(Maybe the set of registers that won't be modified given a certain paramter)
+	Function Options:
+		Normally, to get a different functionality from a function, you would supply an extra variable that determines how the function should behave differently.  A function option however can be considered a function of it's own, except that it shares the same code.  The advantage of using a function option is that using a particular function option can change the function signature.  Maybe using a particular function option would cause the function to not call any subsequent functions and maybe it would know more about which registers will not be used.
+	Function Context:
+		A function has a set of inputs and outputs. A function can use the registers to input or output, or it can use the stack.
+		
+		
+		
+What should we do about the stack?
+Do we have to have a at all times?
+Maybe some functions don't need a stack?
+Let's really break down what a computer does.
+Not all programs need a stack!!!!!!!!!!!!!!!!
+
+Let's say you are writing code that doesn't need much memory.
+
+
+
+
+
+The very first instructions that are executed when the computer boots does not have any runtime memory context.  Runtime Memory context consists of the current state of physical memory and registers.
+
+
+
+So what should the computer do at boot time?
+
+The computer should have a set of code that it executes. 
+
+This code can have a set level of abstraction.
+	Abstraction 0 (No Abstraction)
+		The code that gets executed is simply there, it just executes
+	Abstraction 1
+		
+
+This code should be easily configurable.  For a router, this code may initialize the drivers and then start a few programs that implement the routers functionality.  
+
+
+
+Concept of code abstraction:
+
+What does abstraction get you?
+	More Abstractions => More Configurability => More Functionality
+	
+The processor performs it's operations based on the electrical signals "bits" it receives from stored electrical signals (or memory bits).  Let's talk about abstraction.  The processor can perform a set of things such as, transfer bits from one place to another, store bits in memory or read bits from memory.  Processors have different types of memory such as registers or RAM.  These electrical signals can be represented by writing them as a sequence of characters.  
+
+
+
+
+The Processor has a set of fixed static instructions that it may perform.  When these instructions are in memory, they are not abstracted.  The instructions are represented by an ordered set of electrical signals
+
+
+
+
+

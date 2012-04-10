@@ -1,0 +1,14 @@
+
+
+
+The first sector of a disk is called the DOS Boot Record (DBR).
+
+1. When a computer boots, the BIOS (Basic Input/Output System) reads the disk and loads the first sector into memory at address 0x7C00.
+Then BIOS jumps to address 0x0x7C00.
+
+The machine code that was loaded from the DOS is called the "Boot Loader" and is responsible for loading the Operating System.
+
+
+
+BOOT SECTOR:
+

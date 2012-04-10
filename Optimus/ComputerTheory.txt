@@ -1,0 +1,416 @@
+
+============================================================
+Set Theory applied to Computers
+============================================================
+
+Definition: A "Variable" is a set and an element in that set. The set is called the variable's "Type" and the element is called the variable's "Value".
+
+To define a variable one could say, "Let V be a variable of type {0,1,A,Q,I,Z} with value I". Also, another way to define a variable's type is to say the variable is "from" the type, so if a variable A's type is the set of integers, you could say "A is from the Integers".
+
+Definition: An "Operation" is
+	1. A function
+	2. An element from each domain of the function
+	3. A variable from each codomain of the function.
+	
+To "Execute" an operation is to change the values of the variables corresponding to each codomain to the values mapped to by applying the function to the corresponding elements in the domain.
+	
+Let OP: I -> O be a function from a set I to a set of operations O.  Set I will be refered to as the "Instruction" set and set O as the "Operation" set.  A "Processor System" is defined as having
+	1. A definition of the instruction set I, the operation set O, and the OP function.
+	2. A set of variables available to use when executing operations defined in O.  
+		Note: This set of variables is refered to as the Processor System's "Memory"
+	3. 2 variables CI (Current Instruction) and NI (Next Instruction) from the Instruction set.
+	4. A function CNI: I -> I (Calculate Next Instruction).
+	
+The following is the algorithm loop executed by a processor system.
+	1. Execute the operation OP(CI). (Note: this operation could change the value of NI)
+	2. Assign the value of NI to CI.
+	3. Assign the value of CNI(CI) to NI.
+
+
+
+Note: A "bit" is a variable whose type is any set with a cardinality of 2 and "byte" is a variable whose type is any set with a cardinality of 256.
+
+================================================================
+Memory Redirection
+================================================================
+Memory is a set of variables, and an address of memory is a variable whose type is the memory itself.  In computers, memory is finite.  Without loss of generality, since memory is ordered, we can map the set uint<limit> to memory such that |memory| = |uint<size>| = size.  Therefore, we can represent addresses as an element from the set uint<size>.
+
+The notation for accessing a variable value from memory is to use the brackets syntax.  If we let Mem be memory addressed by the set uint<1024>, you can operate on a variable in Mem with
+
+(<Element> ...) <Function> Mem[<VariableOrElement>]
+
+QUESTION: Where does 'injective' fit into this ? (Mem[x] == Mem[y] <=> x == y)
+
+Example:
+
+A Mem[A]
+A Mem[Mem[Mem[0]]]
+
+
+
+============================================================
+Variable Type Conversion
+============================================================
+Variable type conversion is the concept of assigning the value of a variable to the value of another variable from a different set.
+
+Let x and y be variables from different types X and Y respectively.
+
+Suppose we want to set the value of x to the value of y. Consider the following cases:
+
+1. X is a subset of Y
+	We are done because the value of x must also be a value of Y, which means we can set the value of x to the value of y.
+2. Y is a proper subset of X
+	From this we know that |Y| > |X|.  If one was to 
+If X is a subset of Y, then we are done, so suppose that X is not a subset of Y.
+
+
+
+
+
+============================================================
+Variable Types
+============================================================
+A Variables Type is a set, and determines what Operations can be done on the variable.
+
+Let T be a set.  T is said to implement the following interfaces if and only if T implements the corresponding function(s)
+
+Interface                   Function
+=======================================================
+Comparable                  <: (T X T) -> bool
+                            Note that if a type implements <, it also implements > and since everything is an obj, also implements <= and >=
+Additive                    ADD: (T X T) -> T
+                            MULT: (T X T) -> T
+If a set implements the ADD function, we can say some things about the inputs and outputs such as:
+1. Commutative: ( ((A B) ADD) ((B A) ADD) EQUAL)
+2. Associative: ( (((A B) ADD) C ADD)  (A ((B C) ADD) ADD)  EQUAL)
+3. If T is also Comparable, then (A B) ADD C Implies ( ((C A) >=)  ((C B) >=)  OR)
+	
+
+Let T and U be sets.  If a is a variable of type T and b is a variable of type U, then the following is true
+
+Statment                    Function
+=======================================================
+
+
+
+
+
+
+
+a is "Comparable" to b      EQUAL: (T X U) -> bool
+                            <: (T X U) -> bool
+							
+							
+
+Predfined Sets:
+
+Identifier : bool
+Definition : {0,1}
+Note       : This is the smallest possible variable type set
+Subsets    : None
+Supersets  : obj Natural
+Interfaces : Comparable
+Functions  :
+		   : NOT: bool -> bool
+		          0    -> 1
+				  1    -> 0
+           : AND: (bool X bool) -> bool
+		           0      0     -> 0
+				   0      1     -> 0
+				   1      0     -> 0
+				   1      1     -> 1
+           : OR: (bool X bool) -> bool
+		          0      0     -> 0
+				  0      1     -> 1
+				  1      0     -> 1
+				  1      1     -> 1
+		   : XOR: (bool X bool) -> bool
+		           0      0     -> 0
+				   0      1     -> 1
+				   1      0     -> 1
+				   1      1     -> 0
+		   
+Identifier : obj
+Defintion  : The set of everything
+Subsets    : Integer Natural bool
+Supersets  : None
+Functions  : ASSN: obj -> obj
+           : EQUAL: (obj X obj) -> bool
+
+Identifier : Natural
+Definition : {0,1,...,inf} 
+Subsets    : bool
+Supersets  : obj Integer
+Interfaces : Comparable Additive
+Functions  :
+DownCasts  : bool
+
+Identifier : Integer
+Definition : {-inf,..., -1, 0, 1,...,inf}
+Subsets    : Natural bool
+Supersets  : obj
+Interfaces : Comparable Additive
+Functions  :
+
+Identifier : uint<size>
+Definition : {0, 1, ..., size-1}
+Note       : uint<2> is equal to bool and |uint<size>| = size and size >= 2
+Subsets    : bool
+Supersets  : obj Integer Natural
+Interfaces : Comparable
+Functions  :
+		   : ADDT: (uint<size> X uint<size>) -> uint<size>  "Add w/ carry throw away"
+		   : MULTT: (uint<size> X uint<size>) -> uint<size> "Multiply w/ carry throw away"
+		   : SUBT: (uint<size> X uint<size>) -> uint<size> "Subtract w/ carry throw away"
+		   : SUBT: (uint<size> X uint<size>) -> int<min,max> 
+		   : DIVT: (uint<size> X uint<size>) -> uint<size> "Some type of divide"
+		   
+Identifier : int<min,max>
+Definition : {min, min+1,...,-1, 0, 1,..., max-1, max}
+Note       : min < 0 and max > 0, therefore, the cardinality of int<min,max> is at least 3
+Subsets    : int<min,max-1> int<min+1,max> 
+
+
+============================================================
+Operations
+============================================================
+
+
+
+
+<Operation>  : <InputList> <FunctionName> <OutputList>
+
+<InputList>  : <VariableOrElement> | '(' <Inputs> ')'
+<Inputs>     : <VariableOrElement> | <Inputs> <VariableOrElement>
+
+<OutputList> : <Variable> | '(' <Outputs> ')'
+<Outputs>    : <Variable> | <Outputs> <Variable>
+
+Examples:
+(3 A) ADD B
+(4 6) MULT (G)
+
+
+
+
+
+
+Example:
+
+Let A,B,C be variables of the same type T and let FUNC be defined as:
+	FUNC: (T x T) -> T
+Then the statement " (A B) FUNC (C) " will 'call' the function FUNC with the inputs A and B, and assign it's output to C.
+Note that in the statement, the identifiers 'A','B' and 'C' represent the variables values, not their types.
+Also note that if we let t be an element of T, then one could also call the function FUNC with " (A t) FUNC (C)".
+However, since 't' is not a variable but simply an element, it cannot be an output of the function, so the statement " (A B) FUNC (t) " would not be valid because t cannot be an output.
+
+
+SHORTCUTS:
+
+If a function has one input, or one output, the paranthesis are not needed.  So in the previous example, we could write " (A B) FUNC C ".
+Also, if the function you are wishing to call is the identity function, you may omit the function name.  So if we wanted to assign the value of varaible A to variable B, we could write " (A)(B) " or "(A)B" or "A B".  Note that "AB" would not work because there is no whitespace between the variable to differentiate them.
+
+
+
+
+
+
+Defining Generic Functions:
+
+Definition: A "Set Interface" is a function definition.  A function can operation on it's input/output sets even if it does not know the sets, but only knows the set interfaces of it's input/output sets.
+
+
+Example Procedure:
+bool is a special type that is used with the if/else/loop keywords (Note: bool be a set with a cardinality of 2)
+Let Integer be a set with the function + defined as +: (Integer x Integer) -> Integer
+Let Integer be a set with the function < defined as <: (Integer x Integer) -> bool
+Let Integer be a set with an element identifed as 'Zero'
+
+(Integer a, Integer b) SoftwareMultiply (Integer c)
+{
+	declare Integer i
+	declare bool b
+	
+	Integer.Zero c      // Assign Integer.Zero to c
+	
+	Integer.Zero i      // Assign Integer.Zero to i
+
+LOOP_START:
+	(i a) < b
+	(b 
+	if((i a) <)
+	{
+		return
+	}
+	(b c) + c
+	goto LOOP_START	
+}
+
+Potential Keywords:
+declare?
+loop?
+if else
+goto
+return
+	
+
+
+
+
+
+You can define a function where the input and output sets have defined functions on them, but the set itself is not necesarilly define.
+
+
+
+
+
+============================================================
+Procedures
+============================================================
+In the case that someone wants to group together an ordered seqence of operations, a procedure can be written.
+
+Let's say you wanted to write a procedure that took 2 variables and swapped them.  You could write it like this:
+
+
+*Note: I am explicitly writing out the properties of a procedure such as the inputs, public outputs, and private outputs, but
+all these properties can be seen from the operations, except whether or not an output is public (exposed to the caller of the procedure)
+
+procedure
+{
+	name: swap
+	description: swaps the values of 2 variables
+	inputs: obj a, a.Type b
+	public-outputs: a,b
+	private-variables: a.Type temp
+	a temp
+	b a
+	temp b
+	
+	/* Could also be written like this
+	a ASSN temp
+	(b) ASSN a
+	(temp) ASSN (b)
+	*/
+}
+
+procedure
+{
+	name: max
+	description: returns the max of two comparable variables
+	inputs: Let a be comparable, and let b be comparable to a.
+	public-outputs: Let max be an output such that a and b are assignable to max
+	private-variables: bool condition
+	
+	(A B) >= condition
+	if condition
+	{
+		A max
+	}
+	else
+	{
+		B max
+	}
+}
+
+procedure
+{
+	name: cond
+	description: assigns one of to values based on the condition
+	inputs: bool condition, result.Assignable ifTrue, result.Assignable ifFalse
+	public-outputs: obj result
+	if(condition)
+	{
+		ifTrue result
+	}  
+	else
+	{
+		ifFalse result
+	}
+}
+
+
+procedure
+{
+	name: maxWithConditional
+	description: returns the max of two comparable variables
+	inputs: Comparable A, A.Type B
+	outputs: A.Type max	
+	(  ((A B) >=) A B ) cond max
+}
+
+
+
+================================================================
+Calling a procedure VS calling an operation
+================================================================
+
+Although the syntax for calling a procedure or performing an operation can be similar, or even the same, they have differences.  
+
+A procedure is a set of ordered operations.  An operation has an element set for each input, and a variable for each output.
+
+
+
+
+
+================================================================
+Theoretical Processor Definition
+================================================================
+
+State Assignment: The act of assigning a state to a variable.
+Let A be a variable with the variable type {Q,R,S,T}.  Then the statement " S A " assigns state S to variable A.
+
+Variable Assignment: The act of assinging a variable's state to another variable.
+Let A and B be variables and let  where the variable type of B is either the same or a subset of the variable type of A. Then the statement " B A " assigns the state of B to the state of A.  If the variable type of B is not the same or a subset of the variable type of A, then all variable type elements of B that are not in the variable type of A, must be mapped to an element in the variable type of A.  
+
+If you would like to perform a variable assignment on different variable types you have 2 situations.  If the source variable type is a subset of the destination variable
+If they do not have the same variable type, there must be a mapping of states from the source variable type to the states of the destination variable type.  Note, that this mapping fits under the definition of a single variable input/output function.
+
+================================================================
+Functions
+================================================================
+A function is a mapping of a set of input variable states to output variable states.
+
+Let A,B,C,D be variables of the same type and let AND be a function with 2 inputs and 1 output of the same type.  Then the statement " (A B) AND (C) " will 'call' the function AND with the inputs A and B, and assign it's output to C.
+
+AND Example Definition:
+(A B) AND (C)
+ 0 0       0
+ 0 1       0
+ 1 0       0
+ 1 1       1
+
+================================================================
+How to use Variables
+================================================================
+A device exposes functionality through functions.  The ALU can be seen as a device that exposes functions such as Add, Multiply, AND and so on. 
+
+Function Notation:
+'(' <Input1> [',' <Inputi> ]* ')'  '>' <function> '
+
+'(' 
+
+
+
+
+Example Program:
+
+
+This is a function call of AND with the inputs A and B, and the output C.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
