@@ -1,0 +1,30 @@
+
+UsbSwitch:enum(Off Port1 Port2 Port3 Port4);
+
+Sleep:UInt4; // Time in milliseconds
+Reboot:null;
+
+UsbDeviceList {
+	%props:(VerifyDevices);
+	UsbDevice {
+		%enum:LegacyName DSK GHD CAT KBD SCR MOU;
+		LegacyName:0-1 enum LegacyName;
+		Protocol:0-1 UInt1;
+		SubClass:0-1 UInt1;
+		Class:0-1 UInt1;
+		Interface:0-1 UInt1;
+		SerialNumber:0-1;
+		Product:0-1;
+		Manufacturer:0-1;
+		ProductID:0-1 UInt2;
+		VendorID:0-1 UInt2;
+		PortName:0-1;
+		//%enum:Speed Full High;
+		//Speed:enum Speed;
+		Speed:enum(Full High);
+	}
+}
+
+VerifyDevices {
+	%props:[UsbDeviceList];
+}

@@ -1,0 +1,28 @@
+//%props {	
+	%enum:AsnOrStructEnum Asn Struct;
+	%enum:ParamType string bool null int;
+	
+	
+	Port {
+		ID:1; Name:1; Description:1;
+		
+		Command { %props: [ID Name Description];
+			
+			%group {
+				name:ParameterList;
+				ids:Request Reply;
+				%props:0-1;
+			}			
+			ParameterList {
+				type:1 enum AsnOrStructEnum;
+				param {
+					%props: [Name Description];
+					no:1 uint4;
+					type:0-1 enum ParamType;
+					size:0-1 uint4;
+					nullable:0-1 bool;
+				}
+			}	
+		}	
+	}
+//}

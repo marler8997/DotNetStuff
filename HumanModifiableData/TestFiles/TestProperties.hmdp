@@ -1,0 +1,22 @@
+
+
+CompanyName:1;
+
+Section {
+	Name:1;
+	leader;
+
+	Team {
+		Name:1;
+		Manager:1;
+		
+		Worker {
+			Name:1;
+			Age:1;
+			Notes {
+				%props:0-1;
+				Note;
+			}
+		}		
+	}	
+}

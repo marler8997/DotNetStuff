@@ -1,0 +1,14 @@
+head {
+
+
+}
+
+body {
+	p:Yo what's up my homie?;
+	p:Not much what about you?;
+	a {
+		href:http://www.yahoo.com;
+		
+
+	}
+}

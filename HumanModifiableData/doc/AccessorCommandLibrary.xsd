@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="NewDataSet" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+  <xs:element name="param">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="const" minOccurs="0" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:attribute name="type" type="xs:string" />
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="value" type="xs:string" />
+            <xs:attribute name="description" type="xs:string" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="no" type="xs:string" />
+      <xs:attribute name="type" type="xs:string" />
+      <xs:attribute name="size" type="xs:string" />
+      <xs:attribute name="nullable" type="xs:string" />
+      <xs:attribute name="name" type="xs:string" />
+      <xs:attribute name="ac_name" type="xs:string" />
+      <xs:attribute name="description" type="xs:string" />
+      <xs:attribute name="hp_required" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="protocol">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="port" minOccurs="0" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="command" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="request" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element ref="param" minOccurs="0" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" />
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="reply" minOccurs="0" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element ref="param" minOccurs="0" maxOccurs="unbounded" />
+                        </xs:sequence>
+                        <xs:attribute name="type" type="xs:string" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="name" type="xs:string" />
+                  <xs:attribute name="id" type="xs:string" />
+                  <xs:attribute name="description" type="xs:string" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" />
+            <xs:attribute name="name" type="xs:string" />
+            <xs:attribute name="source" type="xs:string" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="NewDataSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="param" />
+        <xs:element ref="protocol" />
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

@@ -1,0 +1,1523 @@
+%pimport:AccessorCommandLibrary.dump;
+port {id:0; name:Acc Admin Port; source:request;
+	command { id:0x01; name:InitAdminPort; description:This command initializes Admin port. The client has to call this command at first after boot. When the client receives [CM_SystemState], it should call this command to check [Device model], [Serial number] and Start up date time. The client can know a com;
+		request {
+			param {no:0; type:string; size:32; nullable:false; name:Controller code name; }
+		}
+		reply {
+		
+		}
+	}
+/*
+<protocol name="Accessor">
+	<port id="0" name="Acc Admin Port" source="request">
+		<command name="InitAdminPort" id="0x01" description="This command initializes Admin port. The client has to call this command at first after boot. When the client receives [CM_SystemState], it should call this command to check [Device model], [Serial number] and Start up date time. The client can know a com ">
+			<request type="asn">
+				param{no(0)type="string" size="32" nullable="False" name="Controller code name" ac_name="ac_admin_controller_code_name" description=" The controller codename. " />
+				param{no:1" type="int" size="2" nullable="False" name="Controller version" ac_name="ac_admin_controller_version" description=" The controller softoware version. " />
+				param{no:2" type="string" size="8" nullable="False" name="Controller revision" ac_name="ac_admin_controller_revision" description=" The controller softowere revision. " />
+				param{no:3" type="int" size="4" nullable="False" name="Time out" ac_name="ac_admin_time_out" description=" The value of time out. Unit is second. " />
+				<!-- New Parameter as of Accessor Version 4.4 -->
+				<!--param{no:4" type="int" size="2" nullable="False" name="Controller id" ac_name="ac_admin_controller_id" description="Controller id" />-->
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="string" size="32" nullable="False" name="Device model" ac_name="ac_admin_device_model" description=" The product name of printer engine. " />
+				param{no:2" type="string" size="32" nullable="False" name="Serial number" ac_name="ac_admin_serial_number" description=" The serial number of printer engine. The client can confirm the engine is a same as the latest connection. " />
+				param{no:3" type="string" size="32" nullable="False" name="Maker name" ac_name="ac_admin_maker_name" description=" The maker name. If oem printer shows an oem make name. " />
+				param{no:4" type="int" size="2" nullable="False" name="Start up year" ac_name="ac_admin_start_up_year" description=" The start up year of device sysytem. " />
+				param{no:5" type="int" size="1" nullable="False" name="Start up month" ac_name="ac_admin_start_up_month" description=" The start up month of an device system. " />
+				param{no:6" type="int" size="1" nullable="False" name="Start up date" ac_name="ac_admin_start_up_date" description=" The start up date of an device system. " />
+				param{no:7" type="int" size="1" nullable="False" name="Start up week" ac_name="ac_admin_start_up_week" description=" The start up the day of the week of an device system. " />
+				param{no:8" type="int" size="1" nullable="False" name="Start up hour" ac_name="ac_admin_start_up_hour" description=" The start up Hour of an device system. " />
+				param{no:9" type="int" size="1" nullable="False" name="Start up minute" ac_name="ac_admin_start_up_minute" description=" The start up minute of an device system. " />
+				param{no:10" type="int" size="2" nullable="False" name="Start up milli second" ac_name="ac_admin_start_up_milli_second" description=" The start up milli second of an device system. " />
+				param{no:11" type="int" size="2" nullable="True" name="Device bootrom version" ac_name="ac_admin_device_bootrom_version" description=" The bootrom version of main controller board. " />
+				param{no:12" type="int" size="2" nullable="False" name="Device system version" ac_name="ac_admin_device_system_version" description=" The version of the main controller system. " />
+				param{no:13" type="string" size="16" nullable="False" name="Device function id" ac_name="ac_admin_device_function_id" description=" The 32 bytes octets id of the main controller CPCA function. " />
+				param{no:14" type="int" size="2" nullable="False" name="Device function version" ac_name="ac_admin_device_function_version" description=" The version of the main controller CPCA function. " />
+				param{no:15" type="int" size="2" nullable="False" name="Printer version" ac_name="ac_admin_printer_version" description=" The version of the printer controller. " />
+				param{no:16" type="int" size="2" nullable="False" name="Scanner version" ac_name="ac_admin_scanner_version" description=" The version of the scanner controller. " />
+				param{no:17" type="int" size="2" nullable="False" name="Finisher version" ac_name="ac_admin_finisher_version" description=" The version of the finisher controller. " />
+				param{no:18" type="int" size="2" nullable="False" name="Feeder version" ac_name="ac_admin_feeder_version" description=" The version of the feeder controller. " />
+				param{no:19" type="string" size="128" nullable="True" name="Option name 1" ac_name="ac_admin_option_name_1" description=" The name of the 1st. Option. " />
+				param{no:20" type="string" size="128" nullable="True" name="Option name 2" ac_name="ac_admin_option_name_2" description=" The name of the 2nd. Option. " />
+				param{no:21" type="string" size="128" nullable="True" name="Option name 3" ac_name="ac_admin_option_name_3" description=" The name of the 3rd. Option. " />
+				param{no:22" type="string" size="128" nullable="True" name="Option name 4" ac_name="ac_admin_option_name_4" description=" The name of the 4th. Option. " />
+				param{no:23" type="string" size="128" nullable="True" name="Option name 5" ac_name="ac_admin_option_name_5" description=" The name of the 5th. Option. " />
+				param{no:24" type="string" size="128" nullable="True" name="Option name 6" ac_name="ac_admin_option_name_6" description=" The name of the 7th. Option. " />
+				param{no:25" type="string" size="128" nullable="True" name="Option name 7" ac_name="ac_admin_option_name_7" description=" The name of the 8th. Option. " />
+				param{no:26" type="string" size="128" nullable="True" name="Option name 8" ac_name="ac_admin_option_name_8" description=" The name of the 9th. Option. " />
+			</reply>
+		</command>
+		<command name="GetSystemState" id="0x02" description="CM_GetSystemState The client can get the main system state by this command. This command reply contains a legacy type error code and alert code. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="System status" ac_name="ac_admin_system_status" description=" The status of main system of the printer engine. " />
+				param{no:2" size="4" name="Status code" ac_name="ac_admin_status_code" description=" The status code of the main syste. " />
+				param{no:3" size="2" name="Alert code total" ac_name="ac_admin_alert_code_total" description=" The total number of alert code. " />
+				param{no:4" size="4" name="Main alert code" ac_name="ac_admin_main_alert_code" description=" The main alert code number. " />
+				param{no:5" size="4" name="Service call code" ac_name="ac_admin_service_call_code" description=" The service call code. " />
+				param{no:6" size="4" name="Service call sub code" ac_name="ac_admin_service_call_sub_code" description=" The service call sub code. " />
+				param{no:7" size="4" name="Service call position" ac_name="ac_admin_service_call_position" description=" The position of service call. " />
+			</reply>
+		</command>
+		<command name="GetPrinterState" id="0x03" description="CM_GetPrinterState The client can get the printer system state by this command. This command indicates the detailed reasons for the current state. CM_NotifyComponentState event notifies the same information as this command. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="Printer state" ac_name="ac_admin_printer_state" description=" The state of printer component. " />
+				param{no:2" size="1" name="Printer state reason" ac_name="ac_admin_printer_state_reason" description=" The reason of state change. " />
+				param{no:3" size="4" name="Printer state reason 1" ac_name="ac_admin_printer_state_reason_1" description=" The common reasons. / The common status code. " />
+				param{no:4" size="4" name="Printer state reason 2" ac_name="ac_admin_printer_state_reason_2" description=" The reasons for component. / The common status code. " />
+				param{no:5" size="4" name="Printer state reason 3" ac_name="ac_admin_printer_state_reason_3" description=" The reasons depend on each state. / The common status code. " />
+				param{no:6" size="4" name="Printer state reason 4" ac_name="ac_admin_printer_state_reason_4" description=" The reasons depend on each state 2. / The common status code. " />
+				param{no:7" size="4" name="Printer state reason 5" ac_name="ac_admin_printer_state_reason_5" description=" The optional reasons. / The common status code. " />
+			</reply>
+		</command>
+		<command name="GetScannerState" id="0x04" description="CM_GetScannerState The client can get the scanner system state by this command. This command indicates the detailed reasons for the current state. CM_NotifyComponentState event notifies the same information as this command. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="Scanner state" ac_name="ac_admin_scanner_state" description=" The state of scanner component. " />
+				param{no:2" size="1" name="Scanner state reason" ac_name="ac_admin_scanner_state_reason" description=" The reason of state change. " />
+				param{no:3" size="4" name="Scanner state reason 1" ac_name="ac_admin_scanner_state_reason_1" description=" The common reasons. / The common status code. " />
+				param{no:4" size="4" name="Scanner state reason 2" ac_name="ac_admin_scanner_state_reason_2" description=" The reasons for component. / The common status code. " />
+				param{no:5" size="4" name="Scanner state reason 3" ac_name="ac_admin_scanner_state_reason_3" description=" The reasons depend on each state. / The common status code. " />
+				param{no:6" size="4" name="Scanner state reason 4" ac_name="ac_admin_scanner_state_reason_4" description=" The reasons depend on each state. / The common status code. " />
+				param{no:7" size="4" name="Scanner state reason 5" ac_name="ac_admin_scanner_state_reason_5" description=" The optional reasons. / The common status code. " />
+			</reply>
+		</command>
+		<command name="GetJobState" id="0x05" description="CM_GetJobState The client can get the specified job state by this command. This command indicates the detailed reasons for the current state. CM_NotifyJobState event notifies the same information as this command. ">
+			<request type="struct">
+				param{no:0" size="4" name="Job handle" ac_name="ac_admin_job_handle" description=" Job handle number. " />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="Job state" ac_name="ac_admin_job_state" description=" The job state " />
+				param{no:2" size="1" name="Job state reason" ac_name="ac_admin_job_state_reason" description=" The reason " />
+				param{no:3" size="1" name="Job previous state" ac_name="ac_admin_job_previous_state" description=" The prebious state " />
+				param{no:4" size="4" name="Job state reason 1" ac_name="ac_admin_job_state_reason_1" description=" The common reasons. /The common status code. " />
+				param{no:5" size="4" name="Job state reason 2" ac_name="ac_admin_job_state_reason_2" description=" The reasons for tasks. / The common status code. " />
+				param{no:6" size="4" name="Job state reason 3" ac_name="ac_admin_job_state_reason_3" description=" The reasons depend on each state. / The common status code. " />
+				param{no:7" size="4" name="Job state reason 4" ac_name="ac_admin_job_state_reason_4" description=" The reasons depend on each state 2. / The common status code. " />
+				param{no:8" size="4" name="Job state reason 5" ac_name="ac_admin_job_state_reason_5" description=" The optional reasons. / The common status code. " />
+			</reply>
+		</command>
+		<command name="SetEventNotifications" id="0x06" description="CM_SetEventNotifications The client can receive event notification if set appropriate flag on this command. Because this setting is reset by the engine power off, the client has to set when it detects the engine reboot. ">
+			<request type="struct">
+				param{no:0" size="4" name="System event" ac_name="ac_admin_system_event" description=" This event notification for system state is set up. The client can not clear this flag. ">
+					<const type="uint" name="Flag system state changed" value="0x80000000" description="The client can recevie CM_NotifySystemState. "/>
+					<const type="uint" name="Flag service call"         value="0x00002000" description="The client can receive CM_NotifyServiceCall. "/>
+					<const type="uint" name="Flag trap alert code"      value="0x04000000" description="The client can receive CM_NotifyTrapAlertCode. "/>
+					<const type="uint" name="Flag trap status code"     value="0x08000000" description="The client can receive CM_NotifyTrapStatusCode. "/>
+				</param>
+				param{no:1" size="4" name="Printer event" ac_name="ac_admin_printer_event" description=" The event notification to printer component is set up. The event, which had the flag set with this parameter, is notified for all the jobs treated by printer component. ">
+					<const type="uint" name="Flag null"                             value="0x00000000" description="Register no events "/>
+					<const type="uint" name="Flag component state changed"          value="0x00000001" description="The client can recevie CM_NotifyComponentState. "/>
+					<const type="uint" name="Flag component state changed detailed" value="0x00000002" description="The client can recevie CM_NotifyComponentState. "/>
+					<const type="uint" name="Flag job state changed"                value="0x00000004" description="The client can receive CM_NotifyJobState. "/>
+					<const type="uint" name="Flag job state changed detailed"       value="0x00000008" description="The client can receive CM_NotifyJobState. "/>
+					<const type="uint" name="Flag service call"                     value="0x00002000" description="Receive CM_NotifyServiceCall for printer. "/>
+					<const type="uint" name="Flag tray state changed"               value="0x00004000" description="The client can receive CM_TrayStateChanged. "/>
+					<const type="uint" name="Flag tray state changed 2"             value="0x02000000" description=""/>
+				</param>
+				param{no:2" size="4" name="Scanner event" ac_name="ac_admin_scanner_event" description=" The event notification for scanner component. ">
+					<const type="uint" name="Flag null"                             value="0x00000000" description="Register no events. "/>
+					<const type="uint" name="Flag component state changed"          value="0x00000001" description="Enable CM_NotifyComponentState for state changed. "/>
+					<const type="uint" name="Flag component state changed detailed" value="0x00000002" description="Enable CM_NotifyComponentState for all reasons. "/>
+					<const type="uint" name="Flag job state changed"                value="0x00000004" description="The client can receive CM_NotifyComponentState. "/>
+					<const type="uint" name="Flag job state changed detailed"       value="0x00000008" description="The client can receive CM_NotifyComponentState. "/>
+					<const type="uint" name="Flag service call"                     value="0x00002000" description="Enable CM_NotifyServiceCall for scanner. "/>
+					<const type="uint" name="Flag document detect"                  value="0x00010000" description="The client can receive CM_NotifyDocumentDetect. "/>
+				</param>
+				param{no:3" size="4" name="Print job event" ac_name="ac_admin_print_job_event" description="  The event notification for JBIG print is set up. The event for a job of an application like CanoBureau that uses JBIG print service is also notified. When it sets up about the same item by printer, the two same events are notified. ">
+					<const type="uint" name="Flag null"                       value="0x00000000" description="Register no events. "/>
+					<const type="uint" name="Flag job state changed"          value="0x00000004" description="The client can receive CM_NotifyJobState. "/>
+					<const type="uint" name="Flag job state changed detailed" value="0x00000008" description="The client can receive CM_NotifyJobState. "/>
+					<const type="uint" name="Flag object deleted"             value="0x00000010" description="The client can receive CM_NotifyObjectDeleted. "/>
+					<const type="uint" name="Flag job list changed"           value="0x00000020" description="The client can receive CM_NotifyJobListChanged. "/>
+					<const type="uint" name="Flag medium count"               value="0x00000040" description="The client can receive CM_NotifyPrintJobCount. "/>
+					<const type="uint" name="Flag auto paper select"          value="0x00000100" description="The client can receive CM_NotifyAutoPaperSelect. "/>
+					<const type="uint" name="Flag auto cassette change"       value="0x00000200" description="Client can receive CM_NotifyAutoCassetteChange. "/>
+					<const type="uint" name="Flag job state changed mask 1"   value="0x00002000" description=""/>
+					<const type="uint" name="Flag job state changed mask 2"   value="0x00004000" description=""/>
+					<const type="uint" name="Flag auto cassette change 2"     value="0x00080000" description="The client can receive CM_NotifyACC2. "/>
+					<const type="uint" name="Flag auto paper select 2"        value="0x00100000" description=""/>
+					<const type="uint" name="Flag print job end"              value="0x01000000" description="The client can receive CM_NotifyPrintJobEnd. "/>
+				</param>
+				param{no:4" size="4" name="Scan job event" ac_name="ac_admin_scan_job_event" description=" The event notification for scan job. ">
+					<const type="uint" name="Flag null"                         value="0x00000000" description="Register no events. "/>
+					<const type="uint" name="Flag job state changed"            value="0x00000004" description="The client can receive CM_NotifyJobState. "/>
+					<const type="uint" name="Flag job state changed detailed"   value="0x00000008" description="The client can receive CM_NotifyJobState. "/>
+					<const type="uint" name="Flag object deleted"               value="0x00000010" description="The client can receive CM_NotifyObjectDeleted. "/>
+					<const type="uint" name="Flag job list changed"             value="0x00000020" description="The client can receive CM_NotifyJobListChanged. "/>
+					<const type="uint" name="Flag auto color select"            value="0x00000800" description="The client can receive CM_NotifyAutoColorSelect. "/>
+					<const type="uint" name="Flag auto magnification select"    value="0x00001000" description="Can receive CM_NotifyAutoMagnificationSelect. "/>
+					<const type="uint" name="Flag scan impression stored count" value="0x00200000" description="Can receive CM_NotifyScanImpressionStoredCount. "/>
+					<const type="uint" name="Flag scan impression count"        value="0x00400000" description="Can receive CM_NotifyScanImpressionCount. "/>
+					<const type="uint" name="Flag scan page count"              value="0x00800000" description="The client can receive CM_NotifyScanPageCount. "/>
+			</param>
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true">
+					<const type="int" name="ok"                     value="1" description=""/>
+					<const type="int" name="unavailable"            value="2" description=""/>
+					<const type="int" name="access denied"          value="3" description=""/>
+					<const type="int" name="overflow"               value="4" description=""/>
+					<const type="int" name="unknown error"          value="6" description=""/>
+					<const type="int" name="unknown attribute"      value="9" description=""/>
+					<const type="int" name="unknown parameter"      value="11" description=""/>
+					<const type="int" name="timeout"                value="20" description=""/>
+					<const type="int" name="end point disconnected" value="21" description=""/>
+</param>
+			</reply>
+		</command>
+		<command name="GetPrintComponents" id="0x07" description="CM_GetPrintComponents The client can get the configuration and state of the printing components, such as a trays or a toner cartridge. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="Linger toner" ac_name="ac_admin_linger_toner" description=" This indicates the remaining quantity of marker toner. " />
+				param{no:2" size="1" name="Maximum toner" ac_name="ac_admin_maximum_toner" description=" This indicates the maximum number of [Linger toner]. " />
+				param{no:3" size="1" name="Accumulate waste toner" ac_name="ac_admin_accumulate_waste_toner" description=" This indicates the accumulated waste toner. " />
+				param{no:4" size="1" name="Maximum waste toner" ac_name="ac_admin_maximum_waste_toner" description=" This indicates the maximum number of [Accumulate waste toner]. " />
+				param{no:5" size="1" name="Finisher state" ac_name="ac_admin_finisher_state" description=" This indicates the finisher state. " />
+				param{no:6" size="1" name="Staple stitching" ac_name="ac_admin_staple_stitching" description=" This indicates the staple stitching function " />
+				param{no:7" size="1" name="Saddle stitching" ac_name="ac_admin_saddle_stitching" description=" This indicates the saddle stitching " />
+				param{no:8" size="1" name="Punching" ac_name="ac_admin_punching" description=" This indicates the punching " />
+				param{no:9" size="1" name="Z folding" ac_name="ac_admin_z_folding" description=" This indicates the z folding " />
+				param{no:10" size="1" name="Trimmer" ac_name="ac_admin_trimmer" description=" This indicates the trimmer " />
+				param{no:11" size="1" name="Linger staple needles" ac_name="ac_admin_linger_staple_needles" description=" This indicates the remaining stitchnig needles. " />
+				param{no:12" size="1" name="Maximum staple needles" ac_name="ac_admin_maximum_staple_needles" description=" This indicates the maximum number of [Linger staple needles]. " />
+				param{no:13" size="1" name="Linger saddle needles" ac_name="ac_admin_linger_saddle_needles" description=" This indicates the remaining stitchnig needles. " />
+				param{no:14" size="1" name="Maximum saddle needles" ac_name="ac_admin_maximum_saddle_needles" description=" This indicates the maximum number of [Linger saddle needles]. " />
+				param{no:15" size="1" name="Accumulate punching waste" ac_name="ac_admin_accumulate_punching_waste" description=" This indicates the accumulated punching waste. " />
+				param{no:16" size="1" name="Maximum punching waste" ac_name="ac_admin_maximum_punching_waste" description=" This indicates the maximum number of [Linger punching waste]. " />
+				param{no:17" size="1" name="Tray 1 state" ac_name="ac_admin_tray_1_state" description=" This indicates the state of tray 1. Tray 1 is upper right deck. " />
+				param{no:18" size="1" name="Tray 1 medium type" ac_name="ac_admin_tray_1_medium_type" description=" This indicates the existing medium type of tray. " />
+				param{no:19" size="2" name="Tray 1 medium size" ac_name="ac_admin_tray_1_medium_size" description=" This indicates the existing medium size at tray. " />
+				param{no:20" size="1" name="Tray 1 medium orientation" ac_name="ac_admin_tray_1_medium_orientation" description=" This indicates the existing medium orientation at tray. " />
+				param{no:21" size="1" name="Tray 1 linger medium" ac_name="ac_admin_tray_1_linger_medium" description=" This indicates the remaining medium at tray. " />
+				param{no:22" size="1" name="Tray 1 maximum medium" ac_name="ac_admin_tray_1_maximum_medium" description=" This indicates the maximum number of [Tray 1 linger medium] " />
+				param{no:23" size="1" name="Tray 2 state" ac_name="ac_admin_tray_2_state" description=" This indicates the state of tray 2. Tray 2 is upper left deck. " />
+				param{no:24" size="1" name="Tray 2 medium type" ac_name="ac_admin_tray_2_medium_type" description=" This indicates the existing medium type of tray. " />
+				param{no:25" size="2" name="Tray 2 medium size" ac_name="ac_admin_tray_2_medium_size" description=" This indicates the existing medium size at tray. " />
+				param{no:26" size="1" name="Tray 2 medium orientation" ac_name="ac_admin_tray_2_medium_orientation" description=" This indicates the existing medium orientation at tray. " />
+				param{no:27" size="1" name="Tray 2 linger medium" ac_name="ac_admin_tray_2_linger_medium" description=" This indicates the remaining medium at tray. " />
+				param{no:28" size="1" name="Tray 2 maximum medium" ac_name="ac_admin_tray_2_maximum_medium" description=" This indicates the maximum number of [Tray 2 linger medium] " />
+				param{no:29" size="1" name="Tray 3 state" ac_name="ac_admin_tray_3_state" description=" This indicates the state of tray 3. Tray 3 is upper cassette. " />
+				param{no:30" size="1" name="Tray 3 medium type" ac_name="ac_admin_tray_3_medium_type" description=" This indicates the existing medium type of tray. " />
+				param{no:31" size="2" name="Tray 3 medium size" ac_name="ac_admin_tray_3_medium_size" description=" This indicates the existing medium size at tray. " />
+				param{no:32" size="1" name="Tray 3 medium orientation" ac_name="ac_admin_tray_3_medium_orientation" description=" This indicates the existing medium orientation at tray. " />
+				param{no:33" size="1" name="Tray 3 linger medium" ac_name="ac_admin_tray_3_linger_medium" description=" This indicates the remaining medium at tray. " />
+				param{no:34" size="1" name="Tray 3 maximum medium" ac_name="ac_admin_tray_3_maximum_medium" description=" This indicates the maximum number of [Tray 3 linger medium] " />
+				param{no:35" size="1" name="Tray 4 state" ac_name="ac_admin_tray_4_state" description=" This indicates the state of tray 4. Tray 4 is lower cassette. " />
+				param{no:36" size="1" name="Tray 4 medium type" ac_name="ac_admin_tray_4_medium_type" description=" This indicates the existing medium type of tray. " />
+				param{no:37" size="2" name="Tray 4 medium size" ac_name="ac_admin_tray_4_medium_size" description=" This indicates the existing medium size at tray. " />
+				param{no:38" size="1" name="Tray 4 medium orientation" ac_name="ac_admin_tray_4_medium_orientation" description=" This indicates the existing medium orientation at tray. " />
+				param{no:39" size="1" name="Tray 4 linger medium" ac_name="ac_admin_tray_4_linger_medium" description=" This indicates the remaining medium at tray. " />
+				param{no:40" size="1" name="Tray 4 maximum medium" ac_name="ac_admin_tray_4_maximum_medium" description=" This indicates the maximum number of [Tray 4 linger medium] " />
+				param{no:41" size="1" name="Option deck state" ac_name="ac_admin_option_deck_state" description=" This indicates the state of option deck. Option deck is external optional deck. " />
+				param{no:42" size="1" name="Option deck medium type" ac_name="ac_admin_option_deck_medium_type" description=" This indicates the existing medium type of tray. " />
+				param{no:43" size="2" name="Option deck medium size" ac_name="ac_admin_option_deck_medium_size" description=" This indicates the existing medium size at tray. " />
+				param{no:44" size="1" name="Option deck medium orientation" ac_name="ac_admin_option_deck_medium_orientation" description=" This indicates the existing medium orientation at tray. " />
+				param{no:45" size="1" name="Option deck linger medium" ac_name="ac_admin_option_deck_linger_medium" description=" This indicates the remaining medium at tray. " />
+				param{no:46" size="1" name="Option deck maximum medium" ac_name="ac_admin_option_deck_maximum_medium" description=" This indicates the maximum number of [Option deck linger medium] " />
+				param{no:47" size="1" name="Multi tray state" ac_name="ac_admin_multi_tray_state" description=" This indicates the state of multi tray. Multi tray is upper right deck. " />
+				param{no:48" size="1" name="Multi tray medium type" ac_name="ac_admin_multi_tray_medium_type" description=" This indicates the existing medium type of tray. " />
+				param{no:49" size="2" name="Multi tray medium size" ac_name="ac_admin_multi_tray_medium_size" description=" This indicates the existing medium size at tray. " />
+				param{no:50" size="1" name="Multi tray medium orientation" ac_name="ac_admin_multi_tray_medium_orientation" description=" This indicates the existing medium orientation at tray. " />
+				param{no:51" size="1" name="Multi tray linger medium" ac_name="ac_admin_multi_tray_linger_medium" description=" This indicates the remaining medium at tray. " />
+				param{no:52" size="1" name="Multi tray maximum medium" ac_name="ac_admin_multi_tray_maximum_medium" description=" This indicates the maximum number of [Multi tray linger medium] " />
+				param{no:53" size="1" name="Inserter state" ac_name="ac_admin_inserter_state" description=" This indicates the state of inserter. Inserter is upper right deck. " />
+				param{no:54" size="1" name="Inserter medium type" ac_name="ac_admin_inserter_medium_type" description=" This indicates the existing medium type of tray. " />
+				param{no:55" size="2" name="Inserter medium size" ac_name="ac_admin_inserter_medium_size" description=" This indicates the existing medium size at tray. " />
+				param{no:56" size="1" name="Inserter medium orientation" ac_name="ac_admin_inserter_medium_orientation" description=" This indicates the existing medium orientation at tray. " />
+				param{no:57" size="1" name="Inserter linger medium" ac_name="ac_admin_inserter_linger_medium" description=" This indicates the remaining medium at tray. " />
+				param{no:58" size="1" name="Inserter maximum medium" ac_name="ac_admin_inserter_maximum_medium" description=" This indicates the maximum number of [Inserter linger medium] " />
+				param{no:59" size="1" name="Linger black toner" ac_name="ac_admin_linger_black_toner" description=" This indicates the remaining quantity of black toner. " />
+				param{no:60" size="1" name="Linger cyan toner" ac_name="ac_admin_linger_cyan_toner" description=" This indicates the remaining quantity of cyan toner. " />
+				param{no:61" size="1" name="Linger magenta toner" ac_name="ac_admin_linger_magenta_toner" description=" This indicates the remaining quantity of magenta toner. " />
+				param{no:62" size="1" name="Linger yellow toner" ac_name="ac_admin_linger_yellow_toner" description=" This indicates the remaining quantity of yellow toner. " />
+			</reply>
+		</command>
+		<command name="GetScanComponents" id="0x08" description="CM_GetScanComponents The client can get the configuration and state of the scanning components, such as a document feeder. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="2" name="Resolution x" ac_name="ac_admin_resolution_x" description=" This indicates resolution of X direction. " />
+				param{no:2" size="2" name="Resolution y" ac_name="ac_admin_resolution_y" description=" This indicates resolution of Y direction. " />
+				param{no:3" size="1" name="Platen view" ac_name="ac_admin_platen_view" description=" This indicates image orientation on platen. " />
+				param{no:4" size="1" name="Coordinate" ac_name="ac_admin_coordinate" description=" This indicates coordinate of scanner. " />
+				param{no:5" size="4" name="Maximum scannable x size" ac_name="ac_admin_maximum_scannable_x_size" description=" This indicates maximum scannable x size of platen. " />
+				param{no:6" size="4" name="Maximum scannable y size" ac_name="ac_admin_maximum_scannable_y_size" description=" This indicates maximum scannable y size of platen. " />
+				param{no:7" size="4" name="Minimum scannable x size" ac_name="ac_admin_minimum_scannable_x_size" description=" This indicates minimum scannable x size of platen. " />
+				param{no:8" size="4" name="Minimum scannable y size" ac_name="ac_admin_minimum_scannable_y_size" description=" This indicates minimum scannable y size of platen. " />
+				param{no:9" size="1" name="Color function" ac_name="ac_admin_color_function" description=" This indicates the scanner color function. " />
+				param{no:10" size="1" name="Document feeder state" ac_name="ac_admin_document_feeder_state" description=" This indicates status of document feeder. " />
+				param{no:11" size="1" name="Document feeder type" ac_name="ac_admin_document_feeder_type" description=" This indicates type of document feeder. " />
+				param{no:12" size="1" name="Document feeder medium capacity" ac_name="ac_admin_document_feeder_medium_capacity" description=" This indicates capacity of feedable medium. " />
+				param{no:13" size="4" name="Document feedermss maximum count capacity" ac_name="ac_admin_document_feedermss_maximum_count_capaci" description=" This indicates maximum medium capacity of document feeder. ty " />
+				param{no:14" size="1" name="Document feeder ae capacity" ac_name="ac_admin_document_feeder_ae_capacity" description=" This indicates availability of AE function. " />
+				param{no:15" size="1" name="Document feeder nin1 capacity" ac_name="ac_admin_document_feeder_nin1_capacity" description=" This indicates availability of Nin1 function. " />
+				param{no:16" size="1" name="Document feeder editor capacity" ac_name="ac_admin_document_feeder_editor_capacity" description=" This indicates availability of editor function. " />
+				param{no:17" size="1" name="Document feeder stamp capacity" ac_name="ac_admin_document_feeder_stamp_capacity" description=" This indicates availability of stamp function. " />
+				param{no:18" size="1" name="Document feeder sides capacity" ac_name="ac_admin_document_feeder_sides_capacity" description=" This indicates feeding sides capacity. " />
+				param{no:19" size="1" name="Document feeder size detection capacity" ac_name="ac_admin_document_feeder_size_detection_capacity" description=" This indicates the feeder can detect original size. " />
+				param{no:20" size="1" name="Document feeder mixed mss capacity" ac_name="ac_admin_document_feeder_mixed_mss_capacity" description=" This indicates the feeder can feed mixed medium. " />
+				param{no:21" size="1" name="Document feeder mss slide capacity" ac_name="ac_admin_document_feeder_mss_slide_capacity" description=" This indicates availability of slide reading function. " />
+				param{no:22" size="1" name="Document feeder mss fix capacity" ac_name="ac_admin_document_feeder_mss_fix_capacity" description=" This indicates availability of fix reading function. " />
+				param{no:23" size="1" name="Df mss presentation direction detect" ac_name="ac_admin_df_mss_presentation_direction_detect" description=" This indicates the feeder can detect mss directoin, portlait or landscape. " />
+				param{no:24" size="1" name="Document feeder first page capacity" ac_name="ac_admin_document_feeder_first_page_capacity" description=" This indicates the feeder can feed from first page. " />
+				param{no:25" size="4" name="Document feeder maximum scannable x size" ac_name="ac_admin_document_feeder_maximum_scannable_x_size" description=" This indicates maximum scannable x size of document feeder. " />
+				param{no:26" size="4" name="Document feeder maximum scannable y size" ac_name="ac_admin_document_feeder_maximum_scannable_y_size" description=" This indicates maximum scannable y size of document feeder. " />
+				param{no:27" size="4" name="Document feeder minimum scannable x size" ac_name="ac_admin_document_feeder_minimum_scannable_x_size" description=" This indicates minimum scannable x size of document feeder. " />
+				param{no:28" size="4" name="Document feeder minimum scannable y size" ac_name="ac_admin_document_feeder_minimum_scannable_y_size" description=" This indicates minimum scannable y size of document feeder. " />
+			</reply>
+		</command>
+		<command name="GetUserSettings" id="0x09" description="CM_GetUserSettings The client can get some engine setting by user. The information about localization, system manager and device are contained. ">
+			<request type="struct">
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="string" size="2" nullable="False" name="Language" ac_name="ac_admin_language" description=" The language of engine system setting. " />
+				param{no:2" type="string" size="2" nullable="False" name="Country" ac_name="ac_admin_country" description=" The country code of engine system setting. " />
+				param{no:3" type="int" size="2" nullable="False" name="Code" ac_name="ac_admin_code" description=" The character code of engine system setting. " />
+				param{no:4" type="int" size="2" nullable="False" name="Device name code set" ac_name="ac_admin_device_name_code_set" description=" The code set of device name. " />
+				param{no:5" type="string" size="32" nullable="False" name="Device name" ac_name="ac_admin_device_name" description=" The device name. User can change this value at LCD panel of engine or by RemoteUI. " />
+				param{no:6" type="int" size="2" nullable="False" name="Device locations code set" ac_name="ac_admin_device_locations_code_set" description=" The code set of device locations. " />
+				param{no:7" type="string" size="32" nullable="False" name="Device locations" ac_name="ac_admin_device_locations" description=" The device location. User can change this value at LCD panel of engine or by RemoteUI. " />
+				param{no:8" type="int" size="2" nullable="False" name="System manager name code set" ac_name="ac_admin_system_manager_name_code_set" description=" The code set of administrator name. " />
+				param{no:9" type="string" size="32" nullable="False" name="System manager name" ac_name="ac_admin_system_manager_name" description=" The administrator name. User can change this value at LCD panel of engine or by RemoteUI. " />
+				param{no:10" type="string" size="64" nullable="False" name="Email address" ac_name="ac_admin_e_mail_address" description=" The device location. User can change this value at LCD panel of engine or by RemoteUI. " />
+				param{no:11" type="int" size="2" nullable="False" name="Contact information code set" ac_name="ac_admin_contact_information_code_set" description=" The code set of information to contact with system manager " />
+				param{no:12" type="string" size="32" nullable="False" name="Contact information" ac_name="ac_admin_contact_information" description=" The information to contact with system manager. User can change this value at LCD panel of engine or by RemoteUI. " />
+				param{no:13" type="int" size="2" nullable="False" name="Comment code set" ac_name="ac_admin_comment_code_set" description=" The code set of comment for system manager. " />
+				param{no:14" type="string" size="32" nullable="False" name="Comment" ac_name="ac_admin_comment" description=" The comment for system manager. User can change this value at LCD panel of engine or by RemoteUI. " />
+			</reply>
+		</command>
+		<command name="GetAccountMode" id="0x0A" description="CM_GetAccountMode The client can get accounting mode of engine. Engine has some mode for user management. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="Management level" ac_name="ac_admin_management_level" description=" This is the supported user management levels. " />
+				param{no:2" size="1" name="Management privileged" ac_name="ac_admin_management_privileged" description=" This attribute is effective when an engine system supports administrator users. It indicates the state (unregistered or effective) of the administrator privilege. " />
+				param{no:3" size="1" name="Default user for print" ac_name="ac_admin_default_user_for_print" description=" This indicates whether the default user id is acceptalbe for print or not. " />
+				param{no:4" size="1" name="Default user for scan" ac_name="ac_admin_default_user_for_scan" description=" This indicates whether the default user id is acceptalbe for scan or not. " />
+			</reply>
+		</command>
+		<command name="OperateUser" id="0x0B" description="CM_OperateUser The client can manage user account of device. ">
+			<request type="asn">
+				param{no:0" type="null" name="Operator id" ac_name="ac_admin_operator_id" description=" " />
+				param{no:1" type="int" size="4" nullable="False" name="Operator password" ac_name="ac_admin_operator_password" description=" The operator password. " />
+				param{no:2" type="null" name="Operation mode" ac_name="ac_admin_operation_mode" description=" This specifies operation mode for a user id. " />
+				param{no:3" type="int" size="4" nullable="False" name="User id" ac_name="ac_admin_user_id" description=" This is an user id for operation. " />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="User type" ac_name="ac_admin_user_type" description=" It indicates the user type. " />
+				param{no:2" size="4" name="Impression limit" ac_name="ac_admin_impression_limit" description=" This indicates the maximum count limit of the print impresion. " />
+				param{no:3" size="4" name="Print total" ac_name="ac_admin_print_total" description=" This indicates the counts of the impression count limit. " />
+			</reply>
+		</command>
+		<command name="GetDeviceTime" id="0x0C" description="CM_GetDeviceTime The client can check the present date and time of engine device has. If date or time is deferent from present time of the client, the client has to set it at device time. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="2" name="Year" ac_name="ac_admin_year" description=" The present year of an engine system. " />
+				param{no:2" size="1" name="Month" ac_name="ac_admin_month" description=" The present month of an engine system. " />
+				param{no:3" size="1" name="Date" ac_name="ac_admin_date" description=" The present date of an engine system. " />
+				param{no:4" size="1" name="Week" ac_name="ac_admin_week" description=" The present the day of the week of an engine system. " />
+				param{no:5" size="1" name="Hour" ac_name="ac_admin_hour" description=" The present Hour of an engine system. " />
+				param{no:6" size="1" name="Minute" ac_name="ac_admin_minute" description=" The present minute of an engine system. " />
+				param{no:7" size="2" name="Second" ac_name="ac_admin_milli_second" description=" The present millsecond of an engine system. " />
+				param{no:8" size="1" name="Time differential" ac_name="ac_admin_time_differential" description=" The time difference from the GMT in a 2-fold value of 0.5 hour (-12.0, -11.5,..., 11.5, 12.0). " />
+				param{no:9" size="1" name="Summer time" ac_name="ac_admin_summer_time" description=" It indicates whether or not the setting is summer time setting. " />
+			</reply>
+		</command>
+		<command name="GetDocumentInfo" id="0x0D" description="CM_GetDocumentInfo The client can get information of documents at tray, finisher and such output equipment. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of CPCA communicate between Accessor and engine. See 'CPCA Result' sheet for the detail. " hp_required="true"/>
+				param{no:1" size="1" name="Platen document exist" ac_name="ac_admin_platen_document_exist" description=" Document is set on the platen glass. " />
+				param{no:2" size="1" name="Platen document orientation" ac_name="ac_admin_platen_document_orientation" description=" Orientation of platen document. " />
+				param{no:3" size="2" name="Platen document media size" ac_name="ac_admin_platen_document_media_size" description=" Media size of platen document. " />
+				param{no:4" size="1" name="Df document exist" ac_name="ac_admin_df_document_exist" description=" Document is set on the document feeder tray. " />
+				param{no:5" size="1" name="Manual feed document exist" ac_name="ac_admin_manual_feed_document_exist" description=" Document is set at the manual feed tray of the document feeder. " />
+			</reply>
+		</command>
+		<command name="SetControllerState" id="0x0E" description="CM_SetControllerState The client notifies that state with this command. ">
+			<request type="struct">
+				param{no:0" size="2" name="Controller status" ac_name="ac_admin_controller_status" description=" The state of the controller to set. " />
+				param{no:1" size="2" name="Error code" ac_name="ac_admin_error_code" description=" The error code. The 'Service call' state needs this code. " />
+				param{no:2" size="2" name="Error sub code" ac_name="ac_admin_error_sub_code" description=" " />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of CPCA communicate between Accessor and engine. See 'CPCA Result' sheet for the detail. " hp_required="true"/>
+			</reply>
+		</command>
+		<command name="GetOutputBinInfo" id="0x0F" description="CM_GetOutputBinInfo The client can get information of configuration and status of the output bins. ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of CPCA communicate between Accessor and engine. See 'CPCA Result' sheet for the detail. " hp_required="true"/>
+				param{no:1" size="1" name="Output tray 1 availability" ac_name="ac_admin_output_tray_1_availability" description=" Availability of output tray 1 " />
+				param{no:2" size="1" name="Output tray 1 medium level" ac_name="ac_admin_output_tray_1_medium_level" description=" Amount of medium in output tray 1. " />
+				param{no:3" size="4" name="Output tray 1 max capacity" ac_name="ac_admin_output_tray_1_max_capacity" description=" Max count capacity of medium for ouput tray 1. " />
+				param{no:4" size="4" name="Output tray 1 min size x" ac_name="ac_admin_output_tray_1_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:5" size="4" name="Output tray 1 max size x" ac_name="ac_admin_output_tray_1_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:6" size="4" name="Output tray 1 min size y" ac_name="ac_admin_output_tray_1_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:7" size="4" name="Output tray 1 max size y" ac_name="ac_admin_output_tray_1_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:8" size="1" name="Output tray 2 availability" ac_name="ac_admin_output_tray_2_availability" description=" Availability of output tray 2 " />
+				param{no:9" size="1" name="Output tray 2 medium level" ac_name="ac_admin_output_tray_2_medium_level" description=" Amount of medium in output tray 2. " />
+				param{no:10" size="4" name="Output tray 2 max capacity" ac_name="ac_admin_output_tray_2_max_capacity" description=" Max count capacity of medium for ouput tray 2. " />
+				param{no:11" size="4" name="Output tray 2 min size x" ac_name="ac_admin_output_tray_2_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:12" size="4" name="Output tray 2 max size x" ac_name="ac_admin_output_tray_2_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:13" size="4" name="Output tray 2 min size y" ac_name="ac_admin_output_tray_2_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:14" size="4" name="Output tray 2 max size y" ac_name="ac_admin_output_tray_2_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:15" size="1" name="Output tray 3 availability" ac_name="ac_admin_output_tray_3_availability" description=" Availability of output tray 3 " />
+				param{no:16" size="1" name="Output tray 3 medium level" ac_name="ac_admin_output_tray_3_medium_level" description=" Amount of medium in output tray 3. " />
+				param{no:17" size="4" name="Output tray 3 max capacity" ac_name="ac_admin_output_tray_3_max_capacity" description=" Max count capacity of medium for ouput tray 3. " />
+				param{no:18" size="4" name="Output tray 3 min size x" ac_name="ac_admin_output_tray_3_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:19" size="4" name="Output tray 3 max size x" ac_name="ac_admin_output_tray_3_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:20" size="4" name="Output tray 3 min size y" ac_name="ac_admin_output_tray_3_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:21" size="4" name="Output tray 3 max size y" ac_name="ac_admin_output_tray_3_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:22" size="1" name="Finisher tray 1 availability" ac_name="ac_admin_finisher_tray_1_availability" description=" Availability of Finisher tray 1 " />
+				param{no:23" size="1" name="Finisher tray 1 medium level" ac_name="ac_admin_finisher_tray_1_medium_level" description=" Amount of medium in Finisher tray 1. " />
+				param{no:24" size="4" name="Finisher tray 1 max capacity" ac_name="ac_admin_finisher_tray_1_max_capacity" description=" Max count capacity of medium for Finisher tray 1. " />
+				param{no:25" size="4" name="Finisher tray 1 min size x" ac_name="ac_admin_finisher_tray_1_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:26" size="4" name="Finisher tray 1 max size x" ac_name="ac_admin_finisher_tray_1_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:27" size="4" name="Finisher tray 1 min size y" ac_name="ac_admin_finisher_tray_1_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:28" size="4" name="Finisher tray 1 max size y" ac_name="ac_admin_finisher_tray_1_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:29" size="1" name="Finisher tray 2 availability" ac_name="ac_admin_finisher_tray_2_availability" description=" Availability of Finisher tray 2 " />
+				param{no:30" size="1" name="Finisher tray 2 medium level" ac_name="ac_admin_finisher_tray_2_medium_level" description=" Amount of medium in Finisher tray 2. " />
+				param{no:31" size="4" name="Finisher tray 2 max capacity" ac_name="ac_admin_finisher_tray_2_max_capacity" description=" Max count capacity of medium for Finisher tray 2. " />
+				param{no:32" size="4" name="Finisher tray 2 min size x" ac_name="ac_admin_finisher_tray_2_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:33" size="4" name="Finisher tray 2 max size x" ac_name="ac_admin_finisher_tray_2_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:34" size="4" name="Finisher tray 2 min size y" ac_name="ac_admin_finisher_tray_2_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:35" size="4" name="Finisher tray 2 max size y" ac_name="ac_admin_finisher_tray_2_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:36" size="1" name="Finisher tray 3 availability" ac_name="ac_admin_finisher_tray_3_availability" description=" Availability of Finisher tray 3 " />
+				param{no:37" size="1" name="Finisher tray 3 medium level" ac_name="ac_admin_finisher_tray_3_medium_level" description=" Amount of medium in Finisher tray 3. " />
+				param{no:38" size="4" name="Finisher tray 3 max capacity" ac_name="ac_admin_finisher_tray_3_max_capacity" description=" Max count capacity of medium for Finisher tray 3. " />
+				param{no:39" size="4" name="Finisher tray 3 min size x" ac_name="ac_admin_finisher_tray_3_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:40" size="4" name="Finisher tray 3 max size x" ac_name="ac_admin_finisher_tray_3_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:41" size="4" name="Finisher tray 3 min size y" ac_name="ac_admin_finisher_tray_3_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:42" size="4" name="Finisher tray 3 max size y" ac_name="ac_admin_finisher_tray_3_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:43" size="1" name="Saddle tray availability" ac_name="ac_admin_saddle_tray_availability" description=" Availability of Saddle tray " />
+				param{no:44" size="1" name="Saddle tray medium level" ac_name="ac_admin_saddle_tray_medium_level" description=" Amount of medium in Saddle tray. " />
+				param{no:45" size="4" name="Saddle tray max capacity" ac_name="ac_admin_saddle_tray_max_capacity" description=" Max count capacity of medium for Saddle tray. " />
+				param{no:46" size="4" name="Saddle tray min size x" ac_name="ac_admin_saddle_tray_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:47" size="4" name="Saddle tray max size x" ac_name="ac_admin_saddle_tray_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:48" size="4" name="Saddle tray min size y" ac_name="ac_admin_saddle_tray_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:49" size="4" name="Saddle tray max size y" ac_name="ac_admin_saddle_tray_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:50" size="1" name="Shift tray availability" ac_name="ac_admin_shift_tray_availability" description=" Availability of Shift tray " />
+				param{no:51" size="1" name="Shift tray medium level" ac_name="ac_admin_shift_tray_medium_level" description=" Amount of medium in Shift tray. " />
+				param{no:52" size="4" name="Shift tray max capacity" ac_name="ac_admin_shift_tray_max_capacity" description=" Max count capacity of medium for Shift tray. " />
+				param{no:53" size="4" name="Shift tray min size x" ac_name="ac_admin_shift_tray_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:54" size="4" name="Shift tray max size x" ac_name="ac_admin_shift_tray_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:55" size="4" name="Shift tray min size y" ac_name="ac_admin_shift_tray_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:56" size="4" name="Shift tray max size y" ac_name="ac_admin_shift_tray_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:57" size="1" name="Trimmer availability" ac_name="ac_admin_trimmer_availability" description=" Availability of Trimmer " />
+				param{no:58" size="1" name="Trimmer medium level" ac_name="ac_admin_trimmer_medium_level" description=" Amount of medium in Trimmer. " />
+				param{no:59" size="4" name="Trimmer max capacity" ac_name="ac_admin_trimmer_max_capacity" description=" Max count capacity of medium for Trimmer. " />
+				param{no:60" size="4" name="Trimmer min size x" ac_name="ac_admin_trimmer_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:61" size="4" name="Trimmer max size x" ac_name="ac_admin_trimmer_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:62" size="4" name="Trimmer min size y" ac_name="ac_admin_trimmer_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:63" size="4" name="Trimmer max size y" ac_name="ac_admin_trimmer_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:64" size="1" name="Inner tray 1 availability" ac_name="ac_admin_inner_tray_1_availability" description=" Availability of inner tray 1 " />
+				param{no:65" size="1" name="Inner tray 1 medium level" ac_name="ac_admin_inner_tray_1_medium_level" description=" Amount of medium in inner tray 1. " />
+				param{no:66" size="4" name="Inner tray 1 max capacity" ac_name="ac_admin_inner_tray_1_max_capacity" description=" Max count capacity of medium for inner tray 1. " />
+				param{no:67" size="4" name="Inner tray 1 min size x" ac_name="ac_admin_inner_tray_1_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:68" size="4" name="Inner tray 1 max size x" ac_name="ac_admin_inner_tray_1_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:69" size="4" name="Inner tray 1 min size y" ac_name="ac_admin_inner_tray_1_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:70" size="4" name="Inner tray 1 max size y" ac_name="ac_admin_inner_tray_1_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:71" size="1" name="Inner tray 2 availability" ac_name="ac_admin_inner_tray_2_availability" description=" Availability of inner tray 2 " />
+				param{no:72" size="1" name="Inner tray 2 medium level" ac_name="ac_admin_inner_tray_2_medium_level" description=" Amount of medium in inner tray 2. " />
+				param{no:73" size="4" name="Inner tray 2 max capacity" ac_name="ac_admin_inner_tray_2_max_capacity" description=" Max count capacity of medium for inner tray 2. " />
+				param{no:74" size="4" name="Inner tray 2 min size x" ac_name="ac_admin_inner_tray_2_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:75" size="4" name="Inner tray 2 max size x" ac_name="ac_admin_inner_tray_2_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:76" size="4" name="Inner tray 2 min size y" ac_name="ac_admin_inner_tray_2_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:77" size="4" name="Inner tray 2 max size y" ac_name="ac_admin_inner_tray_2_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:78" size="1" name="Inner finisher tray 1 availability" ac_name="ac_admin_inner_finisher_tray_1_availability" description=" Availability of inner finisher tray 1 " />
+				param{no:79" size="1" name="Inner finisher tray 1 medium level" ac_name="ac_admin_inner_finisher_tray_1_medium_level" description=" Amount of medium in inner finisher tray 1. " />
+				param{no:80" size="4" name="Inner finisher tray 1 max capacity" ac_name="ac_admin_inner_finisher_tray_1_max_capacity" description=" Max count capacity of medium for inner finisher tray 1. " />
+				param{no:81" size="4" name="Inner finisher tray 1 min size x" ac_name="ac_admin_inner_finisher_tray_1_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:82" size="4" name="Inner finisher tray 1 max size x" ac_name="ac_admin_inner_finisher_tray_1_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:83" size="4" name="Inner finisher tray 1 min size y" ac_name="ac_admin_inner_finisher_tray_1_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:84" size="4" name="Inner finisher tray 1 max size y" ac_name="ac_admin_inner_finisher_tray_1_max_size_y" description=" Maximum size of medium available to output (y size) " />
+				param{no:85" size="1" name="Inner finisher tray 2 availability" ac_name="ac_admin_inner_finisher_tray_2_availability" description=" Availability of inner finisher tray 2 " />
+				param{no:86" size="1" name="Inner finisher tray 2 medium level" ac_name="ac_admin_inner_finisher_tray_2_medium_level" description=" Amount of medium in inner finisher tray 2. " />
+				param{no:87" size="4" name="Inner finisher tray 2 max capacity" ac_name="ac_admin_inner_finisher_tray_2_max_capacity" description=" Max count capacity of medium for inner finisher tray 2. " />
+				param{no:88" size="4" name="Inner finisher tray 2 min size x" ac_name="ac_admin_inner_finisher_tray_2_min_size_x" description=" Minimum size of medium available to output (x size) " />
+				param{no:89" size="4" name="Inner finisher tray 2 max size x" ac_name="ac_admin_inner_finisher_tray_2_max_size_x" description=" Maximum size of medium available to output (x size) " />
+				param{no:90" size="4" name="Inner finisher tray 2 min size y" ac_name="ac_admin_inner_finisher_tray_2_min_size_y" description=" Minimum size of medium available to output (y size) " />
+				param{no:91" size="4" name="Inner finisher tray 2 max size y" ac_name="ac_admin_inner_finisher_tray_2_max_size_y" description=" Maximum size of medium available to output (y size) " />
+			</reply>
+		</command>
+		<command name="GetPrintJobDefault" id="0x10" description="CM_GetPrintJobDefault ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of CPCA communicate between Accessor and engine. See 'CPCA Result' sheet for the detail. " hp_required="true"/>
+				param{no:1" size="2" name="Default copies" ac_name="ac_admin_default_copies" description=" " />
+				param{no:2" size="1" name="Default output mode" ac_name="ac_admin_default_output_mode" description=" " />
+				param{no:3" size="1" name="Default output partition" ac_name="ac_admin_default_output_partition" description=" " />
+				param{no:4" size="2" name="Default stapling" ac_name="ac_admin_default_stapling" description=" " />
+				param{no:5" size="2" name="Default medium size" ac_name="ac_admin_default_medium_size" description=" " />
+				param{no:6" size="1" name="Default medium type" ac_name="ac_admin_default_medium_type" description=" " />
+				param{no:7" size="1" name="Default plex" ac_name="ac_admin_default_plex" description=" " />
+				param{no:8" size="1" name="Default interleaf mode" ac_name="ac_admin_default_interleaf_mode" description=" " />
+				param{no:9" size="1" name="Default binding position" ac_name="ac_admin_default_binding_position" description=" " />
+				param{no:10" size="4" name="Default binding edge image shift" ac_name="ac_admin_default_binding_edge_image_shift" description=" " />
+				param{no:11" size="1" name="Default smoothing" ac_name="ac_admin_default_smoothing" description=" " />
+				param{no:12" size="1" name="Default color density cyan" ac_name="ac_admin_default_color_density_cyan" description=" " />
+				param{no:13" size="1" name="Default color density magenta" ac_name="ac_admin_default_color_density_magenta" description=" " />
+				param{no:14" size="1" name="Default color density yellow" ac_name="ac_admin_default_color_density_yellow" description=" " />
+				param{no:15" size="1" name="Default color density black" ac_name="ac_admin_default_color_density_black" description=" " />
+			</reply>
+		</command>
+		<command name="GetControllerFuncId" id="0x11" description="CM_GetControllerFuncId ">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of CPCA communicate between Accessor and engine. See 'CPCA Result' sheet for the detail. " hp_required="true"/>
+				param{no:1" size="16" name="Controller function id" ac_name="ac_admin_controller_function_id" description=" The 32 bytes octets id of the main controller CPCA function " />
+				param{no:2" size="2" name="Controller function version" ac_name="ac_admin_controller_function_version" description=" The version of the main controller CPCA function " />
+			</reply>
+		</command>
+		<command name="GetAccVersion" id="0x12" description="CM_GetAccVersion The client can get version and date of installed accessor. ">
+			<request type="struct">
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="string" size="16" nullable="False" name="Accessor version" ac_name="ac_admin_accessor_version" description=" The version of installed accessor. (ex. 3.xx.xx) " />
+				param{no:2" type="string" size="16" nullable="False" name="Accessor verdate" ac_name="ac_admin_accessor_verdate" description=" The version date of installed accessor. (ex.YYYY/MM/DD) " />
+			</reply>
+		</command>
+		<command name="GetFileBoxInfo" id="0x13" description="CM_GetFileBoxInfo ">
+			<request type="struct">
+				param{no:0" size="2" name="Target box number" ac_name="ac_admin_target_box_number" description=" Target box number " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="2" nullable="False" name="Total number of box" ac_name="ac_admin_total_number_of_box" description=" Total number of box available on the device. " />
+				param{no:2" type="int" size="2" nullable="False" name="Box number" ac_name="ac_admin_box_number" description=" Box number " />
+				param{no:3" type="string" size="24" nullable="False" name="Box name" ac_name="ac_admin_box_name" description=" Box name (This will be set to NULL if the name is not set to specified box.) " />
+				param{no:4" type="int" size="2" nullable="False" name="Box print mode" ac_name="ac_admin_box_print_mode" description=" Print mode setting of specified box " />
+			</reply>
+		</command>
+		<command name="GetInputTrayState" id="0x14" description="CM_GetInputTrayState ">
+			<request type="struct">
+				param{no:0" size="1" name="Request type" ac_name="ac_admin_request_type" description=" Request type to get information. " />
+				param{no:1" size="1" name="Request value" ac_name="ac_admin_request_value" description=" Request value based on request type. " />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="Input tray count" ac_name="ac_admin_input_tray_count" description=" Total number of input tray " />
+				param{no:2" size="1" name="Input tray id" ac_name="ac_admin_input_tray_id" description=" Input tray id " />
+				param{no:3" size="1" name="Input tray type" ac_name="ac_admin_input_tray_type" description=" Input tray type " />
+				param{no:4" size="1" name="Input tray state" ac_name="ac_admin_input_tray_state" description=" Input tray state " />
+				param{no:5" size="1" name="Medium type" ac_name="ac_admin_medium_type" description=" " />
+				param{no:6" size="2" name="Medium size" ac_name="ac_admin_medium_size" description=" " />
+				param{no:7" size="1" name="Medium orientation" ac_name="ac_admin_medium_orientation" description=" " />
+				param{no:8" size="1" name="Medium linger" ac_name="ac_admin_medium_linger" description=" Remaining level of medium " />
+				param{no:9" size="4" name="Input tray max capacity" ac_name="ac_admin_input_tray_max_capacity" description=" Maximum capacity of medium " />
+			</reply>
+		</command>
+		<command name="GetOutputBinState" id="0x15" description="CM_GetOutputBinState ">
+			<request type="struct">
+				param{no:0" size="1" name="Request type" ac_name="ac_admin_request_type" description=" Request type to get information. " />
+				param{no:1" size="1" name="Request value" ac_name="ac_admin_request_value" description=" Request value based on request type. " />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="Output bin count" ac_name="ac_admin_output_bin_count" description=" Total number of output bin " />
+				param{no:2" size="1" name="Output bin id" ac_name="ac_admin_output_bin_id" description=" Output bin id " />
+				param{no:3" size="1" name="Output bin type" ac_name="ac_admin_output_bin_type" description=" Output bin type " />
+				param{no:4" size="1" name="Output bin state" ac_name="ac_admin_output_bin_state" description=" " />
+				param{no:5" size="4" name="Output bin max capacity" ac_name="ac_admin_output_bin_max_capacity" description=" Maximum capacity of medium " />
+				param{no:6" size="1" name="Output bin medium linger" ac_name="ac_admin_output_bin_medium_linger" description=" Remaining level of medium " />
+				param{no:7" size="4" name="Output bin min size x" ac_name="ac_admin_output_bin_min_size_x" description=" " />
+				param{no:8" size="4" name="Output bin max size x" ac_name="ac_admin_output_bin_max_size_x" description=" " />
+				param{no:9" size="4" name="Output bin min size y" ac_name="ac_admin_output_bin_min_size_y" description=" " />
+				param{no:10" size="4" name="Output bin max size y" ac_name="ac_admin_output_bin_max_size_y" description=" " />
+			</reply>
+		</command>
+		<command name="GetFinisherState" id="0x16" description="CM_GetFinisherState The client can get finisher/finishing unit state and information for each finisher/finishing unit. ">
+			<request type="struct">
+				param{no:0" size="1" name="Request type" ac_name="ac_admin_request_type" description=" Request type to get information. " />
+				param{no:1" size="1" name="Finisher request value" ac_name="ac_admin_finisher_request_value" description=" Request value " />
+				param{no:2" size="1" name="Finishing unit request value" ac_name="ac_admin_finishing_unit_request_value" description=" Request value based on request type. " />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" size="1" name="Finisher count" ac_name="ac_admin_finisher_count" description=" Total number of finisher " />
+				param{no:2" size="1" name="Finishing unit count" ac_name="ac_admin_finishing_unit_count" description=" Total number of finishing unit " />
+				param{no:3" size="1" name="Finisher number" ac_name="ac_admin_finisher_number" description=" Finisher number " />
+				param{no:4" size="1" name="Finishing unit number" ac_name="ac_admin_finishing_unit_number" description=" Finishing unit number " />
+				param{no:5" size="1" name="Finisher state" ac_name="ac_admin_finisher_state" description=" This indicates the finisher state. " />
+				param{no:6" size="1" name="Finishing unit type" ac_name="ac_admin_finishing_unit_type" description=" Finishing unit type " />
+				param{no:7" size="1" name="Finishing unit state" ac_name="ac_admin_finishing_unit_state" description=" Finishing unit state " />
+				param{no:8" size="1" name="Finishing capacity" ac_name="ac_admin_finishing_capacity" description=" Finishing capacity " />
+				param{no:9" size="4" name="Finishing unit medium max capacity" ac_name="ac_admin_finishing_unit_medium_max_capacity" description=" Maximum capacity of medium " />
+				param{no:10" size="1" name="Finishing unit medium linger" ac_name="ac_admin_finishing_unit_medium_linger" description=" Remaining level of medium " />
+			</reply>
+		</command>
+		<command name="GetOptionName" id="0x17" description="CM_GetOptionName The client can get option unit name. ">
+			<request type="struct">
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="string" size="128" nullable="True" name="Option unit name 1" ac_name="ac_admin_option_unit_name_1" description=" The name of 1st. Option unit. " />
+				param{no:2" type="string" size="128" nullable="True" name="Option unit name 2" ac_name="ac_admin_option_unit_name_2" description=" The name of 2nd Option unit. " />
+				param{no:3" type="string" size="128" nullable="True" name="Option unit name 3" ac_name="ac_admin_option_unit_name_3" description=" The name of 3rd. Option unit. " />
+				param{no:4" type="string" size="128" nullable="True" name="Option unit name 4" ac_name="ac_admin_option_unit_name_4" description=" The name of 4th. Option unit. " />
+				param{no:5" type="string" size="128" nullable="True" name="Option unit name 5" ac_name="ac_admin_option_unit_name_5" description=" The name of 5th. Option unit. " />
+				param{no:6" type="string" size="128" nullable="True" name="Option unit name 6" ac_name="ac_admin_option_unit_name_6" description=" The name of 6th. Option unit. " />
+				param{no:7" type="string" size="128" nullable="True" name="Option unit name 7" ac_name="ac_admin_option_unit_name_7" description=" The name of 7th. Option unit. " />
+				param{no:8" type="string" size="128" nullable="True" name="Option unit name 8" ac_name="ac_admin_option_unit_name_8" description=" The name of 8th. Option unit. " />
+				param{no:9" type="string" size="128" nullable="True" name="Option unit name 9" ac_name="ac_admin_option_unit_name_9" description=" The name of 9th. Option unit. " />
+				param{no:10" type="string" size="128" nullable="True" name="Option unit name 10" ac_name="ac_admin_option_unit_name_10" description=" The name of 10th. Option unit. " />
+				param{no:11" type="string" size="128" nullable="True" name="Option unit name 11" ac_name="ac_admin_option_unit_name_11" description=" The name of 11th. Option unit. " />
+				param{no:12" type="string" size="128" nullable="True" name="Option unit name 12" ac_name="ac_admin_option_unit_name_12" description=" The name of 12th. Option unit. " />
+				param{no:13" type="string" size="128" nullable="True" name="Option unit name 13" ac_name="ac_admin_option_unit_name_13" description=" The name of 13th. Option unit. " />
+				param{no:14" type="string" size="128" nullable="True" name="Option unit name 14" ac_name="ac_admin_option_unit_name_14" description=" The name of 14th. Option unit. " />
+				param{no:15" type="string" size="128" nullable="True" name="Option unit name 15" ac_name="ac_admin_option_unit_name_15" description=" The name of 15th. Option unit. " />
+				param{no:16" type="string" size="128" nullable="True" name="Option unit name 16" ac_name="ac_admin_option_unit_name_16" description=" The name of 16th. Option unit. " />
+				param{no:17" type="string" size="128" nullable="True" name="Option unit name 17" ac_name="ac_admin_option_unit_name_17" description=" The name of 17th. Option unit. " />
+				param{no:18" type="string" size="128" nullable="True" name="Option unit name 18" ac_name="ac_admin_option_unit_name_18" description=" The name of 18th. Option unit. " />
+				param{no:19" type="string" size="128" nullable="True" name="Option unit name 19" ac_name="ac_admin_option_unit_name_19" description=" The name of 19th. Option unit. " />
+				param{no:20" type="string" size="128" nullable="True" name="Option unit name 20" ac_name="ac_admin_option_unit_name_20" description=" The name of 20th. Option unit. " />
+			</reply>
+		</command>
+		<command name="SetShadingCorrectionData" id="0x18" description="CM_SetShadingCorrectionData The client can set the density value for Shading Correction. ">
+			<request type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Shading correction mode" ac_name="ac_admin_shading_correction_mode" description=" Mode " />
+				param{no:1" type="int" size="2" nullable="True" name="Shading correction color" ac_name="ac_admin_shading_correction_color" description=" Color " />
+				param{no:2" type="string" size="38" nullable="True" name="Shading correction data" ac_name="ac_admin_shading_correction_data" description=" Density value " />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+			</reply>
+		</command>
+		<command name="SetMediaLibraryData" id="0x19" description="CM_SetMediaLibraryData Set a medial library data with appending/deleting mode. ">
+			<request type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Ml type" ac_name="ac_admin_ml_type" description=" Media library type " />
+				param{no:1" type="int" size="1" nullable="False" name="Ml registration mode" ac_name="ac_admin_ml_registration_mode" description=" Registration mode to media library " />
+				param{no:2" type="string" size="4" nullable="False" name="Ml registration medium id" ac_name="ac_admin_ml_registration_medium_id" description=" Medium ID " />
+				param{no:3" type="int" size="2" nullable="False" name="Ml registration brand name code set" ac_name="ac_admin_ml_registration_brand_name_code_set" description=" Character code set of brand name " />
+				param{no:4" type="string" size="100" nullable="False" name="Ml registration brand name" ac_name="ac_admin_ml_registration_brand_name" description=" Brand name " />
+				param{no:5" type="string" size="76" nullable="False" name="Ml registration engine parameter" ac_name="ac_admin_ml_registration_engine_parameter" description=" Engine parameter for media library " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="2" nullable="False" name="Ml registered index" ac_name="ac_admin_ml_registered_index" description=" Registered index " />
+				param{no:2" type="string" size="4" nullable="False" name="Ml registered medium id" ac_name="ac_admin_ml_registered_medium_id" description=" Medium ID " />
+			</reply>
+		</command>
+		<command name="GetMediaLibraryInfo" id="0x1A" description="CM_GetMediaLibraryInfo Get a medial library information. ">
+			<request type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Ml type" ac_name="ac_admin_ml_type" description=" Media library type " />
+				param{no:1" type="int" size="1" nullable="False" name="Ml request type" ac_name="ac_admin_ml_request_type" description=" Request type to get information. " />
+				param{no:2" type="int" size="2" nullable="True" name="Ml request value index" ac_name="ac_admin_ml_request_value_index" description=" Request value of Index. " />
+				param{no:3" type="string" size="4" nullable="True" name="Ml request value id" ac_name="ac_admin_ml_request_value_id" description=" Request value of Medium ID. " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="2" nullable="False" name="Ml total count" ac_name="ac_admin_ml_total_count" description=" Total number of media library record " />
+				param{no:2" type="int" size="4" nullable="False" name="Ml update counter" ac_name="ac_admin_ml_update_counter" description=" Update counter of media library " />
+				param{no:3" type="string" size="4" nullable="False" name="Ml medium id" ac_name="ac_admin_ml_medium_id" description=" Medium ID " />
+				param{no:4" type="int" size="2" nullable="False" name="Ml brand name code set" ac_name="ac_admin_ml_brand_name_code_set" description=" Character code set of brand name " />
+				param{no:5" type="string" size="100" nullable="False" name="Ml brand name" ac_name="ac_admin_ml_brand_name" description=" Brand name " />
+				param{no:6" type="string" size="76" nullable="False" name="Ml engine parameter" ac_name="ac_admin_ml_engine_parameter" description=" Engine parameter for media library " />
+			</reply>
+		</command>
+		<command name="SetInputTrayMedia" id="0x1B" description="CM_SetInputTrayMedia Set an input tray media information with media library. ">
+			<request type="asn">
+				param{no:0" type="int" size="1" nullable="False" name="Ml set tray id" ac_name="ac_admin_ml_set_tray_id" description=" Input tray ID " />
+				param{no:1" type="int" size="2" nullable="True" name="Ml set tray medium size" ac_name="ac_admin_ml_set_tray_medium_size" description=" Medium size " />
+				param{no:2" type="int" size="4" nullable="True" name="Ml set tray custom medium width" ac_name="ac_admin_ml_set_tray_custom_medium_width" description=" Medium width for user custom " />
+				param{no:3" type="int" size="4" nullable="True" name="Ml set tray custom medium height" ac_name="ac_admin_ml_set_tray_custom_medium_height" description=" Medium height for user custom " />
+				param{no:4" type="int" size="1" nullable="True" name="Ml set tray medium orientation" ac_name="ac_admin_ml_set_tray_medium_orientation" description=" Medium orientation " />
+				param{no:5" type="string" size="4" nullable="False" name="Ml set tray medium id" ac_name="ac_admin_ml_set_tray_medium_id" description=" Medium ID " />
+				param{no:6" type="int" size="2" nullable="True" name="Ml set tray brand name code set" ac_name="ac_admin_ml_set_tray_brand_name_code_set" description=" Character code set of brand name " />
+				param{no:7" type="string" size="100" nullable="False" name="Ml set tray brand name" ac_name="ac_admin_ml_set_tray_brand_name" description=" Brand name " />
+				param{no:8" type="string" size="76" nullable="False" name="Ml set tray engine parameter" ac_name="ac_admin_ml_set_tray_engine_parameter" description=" Engine parameter for media library " />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+			</reply>
+		</command>
+		<command name="GetInputTrayMedia" id="0x1C" description="CM_GetInputTrayMedia Get input tray media information by each input tray. ">
+			<request type="struct">
+				param{no:0" size="1" name="Request type" ac_name="ac_admin_request_type" description=" Request type to get information. " />
+				param{no:1" size="1" name="Request value" ac_name="ac_admin_request_value" description=" Request value based on request type. " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="2" nullable="True" name="Ml input tray medium size" ac_name="ac_admin_ml_input_tray_medium_size" description=" Medium size " />
+				param{no:2" type="int" size="4" nullable="True" name="Ml input tray custom medium width" ac_name="ac_admin_ml_input_tray_custom_medium_width" description=" Medium width for user custom " />
+				param{no:3" type="int" size="4" nullable="True" name="Ml input tray custom medium height" ac_name="ac_admin_ml_input_tray_custom_medium_height" description=" Medium height for user custom " />
+				param{no:4" type="int" size="1" nullable="False" name="Ml input tray medium orientation" ac_name="ac_admin_ml_input_tray_medium_orientation" description=" Medium orientation " />
+				param{no:5" type="string" size="4" nullable="False" name="Ml input tray medium id" ac_name="ac_admin_ml_input_tray_medium_id" description=" Medium ID " />
+				param{no:6" type="int" size="2" nullable="False" name="Ml input tray brand name code set" ac_name="ac_admin_ml_input_tray_brand_name_code_set" description=" Character code set of brand name " />
+				param{no:7" type="string" size="100" nullable="False" name="Ml input tray brand name" ac_name="ac_admin_ml_input_tray_brand_name" description=" Brand name " />
+				param{no:8" type="string" size="76" nullable="False" name="Ml input tray engine parameter" ac_name="ac_admin_ml_input_tray_engine_parameter" description=" Engine parameter for media library " />
+			</reply>
+		</command>
+		<command name="GetScannerInfo" id="0x1D" description="CM_GetScannerInfo The client can get scanning component information. ">
+			<request type="struct">
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="1" nullable="True" name="Scan sensor type" ac_name="ac_admin_scan_sensor_type" description=" Scanner sensor type " />
+				param{no:2" type="int" size="1" nullable="False" name="Scan feeder type" ac_name="ac_admin_scan_feeder_type" description=" Scanner feeder type " />
+				param{no:3" type="int" size="1" nullable="True" name="Scan plex" ac_name="ac_admin_scan_plex" description=" Supported scan plex mode " />
+				param{no:4" type="int" size="1" nullable="True" name="Scan color function" ac_name="ac_admin_scan_color_function" description=" Scanner color function " />
+			</reply>
+		</command>
+		<command name="GetJobId" id="0x1E" description="CM_GetJobId The client can get Job ID from Job handle. ">
+			<request type="struct">
+				param{no:0" size="4" name="Job handle" ac_name="ac_admin_job_handle" description=" Job handle number. " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="null" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="4" nullable="False" name="Job id" ac_name="ac_admin_job_id" description=" Job ID " />
+			</reply>
+		</command>
+		<command name="GetAtmVersion" id="0x1F" description="CM_GetAtmVersion The client can get version of installed accessor transfer module. ">
+			<request type="struct">
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="string" size="16" nullable="False" name="Atm version" ac_name="ac_admin_atm_version" description=" The version of installed accessor transfer module.(ex. 1.00.xx) " />
+			</reply>
+		</command>
+		<command name="GetDeviceSerialNumber" id="0x20" description="CM_GetDeviceSerialNumber The client can get device serial number. ">
+			<request type="asn">
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="1" nullable="True" name="Device type 1" ac_name="ac_admin_device_type_1" description=" Device type 1 " />
+				param{no:2" type="string" size="32" nullable="True" name="Device serial number 1" ac_name="ac_admin_device_serial_number_1" description=" Device serial number 1 " />
+				param{no:3" type="null" name="Device type 2" ac_name="ac_admin_device_type_2" description=" Device type 2 " />
+				param{no:4" type="null" name="Device serial number 2" ac_name="ac_admin_device_serial_number_2" description=" Device serial number 2 " />
+				param{no:5" type="null" name="Device type 3" ac_name="ac_admin_device_type_3" description=" Device type 3 " />
+				param{no:6" type="null" name="Device serial number 3" ac_name="ac_admin_device_serial_number_3" description=" Device serial number 3 " />
+				param{no:7" type="null" name="Device type 4" ac_name="ac_admin_device_type_4" description=" Device type 4 " />
+				param{no:8" type="null" name="Device serial number 4" ac_name="ac_admin_device_serial_number_4" description=" Device serial number 4 " />
+				param{no:9" type="null" name="Device type 5" ac_name="ac_admin_device_type_5" description=" Device type 5 " />
+				param{no:10" type="null" name="Device serial number 5" ac_name="ac_admin_device_serial_number_5" description=" Device serial number 5 " />
+			</reply>
+		</command>
+		<command name="GetStoredFormInfo" id="0x21" description="CM_GetStoredFormInfo The client can get stored form info ">
+			<request type="asn">
+				param{no:0" type="null" name="Form request type" ac_name="ac_admin_form_request_type" description=" Request type of stored form. " />
+				param{no:1" type="null" name="Target form number" ac_name="ac_admin_target_form_number" description=" Target form number " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="null" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="2" nullable="False" name="Form total count" ac_name="ac_admin_form_total_count" description=" Total number of stored form. " />
+				param{no:2" type="null" name="Form name" ac_name="ac_admin_form_name" description=" Name of stored form. " />
+			</reply>
+		</command>
+		<command name="GetDitherMatrix" id="0x22" description="CM_GetDitherMatrix This function enables you to get Dither Matrix data from copier. ">
+			<request type="asn">
+				param{no:0" type="int" size="1" nullable="False" name="Request type" ac_name="ac_admin_request_type" description=" Request type to get information. " />
+				param{no:1" type="int" size="2" nullable="True" name="Request index" ac_name="ac_admin_request_index" description=" Index value. " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="2" nullable="True" name="Dither matrix count" ac_name="ac_admin_dither_matrix_count" description=" Total number of Dither Matrix " />
+				param{no:2" type="int" size="2" nullable="True" name="Dither matrix index" ac_name="ac_admin_dither_matrix_index" description=" Index value of Dither Matrix " />
+				param{no:3" type="int" size="2" nullable="True" name="Dither matrix row" ac_name="ac_admin_dither_matrix_row" description=" Number of row of Dither Matrix " />
+				param{no:4" type="int" size="2" nullable="True" name="Dither matrix column" ac_name="ac_admin_dither_matrix_column" description=" Number of column of Dither Matrix " />
+				param{no:5" type="string" size="8192" nullable="True" name="Dither matrix data" ac_name="ac_admin_dither_matrix_data" description=" Dither Matrix data " />
+			</reply>
+		</command>
+		<command name="GetTargetLut" id="0x23" description="CM_GetTargetLut This function enables you to get Target LUT data from copier. ">
+			<request type="asn">
+				param{no:0" type="int" size="1" nullable="False" name="Request type" ac_name="ac_admin_request_type" description=" Request type to get information. " />
+				param{no:1" type="int" size="2" nullable="True" name="Request index" ac_name="ac_admin_request_index" description=" Index value. " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="2" nullable="True" name="Target lut count" ac_name="ac_admin_target_lut_count" description=" Total number of target LUT " />
+				param{no:2" type="int" size="2" nullable="True" name="Target lut index" ac_name="ac_admin_target_lut_index" description=" Index of target LUT " />
+				param{no:3" type="string" size="2048" nullable="True" name="Target lut data" ac_name="ac_admin_target_lut_data" description=" Target LUT data " />
+			</reply>
+		</command>
+		<command name="GetGammaLut" id="0x24" description="CM_GetGammaLut This function enables you to get Gamma LUT data from copier. ">
+			<request type="asn">
+				param{no:0" type="int" size="1" nullable="False" name="Request type" ac_name="ac_admin_request_type" description=" Request type to get information. " />
+				param{no:1" type="int" size="2" nullable="True" name="Request index" ac_name="ac_admin_request_index" description=" Index value. " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="2" nullable="True" name="Gamma lut count" ac_name="ac_admin_gamma_lut_count" description=" Total number of Gamma LUT " />
+				param{no:2" type="int" size="2" nullable="True" name="Gamma lut index" ac_name="ac_admin_gamma_lut_index" description=" Index value of Gamma LUT " />
+				param{no:3" type="string" size="2048" nullable="True" name="Gamma lut data" ac_name="ac_admin_gamma_lut_data" description=" Gamma LUT data " />
+			</reply>
+		</command>
+		<command name="GetFinishingUnitInfo" id="0x25" description="CM_GetFinishingUnitInfo The client can get finishing unit information. ">
+			<request type="asn">
+				param{no:0" type="int" size="1" nullable="False" name="Request type" ac_name="ac_admin_request_type" description=" Request type to get information. " />
+				param{no:1" type="int" size="1" nullable="False" name="Finisher request value" ac_name="ac_admin_finisher_request_value" description=" Request value " />
+				param{no:2" type="int" size="1" nullable="False" name="Finishing unit request value" ac_name="ac_admin_finishing_unit_request_value" description=" Request value based on request type. " />
+				param{no:3" type="int" size="1" nullable="True" name="Finishing unit capacity number" ac_name="ac_admin_finishing_unit_capacity_number" description=" Finishing unit capacity number " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="1" nullable="False" name="Finishing unit capacity count" ac_name="ac_admin_finishing_unit_capacity_count" description=" Count of finishing unit capacity " />
+				param{no:2" type="int" size="1" nullable="True" name="Finishing unit capacity" ac_name="ac_admin_finishing_unit_capacity" description=" Finishing unit capacity " />
+				param{no:3" type="int" size="4" nullable="True" name="Finishing unit medium capacity" ac_name="ac_admin_finishing_unit_medium_capacity" description=" Finishing unit medium capacity " />
+			</reply>
+		</command>
+		<command name="GetTonerInfo" id="0x26" description="CM_GetTonerInfo The client can get toner information. ">
+			<request type="asn">
+				param{no:0" type="int" size="1" nullable="False" name="Toner color" ac_name="ac_admin_toner_color" description=" Color of toner " />
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="1" nullable="True" name="Linger toner" ac_name="ac_admin_linger_toner" description=" This indicates the remaining quantity of marker toner. " />
+			</reply>
+		</command>
+		<command name="GetDeviceModel" id="0x27" description="CM_GetDeviceModel The client can get device model main and sub id. ">
+			<request type="struct">
+			</request>
+			<reply type="asn">
+				param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description=" The result of Accessor command. See 'Accessor interface common specification' for more details. " hp_required="true"/>
+				param{no:1" type="int" size="4" nullable="True" name="Device model main id" ac_name="ac_admin_device_model_main_id" description=" Device model main ID of copier. " />
+				param{no:2" type="int" size="4" nullable="True" name="Device model sub id" ac_name="ac_admin_device_model_sub_id" description=" Device model sub ID of copier. " />
+			</reply>
+		</command>
+    <command name="GetDieInfo" id="0x28" description="The client can get the name of the professional puncher die unit.">
+      <request type="asn">
+      </request>
+      <reply type="asn">
+        param{no:0" type="int" size="2" nullable="False" name="Result" ac_name="ac_admin_result" description="The result of Accessor command. See 'Accessor interface common specification' for more details." hp_required="true"/>
+        param{no:1" type="int" size="2" nullable="False" name="Die name code set" ac_name="ac_admin_die_name_code_set" description="" />
+        param{no:2" type="string" size="16" nullable="False" name="Die name" ac_name="ac_admin_die_name" description="the name of die(professional puncher unit)." />
+      </reply>
+    </command>
+    <command name="OpenInputTray" id="0x29" description="The client can set the input tray which to open.">
+      <request type="struct">
+        param{no:0" size="1" name="Request type" ac_name="ac_admin_request_type" description="Request type to get information." />
+        param{no:1" size="1" name="Request value" ac_name="ac_admin_request_value" description="Request value based on request type." />
+      </request>
+      <reply type="struct">
+        param{no:0" size="2" name="Result" ac_name="ac_admin_result" description="The result of Accessor command. See 'Accessor interface common specification' for more details." hp_required="true"/>
+      </reply>
+    </command>
+    <command name="SetMediaLibraryData2" id="0x2A" description="The client can set a media library data with appending/deleting the data.">
+      <request type="asn">
+        param{no:0" type="int" size="2" nullable="False" name="Ml type" ac_name="ac_admin_ml_type" description="Media library type" />
+        param{no:1" type="null" name="Ml registration mode" ac_name="ac_admin_ml_registration_mode" description="Registration mode to media library" />
+        param{no:2" type="string" size="4" nullable="False" name="Ml registration medium id" ac_name="ac_admin_ml_registration_medium_id" description="Medium ID" />
+        param{no:3" type="null" name="Ml registration brand name code set" ac_name="ac_admin_ml_registration_brand_name_code_set" description="Character code set of brand name" />
+        param{no:4" type="string" size="100" nullable="False" name="Ml registration brand name" ac_name="ac_admin_ml_registration_brand_name" description="Brand name" />
+        param{no:5" type="string" size="24" nullable="False" name="Ml media attribute parameter" ac_name="ac_admin_ml_media_attribute_parameter" description="Parameter of media attribute" />
+        param{no:6" type="string" size="100" nullable="False" name="Ml adjustment parameter" ac_name="ac_admin_ml_adjustment_parameter" description="Parameter of adjustment" />
+      </request>
+      <reply type="struct">
+        param{no:0" size="2" name="Result" ac_name="ac_admin_result" description="The result of Accessor command. See 'Accessor interface common specification' for more details." hp_required="true"/>
+        param{no:1" size="2" name="Ml registered index" ac_name="ac_admin_ml_registered_index" description="Registered index" />
+        param{no:2" size="4" name="Ml registered medium id" ac_name="ac_admin_ml_registered_medium_id" description="Medium ID" />
+      </reply>
+    </command>
+    <command name="GetMediaLibraryInfo2" id="0x2B" description="The client can get a media library information.">
+      <request type="asn">
+        param{no:0" type="null" name="Ml type" ac_name="ac_admin_ml_type" description="Media library type" />
+        param{no:1" type="null" name="Ml request type" ac_name="ac_admin_ml_request_type" description="Request type to get information." />
+        param{no:2" type="null" name="Ml request value index" ac_name="ac_admin_ml_request_value_index" description="Request value of Index." />
+        param{no:3" type="null" name="Ml request value id" ac_name="ac_admin_ml_request_value_id" description="Request value of Medium ID." />
+      </request>
+      <reply type="asn">
+        param{no:0" type="null" name="Result" ac_name="ac_admin_result" description="The result of Accessor command. See 'Accessor interface common specification' for more details." hp_required="true"/>
+        param{no:1" type="int" size="2" nullable="False" name="Ml total count" ac_name="ac_admin_ml_total_count" description="Total number of media library record" />
+        param{no:2" type="string" size="4" nullable="False" name="Ml registration medium id" ac_name="ac_admin_ml_registration_medium_id" description="Medium ID" />
+        param{no:3" type="null" name="Ml registration brand name code set" ac_name="ac_admin_ml_registration_brand_name_code_set" description="Character code set of brand name" />
+        param{no:4" type="string" size="100" nullable="False" name="Ml registration brand name" ac_name="ac_admin_ml_registration_brand_name" description="Brand name" />
+        param{no:5" type="string" size="24" nullable="False" name="Ml media attribute parameter" ac_name="ac_admin_ml_media_attribute_parameter" description="Parameter of media attribute" />
+        param{no:6" type="string" size="100" nullable="False" name="Ml adjustment parameter" ac_name="ac_admin_ml_adjustment_parameter" description="Parameter of adjustment" />
+        param{no:7" type="int" size="4" nullable="False" name="Ml update counter number" ac_name="ac_admin_ml_update_counter_number" description="Update counter number of media library" />
+      </reply>
+    </command>
+    <command name="SetInputTrayMedia2" id="0x2C" description="The client can set the media information with media library in the input tray.">
+      <request type="asn">
+        param{no:0" type="null" name="Ml set tray id" ac_name="ac_admin_ml_set_tray_id" description="Input tray ID" />
+        param{no:1" type="null" name="Ml tray medium size" ac_name="ac_admin_ml_tray_medium_size" description="Medium size" />
+        param{no:2" type="int" size="4" nullable="False" name="Ml tray custom medium width" ac_name="ac_admin_ml_tray_custom_medium_width" description="Medium width for user custom" />
+        param{no:3" type="int" size="4" nullable="False" name="Ml tray custom medium height" ac_name="ac_admin_ml_tray_custom_medium_height" description="Medium height for user custom" />
+        param{no:4" type="null" name="Ml tray medium orientation" ac_name="ac_admin_ml_tray_medium_orientation" description="Medium orientation" />
+        param{no:5" type="string" size="4" nullable="False" name="Ml tray medium id" ac_name="ac_admin_ml_tray_medium_id" description="Medium ID" />
+      </request>
+      <reply type="struct">
+        param{no:0" size="2" name="Result" ac_name="ac_admin_result" description="The result of Accessor command. See 'Accessor interface common specification' for more details." hp_required="true"/>
+      </reply>
+    </command>
+    <command name="GetInputTrayMedia2" id="0x2D" description="The client can get the media information in the input tray.">
+      <request type="struct">
+        param{no:0" size="1" name="Request type" ac_name="ac_admin_request_type" description="Request type to get information." />
+        param{no:1" size="1" name="Request value" ac_name="ac_admin_request_value" description="Request value based on request type." />
+      </request>
+    </command>
+  </port>
+	<port id="1" name="Acc Pjob Port" source="request">
+				<command name="InitPjobPort" id="0x1001">
+			<request type="struct">
+				param{no:0" size="2" name="protocol"    />
+				param{no:1" size="4" name="job service" />
+				param{no:2" size="4" name="time out"    />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		<command name="NewPrintJob" id="0x1002">
+			<request type="asn">
+				param{no:0"  type="int"    size="1"   nullable="true"  name="job execution mode"     />
+				param{no:1"  type="null"                               name="box number"             />
+				param{no:2"  type="int"    size="2"   nullable="true"  name="job name code set"      />
+				param{no:3"  type="string" size="255" nullable="true"  name="job name"               />
+				param{no:4"  type="int"    size="2"   nullable="true"  name="job owner code set"     />
+				param{no:5"  type="string" size="32"  nullable="true"  name="job owner"              />
+				param{no:6"  type="string" size="7"   nullable="true"  name="job password"           />
+				param{no:7"  type="int"    size="4"   nullable="true"  name="job user id"            />
+				param{no:8"  type="int"    size="4"   nullable="true"  name="job user password"      />
+				param{no:9"  type="string" size="80"  nullable="true"  name="client job id"          />
+				param{no:10" type="int"    size="1"   nullable="true"  name="job color mode"         />
+				param{no:11" type="null"                               name="job face mode"          />
+				param{no:12" type="string" size="13"  nullable="true"  name="box number list"        />
+				param{no:13" type="int"    size="2"   nullable="true"  name="billing code code set"  />
+				param{no:14" type="int"    size="4"   nullable="true"  name="billing code id 1"       />
+				param{no:15" type="string" size="32"  nullable="true"  name="billing code 1"          />
+				param{no:16" type="int"    size="4"   nullable="true"  name="billing code id 2"       />
+				param{no:17" type="string" size="32"  nullable="true"  name="billing code 2"          />
+				param{no:18" type="int"    size="4"   nullable="true"  name="billing code id 3"       />
+				param{no:19" type="string" size="32"  nullable="true"  name="billing code 3"          />
+				param{no:20" type="int"    size="2"   nullable="true"  name="job comment code set"   />
+				param{no:21" type="string" size="162" nullable="true"  name="job comment"            />
+				param{no:22" type="int"    size="1"   nullable="true"  name="job priority"           />
+				param{no:23" type="int"    size="1"   nullable="true"  name="unlimited binder usage" />
+				param{no:24" type="int"    size="1"   nullable="true"  name="job type"               />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result"         />
+				param{no:1" size="4" name="new job handle" />
+			</reply>
+		</command>
+		<command name="NewPrintBinder" id="0x1003">
+			<request type="asn">
+				param{no:0"  type="int"    size="4"   nullable="false" name="job handle"                         />
+				param{no:1"  type="int"    size="1"   nullable="true"  name="binder type"                        />
+				param{no:2"  type="int"    size="2"   nullable="true"  name="copies"                             />
+				param{no:3"  type="int"    size="1"   nullable="true"  name="output mode"                        />
+				param{no:4"  type="int"    size="1"   nullable="true"  name="output partition"                   />
+				param{no:5"  type="int"    size="1"   nullable="true"  name="output bin"                         />
+				param{no:6"  type="int"    size="2"   nullable="true"  name="stapling"                           />
+				param{no:7"  type="int"    size="2"   nullable="true"  name="punching"                           />
+				param{no:8"  type="int"    size="2"   nullable="true"  name="folding"                            />
+				param{no:9"  type="int"    size="2"   nullable="true"  name="saddle stitching"                   />
+				param{no:10" type="int"    size="2"   nullable="true"  name="trimming mode"                      />
+				param{no:11" type="int"    size="4"   nullable="true"  name="trimming position"                  />
+				param{no:12" type="null"                               name="slip sheet"                         />
+				param{no:13" type="int"    size="1"   nullable="true"  name="booklet layout"                     />
+				param{no:14" type="int"    size="4"   nullable="true"  name="tab image shift"                    />
+				param{no:15" type="int"    size="2"   nullable="true"  name="medium criterion size"              />
+				param{no:16" type="int"    size="1"   nullable="true"  name="mix medium binding"                 />
+				param{no:17" type="int"    size="1"   nullable="true"  name="insertion mode"                     />
+				param{no:18" type="int"    size="1"   nullable="true"  name="insertion medium source"            />
+				param{no:19" type="int"    size="1"   nullable="true"  name="insertion medium type"              />
+				param{no:20" type="string" size="600" nullable="true"  name="insertion positions"                />
+				param{no:21" type="int"    size="1"   nullable="true"  name="front cover mode"                   />
+				param{no:22" type="int"    size="1"   nullable="true"  name="front cover medium source"          />
+				param{no:23" type="int"    size="1"   nullable="true"  name="back cover mode"                    />
+				param{no:24" type="int"    size="1"   nullable="true"  name="back cover medium source"           />
+				param{no:25" type="int"    size="1"   nullable="true"  name="serial number mode"                 />
+				param{no:26" type="int"    size="4"   nullable="true"  name="serial number start"                />
+				param{no:27" type="int"    size="1"   nullable="true"  name="output face mode"                   />
+				param{no:28" type="bool"              nullable="true"  name="binding document data"              />
+				param{no:29" type="int"    size="2"   nullable="true"  name="shift number of copies"             />
+				param{no:30" type="int"    size="1"   nullable="true"  name="gutter shift mode"                  />
+				param{no:31" type="int"    size="4"   nullable="true"  name="gutter shift value"                 />
+				param{no:32" type="int"    size="1"   nullable="true"  name="binding print medium size"          />
+				param{no:33" type="string" size="4"   nullable="true"  name="insertion medium id"                />
+				param{no:34" type="null"                               name="tandem output bin"                  />
+				param{no:35" type="int"    size="1"   nullable="true"  name="trust print"                        />
+				param{no:36" type="int"    size="2"   nullable="true"  name="tab medium size"                    />
+				param{no:37" type="int"    size="4"   nullable="true"  name="tab custom width"                   />
+				param{no:38" type="int"    size="4"   nullable="true"  name="tab custom height"                  />
+				param{no:39" type="int"    size="4"   nullable="true"  name="trimming value top"                 />
+				param{no:40" type="null"                               name="output bin change number of copies" />
+				param{no:41" type="int"    size="1"   nullable="true"  name="punching type"                      />
+				param{no:42" type="null"                               name="saddle press"                       />
+				param{no:43" type="null"                               name="saddle press adjustment"            />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result"            />
+				param{no:1" size="4" name="new binder handle" />
+			</reply>
+		</command>
+		<command name="NewPrintDocument" id="0x1004">
+			<request type="asn">
+				param{no:0"   type="int"    size="4"    nullable="false" name="job handle"                        />
+				param{no:1"   type="int"    size="4"    nullable="false" name="binder handle"                     />
+				param{no:2"   type="int"    size="1"    nullable="false" name="data format"                        >
+					<const type="int" name="video raw data" value="2"/>
+				</param>
+				param{no:3"   type="int"    size="1"    nullable="true"  name="medium source"                     />
+				param{no:4"   type="int"    size="1"    nullable="true"  name="medium type"                       />
+				param{no:5"   type="int"    size="1"    nullable="true"  name="plex"                              />
+				param{no:6"   type="int"    size="1"    nullable="true"  name="interleaf mode"                    />
+				param{no:7"   type="int"    size="1"    nullable="true"  name="interleaf medium source"           />
+				param{no:8"   type="int"    size="1"    nullable="true"  name="interleaf medium type"             />
+				param{no:9"   type="int"    size="1"    nullable="true"  name="binding position"                  />
+				param{no:10"  type="int"    size="4"    nullable="true"  name="binding edge image shift"          />
+				param{no:11"  type="int"    size="1"    nullable="true"  name="image composite mode"              />
+				param{no:12"  type="int"    size="4"    nullable="true"  name="image composite id"                />
+				param{no:13"  type="string" size="24"   nullable="true"  name="image composite name"              />
+				param{no:14"  type="null"                                name="medium printed"                    />
+				param{no:15"  type="int"    size="1"    nullable="true"  name="thin line control"                 />
+				param{no:16"  type="int"    size="1"    nullable="true"  name="print toner saving"                />
+				param{no:17"  type="int"    size="1"    nullable="true"  name="smoothing"                         />
+				param{no:18"  type="int"    size="1"    nullable="true"  name="print density"                     />
+				param{no:19"  type="int"    size="1"    nullable="true"  name="color mode"                        />
+				param{no:20"  type="null"                                name="color density cyan"                />
+				param{no:21"  type="null"                                name="color density magenta"             />
+				param{no:22"  type="null"                                name="color density yellow"              />
+				param{no:23"  type="null"                                name="color density black"               />
+				param{no:24"  type="int"    size="2"    nullable="true"  name="resolution x"                      />
+				param{no:25"  type="int"    size="2"    nullable="true"  name="resolution y"                      />
+				param{no:26"  type="int"    size="4"    nullable="true"  name="front side x image shift"          />
+				param{no:27"  type="int"    size="4"    nullable="true"  name="front side y image shift"          />
+				param{no:28"  type="int"    size="4"    nullable="true"  name="back side x image shift"           />
+				param{no:29"  type="int"    size="4"    nullable="true"  name="back side y image shift"           />
+				param{no:30"  type="null"                                name="tint block in document data"       />
+				param{no:31"  type="int"    size="1"    nullable="true"  name="smoothing target text"             />
+				param{no:32"  type="int"    size="1"    nullable="true"  name="smoothing target graphics"         />
+				param{no:33"  type="int"    size="1"    nullable="true"  name="smoothing target image"            />
+				param{no:34"  type="null"                                name="smoothing target line"             />
+				param{no:35"  type="null"                                name="document face mode"                />
+				param{no:36"  type="int"    size="1"    nullable="true"  name="gradation smoothing color text"    />
+				param{no:37"  type="int"    size="1"    nullable="true"  name="gradation smoothing color graphic" />
+				param{no:38"  type="int"    size="1"    nullable="true"  name="gradation smoothing color image"   />
+				param{no:39"  type="int"    size="1"    nullable="true"  name="number up information"             />
+				param{no:40"  type="int"    size="1"    nullable="true"  name="halftone mono text"                />
+				param{no:41"  type="int"    size="1"    nullable="true"  name="halftone mono graphics"            />
+				param{no:42"  type="int"    size="1"    nullable="true"  name="halftone mono image"               />
+				param{no:43"  type="int"    size="1"    nullable="true"  name="halftone color text"               />
+				param{no:44"  type="int"    size="1"    nullable="true"  name="halftone color graphics"           />
+				param{no:45"  type="int"    size="1"    nullable="true"  name="halftone color image"              />
+				param{no:46"  type="null"                                name="halftone color line"               />
+				param{no:47"  type="int"    size="1"    nullable="true"  name="print sharpness"                   />
+				param{no:48"  type="int"    size="1"    nullable="true"  name="thin line control by density"      />
+				param{no:49"  type="int"    size="1"    nullable="true"  name="document data type"                />
+				param{no:50"  type="int"    size="2"    nullable="true"  name="medium size"                       />
+				param{no:51"  type="string" size="4"    nullable="true"  name="document medium id"                />
+				param{no:52"  type="string" size="4"    nullable="true"  name="interleaf medium id"               />
+				param{no:53"  type="null"                                name="ohp print mode"                    />
+				param{no:54"  type="null"                                name="document type"                     />
+				param{no:55"  type="null"                                name="clear coat mode"                   />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result"              />
+				param{no:1" size="4" name="new document handle" />
+			</reply>
+		</command>
+		<command name="NewPrintPage" id="0x1005">
+			<request type="asn">
+				param{no:0"  type="int"    size="4"   nullable="false" name="job handle"             />
+				param{no:1"  type="int"    size="4"   nullable="false" name="binder handle"          />
+				param{no:2"  type="int"    size="4"   nullable="false" name="document handle"        />
+				param{no:3"  type="int"    size="1"   nullable="false" name="image container type"    >
+					<const type="int" name="video bus type 1" value="33"/>
+				</param>
+				param{no:4"  type="null"                               name="image container name"   />
+				param{no:5"  type="null"                               name="image container size"   />
+				param{no:6"  type="null"                               name="data pointer"           />
+				param{no:7"  type="null"                               name="data size"              />
+				param{no:8"  type="int"    size="4"   nullable="false" name="data pixels on line"    />
+				param{no:9"  type="int"    size="4"   nullable="false" name="data lines on page"     />
+				param{no:10" type="int"    size="4"   nullable="false" name="image left offset"      />
+				param{no:11" type="int"    size="4"   nullable="false" name="image top offset"       />
+				param{no:12" type="int"    size="4"   nullable="true"  name="image left margin"      />
+				param{no:13" type="int"    size="4"   nullable="true"  name="image right margin"     />
+				param{no:14" type="int"    size="4"   nullable="true"  name="image top margin"       />
+				param{no:15" type="int"    size="4"   nullable="true"  name="image bottom margin"    />
+				param{no:16" type="int"    size="1"   nullable="false" name="image orientation"       >
+					<const type="int" name="orientation 0" value="2"/>
+					<const type="int" name="orientation 90" value="3"/>
+					<const type="int" name="orientation 180" value="4"/>
+					<const type="int" name="orientation 270" value="5"/>
+				</param>
+				param{no:17" type="int"    size="1"   nullable="true"  name="media source"           />
+				param{no:18" type="int"    size="2"   nullable="false" name="media size"              >
+					<const type="int" name="ISO A3" value="1"/>
+					<const type="int" name="ISO A4" value="2"/>
+					<const type="int" name="ISO A5" value="3"/>
+					<const type="int" name="JIS B4" value="6"/>
+					<const type="int" name="JIS B5" value="7"/>
+					<const type="int" name="Executive" value="10"/>
+					<const type="int" name="Ledger" value="11"/>
+					<const type="int" name="NA Legal" value="12"/>
+					<const type="int" name="NA Letter" value="13"/>
+				</param>
+				param{no:19" type="int"    size="4"   nullable="true"  name="custom media width"     />
+				param{no:20" type="int"    size="4"   nullable="true"  name="custom media height"    />
+				param{no:21" type="int"    size="1"   nullable="true"  name="media type"             />
+				param{no:22" type="int"    size="1"   nullable="true"  name="print sides"            />
+				param{no:23" type="int"    size="1"   nullable="true"  name="print face"             />
+				param{no:24" type="int"    size="1"   nullable="true"  name="compression rate level" />
+				param{no:25" type="bool"              nullable="true"  name="blank page"             />
+				param{no:26" type="int"    size="2"   nullable="true"  name="page color type"        />
+				param{no:27" type="int"    size="1"   nullable="true"  name="band order"             />
+				param{no:28" type="int"    size="2"   nullable="true"  name="band number"            />
+				param{no:29" type="string" size="128" nullable="true"  name="band size"              />
+				param{no:30" type="string" size="4"   nullable="true"  name="medium id"              />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result"          />
+				param{no:1" size="4" name="new page handle" />
+			</reply>
+		</command>
+		<command name="EndPrintJob" id="0x1006">
+			<request type="struct">
+				param{no:0" size="4" name="job handle"           />
+				param{no:1" size="1" name="job termination mode" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		
+		<command name="PausePrintJob" id="0x1012">
+			<request type="struct">
+				param{no:0" size="4" name="job handle" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		<command name="ResumePrintJob" id="0x1013">
+			<request type="asn">
+				param{no:0" type="int"    size="4" nullable="false" name="job handle"      />
+				param{no:1" type="string" size="7" nullable="true"  name="resume password" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		<command name="PromotePrintJob" id="0x1014">
+			<request type="struct">
+				param{no:0" size="4" name="job handle" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		
+	
+	
+	</port>
+	<port id="5" name="Acc Event Port" source="reply">
+		<command name="NotifySystemState" id="0x5001">
+			<reply type="struct">
+				param{no:0" size="1" name="system status" />
+			</reply>
+		</command>
+		<command name="NotifyStatusCode" id="0x5002">
+			<reply type="struct">
+				param{no:0" size="1" name="status code type"    />
+				param{no:1" size="4" name="status code"         />
+				param{no:2" size="2" name="alert code total"    />
+				param{no:3" size="4" name="priority alert code" />
+			</reply>
+		</command>
+		<command name="NotifyServiceCall" id="0x5003">
+			<reply type="struct">
+				param{no:0" size="4" name="service call code"     />
+				param{no:1" size="4" name="service call sub code" />
+				param{no:2" size="4" name="service call position" />
+			</reply>
+		</command>
+		<command name="NotifyComponentState" id="0x5004">
+			<reply type="struct">
+				param{no:0"  size="4" name="component"               />
+				param{no:1"  size="1" name="component state"         />
+				param{no:2"  size="1" name="component state reason"  />
+				param{no:3"  size="4" name="component state reason 1" />
+				param{no:4"  size="4" name="component state reason 2" />
+				param{no:5"  size="4" name="component state reason 3" />
+				param{no:6"  size="4" name="component state reason 4" />
+				param{no:7"  size="4" name="component state reason 5" />
+			</reply>
+		</command>
+		<command name="NotifyJobState" id="0x5005">
+			<reply type="struct">
+				param{no:0"  size="4" name="class"             />
+				param{no:1"  size="4" name="job handle"        />
+				param{no:2"  size="1" name="job state"         />
+				param{no:3"  size="1" name="job state reason"  />
+				param{no:4"  size="4" name="job state reason 1" />
+				param{no:5"  size="4" name="job state reason 2" />
+				param{no:6"  size="4" name="job state reason 3" />
+				param{no:7"  size="4" name="job state reason 4" />
+				param{no:8"  size="4" name="job state reason 5" />
+			</reply>
+		</command>
+		<command name="NotifyObjectDeleted" id="0x5006">
+			<reply type="struct">
+				param{no:0" size="4" name="class"                  />
+				param{no:1" size="4" name="job handle"             />
+				param{no:2" size="1" name="object deleted reason"  />
+				param{no:3" size="4" name="object deleted user id" />
+			</reply>
+		</command>
+		<command name="NotifyJobListChanged" id="0x5007">
+			<reply type="struct">
+				param{no:0" size="4" name="class"                 />
+				param{no:1" size="4" name="job handle"            />
+				param{no:2" size="1" name="job list state reason" />
+			</reply>
+		</command>
+		<command name="NotifyPrintJobCount" id="0x5008">
+			<reply type="struct">
+				param{no:0" size="4" name="class"                  />
+				param{no:1" size="4" name="print job handle"       />
+				param{no:2" size="4" name="print binder handle"    />
+				param{no:3" size="4" name="print document handle"  />
+				param{no:4" size="4" name="print medium count"     />
+				param{no:5" size="4" name="print impression count" />
+				param{no:6" size="4" name="print page count"       />
+				param{no:7" size="2" name="print document copies"  />
+				param{no:8" size="2" name="print binder copies"    />
+				param{no:9" size="2" name="print job copies"       />
+			</reply>
+		</command>
+		<command name="NotifyAutoPaperSelect" id="0x5009">
+			<reply type="struct">
+				param{no:0" size="4" name="class"                />
+				param{no:1" size="4" name="job handle"           />
+				param{no:2" size="1" name="Result"               />
+				param{no:3" size="1" name="aps medium source"    />
+				param{no:4" size="1" name="aps medium type"      />
+				param{no:5" size="1" name="aps medium color"     />
+				param{no:6" size="2" name="aps medium size"      />
+				param{no:7" size="1" name="aps medium direction" />
+			</reply>
+		</command>
+		<command name="NotifyAutoMagnificationSelect" id="0x500a">
+			<reply type="struct">
+				param{no:0"  size="4" name="class"               />
+				param{no:1"  size="4" name="job handle"          />
+				param{no:2"  size="1" name="Result"              />
+				param{no:3"  size="2" name="magnification x"     />
+				param{no:4"  size="2" name="magnification y"     />
+				param{no:5"  size="1" name="output medium type"  />
+				param{no:6"  size="1" name="output medium color" />
+				param{no:7"  size="2" name="output medium size"  />
+				param{no:8"  size="1" name="origin medium type"  />
+				param{no:9"  size="1" name="origin medium color" />
+				param{no:10" size="2" name="origin medium size"  />
+			</reply>
+		</command>
+		<command name="NotifyAutoCassetteChange" id="0x500b">
+			<reply type="struct">
+				param{no:0" size="4" name="class"             />
+				param{no:1" size="4" name="job handle"        />
+				param{no:2" size="1" name="acc medium source" />
+				param{no:3" size="1" name="acc medium type"   />
+				param{no:4" size="1" name="acc medium color"  />
+				param{no:5" size="2" name="acc medium size"   />
+			</reply>
+		</command>
+		<command name="NotifyAutoExposure" id="0x500c">
+			<reply type="struct">
+				param{no:0" size="4" name="class"             />
+				param{no:1" size="4" name="job handle"        />
+				param{no:2" size="1" name="ae density Result" />
+				param{no:3" size="1" name="ae type"           />
+				param{no:4" size="1" name="ae red"            />
+				param{no:5" size="1" name="ae green"          />
+				param{no:6" size="1" name="ae blue"           />
+				param{no:7" size="1" name="ae black"          />
+			</reply>
+		</command>
+		<command name="NotifyTrayStateChanged" id="0x500d">
+			<reply type="struct">
+				param{no:0" size="1" name="tsc number"              />
+				param{no:1" size="1" name="tsc medium source state" />
+				param{no:2" size="4" name="tsc error detail"        />
+				param{no:3" size="1" name="tsc medium type"         />
+				param{no:4" size="1" name="tsc medium color"        />
+				param{no:5" size="2" name="tsc medium size"         />
+				param{no:6" size="1" name="tsc medium direction"    />
+				param{no:7" size="1" name="tsc linger"              />
+			</reply>
+		</command>
+		<command name="NotifyTrayMediumChanged" id="0x500e">
+			<reply type="struct">
+				param{no:0" size="1" name="tmc medium source number" />
+				param{no:1" size="1" name="tmc medium type"          />
+				param{no:2" size="1" name="tmc medium color"         />
+				param{no:3" size="2" name="tmc medium size"          />
+				param{no:4" size="1" name="tmc medium direction"     />
+			</reply>
+		</command>
+		<command name="NotifyDocumentDetect" id="0x500f">
+			<reply type="asn">
+				param{no:0" type="int"  size="1" nullable="false" name="feeder number"        />
+				param{no:1" type="int"  size="1" nullable="false" name="feeder position"      />
+				param{no:2" type="bool"          nullable="false" name="detect flag"          />
+				param{no:3" type="int"  size="1" nullable="false" name="document orientation" />
+				param{no:4" type="int"  size="2" nullable="false" name="medium size"          />
+				param{no:5" type="int"  size="4" nullable="false" name="medium width"         />
+				param{no:6" type="int"  size="4" nullable="false" name="medium height"        />
+			</reply>
+		</command>
+		<command name="NotifyTrapAlertCode" id="0x5012">
+			<reply type="struct">
+				param{no:0" size="4" name="trap priority alert code" />
+			</reply>
+		</command>
+		<command name="NotifyTrapStatusCode" id="0x5013">
+			<reply type="struct">
+				param{no:0" size="4" name="trap status code" />
+			</reply>
+		</command>
+		<command name="NotifyKeyIn" id="0x5014">
+			<reply type="struct">
+				param{no:0" size="2" name="window id" />
+			</reply>
+		</command>
+		<command name="NotifyAutoColorSelect" id="0x5015">
+			<reply type="struct">
+				param{no:0" size="4" name="class"            />
+				param{no:1" size="4" name="job handle"       />
+				param{no:2" size="1" name="acs color Result" />
+			</reply>
+		</command>
+		<command name="NotifyScanPageCount" id="0x5016">
+			<reply type="struct">
+				param{no:0" size="4" name="class"                />
+				param{no:1" size="4" name="scan job handle"      />
+				param{no:2" size="4" name="scan binder handle"   />
+				param{no:3" size="4" name="scan document handle" />
+				param{no:4" size="2" name="scan page count"      />
+				param{no:5" size="2" name="scan page total"      />
+				param{no:6" size="2" name="scan document copy"   />
+				param{no:7" size="2" name="scan binder copy"     />
+				param{no:8" size="2" name="scan job copy"        />
+			</reply>
+		</command>
+		<command name="NotifyScanImpressionCount" id="0x5017">
+			<reply type="struct">
+				param{no:0" size="4" name="class"                 />
+				param{no:1" size="4" name="scan job handle"       />
+				param{no:2" size="4" name="scan binder handle"    />
+				param{no:3" size="4" name="scan document handle"  />
+				param{no:4" size="4" name="scan submitted object" />
+				param{no:5" size="2" name="scan impression"       />
+				param{no:6" size="1" name="scan end token"        />
+			</reply>
+		</command>
+		<command name="NotifyScanImpressionStoredCount" id="0x5018">
+			<reply type="struct">
+				param{no:0" size="4" name="class"                  />
+				param{no:1" size="4" name="scan job handle"        />
+				param{no:2" size="4" name="scan binder handle"     />
+				param{no:3" size="4" name="scan document handle"   />
+				param{no:4" size="4" name="scan stored file box"   />
+				param{no:5" size="4" name="scan stored folder"     />
+				param{no:6" size="4" name="scan stored file"       />
+				param{no:7" size="2" name="scan stored impression" />
+				param{no:8" size="1" name="scan stored end token"  />
+			</reply>
+		</command>
+		<command name="NotifyUiState" id="0x5019">
+			<reply type="struct">
+				param{no:0" size="1" name="screen state" />
+			</reply>
+		</command>
+		<command name="NotifyUserModeChanged" id="0x5020">
+			<reply type="struct">
+				param{no:0" size="4" name="job service"       />
+				param{no:1" size="4" name="changed parameter" />
+			</reply>
+		</command>
+		<command name="NotifyOutputBinStateChanged" id="0x5021">
+			<reply type="struct">
+				param{no:0" size="1" name="output bin number" />
+				param{no:1" size="1" name="output bin state"  />
+			</reply>
+		</command>
+		<command name="NotifyAutoCassetteChange2" id="0x5022">
+			<reply type="struct">
+				param{no:0" size="4" name="class"             />
+				param{no:1" size="4" name="job handle"        />
+				param{no:2" size="1" name="acc medium source" />
+				param{no:3" size="4" name="acc medium id"     />
+				param{no:4" size="1" name="acc medium color"  />
+				param{no:5" size="2" name="acc medium size"   />
+			</reply>
+		</command>
+		<command name="NotifyPrintJobEnd" id="0x5023">
+			<reply type="struct">
+				param{no:0" size="4" name="printed job handle" />
+				param{no:1" size="1" name="printed job Result" />
+			</reply>
+		</command>
+		<command name="NotifyCalibrationStateChanged" id="0x5024">
+			<reply type="struct">
+				param{no:0" size="1" name="calibration state" />
+			</reply>
+		</command>
+		<command name="NotifyAutoPaperSelect2" id="0x5025">
+			<reply type="struct">
+				param{no:0" size="4" name="class"                />
+				param{no:1" size="4" name="job handle"           />
+				param{no:2" size="1" name="Result"               />
+				param{no:3" size="1" name="aps medium source"    />
+				param{no:4" size="4" name="aps medium id"        />
+				param{no:5" size="1" name="aps medium color"     />
+				param{no:6" size="2" name="aps medium size"      />
+				param{no:7" size="1" name="aps medium direction" />
+			</reply>
+		</command>
+		<command name="NotifyTrayStateChanged2" id="0x5026">
+			<reply type="struct">
+				param{no:0" size="1" name="tsc number" />
+				param{no:1" size="1" name="tsc medium source state" />
+				param{no:2" size="4" name="tsc error detail" />
+				param{no:3" size="4" name="tsc medium id" />
+				param{no:4" size="1" name="tsc medium color" />
+				param{no:5" size="2" name="tsc medium size" />
+				param{no:6" size="1" name="tsc medium direction" />
+				param{no:7" size="1" name="tsc linger" />
+			</reply>
+		</command>
+
+	</port>
+	<port id="8" name="Acc Trans Port" source="request">
+		<command name="InitTransPort" id="0x8001">
+			<request type="struct">
+				param{no:0" size="4" name="time out"           />
+				param{no:1" size="2" name="protocol"           />
+				param{no:2" size="1" name="service print data" />
+				param{no:3" size="1" name="service scan data"  />
+				param{no:4" size="1" name="service raw data"   />
+				param{no:5" size="1" name="service video data" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		<command name="RequestVideoSend" id="0x8002">
+			<request type="struct">
+				param{no:0" size="4" name="time out" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result"           >
+					<const type="int" name="Return OK" value="1"/>
+					<const type="int" name="Return Unavailable" value="2"/>
+					<const type="int" name="Return Unknown Error" value="6"/>
+					<const type="int" name="Return Timeout" value="20"/>
+					<const type="int" name="Return End Point Disconnected" value="21"/>
+					<const type="int" name="Return OK with Deskew" value="34"/>
+				</param>
+				param{no:1" size="4" name="job handle"      />
+				param{no:2" size="4" name="binder handle"   />
+				param{no:3" size="4" name="document handle" />
+				param{no:4" size="4" name="page handle"     />
+			</reply>
+		</command>
+		<command name="StartVideoSend" id="0x8003">
+			<request type="struct">
+				param{no:0" size="2" name="page status" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		<command name="KeepVideoSend" id="0x8004">
+			<request type="struct">
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result"        />
+				param{no:1" size="4" name="extended time" />
+			</reply>
+		</command>
+		<command name="EndVideoSend" id="0x8005">
+			<request type="struct">
+				param{no:0" size="4" name="time out" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		<command name="SendRawData" id="0x8009">
+			<request type="asn">
+				param{no:0"  type="int"    size="4"          nullable="false" name="raw data handle"         />
+				param{no:1"  type="null"                                      name="reserve1"                 />
+				param{no:2"  type="null"                                      name="reserve2"                 />
+				param{no:3"  type="int"    size="4"          nullable="false" name="raw data size"           />
+				param{no:4"  type="int"    size="1"          nullable="false" name="raw data container type" />
+				param{no:5"  type="string" size="127"        nullable="true"  name="raw data container name" />
+				param{no:6"  type="int"    size="4"          nullable="true"  name="raw data container size" />
+				param{no:7"  type="string" size="50000000"   nullable="true"  name="send raw data"           />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		<command name="GetCompressionRate" id="0x800A">
+			<request type="asn">
+				param{no:0" type="int" size="4" nullable="false" name="page id" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result"           />
+				param{no:1" size="1" name="compression rate" />
+			</reply>
+		</command>
+		<command name="SetCompressionRate" id="0x800B">
+			<request type="asn">
+				param{no:0" type="int" size="4" nullable="false" name="page id"          />
+				param{no:1" type="int" size="1" nullable="false" name="compression rate" />
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+		<command name="SendPageData" id="0x800C">
+			<request type="asn">
+				param{no:0"  type="int"    size="4"    nullable="true" name="timeout"/>
+				param{no:1"  type="int"    size="1"    nullable="true" name="page data format">
+					<const type="int" name="Page Data Format jbig" value="1"/>
+				</param>
+				param{no:2"  type="int"    size="1"    nullable="true" name="image container type">
+					<const type="int" name="Image Container Shared Memory" value="0"/>
+					<const type="int" name="Image Container File" value="1"/>
+					<const type="int" name="Image Container OEM Special" value="18"/>			
+				</param>
+				param{no:3"  type="string" size="127"  nullable="true" name="image conatiner name"/>
+				param{no:4"  type="int"    size="4"    nullable="true" name="image container size"/>
+				param{no:5"  type="int"    size="4"    nullable="true" name="data pointer"/>
+				param{no:6"  type="int"    size="4"    nullable="true" name="total data size"/>
+			</request>
+			<reply type="struct">
+				param{no:0" size="2" name="Result" />
+			</reply>
+		</command>
+	</port>
+</protocol>
+*/

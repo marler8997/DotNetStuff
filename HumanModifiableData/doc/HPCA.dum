@@ -1,0 +1,18 @@
+%pimport:HPCA.dump;
+AccessorIPFromHPCA:127.0.0.1;
+HPCAIPFromAccessor:127.0.0.1;
+CanonDeviceIPFromAccessor:10.255.255.2;
+AccessorManager {
+	Executable:@\MachineData\hpca\Accessor-Ver4.0\Accessor.exe;
+	Version:4.0;
+	SetServices:false;
+}
+IsColor:false;
+MonochromeSettings {
+	JBigFile:\MachineData\hpca\hpwatches.jbg;
+	Resolution:600;
+}
+ColorSettings { }
+MediaSize:Letter;
+EventRegisterLevel:All;
+PerformTimeAnalysis:true;

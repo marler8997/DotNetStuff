@@ -1,0 +1,133 @@
+//
+
+// =========================================
+// Properties
+// =========================================
+// ID Properties:
+//     count    : The number of IDs per parent
+//     parents  : By default, the parent is the parent of the ID as it appears in the %props block, but this can be overriden to a different parent using this property, or used to create multiple parents.
+//   [Block ID Only]
+//     children : Since block IDs cannot have a value to specify properties, a block id's properties must be specified using directives within the block, the %ref:<child>; directive, specifies what children a particular block is required to have.  Note that the parent can also override the references properties such as %ref:<child> count(1);
+//   [Value ID Only]
+//     type     : Specifies the type of the value ID.
+//     default  : If the count can be 0, then a default value can be specified in the case that the ID has no values.
+//
+// =========================================
+// Count
+// =========================================
+//	Scenarios: (let n >= 0)
+//  0-*   "no restriction on count" (this is the default)
+//  n     "exactly n"
+//  n-*   "at least n"
+//  0-n   "up to n"
+//  n-m   "at least n, up to m" (note that m > n)
+//  Maybe use <= and >= instead?
+//
+// =========================================
+// Parent
+// =========================================
+// Ability to have a parent, or specify a parent from simply putting it in the block
+// Note that in order to do complex recursive inheritance, the ability to specify parents explicitly will be needed
+// Parent: %root (cannot have a parent), null (anyone can be parent)
+// Multiple parents are allowed.
+// Default parent: Specify it in the file with a directive maybe? Without specifying the default parent will be the parent that it is defined in, where the top level %props means the parent is the root.
+// Should I make a way to categorize IDs, so I can group them together, to specify categories of parents?
+//
+// =========================================
+// Types
+// =========================================
+// 1. string (default)
+// 2. null (no value)
+// 3. bool
+// 4. int, uint, intX, uintX (where X is the number of bytes from 1 to 16) (int and uint are just integers without a specified size)//    
+// 5. float, double, decimal?
+// 6. enum <enum-name>
+// 7. type <type-name>, It might be nice to have a %typedef:MyType uint4; directive?
+//
+// =========================================
+// Default
+// =========================================
+// Maybe use "" for the default, i.e. IsColor:1 bool "true" (root);
+// 
+//
+// =========================================
+// Examples
+// =========================================
+//
+// You have an id called Name, and you want to make sure that only things it only appears in the Named group
+// %group {
+//   name: named;
+//   ids:Person House Dog Human Rock;
+//   props: // way to specify block props vs value props
+//   block-props {
+//     %ref:Name;
+//   }
+//
+//
+// Ability to create aliases? %alias:AccIP AccessorIPFromHPCA;
+//
+// Ability to specify a default value (only if count is 0 or can have 0)
+//
+//
+// Need the ability to add a reference to a previously defined ID, i.e.
+// Name:type=string;
+// Person {
+//    %ref:Name,count=1;
+// }
+// This says that a Person Block ID, must have exactly one Name ID, (the count overrides the default count for Name (which is 0-*);
+//
+// The default type is string
+// If a default is specified, then the count becomes 0-* is one is not specified?
+//
+// The %define directive is a block directive that allows you to define types in a %dumt block
+// The %ref directive is used to reference types that have been defined using %define, (i.e. %ref:mytype).
+//    - Note that the %ref directive can also override the properties on the type that is being referenced (i.e. %ref:mytype count(0-*);)
+// The %group directive allows you to group IDs together to share properties
+// Add the ability to have IDs without anything (i.e. MyID;)
+//
+// Add the ability to override default properties
+// %default {
+//   count:1;
+//   type:int4;
+// }
+//
+// NOTE: Should I use the %define block? Maybe call it %orphan block?
+//
+// Add the ability to change from loose to strict definition.
+// Loose means you can have ids that are not defined in the %props section (this means they get the default values) and Strict means that all IDs must be defined.
+//
+// TODO: Add a %pimport (props import), which imports a file that only contains props, this way, if the props are being ignored then this file can be ignored :)
+//
+
+//%props {
+	%enum:MediaSize Letter Ledger Default;
+	%enum:EventRegisterLevel All Non;
+	/*
+	%group {
+		// name:IP-IDs; // name is optional
+		ids:AccessorIPFromHPCA,HPCAIPFromAccessor,CanonDeviceIPFromAccessor; 
+												// note that since AccessorIPFromHPCA and HPCAIPFromAccessorthese id's are not defined anywhere else, they are defined by the group itself
+		                                        // also note that if these id's were defined outside of the group, their properties would override the groups properties:)
+		%props:0-1; // default(127.0.0.1)count(0-1); (no way to do default yet)		
+	}
+	*/
+	CanonDeviceIPFromAccessor:1; // default(10.255.255.2); // this overrides the groups 'default' property
+	AccessorManager { %props:1;
+		Executable:1;  // because this is under AccessorManager in %dumt, the parent will be AccessorManager
+		Version:1;
+		SetServices:bool 1;
+	}
+	IsColor:1 bool;
+	MonochromeSettings {
+		//%props:1;
+		JBigFile:1;
+		Resolution:uint4 1;
+	}
+	MediaSize:1 enum MediaSize;
+	EventRegisterLevel:1 enum EventRegisterLevel;
+	PerformTimeAnalysis:1 bool;
+	
+	
+	
+	
+//}
