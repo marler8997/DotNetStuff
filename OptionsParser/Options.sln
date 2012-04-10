@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OptionsParser", "Options\OptionsParser.csproj", "{7F3980CC-F164-444D-BAD8-CE74D7C64CFA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OptionParserExample", "OptionParserExample\OptionParserExample.csproj", "{D3049C52-3282-4089-96FE-E524EE09520F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7F3980CC-F164-444D-BAD8-CE74D7C64CFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F3980CC-F164-444D-BAD8-CE74D7C64CFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F3980CC-F164-444D-BAD8-CE74D7C64CFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F3980CC-F164-444D-BAD8-CE74D7C64CFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3049C52-3282-4089-96FE-E524EE09520F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3049C52-3282-4089-96FE-E524EE09520F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3049C52-3282-4089-96FE-E524EE09520F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3049C52-3282-4089-96FE-E524EE09520F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
