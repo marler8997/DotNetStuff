@@ -1,0 +1,183 @@
+			Procedure Call Sequence in C
+			==============================
+When you call a function in C, you need to ensure mainly 5 things:
+
+1. Store the returning address somewhere, so that we can continue
+executing the current function after completion of called function.
+
+2. Saving other information about current function. (Later, we'll see
+that it boils down to saving current frame pointer (EBP) somewhere.)
+
+3. Providing the callee with the parameters. 
+
+4. Providing called function some space to store its automatic variables. 
+
+5. Providing some mechanism to get return value from the called
+function. It's implemented using EAX register. Called function stores
+return calue in EAX.
+
+				STACK
+				======
+
+In C, first 4 features are implemented using stack. 
+
+Salient Features of Stack:
+--------------------------
+
+1. It grows downwards in memory. That is the top of the stack moves down
+with each push to the stack.
+
+		 _______________ <---- Bottom of the stack (fixed)
+		|				|		Higher memory address
+		|				|
+		|				|			
+		|_______________|<---- Top of the stack (moving down)
+			|					Lower memory address
+			|
+			V Grows downwards in memory
+2. Top of stack (pointer to the last pushed vlaue) is stored in the
+register ESP
+
+3. Only operations allowed are push and pop.
+
+Thus, **ESP alone represents the current status of the stack.
+
+FUNCTION EXECUTION:
+==================
+
+By convention, procedures will take their parameters from stack. If a
+procedure returns a value that will fit in a register, it will be
+returned in AL, AX, EAX, depending on its size. A procedure will in
+general have local variables on stack as well. 
+
+A standard method of accessing both local variables and parameters is to
+"mark" a place on the stack, and then address both parameters and local
+variables by their offsets from the "mark". This mark or reference point
+is called "FRAME POINTER" , because all the information that is pushed
+into the stack at the time of procedure call is called a frame for that
+procedure.
+
+Frame Pointer (FP) for the running procedure is always stored in EBP.
+
+
+EXECUTION IN STEPS:
+===================
+
+1. Push the parameters in the reverse order (right to left).
+
+2. "Call" function now. It implicitly pushes the return address into STACK.
+[[ call func ]]
+------ Now enters the called procedure ------
+
+3. Push the current EBP ie. Frame Pointer (FP) of calling function into
+stack. We need to do this to continue with the execution of calling
+function after return from the called function.  
+[[ pushl %ebp ]]
+
+4. Copy the ESP to EBP. (yes, this location will be new FRAME POINTER)
+[[ movl %esp, %ebp ]]
+
+5. Allocate space on stack for local variables. It's done by
+decrementing ESP.
+[[ subl $4, %esp ]]
+
+------ Do some processing ------
+
+6. Put the value to be returned in EAX.
+
+----- Start unwinding STACK ------
+
+7. Copy current EBP to ESP, it will reduce stack's size.  Now we have
+old FP at the top of the stack.  
+[[ movl %ebp, %esp]]
+
+8. Pop a 32 bit value (which is old frame pointer) and stuff it into
+EBP. (undoing Step 3)
+[[ popl %ebp ]]
+
+9. The "ret" instruction pops a 32 bit value from the stack and stuffs
+into the program counter.
+[[ ret ]]
+
+** steps 7 and 8 are combined in single instruction "leave".
+
+
+
+				ILLUSTRATION
+				=============
+Example C Code:
+--------------
+
+static int a = 8; 	/*Static Storage*/
+extern c;
+
+static int func1 (int x)
+{
+	int t = 8;	/* Local Variable */
+	return (x+t);	/* Return */
+}
+
+int main()
+{
+	int b = 0;
+	b = func1(a);
+	c = b;
+	return(0);
+}
+
+Corresponding Assembly Code (Only relevant part shown):
+------------------------------------------------------
+
+a:
+    .long   8				<-- Static variable a
+
+func1:
+	pushl   %ebp			<-- Step 3, Push EBP
+	movl    %esp, %ebp		<-- Step 4, Copy ESP -> EBP
+	subl    $4, %esp		<-- Step 5, Create space on stack for t
+	movl    $8, -4(%ebp)	<-- Initialize "t" to 8
+	movl    -4(%ebp), %eax	<-- Step 6, Copy "t" to EAX
+	addl    8(%ebp), %eax	<-- Step 6, Add "c" to EAX
+    leave					<-- Step 7 and 8:
+							7: Restore ESP (EBP -> ESP)
+							8: Restore EBP (Pop STACK -> EBP)
+	ret						<-- Step 9, (Pop STACK -> Program Counter)
+
+main:
+	.........
+	pushl   a				<-- Step 1, push parameters
+	call    func1			<-- Step 2, call func1
+	addl    $16, %esp
+	movl    %eax, -4(%ebp)
+	movl    -4(%ebp), %eax
+	movl    %eax, c
+	.........
+
+During execution of func1, STACK looks like:
+
+				 ______________	 <---- Bottom of the stack (fixed)
+				|				|
+				|     main		|
+				|_______________|
+func1 frame -->	|	a			|<---- Parameters pushed
+starts here		|_______________|
+				|    RET Addr	|<---- Return address pushed by "call"
+				|_______________|
+Frame Pointer-->|      EBP		|<---- FP for main pushed by func1
+for func1		|_______________|		Copy ESP to EBP
+				|	t			|<---- Local variable "t"
+				|_______________|
+						|
+						V
+
+From the figure, you can make out that , to refer to parameters, we have
+to add 8 offset to EBP ie. 8(%ebp). And to refer to local variable,
+we'll say -4(%ebp).
+
+**Remember, ESP points to the last item pushed, so 0(%ebp) will give us
+FP of main.
+
+-----------------------------------------------------------------------------
+Author: Manu Garg
+http://www.manugarg.com
+manugarg at gmail dot com
