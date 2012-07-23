@@ -24,14 +24,14 @@ namespace Marler.RuntimeAnalyzer
                 return -1;
             }
 
-            String optimusFile = nonOptionArgs[0];
+            String assemblyFile = nonOptionArgs[0];
             AssemblyBuilder assembly = null;
             using (FileStream assemblyStream = new FileStream(assemblyFile, FileMode.Open))
             {
                 AssemblyTokenizer tokenizer = new AssemblyTokenizer();
                 tokenizer.SetStream(new StreamReader(assemblyStream), 1);
 
-                AssemblyParser parser = new AssemblyParser(Console.Out, tokenizer);
+                AssemblyParser parser = new AssemblyParser(Console.Out, out tokenizer);
                 assembly = parser.Parse();
             }
 

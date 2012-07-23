@@ -124,10 +124,9 @@ namespace Marler.NetworkTools
 
         public Int32 Receive(Byte[] buffer, Int32 offset, Int32 length)
         {
-            Int32 dataBytesRead;
             Int32 firstEscapeOffset;
 
-            do
+            while (true)
             {
                 Int32 bytesRead = socket.Receive(buffer, offset, length, SocketFlags.None);
                 if (bytesRead <= 0) return bytesRead;
@@ -147,20 +146,19 @@ namespace Marler.NetworkTools
                 }
 
                 firstEscapeOffset = offset;
+
             HANDLE_ESCAPED_BYTES:
-                dataBytesRead = HandleEscapes(buffer, firstEscapeOffset, bytesRead);
 
-            } while (dataBytesRead == 0);
-
-            return dataBytesRead;
+                bytesRead = HandleEscapes(buffer, firstEscapeOffset, bytesRead);
+                if (bytesRead > 0) return bytesRead;
+            }
         }
 
         public Int32 Receive(Byte[] buffer)
         {
-            Int32 dataBytesRead;
             Int32 firstEscapeOffset;
 
-            do
+            while (true)
             {
                 Int32 bytesRead = socket.Receive(buffer);
                 if (bytesRead <= 0) return bytesRead;
@@ -179,12 +177,12 @@ namespace Marler.NetworkTools
                 }
 
                 firstEscapeOffset = 0;
+
             HANDLE_ESCAPED_BYTES:
-                dataBytesRead = HandleEscapes(buffer, firstEscapeOffset, bytesRead);
 
-            } while (dataBytesRead == 0);
-
-            return dataBytesRead;
+                bytesRead = HandleEscapes(buffer, firstEscapeOffset, bytesRead);
+                if (bytesRead > 0) return bytesRead;
+            }
         }
 
         private Int32 HandleEscapes(Byte[] buffer, Int32 offset, Int32 offsetLimit)

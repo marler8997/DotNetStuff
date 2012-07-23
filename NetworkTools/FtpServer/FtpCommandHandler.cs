@@ -1,21 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+using System.IO;
+using System.Net.Sockets;
+using System.Net;
+using System.Threading;
 
 namespace Marler.NetworkTools
 {
     public interface IFtpCommandHandler
     {
-        UInt16 HandleCommand(String command);
+        void HandleCommand(StringBuilder resposeBuilder, String commandUpperCase, String commandArgs);
     }
 
 
     public class DictionaryCommandHandler : IFtpCommandHandler
     {
-        delegate UInt16 CommandHandler();
+        delegate void CommandHandler(StringBuilder responseBuilder, String args);
+        delegate void DataHandler(Socket socket);
 
         private readonly Dictionary<String,CommandHandler> dictionary;
 
-        public DictionaryCommandHandler()
+        public readonly IPEndPoint clientSocketLocalEndPoint;
+        public readonly String passiveAddressString;
+
+        public readonly String rootDirectoryServerSystemFormat;
+        public readonly String rootDirectoryFtpFormat;
+
+        private String currentSubdirectoryFromRootSystemFormat;
+        //private String currentSubdirectoryFromRootFtpFormat;
+
+        private Ftp.TransferType currentTransferType;
+        private Ftp.TransferType2 currentTransferType2;
+        private Boolean receivedTypeCommand;
+
+        private Socket currentPassiveListenSocket;
+        private EventWaitHandle passiveWaitHandle;
+        private DataHandler passiveDataHandler;
+
+        public DictionaryCommandHandler(IPEndPoint clientSocketLocalEndPoint, String rootDirectoryServerSystemFormat)
         {
             this.dictionary = new Dictionary<String,CommandHandler>();
             this.dictionary.Add("ABOR",ABOR);
@@ -77,259 +100,377 @@ namespace Marler.NetworkTools
             this.dictionary.Add("XRMD",XRMD);
             this.dictionary.Add("XRSQ",XRSQ);
             this.dictionary.Add("XSEM",XSEM);
-            this.dictionary.Add("XSEN",XSEN);
+            this.dictionary.Add("XSEN", XSEN);
+
+            this.clientSocketLocalEndPoint = clientSocketLocalEndPoint;
+            Byte [] clientSocketLocalAddressBytes = clientSocketLocalEndPoint.Address.GetAddressBytes();
+            this.passiveAddressString = String.Format("{0},{1},{2},{3}", clientSocketLocalAddressBytes[0],
+                clientSocketLocalAddressBytes[1], clientSocketLocalAddressBytes[2], clientSocketLocalAddressBytes[3]);
+
+            this.rootDirectoryServerSystemFormat = rootDirectoryServerSystemFormat;
+            this.rootDirectoryFtpFormat = PathExtensions.SystemPathToUrlPath(rootDirectoryServerSystemFormat);
+            this.currentSubdirectoryFromRootSystemFormat = null;
+
+            this.receivedTypeCommand = false;
+
+            //
+            // Passive State Variables
+            //
+            this.currentPassiveListenSocket = null;
+            this.passiveWaitHandle = null;
+            this.passiveDataHandler = null;
         }
 
-        public UInt16 HandleCommand(String command)
+        private void PassiveConnectionListener()
+        {
+            if(this.currentPassiveListenSocket == null) throw new InvalidOperationException();
+            Socket listenSocket = currentPassiveListenSocket;
+            this.currentPassiveListenSocket = null;
+
+            try
+            {
+                while (true)
+                {
+                    Socket client = listenSocket.Accept();
+                    this.passiveWaitHandle.WaitOne();
+
+                }
+            }
+            finally
+            {
+                this.passiveWaitHandle = null;
+                if (listenSocket.Connected)
+                {
+                    try
+                    {
+                        listenSocket.Shutdown(SocketShutdown.Both);
+                    }
+                    catch (Exception) { }
+                }
+                listenSocket.Close();
+            }
+        }
+
+
+        public void HandleCommand(StringBuilder resposeBuilder, String commandUpperCase, String commandArgs)
         {
             CommandHandler handler;
-            if (dictionary.TryGetValue(command, out handler))
+            if (dictionary.TryGetValue(commandUpperCase, out handler))
             {
-                return handler();
+                lock (dictionary)
+                {
+                    handler(resposeBuilder, commandArgs);
+                }
+            }
+        }
+
+        void ABOR(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void ACCT(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void ADAT(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void ALLO(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void APPE(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void AUTH(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void CCC(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void CDUP(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void CONF(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void CWD(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void DELE(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void ENC(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void EPRT(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void EPSV(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void FEAT(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void HELP(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void LANG(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void LIST(StringBuilder responseBuilder, String args)
+        {
+            if (passiveWaitHandle == null)
+            {
+                responseBuilder.Append("503 You must either send PASV or PORT command first.\r\n");
+                return;
             }
 
-            return 500;
+            passiveDataHandler = (Socket s) =>
+            {
+                s.Send(Encoding.UTF8.GetBytes("hello\r\n"));
+            };
         }
+        void LPRT(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void LPSV(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void MDTM(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void MIC(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void MKD(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void MLSD(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void MLST(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void MODE(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void NLST(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void NOOP(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void OPTS(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void PASS(StringBuilder responseBuilder, String args)
+        {
+            responseBuilder.Append("502 Not Implemented.\r\n");
+        }
+        void PASV(StringBuilder responseBuilder, String args)
+        {
+            if (currentPassiveListenSocket == null)
+            {
+                this.currentPassiveListenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                this.currentPassiveListenSocket.Bind(new IPEndPoint(clientSocketLocalEndPoint.Address, 0));
+                
+                IPEndPoint localEndPoint = (IPEndPoint)this.currentPassiveListenSocket.LocalEndPoint;
+                Byte[] localAddress = localEndPoint.Address.GetAddressBytes();
+                Int32 localPort = localEndPoint.Port;
 
-        UInt16 ABOR()
-        {
-            return 500;
+                this.passiveWaitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+                this.passiveDataHandler = null;
+
+                this.currentPassiveListenSocket.Listen(1);
+                new Thread(PassiveConnectionListener).Start();
+
+                responseBuilder.Append(String.Format("227 Entering Passive Mode ({0},{1},{2}).\r\n",
+                    passiveAddressString, (Byte)(localPort>>8), (Byte)localPort));
+            }
+            else
+            {
+                responseBuilder.Append("503 Already listening.\r\n");
+            }
         }
-        UInt16 ACCT()
+        void PBSZ(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 ADAT()
+        void PORT(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 ALLO()
+        void PROT(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 APPE()
+        void PWD(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append(String.Format("200 \"{0}\" is current directory.\r\n",
+                (currentSubdirectoryFromRootSystemFormat == null) ? rootDirectoryFtpFormat :
+                PathExtensions.SystemPathToUrlPath(Path.Combine(rootDirectoryServerSystemFormat, currentSubdirectoryFromRootSystemFormat))));
         }
-        UInt16 AUTH()
+        void QUIT(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 CCC()
+        void REIN(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 CDUP()
+        void REST(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 CONF()
+        void RETR(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 CWD()
+        void RMD(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 DELE()
+        void RNFR(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 ENC()
+        void RNTO(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 EPRT()
+        void SITE(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 EPSV()
+        void SIZE(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 FEAT()
+        void SMNT(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 HELP()
+        void STAT(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 LANG()
+        void STOR(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 LIST()
+        void STOU(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 LPRT()
+        void STRU(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 LPSV()
+        void SYST(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 MDTM()
+        void TYPE(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            if (String.IsNullOrEmpty(args)) return;
+
+            switch (args[0])
+            {
+                case 'A':
+                    this.currentTransferType = Ftp.TransferType.Ascii;
+                    if (args.Length > 1)
+                    {
+                        responseBuilder.Append("502 Not Implemented.\r\n");
+                        return;
+                    }
+                    responseBuilder.Append("200 Type set to A.\r\n");
+                    this.receivedTypeCommand = true;
+                    break;
+                case 'E':
+                    this.currentTransferType = Ftp.TransferType.Ebcdic;
+                    if (args.Length > 1)
+                    {
+                        responseBuilder.Append("502 Not Implemented.\r\n");
+                        return;
+                    }
+                    responseBuilder.Append("200 Type set to E.\r\n");
+                    this.receivedTypeCommand = true;
+                    break;
+                case 'I':
+                    this.currentTransferType = Ftp.TransferType.Image;
+                    responseBuilder.Append("200 Type set to I.\r\n");
+                    this.receivedTypeCommand = true;
+                    break;
+                case 'L':
+                    this.currentTransferType = Ftp.TransferType.Local;
+                    responseBuilder.Append("200 Type set to L.\r\n");
+                    this.receivedTypeCommand = true;
+                    break;
+            }
         }
-        UInt16 MIC()
+        void USER(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("230 Welcome to the super simple FTP Server\r\n230 User ");
+            responseBuilder.Append(args);
+            responseBuilder.Append(" logged in.\r\n");
         }
-        UInt16 MKD()
+        void XCUP(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 MLSD()
+        void XMKD(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 MLST()
+        void XPWD(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 MODE()
+        void XRCP(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 NLST()
+        void XRMD(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 NOOP()
+        void XRSQ(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 OPTS()
+        void XSEM(StringBuilder responseBuilder, String args)
         {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
-        UInt16 PASS()
+        void XSEN(StringBuilder responseBuilder, String args)
         {
-            return 500;
-        }
-        UInt16 PASV()
-        {
-            return 500;
-        }
-        UInt16 PBSZ()
-        {
-            return 500;
-        }
-        UInt16 PORT()
-        {
-            return 500;
-        }
-        UInt16 PROT()
-        {
-            return 500;
-        }
-        UInt16 PWD()
-        {
-            return 500;
-        }
-        UInt16 QUIT()
-        {
-            return 500;
-        }
-        UInt16 REIN()
-        {
-            return 500;
-        }
-        UInt16 REST()
-        {
-            return 500;
-        }
-        UInt16 RETR()
-        {
-            return 500;
-        }
-        UInt16 RMD()
-        {
-            return 500;
-        }
-        UInt16 RNFR()
-        {
-            return 500;
-        }
-        UInt16 RNTO()
-        {
-            return 500;
-        }
-        UInt16 SITE()
-        {
-            return 500;
-        }
-        UInt16 SIZE()
-        {
-            return 500;
-        }
-        UInt16 SMNT()
-        {
-            return 500;
-        }
-        UInt16 STAT()
-        {
-            return 500;
-        }
-        UInt16 STOR()
-        {
-            return 500;
-        }
-        UInt16 STOU()
-        {
-            return 500;
-        }
-        UInt16 STRU()
-        {
-            return 500;
-        }
-        UInt16 SYST()
-        {
-            return 500;
-        }
-        UInt16 TYPE()
-        {
-            return 500;
-        }
-        UInt16 USER()
-        {
-            return 230;
-        }
-        UInt16 XCUP()
-        {
-            return 500;
-        }
-        UInt16 XMKD()
-        {
-            return 500;
-        }
-        UInt16 XPWD()
-        {
-            return 500;
-        }
-        UInt16 XRCP()
-        {
-            return 500;
-        }
-        UInt16 XRMD()
-        {
-            return 500;
-        }
-        UInt16 XRSQ()
-        {
-            return 500;
-        }
-        UInt16 XSEM()
-        {
-            return 500;
-        }
-        UInt16 XSEN()
-        {
-            return 500;
+            responseBuilder.Append("502 Not Implemented.\r\n");
         }
     }
 

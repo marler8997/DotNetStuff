@@ -30,18 +30,14 @@ namespace Marler.NetworkTools
         public void Run()
         {
             byte[] buffer = new byte[4096];
+            StringBuilder responseBuilder = new StringBuilder();
 
-            byte[] response = new byte[5];
-            response[3] = (byte)'\r';
-            response[4] = (byte)'\n';
+            responseBuilder.Append("220 localhost FTP Service ready.\r\n");
 
-            response[0] = (byte)'2';
-            response[1] = (byte)'2';
-            response[2] = (byte)'0';
-
-            messageLogger.Log("Sending '220'...");
-            dataLogger.LogData(response, 0, 5);
-            stream.Write(response, 0, 5);
+            Byte[] resposeBytes = Encoding.UTF8.GetBytes(responseBuilder.ToString());
+            dataLogger.LogData(resposeBytes, 0, resposeBytes.Length);
+            stream.Write(resposeBytes, 0, resposeBytes.Length);
+            responseBuilder.Length = 0;
 
             while (true)
             {
@@ -82,45 +78,42 @@ namespace Marler.NetworkTools
                 int commandEnd = (offset > 1 && buffer[offset - 2] == '\r') ? offset - 2 : offset - 1;
 
                 String command = Encoding.UTF8.GetString(buffer, 0, commandEnd);
-                messageLogger.Log("Got Command '{0}'", command);
 
-                if (command.Length < 3)
+                String commandUpperCase = null;
+                String commandArgs = null;
+                
+                Int32 spaceIndex = command.IndexOf(' ');
+
+                if(spaceIndex < 0)
                 {
-
-                    messageLogger.Log("Command was only {0} characters", command.Length);
-
-                RESPOND_500:
-                    response[0] = (byte)'5';
-                    response[1] = (byte)'0';
-                    response[2] = (byte)'0';
+                    commandUpperCase = command.ToUpper();
                 }
                 else
                 {
-                    String commandName = command.Substring(0,
-                        (command.Length == 3 ||
-                        ((command[3] < 'a' || command[3] > 'z') && (command[3] < 'A' || command[3] > 'Z')) ?
-                        3 : 4)).ToUpper();
-
-                    UInt16 returnCode = handler.HandleCommand(commandName);
-
-                    String codeString = returnCode.ToString();
-                    if (codeString.Length != 3)
+                    commandUpperCase = command.Remove(spaceIndex).ToUpper();
+                    if(spaceIndex + 1 <= command.Length)
                     {
-                        response[0] = (byte)'5';
-                        response[1] = (byte)'0';
-                        response[2] = (byte)'0';
-                    }
-                    else
-                    {
-                        response[0] = (byte)codeString[0];
-                        response[1] = (byte)codeString[1];
-                        response[2] = (byte)codeString[2];
+                        commandArgs = command.Substring(spaceIndex + 1);
                     }
                 }
+                messageLogger.Log("Got Command '{0}'{1}", commandUpperCase, (commandArgs == null)?"":String.Format(" args='{0}'",commandArgs));
 
-                messageLogger.Log("Return Code '{0}{1}{2}'", (char)response[0], (char)response[1], (char)response[2]);
-                stream.Write(response, 0, 5);
+                handler.HandleCommand(responseBuilder, commandUpperCase, commandArgs);
 
+                String responseString = "500 Command was not handled correctly.\r\n";
+                if (responseBuilder.Length > 0)
+                {
+                    responseString = responseBuilder.ToString();
+                    responseBuilder.Length = 0;
+                }
+                else
+                {                    
+                    messageLogger.Log("Command '{0}' was not handled", command);
+                }
+
+                resposeBytes = Encoding.UTF8.GetBytes(responseString);
+                stream.Write(resposeBytes, 0, resposeBytes.Length);
+                dataLogger.LogData(resposeBytes, 0, resposeBytes.Length);
             }
         }
 

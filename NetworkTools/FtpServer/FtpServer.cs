@@ -44,7 +44,7 @@ namespace Marler.NetworkTools
 
 
                 FtpHandler ftpHandler = new FtpHandler(
-                    new DictionaryCommandHandler(),
+                    new DictionaryCommandHandler((IPEndPoint)newClientSocket.LocalEndPoint, rootPath),
                     new NetworkStream(newClientSocket),
                     nextMessageLogger, 
                     new ConsoleDataLoggerWithLabels(String.Format("[{0} Data]:", nextMessageLogger.name),

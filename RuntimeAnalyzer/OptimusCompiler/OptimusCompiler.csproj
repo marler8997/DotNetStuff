@@ -46,6 +46,16 @@
     <Compile Include="OptimusTokenizer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Assembler\Assembler.csproj">
+      <Project>{36D31436-0B99-4332-86AB-5DFA880C3332}</Project>
+      <Name>Assembler</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RuntimeLibrary\RuntimeLibrary.csproj">
+      <Project>{A4D38FDD-4833-43F5-B1E3-08C096D5FB85}</Project>
+      <Name>RuntimeLibrary</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

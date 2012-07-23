@@ -46,8 +46,10 @@
     <Compile Include="DataLogger.cs" />
     <Compile Include="Dns2.cs" />
     <Compile Include="DomainName.cs" />
+    <Compile Include="Ftp.cs" />
     <Compile Include="IncomingConnection.cs" />
     <Compile Include="ParseUtilities.cs" />
+    <Compile Include="PathExtensions.cs" />
     <Compile Include="PortSet.cs" />
     <Compile Include="PortSetListener.cs" />
     <Compile Include="ProcessExecutor.cs" />
