@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
@@ -85,7 +84,7 @@ namespace Marler.NetworkTools
                 {
                     Console.WriteLine("[Client {0} has no matching connection, adding to queue]", newConnection.endPointName);
                     connectionList.Add(newConnection);
-                    Console.WriteLine("[Queue ({0}): {1}]", connectionList.Count, connectionList.GetString());
+                    Console.WriteLine("[Queue ({0}): {1}]", connectionList.Count, GenericUtilities.GetString(connectionList));
                     return;
                 }
             }            
@@ -175,7 +174,7 @@ namespace Marler.NetworkTools
                         nextLogger.Log("Listening");
                         Socket newClientSocket = listenSocket.Accept();
 
-                        nextLogger.Log("Accepted {0}", newClientSocket.RemoteEndPoint.GetString());
+                        nextLogger.Log("Accepted {0}", newClientSocket.RemoteEndPoint);
                         server.NewClient(new IncomingConnection(newClientSocket, listenPort));
 
                         acceptCount++;

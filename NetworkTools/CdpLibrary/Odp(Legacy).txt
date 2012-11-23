@@ -1,0 +1,230 @@
+
+
+ODP Ordered Datagram Protocol
+---------------------------------------------------------------------
+
+
+Protocol Goal:
+  Provide a way to transfer ordered blocks of data
+
+  
+Definitions
+---------------------------------------------------------------------
+The "Sender" is the end point of an ODP connection that initaites all packets.
+The "Receiver" is other end point of an ODP connection that receives packets and responds.
+
+
+
+
+                              Odp Header
+-------------------------------------------------------------------------
+| 0  1  2  3  4  5  6  7| 8  9 10 11 12 13 14 15|16 17 18 19 20 21 22 23|
+-------------------------------------------------------------------------
+| H  N  O  R            |       PayloadID       |   AckPayloadID        |
+-------------------------------------------------------------------------
+
+(H) Halt                If true, the sender is no longer sending or receiving any packets (Note: Halt=1 implies NoMorePayloads=1)
+(N) NoMorePayloads      If true, the payload id represents the last payload to be sent from the sender
+(O) OrderedPayload      If true, the packet is a part of the ordered payload sequence, which means it must receive an ACK.
+(R) Resend              If true, the sender has received an out of order payload id so the receiver of this packet 
+                            should start resending payloads starting from the AckPayloadID of this packet
+
+						
+Invalid Flag Combinations:
+   
+
+NonObvious Valid Flags Combinations:
+   <none>:  If there are no flags asserted, the packet and ack packet id mean nothing, but the data is still a valid block of data.
+         :  Why? Used when it is not that important if the data is sent
+   
+
+   
+Payload ID Window
+--------------------------------------------------------------------------
+A sender can send at most 127 payloads without receiving an ACK.
+This is because the payload id is 1 byte.
+This limit exists so that the receiver can always determine if a packet is a resend or an out of order packet.
+The following shows how to determine if a packet is a resend or an out of order packet.
+
+
+public static Byte PayloadDiff(Byte currentPayloadID, Byte previousPayloadID)
+{
+	Int32 payloadIDDiff = (0xFF & (Int32)currentPayloadID) - (0xFF & (Int32)previousPayloadID);
+	if(payloadIDDiff < 0) payloadIDDiff += 256;
+
+	if(payloadIDDiff == 1) {
+	  // This is the next packet in the sequence yay!
+	} else if(payloadIDDiff < 128) {
+	  // This packet is Out of Order
+	} else {
+	  // This sequence packet is just a resent packet
+	}
+}
+
+
+Note: It is very beneficial for a protocol on top of Odp to have a max packet size
+
+
+Graceful Halt
+--------------------------------------------------------------------------
+A host sends a packet with the FinishedSending flag asserted that also contains the last data sequence number set.
+The host waits for response.
+If it receives no response within a given timeout it errors out,
+If it receives a close connection response it checks the last number sent.
+   If the lastSequenceNumberSent and lastAckReceived are good, then the client can close.
+   If not then the proper things are done to ack/resend packets
+
+
+If a host receives a CloseConnection packet, 
+If the host has received all the data packets, it responds with C
+
+
+
+
+works on top of a datagram protocol
+
+Odp has different types of packets
+
+The first byte of the odp packet is a set of flags.
+
+//
+// Notes:
+//    1. The length of the datagram will be determined by the parent protocol
+//    2. The integrity of the odp data is determined by the parent protocol
+
+
+
+
+API
+-------------------------
+
+    /// <summary>
+    /// Thrown if a halt packet is received without performing a gracefull halt
+    /// </summary>
+    public class OdpSequenceBadHaltException : Exception
+    {
+        public OdpSequenceBadHaltException()
+            : base()
+        {
+        }
+    }
+    public interface IOdpConnection
+    {
+        //
+        // Send an Odp payload packet without a data seqeunce number.
+        //    Disadvantage:
+        //       The odp protocol cannot determine if the packet becomes lost.
+        //    Advantage:
+        //       The sender does not have to wait for an Ack from the receiver.
+        //       If the packet sent is not intended to have a response, it will reduce the traffic becauses there is no need for an empty ack packet.
+        //
+        void SendUnacknowledgedDatagram(Byte[] buffer);
+        void SendUnacknowledgedDatagram(Byte[] buffer, Int32 offset, Int32 length);
+
+        //
+		// Starts be receiving all available packets and updates the lates payload ack id.
+		// If the last payload id ack is within the payload id window, then the packet is sent.
+        // QueueDatagram will send an Odp packet over the connection if the last ack is within the sequence window.
+        // Otherwise, it will save the datagram in a queue and return.
+        //
+        Boolean TrySendDatagramNonBlocking(Byte[] buffer);
+        Boolean TrySendDatagramNonBlocking(Byte[] buffer, Int32 offset, Int32 length);
+
+
+
+
+        //
+		// Starts be receiving all available packets and updates the lates payload ack id.
+        // This method will block until the last acknowledged datagram is within the sequence window or the timeout is reached.
+        // If the timeout is reached it will throw a TimeoutException, otherwise it sends the packet.
+        //    throws TimeoutException, OdpSequenceBadHaltException
+        //
+        void SendDatagram(Byte[] buffer);
+        void SendDatagram(Byte[] buffer, Int32 timeout);
+
+        void SendDatagram(Byte[] buffer, Int32 offset, Int32 length);
+        void SendDatagram(Byte[] buffer, Int32 offset, Int32 length, Int32 timeout);
+
+
+        // Blocks till all sent packets have been acknowledged
+        void Flush();
+		void Flush(Int32 timeout);
+
+        //
+        // returns -1 if connection has gracefully halted
+        //    throws TimeoutException, OdpSequenceBadHaltException
+		// Note: there should be a way to check if the packet is ordered or unordered
+        Int32 Receive(Byte[] buffer, Int32 offset, Int32 maxLength);
+        Int32 Receive(Byte[] buffer, Int32 offset, Int32 maxLength, Int32 timeout);
+
+        void GracefulHalt();
+        void GracefulHalt(Int32 timeout);
+
+        void UngracefulHalt();
+    }
+    
+
+    public class OdpOverUdp : IOdpConnection
+    {
+        private Socket udpSocket;
+        private EndPoint remoteEndPoint;
+
+        public OdpOverUdp(AddressFamily addressFamily, EndPoint remoteEndPoint)
+        {
+            this.udpSocket = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
+            this.udpSocket.Connect(remoteEndPoint);
+        }
+
+        public void SendUnacknowledgedDatagram(byte[] buffer)
+        {
+            udpSocket.Send(buffer);
+        }
+        public void SendUnacknowledgedDatagram(byte[] buffer, int offset, int length)
+        {
+            udpSocket.Send(buffer, offset, length, SocketFlags.None);
+        }
+
+        public void QueueDatagram(byte[] buffer)
+        {
+            throw new NotSupportedException();
+        }
+        public void QueueDatagram(byte[] buffer, int offset, int length)
+        {
+            throw new NotSupportedException();
+        }
+
+        public void SendDatagram(byte[] buffer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SendDatagram(byte[] buffer, int offset, int length)
+        {
+            throw new NotImplementedException();
+        }
+
+        void GracefulHalt();
+        void GracefulHalt(Int32 timeout);
+
+        void UngracefulHalt();
+    }
+
+
+    public interface IOdpHandler
+    {
+        OdpListenerInstruction NewConnection(EndPoint remoteEndPoint);
+        OdpListenerInstruction ClosedConnection(EndPoint remoteEndPoint);
+        OdpListenerInstruction Datagram(EndPoint remoteEndPoint, Byte[] readBytes, Int32 offset, UInt32 length);
+    }
+    [Flags]
+    public enum OdpListenerInstruction
+    {
+        NoInstruction   = 0x00,
+        CloseConnection = 0x01,
+        Stop            = 0x02,
+
+    }
+    public class OdpListener
+    {
+
+    }

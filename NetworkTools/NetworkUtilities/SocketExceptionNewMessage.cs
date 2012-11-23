@@ -23,6 +23,7 @@ namespace Marler.NetworkTools
                 return String.Format("{0}: {1}", socketException.Message, extraMessage);
             }
         }
+#if !WindowsCE
         public override IDictionary Data
         {
             get
@@ -30,28 +31,9 @@ namespace Marler.NetworkTools
                 return socketException.Data;
             }
         }
-        public override bool Equals(object obj)
-        {
-            return socketException.Equals(obj);
-        }
-        public override Exception GetBaseException()
-        {
-            return socketException.GetBaseException();
-        }
         public override void GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
         {
             socketException.GetObjectData(info, context);
-        }
-        public override int ErrorCode
-        {
-            get
-            {
-                return socketException.ErrorCode;
-            }
-        }
-        public override int GetHashCode()
-        {
-            return socketException.GetHashCode();
         }
         public override string HelpLink
         {
@@ -74,6 +56,26 @@ namespace Marler.NetworkTools
             {
                 socketException.Source = value;
             }
+        }
+#endif
+        public override bool Equals(object obj)
+        {
+            return socketException.Equals(obj);
+        }
+        public override Exception GetBaseException()
+        {
+            return socketException.GetBaseException();
+        }
+        public override int ErrorCode
+        {
+            get
+            {
+                return socketException.ErrorCode;
+            }
+        }
+        public override int GetHashCode()
+        {
+            return socketException.GetHashCode();
         }
         public override string StackTrace
         {

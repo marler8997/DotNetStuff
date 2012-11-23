@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Net.Sockets;
@@ -73,7 +72,7 @@ namespace Marler.NetworkTools
                     nextLogger.Log("Listening");
                     Socket newClientSocket = listenSocket.Accept();
 
-                    nextLogger.Log("Accepted {0}", newClientSocket.RemoteEndPoint.GetString());
+                    nextLogger.Log("Accepted {0}", newClientSocket.RemoteEndPoint);
 
                     Handler handler = handlerConstructor(nextLogger, new NetworkStream(newClientSocket));
 

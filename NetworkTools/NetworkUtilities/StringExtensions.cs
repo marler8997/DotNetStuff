@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Marler.NetworkTools
@@ -8,7 +7,7 @@ namespace Marler.NetworkTools
     public static class StringExtensions
     {
 
-        public static Boolean SubstringEquals(this String str, Int32 offset, String compare)
+        public static Boolean SubstringEquals(String str, Int32 offset, String compare)
         {
             if (offset + compare.Length > str.Length)
             {

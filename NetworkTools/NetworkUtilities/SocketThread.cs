@@ -7,9 +7,8 @@ using System.Net.Sockets;
 
 namespace Marler.NetworkTools
 {
+#if !WindowsCE
     public delegate void SocketThreadClosedEvent(SocketThread streamThread);
-
-
     public class SocketThread
     {
         public const Int32 DefaultBufferSize = 1024;
@@ -134,5 +133,5 @@ namespace Marler.NetworkTools
         }
 
     }
-
+#endif
 }

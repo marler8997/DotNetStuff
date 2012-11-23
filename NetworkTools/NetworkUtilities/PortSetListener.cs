@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Net.Sockets;
@@ -90,7 +89,7 @@ namespace Marler.NetworkTools
                         if (messageLogger != null) messageLogger.Log("Socket {0}: Listening", socketID);
                         Socket newClient = listenSocket.Accept();
 
-                        if (messageLogger != null) messageLogger.Log("Socket {0}: Accepted {1}", socketID, newClient.RemoteEndPoint.GetString());
+                        if (messageLogger != null) messageLogger.Log("Socket {0}: Accepted {1}", socketID, newClient.RemoteEndPoint);
 
                         IncomingConnection incomingConnection = new IncomingConnection(newClient, listenPort);
                         callback(socketID, listenPort, incomingConnection);

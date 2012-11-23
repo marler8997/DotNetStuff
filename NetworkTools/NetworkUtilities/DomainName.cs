@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Marler.NetworkTools
@@ -16,7 +15,7 @@ namespace Marler.NetworkTools
             UInt32 offsetOriginal = offset;
 
             StringBuilder builder = new StringBuilder();
-            offset = builder.DomainBytesToString(bytes, offset);
+            offset = Dns2.DomainBytesToString(builder, bytes, offset);
             this.name = builder.ToString();
 
             this.packet = new Byte[offset - offsetOriginal];
@@ -49,7 +48,7 @@ namespace Marler.NetworkTools
             this.offset = offset;
 
             StringBuilder builder = new StringBuilder();
-            offset = builder.DomainBytesToString(bytes, offset);
+            offset = Dns2.DomainBytesToString(builder, bytes, offset);
 
             this.packetLength = (UInt16)(offset - this.offset);
 

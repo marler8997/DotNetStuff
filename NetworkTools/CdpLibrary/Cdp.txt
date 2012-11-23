@@ -1,0 +1,361 @@
+
+CDP Controller Datagram Protocol
+---------------------------------------------------------------------
+
+Definitions
+---------------------------------------------------------------------
+A "payload" is block of data. (A block of no data is still a payload)
+A "transmission" is a payload sent from one end point to another.
+A "datagram" is a payload and routing information to transmit the payload. Note that a datagram is itself a payload.
+A transmission is "verifiable" if it has a mechanism for the sender to know it was received.
+A "full-duplex" connection is one where either end point can trasmit simultaneously.
+A "half-duplex" connection is one where only one end point can transmit at a time.
+   
+Introduction
+---------------------------------------------------------------------
+
+CDP is a protocol to facilitate verifiable transmission of ordered payloads.
+The purpose of CDP is to provide new programming paradigms to be used in future protocols to outperform their counterparts based on other datagram protocols like TCP or UDP.
+
+CDP does this by providing a half-duplex connection and does not abstract datagram boundary information from the application.
+
+Going from a full-duplex connection to half-duplex changes the API for programmers implementing protocols on top of CDP.
+The API exposes more functionality and connection status to the application, which may or may not be desired depending on the type of application.
+However, because the connection is half-dupliex, the CDP layer will always know where the next payload is coming from which enables optimization in network traffic.
+
+Since CDP does not abstract datagram boundary information, this allows protocols to use boundaries knowing it will be same before and after transmission.
+
+What Makes CDP Different
+---------------------------------------------------------------------
+CDP does less than TCP but more than UDP.
+Unlike TCP which is stream based, CDP is a datagram protocol like UDP.
+TCP provides a full-duplex stream interface whereas CDP provides a half-duplex payload interface.
+UDP is a full-duplex payload interface but does not provide verifiable transmission or re-ordering.
+
+
+    | Interface | Duplex | Verifiable | Reorders   | HeaderSize |
+-----------------------------------------------------------------
+TCP |  Stream   |  Full  |    Yes     |   Yes      |    20      |
+-----------------------------------------------------------------
+CDP | Payload   |  Half  |    Yes     |   Yes      |   *10      |
+-----------------------------------------------------------------
+UDP | Payload   |  Full  |    No      |   No       |     8      |
+-----------------------------------------------------------------
+
+*NOTE: The actual CDP header is only 2 bytes, however CDP requires another protocol underneath it and the comparable version of CDP to TCP and UDP is CDP on top of UDP.
+
+
+
+NOTE: In the future maybe I will probably make a stream protocol to operate either above or below CDP?
+
+****If a user protocol does not require a full-duplex connection or a stream interface, providing a half-duplex connection and a payload interface is much simpler for the user to use and also faster, and less memory intensive for the underlying protocol.
+The following is a list of protocols that run over TCP that do not need full-duplex communication.
+	HTTP/HTTPS
+	RPC/NFS
+	FTP
+	DNS
+	DHCP
+Here's a list of protocols that do use the full-duplex capabilities:
+	Telnet/SSH
+	VNC/RDP
+
+If the user protocol only needs half-duplex communication, it takes extra datagrams and more local memory to facilitate it as a full-duplex communication.
+A full-duplex api is much different than a half-duplex api.
+Current protocols that only use half-duplex communication can optimize and simplify their implementation if the underlying protocol provided a half-duplex api.
+
+To demonstrate the differences, let's take a look at an example.
+
+interface FullDuplex {
+   void Send(Payload payload);
+   Payload Receive();
+}
+
+
+interface HalfDuplexSender {
+   void Send(Payload payload);
+}
+interface HalfDuplexTransmitter2 : HalfDuplexSender {
+   void SendAndGiveUpTransmissionControl(Payload payload, HalfDuplexReceiver receiver);
+}
+interface HalfDuplexReceiver {
+   void GotPayload(Payload);
+   void GotTransmissionControl(HalfDuplexSender receiver);
+}
+
+HTTP Example:
+
+Server: Payload payload = Receive();
+Client: Send("GET / HTTP/1.1...");
+Server: Send("HTTP/1.1 200 OK...");
+        payload = Receive();
+
+
+		
+Server: Receive(halfDuplexReceiver);
+Client: SendAndGiveUpTransmissionControl("GET / HTTP/1.1...", halfDuplexReceiver);
+
+
+
+
+
+
+
+
+
+HalfDuplex API: 
+
+
+It also take much more memory because the protocol must always buffer 
+Moreover, the user is given more control than it needs, with 
+Providing full duplex communication requires more traffic from the underlying protocol.
+Also, the api for a full duplex system is much different than for a half-duplex system.
+This document contains a suggested api for calling into CDP and since it is half-duplex it 
+	
+	
+	
+Many of our current protocols which sit on top of existing datagram protocols 
+Many of these new programming paradigms come from CDP being half-duplex.
+
+Underlying Protocol
+---------------------------------------------------------------------
+The CDP protocol requires an underlying protocol to handle the transmission of unfragmented datagrams.
+CDP handles the re-ordering of payloads, transmission verification, and FullDuplex to HalfDuplex.
+UDP (User Datagram Protocol) is a compatible protocol to use underneath CDP.
+
+
+
+
+
+
+
+
+
+
+
+Full-Duplex Datagrams to Half-Duplex Payloads
+---------------------------------------------------------------------
+
+CDP differs from other datagram protocols because payload transmission is half duplex.
+This means that only one end point of a connection can send payloads at a time.
+
+However
+Unlike other datagram protocols, CDP is half-duplex which means that each end point
+
+
+
+The CDP Protocol
+---------------------------------------------------------------------
+
+
+                            CDP Header
+-------------------------------------------------------------------
+|  0   1   2   3   4   5   6   7  | 8   9  10  11  12  13  14  15 |
+-------------------------------------------------------------------
+|  H   T   G   I   P0  P1  P2  P3 |     Payload ID (Bits 4-11)    |
+-------------------------------------------------------------------
+
+H: is handler (or it's just a halt)
+T: datagram type (0: normal payload with id)
+G: give control to the handler, P: just a placeholder
+I: the controller wants an immediate ack
+
+
+Ordered by what order the packets should be processed in.
+
+X: Flag value hex
+D: Flag value decimal
+C: Can be sent by the controller
+H: Can be sent by the handler
+
+|  X  |  D | C | H | Name                          | Flags
+---------------------------------------------------------------------
+|  -  |  - | X | X | Heartbeat                     | (no header flags, determined by the datagram length)
+---------------------------------------------------------------------
+| 0x0 |  0 | X |   | Payload No Ack                | H:0 T:0 G:0 I:0
+---------------------------------------------------------------------
+| 0x1 |  1 | X |   | Payload With Ack              | H:0 T:0 G:0 I:1
+---------------------------------------------=-----------------------
+| 0x2 |  2 | X |   | Payload No Ack/Give Control   | H:0 T:0 G:1 I:0
+---------------------------------------------------------------------
+| 0x3 |  3 | X |   | Payload With Ack/Give Control | H:0 T:0 G:1 I:1
+---------------------------------------------------------------------
+| 0x4 |  4 | X |   | Halt With Payload             | H:0 T:1 G:0 I:0
+---------------------------------------------------------------------
+| 0x5 |  5 | X |   | Payload And Close             | H:0 T:1 G:0 I:1
+---------------------------------------------------------------------
+| 0x6 |  6 | X |   | Random Payload                | H:0 T:1 P:1 I:0
+---------------------------------------------------------------------
+| 0x8 |  8 |   | X | Ack                           | H:1 000
+---------------------------------------------------------------------
+| 0x9 |  9 |   | X | Resend                        | H:1 001
+---------------------------------------------------------------------
+| 0xF | 15 | X | X | Halt                          | 1111
+---------------------------------------------------------------------
+
+*Note: these payloads are roughly ordered by when an algorithm should process each one:
+if(datagramLenth <= 0) // Datagram is a heartbeat
+if(flagValue     < 6)   // Datagram is from the controller and it has a payload with an id
+if(flagValue     < 6 && (flags & 0x1) != 0) // Controller is waiting for immediate ack
+
+
+
+At any point in time, only one end point can be designated as the "Controller" and the other is called the "Handler".
+The Controller is the only one who can send payloads.
+At any time the Controller can "give" control to the other end point and the roles of Contoller and Handler are switched.
+
+
+
+
+Datagram Types
+---------------------------------------------------------------------
+
+Heartbeat (Controller or Handler) (No Flag Value)
+------------------------------------------------------
+A heartbeat is a special datagram that has no header.  The receiver can tell it's a heartbeat by using the length in the
+protocol below CDP.  One reason to send a heartbeat is to make sure that a connection stays open.
+
+One usefull case for a heartbeat is if a client behind a NAT or PROXY connects to a public server, and then
+gives control to the server.  If the client does not receive any datagrams for too long, the NAT or PROXY may
+close the connection so the server can no longer reach the client.  In this case, it's a good idea for the client
+to send heartbeats reguarlarly to let the NAT or PROXY know to keep the return path open.
+
+RandomPaylod (Controller only) FlagValue=6
+------------------------------------------------------
+A random payload is one that is not reordered on the receivers end and is never acknowledged.
+It has no payload id so the CDP header is only one byte instead of two.
+However just like a normal payload, the controller is the only one who can send them.
+If the handler sends a random payload it is ignored by the controller.
+
+
+
+
+
+
+
+Closing the connection
+---------------------------------------------------------------------
+At any point in time, anyone can send a HALT datagram, which means the sender will no longer send or receive any datagrams.
+A Close datagram means that the sender wants to halt communications but will wait for the receiver to become ready or it will timeout.
+   
+There are a few types of close sequences so the protocol on top of Cdp must determine which one to use.
+
+I   QuickHalt: Use if all payloads have been acknowledged and the current handler has a small receive timeout
+
+   1. Controller sends Halt
+   
+II  CloseAndHalt: Use if the current handler has a long receive timeout
+
+   1. Controller sends Close
+   2. Handler sends Halt
+
+III LongHalt: Not sure when to use yet?
+   1. Controller sends Close
+   2. Handler sends Close
+   3. Controller sends Halt
+
+   
+   
+
+
+
+Note: If all flags are off, it means that the payload does not have an id.  So the header is only 1 byte instead of 2. Note that this means the payload cannot be acknowledged.
+
+To keep a connection alive, a protocol could routinely send a packet with a zero CDP header.
+
+
+Note: When a client gives control to a server for a long time, and the client does not send any acks/payloads for longer than a minute, then
+the protocol should have the client send a heartbeat every so often (probably once a minute) so that NAT and Proxies keep the tables open in order
+for the server to send packets back to the client.
+
+
+
+
+
+
+Algorithms
+-------------------------------------------------------------------------------------------
+
+
+
+Handle Datagram Algorithm
+---------------------------------------------------------------------
+The algorithm to process the packet should check the most likely
+packets first for performance reasons.  The algorithm must have access to the following objects:
+1. Datagram: byte[] datagram, int offset, int length;
+2. DatagramTransmitter transmitter
+3. CdpServerHandler serverHandler
+4. CdpServerController controller
+5. CdpTimeout timeout
+6. Function Cdp.SendAndGiveControl(Byte[] buffer, Int32 offset, Int32 length, Boolean requestImmediateAck, CdpTimeout timeout);
+
+
+if(length <= 0) return // The packet is just a heartbeat,
+                       // Note: this must be checked first because a heartbeat has no flags					   
+Byte flagValue = (datagram[offset++] >> 4);
+if(flagValue > 7) {
+  // It is either a halt with no payload, or the other side thinks it is the controller, or the packet has gotten here late
+  if(flagValue == Halt) {
+    handler.Halt();
+	return
+  }
+  if(flagValue == Resend) {
+    Check if a resend needs to occur, resend if necessary
+  }
+  return;
+}
+if(flagValue < 6) {
+  if(length < 2) {client disobeying cdp protocol, send halt, handler.Halt(), close connection}
+  payloadID = combine datagram[0] and datagram[1]
+  while(id not in order) {
+    if(transmitter.DatagramAvailable()) {
+      // proces available datagrams until the next payload id is found
+      if(payload(s) found) continue;
+    }
+    send resend;
+    return;
+  }
+  
+  // Not a close/halt and requesting immediate ack
+  if(flagValue < 4 && flagValue & ImmedateAck) transmitter.sendAck(payloadID);
+ 
+  // Handle the payload
+  handler.Payload(datagram, 2, length - 2);
+
+  if(flagValue >= 4) {
+    // Got eitherEither a close or a halt
+	
+    if(flagValue == 5) // If it was a close
+	{
+	  // Decide to either send close or halt
+	  if(close) {
+	    // Try to send close
+	  }
+	}
+	handler.Halt();
+	return;
+  }
+  
+  if(flagValue & GiveControl) {
+    int sendBufferOffsetLimit;
+    Boolean requestImmediateAck;
+    handler.GotControl((CdpServerController)serverController, out sendBufferOffsetLimit, out requestImmediateAck); // returns a payload to send when it returns control
+    // Generate sendAndGiveControl packet
+
+    Cdp.SendAndGiveControl(serverController.lastBuffer, 0, sendBufferOffsetLimit, requestImmediateAck, timeout);
+  }
+
+} else if(flagValue & hasPayloadNoID) {
+  handler.RandomPayload(datagram, 1, length - 1);
+} else {
+  client disobeying cdp protocol, send halt, handler.Halt(), close connection
+}
+
+
+SendAndGiveControl Algorithm
+-----------------------------------------------------------------
+Need the following
+1. Datagram: byte[] datagram, int offset, int length
+2. DatagramTransmitter transmitter
+3. CdpTimeout timeout
+
+

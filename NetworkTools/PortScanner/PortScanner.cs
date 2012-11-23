@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
@@ -179,13 +178,13 @@ namespace Marler.NetworkTools
                     }
                     else
                     {
-                        if (socket.ConnectWithTimeout(new IPEndPoint(portScannerManager.hostIP, port), portScannerManager.timeout))
+                        if (SocketExtensions.ConnectWithTimeout(socket, new IPEndPoint(portScannerManager.hostIP, port), portScannerManager.timeout))
                         {
                             connected = true;
                         }
                     }
                 }
-                catch (SocketException se)
+                catch (SocketException)
                 {
                 }
                 finally

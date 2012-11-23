@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
@@ -42,7 +41,7 @@ namespace Marler.NetworkTools
             Socket newClientSocket = listenSocket.Accept();
 
             Console.WriteLine("[Server {0}: Accepted client \"{1}\"]",
-                nextHandlerID, newClientSocket.RemoteEndPoint.GetString());
+                nextHandlerID, newClientSocket.RemoteEndPoint);
 
             return new ServerInitializer(nextHandlerID, new NetworkStream(newClientSocket));
         }

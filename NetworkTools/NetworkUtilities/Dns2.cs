@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net;
-using System.Reflection.Emit;
 
 namespace Marler.NetworkTools
 {
@@ -92,7 +90,7 @@ namespace Marler.NetworkTools
 
     public static class Dns2
     {
-        public static UInt32 DomainBytesToString(this StringBuilder builder, Byte[] bytes, UInt32 offset)
+        public static UInt32 DomainBytesToString(StringBuilder builder, Byte[] bytes, UInt32 offset)
         {
             if (offset >= bytes.Length) throw new FormatException("Dns Packet was too short");
 
@@ -119,7 +117,7 @@ namespace Marler.NetworkTools
             }
         }
 
-        public static UInt32 InsertResourceRecord(this Byte[] packet, UInt32 packetOffset,
+        public static UInt32 InsertResourceRecord(Byte[] packet, UInt32 packetOffset,
             DomainNamePacketHook domainName, UInt16 type, UInt16 @class,
             UInt32 validTimeSeconds, Byte[] rData, UInt32 rDataOffset, UInt16 rDataLength)
         {

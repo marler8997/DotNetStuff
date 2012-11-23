@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.IO;
 using Microsoft.Win32;
@@ -59,7 +58,7 @@ namespace Marler.NetworkTools
                         urlStack.Push(urlIterator);
                     }
                     Console.WriteLine("DEBUG: URL STACK({0}) :", urlStack.Count);
-                    urlStack.PrintStack();
+                    GenericUtilities.PrintStack(urlStack);
 
                     stringBuilder.Append(String.Format("<h1>URL: {0}</h1>\n", request.url));
                     if (urlStack.Count > 0)

@@ -22,7 +22,7 @@ namespace Marler.NetworkTools
         public override String ToString()
         {
             return String.Format("HttpResponse status='{0}' version='{1}' Headers='{2}' BodySize='{3}']",
-                status, version, (Headers == null) ? "<null>" : Headers.GetString(), bodyStream.Length);
+                status, version, (Headers == null) ? "<null>" : GenericUtilities.GetString(Headers), bodyStream.Length);
         }
     }
 }

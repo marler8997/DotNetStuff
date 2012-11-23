@@ -8,9 +8,10 @@ using System.Diagnostics;
 
 namespace Marler.NetworkTools
 {
+    /*
     public static class SocketExtensions
     {
-        public static Boolean ConnectWithTimeout(this Socket socket, EndPoint endPoint, TimeSpan timeout)
+        public static Boolean ConnectWithTimeout(Socket socket, EndPoint endPoint, TimeSpan timeout)
         {
             IAsyncResult asyncResult = socket.BeginConnect(endPoint, null, null);
             if (asyncResult.AsyncWaitHandle.WaitOne(timeout))
@@ -27,7 +28,7 @@ namespace Marler.NetworkTools
             return false;
         }
 
-        public static Boolean ConnectWithTimeout(this Socket socket, String host, UInt16 port, TimeSpan timeout)
+        public static Boolean ConnectWithTimeout(Socket socket, String host, UInt16 port, TimeSpan timeout)
         {
             IAsyncResult asyncResult = socket.BeginConnect(host, port, null, null);
             if (asyncResult.AsyncWaitHandle.WaitOne(timeout))
@@ -43,16 +44,16 @@ namespace Marler.NetworkTools
             return false;
         }
     }
-
+    */
 
     public static class GenericUtilities
     {
-        public static void ForEach<T>(this IEnumerable<T> source, Action<T> action)
+        public static void ForEach<T>(IEnumerable<T> source, Action<T> action)
         {
             foreach (T element in source) action(element);
         }
 
-        public static String GetString<T>(this List<T> list)
+        public static String GetString<T>(List<T> list)
         {
             StringBuilder stringBuilder = new StringBuilder("{ ");
 
@@ -69,20 +70,21 @@ namespace Marler.NetworkTools
             return stringBuilder.ToString();
         }
 
+#if !WindowsCE
         public static String Proxy4Name(byte[] userID, IDirectSocketConnector proxyConnector, IPAddress hostIP, UInt16 hostPort)
         {
             return String.Format("%proxy4%{0}{1}>{2}:{3}", (userID == null) ? String.Empty : (Encoding.UTF8.GetString(userID) + "@"),
-                proxyConnector.HostAndPort, hostIP, hostPort);
+                proxyConnector.ConnectionSpecifier, hostIP, hostPort);
         }
 
         public static String Proxy4aName(byte[] userID, IDirectSocketConnector proxyConnector, String host, UInt16 hostPort)
         {
             return String.Format("%proxy4a%{0}{1}>{2}:{3}", (userID == null) ? String.Empty : (Encoding.UTF8.GetString(userID) + "@"),
-                proxyConnector.HostAndPort, host, hostPort);
+                proxyConnector.ConnectionSpecifier, host, hostPort);
         }
+#endif
 
-
-        public static void Insert(this byte[] arr, ref Int32 offset, byte[] insert)
+        public static void Insert(byte[] arr, ref Int32 offset, byte[] insert)
         {
             if (offset + insert.Length > arr.Length) throw new ArgumentOutOfRangeException("offset");
 
@@ -93,7 +95,7 @@ namespace Marler.NetworkTools
         }
 
 
-        public static String GetString(this Dictionary<String, String> dictionary)
+        public static String GetString(Dictionary<String, String> dictionary)
         {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.Append('{');
@@ -109,7 +111,7 @@ namespace Marler.NetworkTools
             return stringBuilder.ToString();
         }
 
-        public static void PrintStack<T>(this Stack<T> stack)
+        public static void PrintStack<T>(Stack<T> stack)
         {
             if (stack.Count <= 0)
             {
@@ -122,10 +124,9 @@ namespace Marler.NetworkTools
                     Console.WriteLine(item);            
                 }
             }
-        }
-        
+        }        
 
-        public static void SendFile(this Socket socket, String filename, Int32 bufferSize)
+        public static void SendFile(Socket socket, String filename, Int32 bufferSize)
         {
             byte[] buffer = new byte[bufferSize];
             if (filename == null)
@@ -167,7 +168,7 @@ namespace Marler.NetworkTools
             }
         }
 
-        public static void ReadFullSize(this Socket socket, byte[] buffer, int offset, int size)
+        public static void ReadFullSize(Socket socket, byte[] buffer, int offset, int size)
         {
             int lastBytesRead;
 
@@ -184,8 +185,7 @@ namespace Marler.NetworkTools
 
             throw new IOException(String.Format("reached end of stream: still needed {0} bytes", size));
         }
-
-        public static void ReadFullSize(this Stream stream, byte[] buffer, int offset, int size)
+        public static void ReadFullSize(Stream stream, byte[] buffer, int offset, int size)
         {
             int lastBytesRead;
 
@@ -202,15 +202,44 @@ namespace Marler.NetworkTools
 
             throw new IOException("reached end of stream");
         }
+        
+	    public static String ReadLine(this Stream stream, StringBuilder builder)
+        {
+            builder.Length = 0;
+		    while(true) {
+                int next = stream.ReadByte();
+			    if(next < 0) {
+                    if (builder.Length == 0) return null;
+                    return builder.ToString();
+			    }
+    			
+			    if(next == '\n') return builder.ToString();
+			    if(next == '\r') {
+                    do
+                    {
+                        next = stream.ReadByte();
+                        if (next < 0)
+                        {
+                            if (builder.Length == 0) return null;
+                            return builder.ToString();
+                        }
+                        if (next == '\n') return builder.ToString();
+                        builder.Append('\r');
+                    } while (next == '\r');
+			    }
 
-        public static byte[] ReadFile(String filename)
+			    builder.Append((char)next);		
+		    }
+	    }
+
+        public static Byte[] ReadFile(String filename)
         {
             //
             // 1. Get file size
             //
             FileInfo fileInfo = new FileInfo(filename);
             Int32 fileLength = (Int32)fileInfo.Length;
-            byte[] buffer = new byte[fileLength];
+            Byte[] buffer = new Byte[fileLength];
 
             //
             // 2. Read the file contents
@@ -219,7 +248,7 @@ namespace Marler.NetworkTools
             try
             {
                 fileStream = new FileStream(filename, FileMode.Open);
-                ReadFile(fileStream, buffer, 0, fileLength);
+                ReadFullSize(fileStream, buffer, 0, fileLength);
             }
             finally
             {
@@ -229,6 +258,7 @@ namespace Marler.NetworkTools
             return buffer;
         }
 
+        /*
         public static void ReadFile(this FileStream fileStream, byte[] buffer, Int32 offset, Int32 size)
         {
             int lastBytesRead;
@@ -246,8 +276,49 @@ namespace Marler.NetworkTools
 
             throw new IOException("reached end of file");
         }
+        */
 
-        public static String GetString(this EndPoint endPoint)
+        /*
+        public static void WriteFile(this FileInfo fileInfo, Int32 fileOffset, Byte[] buffer, Int32 bufferOffset, Int32 length)
+        {
+            fileInfo.Refresh();
+
+            using (FileStream fileStream = fileInfo.Open(FileMode.Open))
+            {
+                fileStream.Position = fileOffset;
+                fileStream.Write(buffer, bufferOffset, length);
+            }
+        }
+        */
+        public static Int32 ReadFile(FileInfo fileInfo, Int32 fileOffset, Byte[] buffer, out Boolean reachedEndOfFile)
+        {
+            fileInfo.Refresh();
+
+            Int64 fileSize = fileInfo.Length;
+
+            Int32 readLength;
+            if (fileSize > (Int64)buffer.Length)
+            {
+                reachedEndOfFile = false;
+                readLength = buffer.Length;
+            }
+            else
+            {
+                reachedEndOfFile = true;
+                readLength = (Int32)fileSize;
+            }
+            if (readLength <= 0) return 0;
+
+            using (FileStream fileStream = fileInfo.Open(FileMode.Open))
+            {
+                fileStream.Position = fileOffset;
+                GenericUtilities.ReadFullSize(fileStream, buffer, 0, readLength);
+            }
+
+            return readLength;
+        }
+
+        public static String GetString(EndPoint endPoint)
         {
             //DnsEndPoint dnsEndPoint = endPoint as DnsEndPoint;
             //if(dnsEndPoint != null)
@@ -262,21 +333,27 @@ namespace Marler.NetworkTools
             return "?.?.?.?";
         }
 
+        /*
         public static Stream Connect(String host, Int32 port)
         {
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             socket.Connect(host, port);
             return new NetworkStream(socket);
         }
+        */
 
-
+        /*
         public static IPAddress ResolveHost(String host)
         {
             IPAddress ipAddress;
+#if WindowsCE
+            ipAddress = IPAddress.Parse(host);
+#else
             if (IPAddress.TryParse(host, out ipAddress))
             {
                 return ipAddress;
             }
+#endif
 
             Console.WriteLine("Host \"{0}\" could not be parsed as an IP Address...attempting to resolve it as a host name...", host);
 
@@ -299,6 +376,6 @@ namespace Marler.NetworkTools
 
             return ipAddress;
         }
-
+        */
     }
 }

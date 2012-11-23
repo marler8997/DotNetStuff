@@ -5,6 +5,7 @@ using System.Net;
 
 namespace Marler.NetworkTools
 {
+#if !WindowsCE
     public class ProxyException : Exception
     {
         public ProxyException(String message)
@@ -83,7 +84,7 @@ namespace Marler.NetworkTools
         }
     }
 
-    public static class Proxy
+    public static class SocksProxy
     {
         public const Byte ProxyVersion4                = 0x04;
         public const Byte ProxyVersion5                = 0x05;
@@ -96,7 +97,7 @@ namespace Marler.NetworkTools
         public const Byte Proxy5AddressTypeDomainName  = 0x03;
         public const Byte Proxy5AddressTypeIPv6        = 0x04;
 
-
+#if !WindowsCE
         public static void RequestBind(String proxyHost, UInt16 proxyPort, IPAddress bindIP, UInt16 bindPort, byte[] userID)
         {
             if (userID == null) throw new ArgumentNullException("userID");
@@ -129,7 +130,7 @@ namespace Marler.NetworkTools
             Socket proxySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             proxySocket.Connect(proxyHost, proxyPort);
             proxySocket.Send(buffer);
-            proxySocket.ReadFullSize(buffer, 0, 8);
+            GenericUtilities.ReadFullSize(proxySocket, buffer, 0, 8);
 
 
             if (buffer[0] != 0)
@@ -149,6 +150,7 @@ namespace Marler.NetworkTools
             UInt16 responsePort = (UInt16)((responseIPArray[2] << 8) | responseIPArray[3]);
             Console.WriteLine("Response IP={0}, Port={1}", responseIP, responsePort);
         }
+#endif
     }
 
     public abstract class ProxySocket
@@ -195,7 +197,7 @@ namespace Marler.NetworkTools
             //
             Socket socket = proxyConnector.Connect();
             socket.Send(bindRequest);
-            socket.ReadFullSize(replyBuffer, 0, 8);
+            GenericUtilities.ReadFullSize(socket, replyBuffer, 0, 8);
 
             if (replyBuffer[0] != 0)
             {
@@ -250,7 +252,7 @@ namespace Marler.NetworkTools
             //
             Socket socket = proxyConnector.Connect();
             socket.Send(connectRequest);
-            socket.ReadFullSize(replyBuffer, 0, 8);
+            GenericUtilities.ReadFullSize(socket, replyBuffer, 0, 8);
 
             if (replyBuffer[0] != 0)
             {
@@ -323,7 +325,7 @@ namespace Marler.NetworkTools
             Socket socket = proxyConnector.Connect();
 
             socket.Send(connectRequest);
-            socket.ReadFullSize(replyBuffer, 0, 8);
+            GenericUtilities.ReadFullSize(socket, replyBuffer, 0, 8);
 
             if (replyBuffer[0] != 0)
             {
@@ -367,7 +369,7 @@ namespace Marler.NetworkTools
             // 2. Receive Initial Response
             //
             Console.WriteLine("Waiting for initial response...");
-            socket.ReadFullSize(buffer, 0, 2);
+            GenericUtilities.ReadFullSize(socket, buffer, 0, 2);
             if (buffer[0] != 5)
             {
                 Console.WriteLine("WARNING: The first byte of the proxy response was expected to be 5 (for SOCKS5 version) but it was {0}", buffer[0]);
@@ -380,7 +382,7 @@ namespace Marler.NetworkTools
             buffer[0] = 5; // Version 5 of the SOCKS protocol
             buffer[1] = 1; // The CONNECT Command
             buffer[2] = 0; // Reserved
-            buffer[3] = Proxy.Proxy5AddressTypeIPv4; // 1 = IPv4 Address (3 = DomainName, 4 = IPv6 Address)
+            buffer[3] = SocksProxy.Proxy5AddressTypeIPv4; // 1 = IPv4 Address (3 = DomainName, 4 = IPv6 Address)
             byte[] hostIPArray = hostIP.GetAddressBytes();
             buffer[4] = hostIPArray[0];
             buffer[5] = hostIPArray[1];
@@ -394,24 +396,24 @@ namespace Marler.NetworkTools
             // 4. Get Response
             //
             Console.WriteLine("Waiting for CONNECT response...");
-            socket.ReadFullSize(buffer, 0, 7);
+            GenericUtilities.ReadFullSize(socket, buffer, 0, 7);
             if (buffer[0] != 5) Console.WriteLine("WARNING: The first byte of the proxy response was expected to be 5 (for SOCKS5 version) but it was {0}", buffer[0]);
             if (buffer[1] != 0) throw new Proxy5Exception(buffer[1]);
             if (buffer[2] != 0) Console.WriteLine("WARNING: The third byte of the proxy response was expected to be 0 (It is RESERVED) but it was {0}", buffer[2]);
 
             switch (buffer[3])
             {
-                case Proxy.Proxy5AddressTypeIPv4:
-                    socket.ReadFullSize(buffer, 7, 3);
+                case SocksProxy.Proxy5AddressTypeIPv4:
+                    GenericUtilities.ReadFullSize(socket, buffer, 7, 3);
 
                     //port = (UInt16) ( (buffer[8] << 8) | buffer[9] );
                     break;
-                case Proxy.Proxy5AddressTypeDomainName:
+                case SocksProxy.Proxy5AddressTypeDomainName:
                     byte[] domainNameArray = new byte[buffer[4]];
                     Int32 bytesLeft = domainNameArray.Length - 2;
                     if (bytesLeft > 0)
                     {
-                        socket.ReadFullSize(buffer, 7, bytesLeft);
+                        GenericUtilities.ReadFullSize(socket, buffer, 7, bytesLeft);
                     }
                     offset = 5;
                     for (int i = 0; i < domainNameArray.Length; i++)
@@ -422,8 +424,8 @@ namespace Marler.NetworkTools
 
                     //port = (UInt16) ( (buffer[offset] << 8) | buffer[offset + 1] );
                     break;
-                case Proxy.Proxy5AddressTypeIPv6:
-                    socket.ReadFullSize(buffer, 7, 15);
+                case SocksProxy.Proxy5AddressTypeIPv6:
+                    GenericUtilities.ReadFullSize(socket, buffer, 7, 15);
 
                     //port = (UInt16) ( (buffer[20] << 8) | buffer[21] );
                     break;
@@ -476,7 +478,7 @@ namespace Marler.NetworkTools
             //
             // 2. Receive Initial Response
             //
-            socket.ReadFullSize(buffer, 0, 2);
+            GenericUtilities.ReadFullSize(socket, buffer, 0, 2);
             if (buffer[0] != 5)
             {
                 Console.WriteLine("WARNING: The first byte of the proxy response was expected to be 5 (for SOCKS5 version) but it was {0}", buffer[0]);
@@ -503,7 +505,7 @@ namespace Marler.NetworkTools
             //
             // 4. Get Response
             //
-            socket.ReadFullSize(buffer, 0, 2);
+            GenericUtilities.ReadFullSize(socket, buffer, 0, 2);
             if (buffer[0] != 5)
             {
                 Console.WriteLine("WARNING: The first byte of the proxy response was expected to be 5 (for SOCKS5 version) but it was {0}", buffer[0]);
@@ -516,7 +518,7 @@ namespace Marler.NetworkTools
             buffer[0] = 5; // Version 5 of the SOCKS protocol
             buffer[1] = 1; // The CONNECT Command
             buffer[2] = 0; // Reserved
-            buffer[3] = Proxy.Proxy5AddressTypeIPv4; // 1 = IPv4 Address (3 = DomainName, 4 = IPv6 Address)
+            buffer[3] = SocksProxy.Proxy5AddressTypeIPv4; // 1 = IPv4 Address (3 = DomainName, 4 = IPv6 Address)
             byte[] hostIPArray = hostIP.GetAddressBytes();
             buffer[4] = hostIPArray[0];
             buffer[5] = hostIPArray[1];
@@ -529,24 +531,24 @@ namespace Marler.NetworkTools
             //
             // 5. Get Response
             //
-            socket.ReadFullSize(buffer, 0, 7);
+            GenericUtilities.ReadFullSize(socket, buffer, 0, 7);
             if (buffer[0] != 5) Console.WriteLine("WARNING: The first byte of the proxy response was expected to be 5 (for SOCKS5 version) but it was {0}", buffer[0]);
             if (buffer[1] != 0) throw new Proxy5Exception(buffer[1]);
             if (buffer[2] != 0) Console.WriteLine("WARNING: The third byte of the proxy response was expected to be 0 (It is RESERVED) but it was {0}", buffer[2]);
 
             switch(buffer[3])
             {
-                case Proxy.Proxy5AddressTypeIPv4:
-                    socket.ReadFullSize(buffer, 7, 3);
+                case SocksProxy.Proxy5AddressTypeIPv4:
+                    GenericUtilities.ReadFullSize(socket, buffer, 7, 3);
                     
                     //port = (UInt16) ( (buffer[8] << 8) | buffer[9] );
                     break;
-                case Proxy.Proxy5AddressTypeDomainName:
+                case SocksProxy.Proxy5AddressTypeDomainName:
                     byte[] domainNameArray = new byte[buffer[4]]; 
                     Int32 bytesLeft = domainNameArray.Length - 2;
                     if(bytesLeft > 0)
                     {
-                        socket.ReadFullSize(buffer, 7, bytesLeft);
+                        GenericUtilities.ReadFullSize(socket, buffer, 7, bytesLeft);
                     }
                     offset = 5;
                     for(int i = 0; i < domainNameArray.Length; i++)
@@ -556,9 +558,9 @@ namespace Marler.NetworkTools
                     String domainName = Encoding.UTF8.GetString(domainNameArray);
 
                     //port = (UInt16) ( (buffer[offset] << 8) | buffer[offset + 1] );
-                    break;                    
-                case Proxy.Proxy5AddressTypeIPv6:
-                    socket.ReadFullSize(buffer, 7, 15);
+                    break;
+                case SocksProxy.Proxy5AddressTypeIPv6:
+                    GenericUtilities.ReadFullSize(socket, buffer, 7, 15);
                     
                     //port = (UInt16) ( (buffer[20] << 8) | buffer[21] );
                     break;
@@ -570,5 +572,5 @@ namespace Marler.NetworkTools
         }
     }
 
-
+#endif
 }

@@ -39,14 +39,14 @@ namespace Marler.NetworkTools
                 nextMessageLogger.Log("Listening");
                 Socket newClientSocket = listenSocket.Accept();
 
-                nextMessageLogger.Log("Accepted {0}", newClientSocket.RemoteEndPoint.GetString());
+                nextMessageLogger.Log("Accepted {0}", newClientSocket.RemoteEndPoint);
 
                 HttpRequestHandler requestHandler = new HttpRequestHandler(
                     resourceHandler,
                     new NetworkStream(newClientSocket),
                     nextMessageLogger,
                     new ConnectionDataLoggerPrettyLog(acceptCount, ConsoleDataLogger.Instance,
-                        newClientSocket.RemoteEndPoint.GetString(), "localhost"));
+                        newClientSocket.RemoteEndPoint.ToString(), "localhost"));
 
                 Thread handlerThread = new Thread(new ThreadStart(requestHandler.Run));
                 handlerThread.IsBackground = true;

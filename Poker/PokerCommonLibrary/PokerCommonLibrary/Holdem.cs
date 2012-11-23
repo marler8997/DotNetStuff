@@ -29,6 +29,7 @@ namespace Marler.Poker
     //    Proof) 22 is harder to get than AKo, but less likely to win, but then AA is harder to get than 72o but is extremely likely to win.
     //    The point of mentioning this is that you shouldn't assume that if a hand is harder to get than another hand, that it is more likely to win.
     //
+    // Note: One important stat of poker players is their variance.  See if there is a way to capture this.  Line graps should be used.
 
     public enum CardRank {
         Ace   =  1,

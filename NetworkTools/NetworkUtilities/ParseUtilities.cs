@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net;
 using System.IO;
-using Microsoft.CSharp;
 using System.CodeDom.Compiler;
 using System.CodeDom;
 
@@ -18,10 +16,9 @@ namespace Marler.NetworkTools
         }
     }
 
+#if !WindowsCE
     public static class ParseUtilities
     {
-
-
         public static byte[] ParseLiteralString(String literal, Int32 offset, out Int32 outLength)
         {
             /*
@@ -237,7 +234,7 @@ namespace Marler.NetworkTools
 
         public static UInt16[] ParsePorts(String portListString)
         {
-            String[] portStrings = portListString.SplitCorrectly(',');
+            String[] portStrings = ParseUtilities.SplitCorrectly(portListString, ',');
             if(portStrings == null || portStrings.Length == 0)
             {
                 return null;
@@ -274,7 +271,7 @@ namespace Marler.NetworkTools
             return hostString;
         }
 
-        public static SocketConnectorFromIPAddress ParseIPAndPort(String ipAndPort)
+        public static SocketConnectorFromEndPoint ParseIPAndPort(String ipAndPort)
         {
             Int32 colonIndex = ipAndPort.IndexOf(':');
             if (colonIndex < 0) throw new ParseException(String.Format("'{0}' needs a port, i.e. '{0}:80' would work", ipAndPort));
@@ -294,7 +291,7 @@ namespace Marler.NetworkTools
             IPAddress ipAddress;
             if (IPAddress.TryParse(ipString, out ipAddress))
             {
-                return new SocketConnectorFromIPAddress(ipAddress, port);
+                return new SocketConnectorFromEndPoint(new IPEndPoint(ipAddress, port));
             }
             throw new ParseException(String.Format("'{0}' isn't a valid ip address", ipString));
         }
@@ -319,12 +316,12 @@ namespace Marler.NetworkTools
             IPAddress ipAddress;
             if (IPAddress.TryParse(host, out ipAddress))
             {
-                return new SocketConnectorFromIPAddress(ipAddress, port);
+                return new SocketConnectorFromEndPoint(new IPEndPoint(ipAddress, port));
             }
             return new SocketConnectorFromHost(host, port);
         }
 
-        public static ISocketConnector ParseConnectionSpecifier(this String connectionSpecifier)
+        public static ISocketConnector ParseConnectionSpecifier(String connectionSpecifier)
         {
             String host;
             UInt16 hostPort;
@@ -361,12 +358,12 @@ namespace Marler.NetworkTools
 
             if (IPAddress.TryParse(connectionSpecifier, out hostIP))
             {
-                return new SocketConnectorFromIPAddress(hostIP, hostPort);
+                return new SocketConnectorFromEndPoint(new IPEndPoint(hostIP, hostPort));
             }
             return new SocketConnectorFromHost(host, hostPort);
         }
 
-        public static String[] SplitCorrectly(this String str, Char seperator)
+        public static String[] SplitCorrectly(String str, Char seperator)
         {
             if (str == null || str.Length == 0) return null;
 
@@ -415,7 +412,6 @@ namespace Marler.NetworkTools
 
             return splitStrings;
         }
-
-
     }
+#endif
 }

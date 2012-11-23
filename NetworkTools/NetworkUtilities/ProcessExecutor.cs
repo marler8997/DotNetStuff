@@ -6,6 +6,7 @@ using System.Threading;
 
 namespace Marler.NetworkTools
 {
+#if !WindowsCE
     public class ProcessExecutor
     {
         private readonly Process process;
@@ -88,4 +89,5 @@ namespace Marler.NetworkTools
             }
         }
     }
+#endif
 }

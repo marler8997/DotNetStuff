@@ -12,6 +12,8 @@
     <AssemblyName>NetworkUtilities</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkSubset>
+    </TargetFrameworkSubset>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -39,21 +41,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AdapterUtilities.cs" />
+    <Compile Include="BufferPool.cs" />
+    <Compile Include="ByteBuffer.cs" />
     <Compile Include="ClientAcceptor.cs" />
+    <Compile Include="CommonPort.cs" />
     <Compile Include="ConnectionDataLogger.cs" />
     <Compile Include="ConnectionMessageLogger.cs" />
     <Compile Include="DataLogger.cs" />
     <Compile Include="Dns2.cs" />
+    <Compile Include="DnsEndPoint.cs" />
     <Compile Include="DomainName.cs" />
     <Compile Include="Ftp.cs" />
     <Compile Include="IncomingConnection.cs" />
+    <Compile Include="ObjectManager.cs" />
+    <Compile Include="NetworkRecord.cs" />
+    <Compile Include="Odp.cs" />
     <Compile Include="ParseUtilities.cs" />
     <Compile Include="PathExtensions.cs" />
     <Compile Include="PortSet.cs" />
     <Compile Include="PortSetListener.cs" />
     <Compile Include="ProcessExecutor.cs" />
-    <Compile Include="SelectBasedServer.cs" />
+    <Compile Include="ProxySelector.cs" />
+    <Compile Include="RecordHandler.cs" />
+    <Compile Include="SelectServer.cs" />
+    <Compile Include="Serialization.cs" />
+    <Compile Include="SerializationByReflection.cs" />
     <Compile Include="ServerHandler.cs" />
     <Compile Include="CommandDictionary.cs" />
     <Compile Include="GenericUtilities.cs" />
@@ -67,10 +79,17 @@
     <Compile Include="SocketExceptionNewMessage.cs" />
     <Compile Include="SocketThread.cs" />
     <Compile Include="SocketTunnel.cs" />
+    <Compile Include="SocketWrappers.cs" />
+    <Compile Include="SortedList.cs" />
+    <Compile Include="StopwatchExtensions.cs" />
+    <Compile Include="StringBuilderWriter.cs" />
     <Compile Include="StringExtensions.cs" />
     <Compile Include="Telnet.cs" />
     <Compile Include="Threads.cs" />
     <Compile Include="Tunnel.cs" />
+    <Compile Include="UniqueIndexObjectDictionary.cs" />
+    <Compile Include="Xdr.cs" />
+    <Compile Include="Xdr2.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

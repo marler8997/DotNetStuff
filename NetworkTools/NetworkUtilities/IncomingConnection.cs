@@ -3,7 +3,6 @@ using System.Net.Sockets;
 
 namespace Marler.NetworkTools
 {
-
     public class IncomingConnection
     {
         public readonly String endPointName;
@@ -12,7 +11,7 @@ namespace Marler.NetworkTools
 
         public IncomingConnection(Socket socket, UInt16 acceptedOnPort)
         {
-            this.endPointName = String.Format("{0}:{1}", socket.RemoteEndPoint.GetString(), acceptedOnPort);
+            this.endPointName = socket.RemoteEndPoint.ToString();
             this.socket = socket;
             this.acceptedOnPort = acceptedOnPort;
         }

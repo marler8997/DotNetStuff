@@ -237,7 +237,7 @@ namespace Marler.NetworkTools
         public override String ToString()
         {
             return String.Format("[HttpRequest method='{0}' url='{1}' httpVersion='{2}' headers='{3}' bodyLength='{4}']",
-                method, url, httpVersion, (headers == null) ? "<null>" : headers.GetString(), (body == null) ? 0 : body.Length);
+                method, url, httpVersion, (headers == null) ? "<null>" : GenericUtilities.GetString(headers), (body == null) ? 0 : body.Length);
         }
     }
 }

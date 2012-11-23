@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Marler.NetworkTools
@@ -68,25 +67,25 @@ namespace Marler.NetworkTools
         [TestMethod]
         public void SplitCorrectlyTest()
         {
-            ValidateStringArray("1,2,3,4".SplitCorrectly(','), "1", "2", "3", "4");
-            ValidateStringArray("1".SplitCorrectly(','), "1");
-            ValidateStringArray("100".SplitCorrectly(','), "100");
+            ValidateStringArray(ParseUtilities.SplitCorrectly("1,2,3,4", ','), "1", "2", "3", "4");
+            ValidateStringArray(ParseUtilities.SplitCorrectly("1", ','), "1");
+            ValidateStringArray(ParseUtilities.SplitCorrectly("100", ','), "100");
 
             try
             {
-                ValidateStringArray(",1".SplitCorrectly(','), "1");
+                ValidateStringArray(ParseUtilities.SplitCorrectly(",1", ','), "1");
                 Assert.Fail();
             }
             catch (FormatException) { }
             try
             {
-                ValidateStringArray(",".SplitCorrectly(','), "1");
+                ValidateStringArray(ParseUtilities.SplitCorrectly(",", ','), "1");
                 Assert.Fail();
             }
             catch (FormatException) { }
             try
             {
-                ValidateStringArray("1,".SplitCorrectly(','), "1");
+                ValidateStringArray(ParseUtilities.SplitCorrectly("1,", ','), "1");
                 Assert.Fail();
             }
             catch (FormatException) { }

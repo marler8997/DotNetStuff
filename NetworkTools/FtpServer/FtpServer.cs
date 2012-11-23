@@ -40,7 +40,7 @@ namespace Marler.NetworkTools
                 nextMessageLogger.Log("Listening");
                 Socket newClientSocket = listenSocket.Accept();
 
-                nextMessageLogger.Log("Accepted {0}", newClientSocket.RemoteEndPoint.GetString());
+                nextMessageLogger.Log("Accepted {0}", newClientSocket.RemoteEndPoint);
 
 
                 FtpHandler ftpHandler = new FtpHandler(

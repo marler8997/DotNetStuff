@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
@@ -12,12 +11,12 @@ namespace Marler.NetworkTools
     {
         String ConnectionSpecifier { get; }
         Socket Connect();
-        Socket Connect(TimeSpan timeout);
+        //Socket Connect(TimeSpan timeout);
     }
 
     public interface IDirectSocketConnector : ISocketConnector
     {
-        String HostAndPort { get; }
+        //String HostAndPort { get; }
     }
 
     public class SocketConnectorFromHost : IDirectSocketConnector
@@ -31,25 +30,64 @@ namespace Marler.NetworkTools
             this.port = port;
         }
 
-        public String HostAndPort { get { return String.Format("{0}:{1}", host, port); } }
+        //public String HostAndPort { get { return String.Format("{0}:{1}", host, port); } }
         public String ConnectionSpecifier { get { return String.Format("{0}:{1}", host, port); } }
 
         public Socket Connect()
         {
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(host, port);
+            socket.Connect(new IPEndPoint(DnsEndPoint.Resolve(host), port));
             return socket;
         }
 
+        /*
         public Socket Connect(TimeSpan timeout)
         {
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            if (socket.ConnectWithTimeout(host, port, timeout))
+            if (SocketExtensions.ConnectWithTimeout(socket, host, port, timeout))
             {
                 return socket;
             }
             return null;
         }
+        */
+
+        public override String ToString()
+        {
+            return ConnectionSpecifier;
+        }
+    }
+
+    public class SocketConnectorFromEndPoint : IDirectSocketConnector
+    {
+        public readonly EndPoint endPoint;
+
+        public SocketConnectorFromEndPoint(EndPoint endPoint)
+        {
+            this.endPoint = endPoint;
+        }
+
+        //public String HostAndPort { get { return String.Format("{0}:{1}", ipAddress.ToString(), port); } }
+        public String ConnectionSpecifier { get { return endPoint.ToString(); } }
+
+        public Socket Connect()
+        {
+            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(endPoint);
+            return socket;
+        }
+
+        /*
+        public Socket Connect(TimeSpan timeout)
+        {
+            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            if (SocketExtensions.ConnectWithTimeout(socket, new IPEndPoint(ipAddress, port), timeout))
+            {
+                return socket;
+            }
+            return null;
+        }
+        */
 
         public override String ToString()
         {
@@ -58,6 +96,7 @@ namespace Marler.NetworkTools
     }
 
 
+    /*
     public class SocketConnectorFromIPAddress : IDirectSocketConnector
     {
         public readonly IPAddress ipAddress;
@@ -78,23 +117,25 @@ namespace Marler.NetworkTools
             socket.Connect(ipAddress, port);
             return socket;
         }
+
         public Socket Connect(TimeSpan timeout)
         {
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            if (socket.ConnectWithTimeout(new IPEndPoint(ipAddress, port), timeout))
+            if (SocketExtensions.ConnectWithTimeout(socket, new IPEndPoint(ipAddress, port), timeout))
             {
                 return socket;
             }
             return null;
         }
 
-
         public override String ToString()
         {
             return ConnectionSpecifier;
         }
     }
+    */
 
+#if !WindowsCE
     public class SocketConnectorFromProxy4 : ISocketConnector
     {
         private readonly IDirectSocketConnector proxyConnector;
@@ -119,10 +160,12 @@ namespace Marler.NetworkTools
             Proxy4ConnectSocket proxySocket = new Proxy4ConnectSocket(userID, proxyConnector);
             return proxySocket.Connect(hostIP, hostPort);
         }
+        /*
         public Socket Connect(TimeSpan timeout)
         {
             throw new NotImplementedException();
         }
+        */
         public override String ToString()
         {
             return ConnectionSpecifier;
@@ -154,11 +197,12 @@ namespace Marler.NetworkTools
             Proxy4aConnectSocket proxySocket = new Proxy4aConnectSocket(userID, proxyConnector);
             return proxySocket.Connect(host, hostPort);
         }
+        /*
         public Socket Connect(TimeSpan timeout)
         {
             throw new NotImplementedException();
         }
-
+        */
         public override String ToString()
         {
             return ConnectionSpecifier;
@@ -186,12 +230,14 @@ namespace Marler.NetworkTools
         public Socket Connect()
         {
             Proxy5NoAuthenticationConnectSocket proxySocket = new Proxy5NoAuthenticationConnectSocket(ProtocolType.Tcp, proxyConnector);
-            return proxySocket.Connect(GenericUtilities.ResolveHost(host), hostPort);
+            return proxySocket.Connect(DnsEndPoint.Resolve(host), hostPort);
         }
+        /*
         public Socket Connect(TimeSpan timeout)
         {
             throw new NotImplementedException();
         }
+        */
         public override String ToString()
         {
             return ConnectionSpecifier;
@@ -227,15 +273,18 @@ namespace Marler.NetworkTools
         {
             Proxy5UsernamePasswordConnectSocket proxySocket = new Proxy5UsernamePasswordConnectSocket(
                 ProtocolType.Tcp, proxyConnector, username, password);
-            return proxySocket.Connect(GenericUtilities.ResolveHost(host), hostPort);
+            return proxySocket.Connect(DnsEndPoint.Resolve(host), hostPort);
         }
+        /*
         public Socket Connect(TimeSpan timeout)
         {
             throw new NotImplementedException();
         }
+        */
         public override String ToString()
         {
             return ConnectionSpecifier;
         }
     }
+#endif
 }

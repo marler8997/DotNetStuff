@@ -112,7 +112,7 @@ namespace Marler.NetworkTools
                 if (thisSocketCache != socket)
                 {
                     Console.WriteLine("[WARNING: The Read Thread signaled the disconnected event, but it's socket '{0}' does not match the current socket '{1}']",
-                       socket.RemoteEndPoint.GetString(), thisSocketCache.RemoteEndPoint.GetString());
+                       socket.RemoteEndPoint, thisSocketCache.RemoteEndPoint);
                 }
                 else
                 {
