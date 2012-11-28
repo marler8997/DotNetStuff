@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace Marler.NetworkTools
 {
@@ -70,18 +71,18 @@ namespace Marler.NetworkTools
                     clientWaitMode, (Int32) clientWaitMode));
             }
 
-            ConnectionMessageLogger connectionMessageLogger = ConnectionMessageLogger.NullConnectionMessageLogger;
+            ConnectionMessageLogger messageLogger = ConnectionMessageLogger.NullConnectionMessageLogger;
             /*
             ConnectionMessageLogger connectionMessageLogger = new ConnectionMessageLoggerSingleLog(
                 new ConsoleMessageLogger("Tunnel"), String.Format("{0} to {1}", clientSideConnectionSpecifier, incomingConnection.endPointName),
                 String.Format("{0} to {1}", incomingConnection.endPointName, clientSideConnectionSpecifier));
             */
-            IConnectionDataLogger connectionDataLogger = new ConnectionDataLoggerPrettyLog(socketID, ConsoleDataLogger.Instance,
+            IConnectionDataLogger dataLogger = new ConnectionDataLoggerPrettyLog(socketID, ConsoleDataLogger.Instance,
                 clientSideConnectionSpecifier, incomingConnection.endPointName);
 
-            SocketTunnel socketTunnel = new SocketTunnel(connectionMessageLogger, connectionDataLogger,
-                clientSideSocket, incomingConnection.socket, readBufferSize);
-            socketTunnel.Start();
+            TwoWaySocketTunnel socketTunnel = new TwoWaySocketTunnel(null,
+                clientSideSocket, incomingConnection.socket, readBufferSize, messageLogger, dataLogger);
+            new Thread(socketTunnel.StartOneAndRunOne).Start();
         }
 
 

@@ -4,11 +4,15 @@ using System.Net.Sockets;
 
 namespace Marler.NetworkTools
 {
-    public interface ITransmitterFactory
+    public interface IConnectedTransmitterFactory
     {
-        IDatagramTransmitter Create(EndPoint remoteEndPoint);
-        IDatagramTransmitter Create(EndPoint remoteEndPoint, EndPoint localEndPoint);
+        IConnectedDatagramTransmitter Create(EndPoint remoteEndPoint);
+        IConnectedDatagramTransmitter Create(EndPoint remoteEndPoint, EndPoint localEndPoint);
     }
+
+
+
+    /*
     public interface IDatagramTransmitterMultipleEndPoints : IDisposable
     {
         Int32 MaximumDatagramSize { get; }
@@ -16,7 +20,6 @@ namespace Marler.NetworkTools
         Boolean DatagramAvailable(EndPoint remoteEndPoint);
 
         Int32 ReceiveHeaderNonBlocking(EndPoint remoteEndPoint); // returns -1 if none available
-        Int32 ReceiveHeaderBlocking(EndPoint remoteEndPoint, Int32 timeoutMillis); // returns -1 on timeout, otherwise returns header
 
 
         // Returns size of datagram (0 is valid)
@@ -29,33 +32,59 @@ namespace Marler.NetworkTools
         //  throws TimeoutException, InvalidOperationException (if ReceiveIsBlocking is false)
         Int32 ReceiveBlocking(EndPoint remoteEndPoint, Byte[] buffer, Int32 offset, Int32 maxLength, Int32 timeoutMillis);
     }
-    public interface IDatagramTransmitter : IDisposable
+    */
+    public interface IUnroutedDatagramTransmitter : IDisposable
+    {
+        Boolean DatagramAvailable { get; }
+        Int32 MaximumDatagramSize { get; }
+
+        void SendTo(EndPoint endPoint, Byte[] datagram, Int32 datagramOffset, Int32 datagramLength);
+
+
+        // Returns size of datagram (0 is valid), or -1 if no datagrams available.
+        // Will never return a negative number, only works for nonblocking transmitters.
+        //  throws InvalidOperationException (if ReceiveIsBlocking is true)
+        Int32 ReceiveHeaderNonBlocking(out EndPoint endPoint);
+
+        // Returns size of datagram (0 is valid), or -1 if no datagrams available.
+        // Will never return a negative number, only works for nonblocking transmitters.
+        //  throws InvalidOperationException (if ReceiveIsBlocking is true)
+        Int32 ReceiveNonBlocking(out EndPoint endPoint, Byte[] buffer, Int32 offset, Int32 maxLength);
+
+
+        // timeoutMillis, set to 0 for no timeout
+        // Returns size of datagram (0 is valid), or -1 on timeout.
+        // Will never return a negative number, only works for blocking transmitters.
+        //  throws InvalidOperationException (if ReceiveIsBlocking is false)
+        Int32 ReceiveBlocking(out EndPoint endPoint, Byte[] buffer, Int32 offset, Int32 maxLength, Int32 timeoutMillis);
+    }
+
+    public interface IConnectedDatagramTransmitter : IDisposable
     {
         Int32 MaximumDatagramSize { get; }
-        EndPoint RemoteEndPoint { get; }
 
-        //void Bind(EndPoint localEndPoint);
-        //void Connect(EndPoint remoteEndPoint);
+        EndPoint LocalEndPoint { get; }
+        EndPoint RemoteEndPoint { get; }
 
         void Send(Byte[] datagram, Int32 datagramOffset, Int32 datagramLength);
 
         Boolean DatagramAvailable { get; }
 
-        Int32 ReceiveHeaderNonBlocking(); // returns -1 if none available
-        //Int32 ReceiveHeaderBlocking(Int32 timeoutMillis); // returns -1 on timeout, otherwise returns header
+        // Returns size of datagram (0 is valid), or -1 if no datagrams available.
+        // Will never return a negative number, only works for nonblocking transmitters.
+        //  throws InvalidOperationException (if ReceiveIsBlocking is true)
+        Int32 ReceiveHeaderNonBlocking();
 
-        // returns true on timeout
-        Boolean ReceiveHeaderBlocking(Byte[] buffer, Int32 offset, Int32 timeoutMillis); // returns -1 on timeout, otherwise returns header
-
-
-        // Returns size of datagram (0 is valid)
+        // Returns size of datagram (0 is valid), or -1 if no datagrams available.
         // Will never return a negative number, only works for nonblocking transmitters.
         //  throws InvalidOperationException (if ReceiveIsBlocking is true)
         Int32 ReceiveNonBlocking(Byte[] buffer, Int32 offset, Int32 maxLength);
 
-        // Returns size of datagram (0 is valid).
+
+        // timeoutMillis, set to 0 for no timeout
+        // Returns size of datagram (0 is valid), or -1 on timeout.
         // Will never return a negative number, only works for blocking transmitters.
-        //  throws TimeoutException, InvalidOperationException (if ReceiveIsBlocking is false)
+        //  throws InvalidOperationException (if ReceiveIsBlocking is false)
         Int32 ReceiveBlocking(Byte[] buffer, Int32 offset, Int32 maxLength, Int32 timeoutMillis);
     }
 

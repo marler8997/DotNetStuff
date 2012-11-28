@@ -70,6 +70,7 @@
     <Compile Include="CommandDictionary.cs" />
     <Compile Include="GenericUtilities.cs" />
     <Compile Include="MessageLogger.cs" />
+    <Compile Include="SingleObjectList.cs" />
     <Compile Include="SocketConnector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ProxySocket.cs" />

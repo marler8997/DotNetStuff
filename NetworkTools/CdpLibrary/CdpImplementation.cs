@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Diagnostics;
+using System.Threading;
 
 namespace Marler.NetworkTools
 {
@@ -36,9 +37,6 @@ namespace Marler.NetworkTools
         public const Int32 MaxPayloadWithoutIDOverUdp   = MaxDatagramOverUdp - HeaderLengthWithoutPayloadID;
 
         public const Int32 MaxPayloadID                 = 0x0FFF;
-
-
-
 
 
         private static LinearBucketSizeBufferPool bufferPool = null; // Note that this buffer pool is thread safe
@@ -83,8 +81,8 @@ namespace Marler.NetworkTools
         }
 
         // If return value is 1, the payload id is the next in the seqeunce, 
-        // If the return value is < 0x8000, the payload is out of order
-        // Else, (== 0 or >= 0x8000), the payload is a resend of a previous payload
+        // If the return value is < 0x800, the payload is out of order
+        // Else, (== 0 or >= 0x800), the payload is a resend of a previous payload
         public static Int32 PayloadDiff(Int32 currentPayloadID, Int32 previousPayloadID)
         {
             Int32 payloadIDDiff = (MaxPayloadID & currentPayloadID) - (MaxPayloadID & previousPayloadID);
@@ -92,23 +90,24 @@ namespace Marler.NetworkTools
             return payloadIDDiff;
         }
 
-        public static void UdpServerLoop(EndPoint endPoint, Byte[] maxDatagramBuffer, ICdpServer server, ICdpTimeout timeout)
+        public static void UdpServerLoop(ICdpServer server, Socket udpSocket, EndPoint listenEndPoint, Byte[] maxDatagramBuffer, ICdpTimeout timeout)
         {
             Dictionary<EndPoint, CdpServerDatagramHandler> endPointToHandler =
                 new Dictionary<EndPoint, CdpServerDatagramHandler>();
 
-            Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            udpSocket.Bind(endPoint);
+            //Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            udpSocket.Bind(listenEndPoint);
 
             try
             {
 
                 while (true)
                 {
+                    EndPoint from = listenEndPoint;
                     int bytesRead;
                     try
                     {
-                        bytesRead = udpSocket.ReceiveFrom(maxDatagramBuffer, ref endPoint);
+                        bytesRead = udpSocket.ReceiveFrom(maxDatagramBuffer, ref from);
                     }
                     catch (SocketException e)
                     {
@@ -123,7 +122,7 @@ namespace Marler.NetworkTools
                     if (bytesRead <= 0)
                     {
                         // it's just a heartbeat
-                        Console.WriteLine("[CdpDebug] Got a heartbeat from '{0}'", endPoint);
+                        Console.WriteLine("[CdpDebug] Got a heartbeat from '{0}'", from);
                         continue;
                     }
 
@@ -132,9 +131,9 @@ namespace Marler.NetworkTools
                     //
                     // Handle new connection
                     //
-                    if (!endPointToHandler.TryGetValue(endPoint, out handler))
+                    if (!endPointToHandler.TryGetValue(from, out handler))
                     {
-                        CdpTransmitter transmitter = new CdpTransmitter(new UdpServerTransmitter(udpSocket, endPoint));
+                        CdpTransmitter transmitter = new CdpTransmitter(new UdpConnectedServerTransmitter(udpSocket, from));
 
                         ICdpServerHandler serverHandler;
                         Int32 maxSendBeforeAck;
@@ -143,27 +142,27 @@ namespace Marler.NetworkTools
                         if (refuseConnection)
                         {
                             handler.Closed();
-                            server.ConnectionClosed(endPoint);
+                            server.ConnectionClosed(from);
                             throw new NotImplementedException("Refusing connection is not yet implemented");
                         }
 
                         if (serverHandler == null)
                         {
                             handler.Closed();
-                            server.ConnectionClosed(endPoint);
+                            server.ConnectionClosed(from);
                             throw new InvalidOperationException("You provided a null payload handler");
                         }
 
                         handler = new CdpServerDatagramHandler(transmitter, serverHandler, timeout);
-                        endPointToHandler.Add(endPoint, handler);
+                        endPointToHandler.Add(from, handler);
                     }
 
                     Boolean closeClient = handler.Datagram(maxDatagramBuffer, 0, bytesRead);
                     if (closeClient)
                     {
                         handler.Closed();
-                        server.ConnectionClosed(endPoint);
-                        endPointToHandler.Remove(endPoint);
+                        server.ConnectionClosed(from);
+                        endPointToHandler.Remove(from);
                     }
                 }
 
@@ -173,8 +172,34 @@ namespace Marler.NetworkTools
                 if (udpSocket != null) udpSocket.Close();
             }
         }
-
     }
+
+    public class CdpServerOverUdp
+    {
+        public readonly EndPoint endPoint;
+        public readonly Socket udpSocket;
+        public CdpServerOverUdp(EndPoint endPoint)
+        {
+            this.endPoint = endPoint;
+            this.udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+        }
+        public void Run(ICdpServer server, Byte[] maxDatagramBuffer, ICdpTimeout timeout)
+        {
+            Cdp.UdpServerLoop(server, udpSocket, endPoint, maxDatagramBuffer, timeout);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     /// <summary>
     /// Thrown if a halt packet is received without performing a gracefull halt
@@ -196,6 +221,7 @@ namespace Marler.NetworkTools
     }
     */
 
+    /*
     class Datagram
     {
         public readonly Byte[] datagram;
@@ -208,24 +234,44 @@ namespace Marler.NetworkTools
             this.length = length;
         }
     }
+    */
+
+
 
     struct CdpBufferPoolDatagram
     {
         public Byte[] datagram;
         public Int32 length;
+        /*
         public CdpBufferPoolDatagram(Byte[] datagram, Int32 length)
         {
             this.datagram = datagram;
             this.length = length;
         }
-
+        */
     }
+    struct CdpBufferPoolDatagramAndEndPoint
+    {
+        public EndPoint endPoint;
+        public Byte[] datagram;
+        public Int32 length;
+        /*
+        public CdpBufferPoolDatagram(EndPoint endPoint, Byte[] datagram, Int32 length)
+        {
+            this.endPoint = endPoint;
+            this.datagram = datagram;
+            this.length = length;
+        }
+        */
+    }
+
+
 
     class DatagramQueue
     {
         readonly Int32 extendLength;
 
-        CdpBufferPoolDatagram[] queue;
+        public CdpBufferPoolDatagram[] queue;
         Int32 queueCount;
 
         Int32 firstPayloadIDInQueue;
@@ -238,7 +284,10 @@ namespace Marler.NetworkTools
             this.queue = new CdpBufferPoolDatagram[initialCapacity];
             this.queueCount = 0;
         }
-
+        public Int32 PayloadIDToIndex(Int32 payloadID)
+        {
+            return payloadID - firstPayloadIDInQueue;
+        }
         public void QueueSend(Int32 payloadID, Byte[] datagram, Int32 length)
         {
             if(queue.Length <= queueCount)
@@ -265,7 +314,6 @@ namespace Marler.NetworkTools
                 queueCount++;
             }
         }
-
         public void EmptyAndFree()
         {
             for (int i = 0; i < queueCount; i++)
@@ -283,22 +331,22 @@ namespace Marler.NetworkTools
         public const Int32 QueueInitialCapacity = 0;
         public const Int32 QueueExtendLength = 1;
 
-        IDatagramTransmitter datagramTransmitter;
+        IConnectedDatagramTransmitter connectedDatagramTransmitter;
 
         Byte[] lastSendBufferRequested;
 
-        Int32 nextPayloadID;
+        internal Int32 nextPayloadID;
         
-        DatagramQueue datagramQueue;
+        readonly DatagramQueue datagramQueue;
         
         private readonly Byte[] headerBuffer;        
 
         private Int32 averageLatency; // Maybe this should be the max RTT of the last X packets
         private Int32 latencyMeasurementsInAverage;
 
-        public CdpTransmitter(IDatagramTransmitter datagramTransmitter)
+        public CdpTransmitter(IConnectedDatagramTransmitter connectedDatagramTransmitter)
         {
-            this.datagramTransmitter = datagramTransmitter;
+            this.connectedDatagramTransmitter = connectedDatagramTransmitter;
 
             this.lastSendBufferRequested = null;
 
@@ -311,7 +359,7 @@ namespace Marler.NetworkTools
             this.latencyMeasurementsInAverage = 0;
         }
 
-        public EndPoint RemoteEndPoint { get { return datagramTransmitter.RemoteEndPoint; } }
+        public EndPoint RemoteEndPoint { get { return connectedDatagramTransmitter.RemoteEndPoint; } }
         
         //
         // This method must be called to get a buffer before sending
@@ -334,14 +382,13 @@ namespace Marler.NetworkTools
 
         public void SendHearbeat()
         {
-            datagramTransmitter.Send(headerBuffer, 0, 0);
+            connectedDatagramTransmitter.Send(headerBuffer, 0, 0);
         }
 
         public void SendHaltNoPayload()
         {
             headerBuffer[0] = (Byte)CdpFlagValue.Halt << 4;
-            Console.WriteLine("Sending Halt...");
-            datagramTransmitter.Send(headerBuffer, 0, 1);
+            connectedDatagramTransmitter.Send(headerBuffer, 0, 1);
         }
 
         public void HandlerSendHeader(Byte flagValue, Int32 payloadID)
@@ -349,7 +396,7 @@ namespace Marler.NetworkTools
             headerBuffer[0] = (Byte)(         ((Byte)flagValue << 4)  |
                                       (0x0F & (      payloadID >> 8)) );
             headerBuffer[1] = (Byte) payloadID;
-            datagramTransmitter.Send(headerBuffer, 0, 2);
+            connectedDatagramTransmitter.Send(headerBuffer, 0, 2);
         }
 
         private Byte[] GetRequestedBuffer(Int32 offsetLimit)
@@ -370,13 +417,13 @@ namespace Marler.NetworkTools
 
             // Cdp Header
             bufferToSend[1] = ((Byte)CdpFlagValue.RandomPayload << 4);
-            datagramTransmitter.Send(bufferToSend, 1, offsetLimit);
+            connectedDatagramTransmitter.Send(bufferToSend, 1, offsetLimit);
             Cdp.BufferPool.FreeBuffer(bufferToSend);
         }
 
         public void ControllerSendPayloadNoAck(Int32 offsetLimit)
         {
-            // 1. Check for acks/resends/halts
+            // TODO: Check for acks/resends/halts
 
             Byte[] bufferToSend = GetRequestedBuffer(offsetLimit);
 
@@ -390,7 +437,7 @@ namespace Marler.NetworkTools
             // Queue the datagram (because there is no ack
             datagramQueue.QueueSend(payloadID, bufferToSend, offsetLimit);
 
-            datagramTransmitter.Send(bufferToSend, 0, offsetLimit);            
+            connectedDatagramTransmitter.Send(bufferToSend, 0, offsetLimit);            
         }
 
         public void ControllerSendPayloadWithAck(Int32 offsetLimit, ICdpTimeout timeout)
@@ -411,8 +458,8 @@ namespace Marler.NetworkTools
                 //
                 // Send the datagram
                 //
-                datagramTransmitter.Send(bufferToSend, 0, offsetLimit);
-                
+                connectedDatagramTransmitter.Send(bufferToSend, 0, offsetLimit);
+
                 Int64 stopwatchTicksAfterSend = Stopwatch.GetTimestamp();
 
                 Int32 timeoutMillis = timeout.WaitForAckInitialRetryTimeout(averageLatency);
@@ -422,19 +469,20 @@ namespace Marler.NetworkTools
 
                 Int32 retries = 0;
 
-                // Keep resending the datagram until a header is recevied
+                // Keep resending the datagram until a header is recevied or timeout is reached
                 while (true)
                 {
-                    Boolean receiveTimeout = datagramTransmitter.ReceiveHeaderBlocking(headerBuffer, 0, timeoutMillis);
+                    Console.WriteLine("Send Retry {0}", retries);
+                    Int32 bytesRead = connectedDatagramTransmitter.ReceiveBlocking(headerBuffer, 0, 2, timeoutMillis);
 
-                    if (receiveTimeout)
+                    if (bytesRead < 0)
                     {
                         Int32 elapsedMillis = (Stopwatch.GetTimestamp() - stopwatchTicksAfterSend).StopwatchTicksAsInt32Milliseconds();
                         timeoutMillis = timeout.WaitForAckRetryOrTimeout(retries, averageLatency, elapsedMillis, timeoutMillis);
                         if (timeoutMillis <= 0) throw new TimeoutException(String.Format("Timed out waiting for ack: {0} retries {1} milliseconds elapsed", retries, elapsedMillis));
 
                         // Retry sending the packet
-                        datagramTransmitter.Send(bufferToSend, 0, offsetLimit);
+                        connectedDatagramTransmitter.Send(bufferToSend, 0, offsetLimit);
                         retries++;
                         continue;
                     }
@@ -442,36 +490,64 @@ namespace Marler.NetworkTools
                     //
                     // Check the datagram
                     //
-                    Byte receivedFlagValue = (Byte)(headerBuffer[0] >> 4);
-                    Int32 receivedPayloadID = (0xF00 & (headerBuffer[0] << 8)) | (0xFF & headerBuffer[1]);
-                    if (receivedFlagValue == (Byte)CdpFlagValue.Ack)
+                    if (bytesRead == 0)
                     {
-                        if (receivedPayloadID == payloadID)
+                        // It's just a heart beat packet
+                    }
+                    else
+                    {
+                        Byte receivedFlagValue = (Byte)(headerBuffer[0] >> 4);
+                        Int32 receivedPayloadID = (0xF00 & (headerBuffer[0] << 8)) | (0xFF & headerBuffer[1]);
+                        if (receivedFlagValue == (Byte)CdpFlagValue.Ack)
                         {
-                            Console.WriteLine("[CdpDebug] Received ACK for payload id {0}", payloadID);
-                            break;
+                            if (receivedPayloadID == payloadID)
+                            {
+                                Console.WriteLine("[CdpDebug] Received ACK for payload id {0}", payloadID);
+                                break;
+                            }
+                            Console.WriteLine("[CdpDebug] Got an ack for an old payload id {0}?", receivedPayloadID);
+                        }
+                        else if (receivedFlagValue == (Byte)CdpFlagValue.Halt)
+                        {
+                            throw new CdpBadHaltException();
+                        }
+                        else if (receivedFlagValue == (Byte)CdpFlagValue.Resend)
+                        {
+                            if (receivedPayloadID <= payloadID)
+                            {
+                                Int32 index = datagramQueue.PayloadIDToIndex(receivedPayloadID);
+                                if (index >= 0)
+                                {
+                                    if (receivedPayloadID < payloadID)
+                                    {
+                                        do
+                                        {
+                                            Console.WriteLine("[Debug] Queue Index {0} Payload ID {1}", index, receivedPayloadID + index);
+                                            CdpBufferPoolDatagram datagram = datagramQueue.queue[index];
+                                            connectedDatagramTransmitter.Send(datagram.datagram, 0, datagram.length);
+                                            index++;
+                                        } while (receivedPayloadID + index < payloadID);
+                                    }
+                                    connectedDatagramTransmitter.Send(bufferToSend, 0, offsetLimit);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Unknown flag value {0} from '{1}' (Maybe I should throw an exception? TBD)",
+                                receivedFlagValue, connectedDatagramTransmitter.RemoteEndPoint);
+
                         }
                     }
-                    else if (receivedFlagValue == (Byte)CdpFlagValue.Halt)
+
+                    //
+                    // Get next timeout
+                    //
                     {
-                        throw new CdpBadHaltException();
+                        Int32 elapsedMillis = (Stopwatch.GetTimestamp() - stopwatchTicksAfterSend).StopwatchTicksAsInt32Milliseconds();
+                        timeoutMillis = timeout.WaitForAckRetryOrTimeout(retries, averageLatency, elapsedMillis, timeoutMillis);
+                        if (timeoutMillis <= 0) throw new TimeoutException(String.Format("Timed out waiting for ack: {0} retries {1} milliseconds elapsed", retries, elapsedMillis));
                     }
-                    else if (receivedFlagValue == (Byte)CdpFlagValue.Resend)
-                    {
-                        throw new NotImplementedException("Resend not  yet implemented");
-
-                        while (datagramTransmitter.DatagramAvailable)
-                        {
-                            // Check to see if the ack if present
-                        }
-
-                        Resend(payloadID);
-                    }
-
-                    Console.WriteLine("Unknown flag value {0} from '{1}' (Maybe I should ignore it instead of throwing an exception? TBD)",
-                        receivedFlagValue, datagramTransmitter.RemoteEndPoint);
-                    throw new NotImplementedException("Need to reinitialize timeout stuff");
-
                 }
 
                 datagramQueue.EmptyAndFree(); // free the queue because everything has been acked
@@ -481,16 +557,6 @@ namespace Marler.NetworkTools
                 Cdp.BufferPool.FreeBuffer(bufferToSend);
             }
         }
-
-
-        private void Resend(Int32 payloadID)
-        {
-            throw new NotImplementedException(); 
-        }
-
-
-
-
     }
 
 
@@ -504,7 +570,7 @@ namespace Marler.NetworkTools
         readonly ICdpServerHandler serverHandler;
         readonly ICdpTimeout timeout;
 
-        Int32 lastPayloadIDReceived;
+        //Int32 lastPayloadIDReceived;
 
         public CdpServerDatagramHandler(CdpTransmitter transmitter,
             ICdpServerHandler serverHandler, ICdpTimeout timeout)
@@ -513,7 +579,7 @@ namespace Marler.NetworkTools
             this.serverHandler = serverHandler;
             this.timeout = timeout;
 
-            this.lastPayloadIDReceived = Cdp.MaxPayloadID;
+            //this.lastPayloadIDReceived = Cdp.MaxPayloadID;
         }
         public void ServerStopped()
         {
@@ -577,26 +643,37 @@ namespace Marler.NetworkTools
 
                 while(true)
                 {
-                    Int32 payloadDiff = Cdp.PayloadDiff(payloadID, lastPayloadIDReceived);
-                    if(payloadDiff == 1) break;
+                    Int32 payloadDiff = Cdp.PayloadDiff(payloadID, transmitter.nextPayloadID);
+                    if(payloadDiff == 0) break;
 
-                    if (payloadDiff == 0 && payloadDiff > 0x8000)
+                    // Check if it's a resend
+                    if (payloadDiff == Cdp.MaxPayloadID)
+                    {
+                        if (flagValue < 4 && ((flagValue & (Byte)CdpFlagValueFlag.ImmediateAck) != 0))
+                        {
+                            Console.WriteLine("[CdpDebug] Got a resend of payload {0}. The payload requested an ACK but the ACK must have been lost.", payloadID);
+                            // Resend the ack
+                            transmitter.HandlerSendHeader((Byte)CdpFlagValue.Ack, payloadID);
+                        }
+                    }
+
+                    if (payloadDiff >= 0x800)
                     {
                         // The packet is a resend so ignore it
                         Console.WriteLine("[CdpDebug] Received resend of payload id {0}", payloadID);
                         return false;
                     }
 
-                    throw new NotImplementedException(String.Format("Received payload id of {0} but the diff is {1} so it is out of order. Out of order packets are not yet implemented",
-                        payloadID, payloadDiff));
+                    //throw new NotImplementedException(String.Format("Received payload id of {0} but the diff is {1} so it is out of order. Out of order packets are not yet implemented",
+                    //    payloadID, payloadDiff));
 
                     // Request a resend
-                    transmitter.HandlerSendHeader((Byte)CdpFlagValue.Resend, lastPayloadIDReceived + 1);
+                    transmitter.HandlerSendHeader((Byte)CdpFlagValue.Resend, transmitter.nextPayloadID);
                     return false;
                 }
 
                 // Update last payload id received
-                lastPayloadIDReceived = payloadID;
+                transmitter.nextPayloadID++;
 
                 //
                 // If it's not a close or halt with payload, send immediate ack if requested

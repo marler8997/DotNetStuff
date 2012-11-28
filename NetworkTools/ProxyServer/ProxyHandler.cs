@@ -42,12 +42,12 @@ namespace Marler.NetworkTools
                     switch (proxyState)
                     {
                         case ProxyState.Initial:
-                            if(readBuffer[offset] == Proxy.ProxyVersion4)
+                            if(readBuffer[offset] == SocksProxy.ProxyVersion4)
                             {
                                 offset++;
                                 proxyState = ProxyState.Version4;
                             }
-                            else if(readBuffer[offset] == Proxy.ProxyVersion5)
+                            else if (readBuffer[offset] == SocksProxy.ProxyVersion5)
                             {
                                 offset++;
                                 proxyState = ProxyState.Version5;

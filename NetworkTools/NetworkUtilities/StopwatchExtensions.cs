@@ -34,12 +34,6 @@ namespace Marler.NetworkTools
         {
             return Stopwatch.Frequency * (Int64)millis / 1000L;
         }
-        /*
-        public static Int64 TicksAsMicroseconds(this Stopwatch stopwatch)
-        {
-            return stopwatch.ElapsedTicks * 1000000L / Stopwatch.Frequency;
-        }
-        */
         public static Int64 StopwatchTicksAsMicroseconds(this Int64 stopwatchTicks)
         {
             return stopwatchTicks * 1000000L / Stopwatch.Frequency;

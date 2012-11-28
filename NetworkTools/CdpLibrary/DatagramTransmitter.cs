@@ -9,92 +9,33 @@ using System.Diagnostics;
 
 namespace Marler.NetworkTools
 {
-    public class UdpClientTransmitter : IDatagramTransmitter
+    public class UdpConnectedClientTransmitter : IConnectedDatagramTransmitter
     {
-        EndPoint localEndPoint, connectedRemoteEndPoint;
-        Socket udpSocket;
-        public UdpClientTransmitter()
+        readonly Socket udpSocket;
+        readonly SingleObjectList list;
+
+        public UdpConnectedClientTransmitter(EndPoint serverEndPoint)
         {
-            this.localEndPoint = null;
-            this.connectedRemoteEndPoint = null;
-            this.udpSocket = null;
-        }
-        public UdpClientTransmitter(Socket udpSocketAlreadyConnected)
-        {
-            this.udpSocket = udpSocketAlreadyConnected;
-            this.connectedRemoteEndPoint = udpSocket.RemoteEndPoint;
+            this.udpSocket = new Socket(serverEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            this.udpSocket.Connect(serverEndPoint);
+            this.list = new SingleObjectList();
         }
         public int MaximumDatagramSize
         {
             get { return 0xFFFF; }
         }
-        public EndPoint RemoteEndPoint
-        {
-            get
-            {
-                if (connectedRemoteEndPoint == null) throw new InvalidOperationException("This udp transmitter is not connected");
-                return connectedRemoteEndPoint;
-            }
-        }
+        public EndPoint LocalEndPoint { get { return udpSocket.LocalEndPoint; } }
+        public EndPoint RemoteEndPoint { get { return udpSocket.RemoteEndPoint; } }
         public Boolean DatagramAvailable
         {
             get { return udpSocket.Available > 0; }
         }
-        public void Bind(EndPoint localEndPoint)
-        {
-            if (connectedRemoteEndPoint != null) throw new InvalidOperationException("You cannot bind a udp transmitter that is already connected");
-            this.localEndPoint = localEndPoint;
-            if (this.udpSocket == null)
-            {
-                this.udpSocket = new Socket(localEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                this.udpSocket.DontFragment = true;
-            }
-            this.udpSocket.Bind(localEndPoint);
-        }
 
-        public void Connect(EndPoint remoteEndPoint)
-        {
-            if (connectedRemoteEndPoint != null) throw new InvalidOperationException("This udp transmitter is already connected");
-            if (this.udpSocket == null)
-            {
-                this.udpSocket = new Socket(remoteEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                this.udpSocket.DontFragment = true;
-            }
-            this.udpSocket.Connect(remoteEndPoint);
-            this.connectedRemoteEndPoint = remoteEndPoint;
-        }
         public void Send(byte[] datagram, int datagramOffset, int datagramLength)
         {
-            if (connectedRemoteEndPoint == null) throw new InvalidOperationException("This udp transmitter is not connected");
             this.udpSocket.Send(datagram, datagramOffset, datagramLength, SocketFlags.None);
         }
 
-        public Boolean ReceiveHeaderBlocking(byte[] buffer, int offset, int timeoutMillis)
-        {
-            if (connectedRemoteEndPoint == null) throw new InvalidOperationException("This udp transmitter is not connected");
-            if (udpSocket.Blocking == false) udpSocket.Blocking = true;
-
-            Int64 stopwatchTicks = Stopwatch.GetTimestamp();
-            Int32 nextReceiveTimeout = timeoutMillis;
-            while (true)
-            {
-                Int32 bytesRead = this.udpSocket.Receive(buffer, offset, 2, SocketFlags.None); // Use nextReceiveTimeout
-                if (bytesRead > 0) return false;
-                while (this.udpSocket.Available > 0)
-                {
-                    bytesRead = this.udpSocket.Receive(buffer, offset, 2, SocketFlags.None);
-                    if (bytesRead > 0) return false;
-                }
-
-                nextReceiveTimeout = timeoutMillis - (Stopwatch.GetTimestamp() - stopwatchTicks).StopwatchTicksAsInt32Milliseconds();
-                if (nextReceiveTimeout <= 0) return true; // Timeout
-            }
-
-        }
-        public int ReceiveHeaderBlocking(int timeoutMillis)
-        {
-            throw new NotImplementedException();
-        }
         public int ReceiveHeaderNonBlocking()
         {
             throw new NotImplementedException();
@@ -105,7 +46,7 @@ namespace Marler.NetworkTools
         //
         public int ReceiveNonBlocking(byte[] buffer, int offset, int maxLength)
         {
-            if (connectedRemoteEndPoint == null) throw new InvalidOperationException("This udp transmitter is not connected");
+            if (udpSocket.Available <= 0) return -1;
             if (udpSocket.Blocking == true) udpSocket.Blocking = false;
             return this.udpSocket.Receive(buffer, offset, maxLength, SocketFlags.None);
         }
@@ -114,23 +55,44 @@ namespace Marler.NetworkTools
         //
         public int ReceiveBlocking(byte[] buffer, int offset, int maxLength, int timeoutMillis)
         {
-            if (connectedRemoteEndPoint == null) throw new InvalidOperationException("This udp transmitter is not connected");
-            if (udpSocket.Blocking == false) udpSocket.Blocking = true;
-            return this.udpSocket.Receive(buffer, offset, maxLength, SocketFlags.None);
+            /*
+            if (udpSocket.Blocking == false)
+            {
+                Console.WriteLine("[UdpDebug] UdpSocket was not blocking but now it should be");
+                udpSocket.Blocking = true;
+            }
+            */
+            if (timeoutMillis <= 0)
+            {
+                this.udpSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, 0);
+                if (udpSocket.Blocking == false)
+                {
+                    Console.WriteLine("[UdpDebug] UdpSocket was not blocking but now it should be");
+                    udpSocket.Blocking = true;
+                }
+                return this.udpSocket.Receive(buffer, offset, offset + maxLength, SocketFlags.None);
+            }
+
+            list.obj = udpSocket;
+            Socket.Select(list, null, null, timeoutMillis * 1000);
+            if (list.obj == null) return -1; // Timeout
+
+            Int32 bytesRead = this.udpSocket.Receive(buffer, offset, offset + maxLength, SocketFlags.None);
+            if (bytesRead < 0) return -1; // This should never happen
+            return bytesRead;
         }
         public void Dispose()
         {
-            this.connectedRemoteEndPoint = null;
-            this.localEndPoint = null;
-            Socket udpSocket = this.udpSocket;
             if (udpSocket != null) udpSocket.Close();
         }
     }
-    public class UdpServerTransmitter : IDatagramTransmitter
+
+
+    public class UdpConnectedServerTransmitter : IConnectedDatagramTransmitter
     {
         readonly EndPoint remoteEndPoint;
         readonly Socket udpSocket;
-        public UdpServerTransmitter(Socket udpSocket, EndPoint remoteEndPoint)
+        public UdpConnectedServerTransmitter(Socket udpSocket, EndPoint remoteEndPoint)
         {
             if (udpSocket == null || remoteEndPoint == null)
                 throw new ArgumentNullException();
@@ -147,13 +109,8 @@ namespace Marler.NetworkTools
         {
             get { return 0xFFFF; }
         }
-        public EndPoint RemoteEndPoint
-        {
-            get
-            {
-                return remoteEndPoint;
-            }
-        }
+        public EndPoint LocalEndPoint { get { return udpSocket.LocalEndPoint; } }
+        public EndPoint RemoteEndPoint { get { return remoteEndPoint; } }
 
         public void Send(Byte[] data, Int32 offset, Int32 length)
         {
@@ -165,7 +122,7 @@ namespace Marler.NetworkTools
         {
             throw new NotImplementedException();
         }
-        public bool ReceiveHeaderBlocking(byte[] buffer, int offset, int timeoutMillis)
+        public Int32 ReceiveHeaderBlocking(byte[] buffer, int offset, int timeoutMillis)
         {
             throw new NotImplementedException();
         }
@@ -184,40 +141,101 @@ namespace Marler.NetworkTools
     }
 
 
-    /*
-    public class SharedDatagramTransmitter : IDatagramTransmitter
-    {
-        readonly Dictionary<EndPoint, IDatagramTransmitter> endPointToTransmitter;
-        readonly List<EndPoint> endPointList;
 
-        public SharedDatagramTransmitter()
+
+    /*
+    class DatagramAndEndPointQueue
+    {
+        readonly Int32 extendLength;
+
+        CdpBufferPoolDatagramAndEndPoint[] queue;
+        Int32 queueCount;
+
+        Int32 firstPayloadIDInQueue;
+
+        public DatagramAndEndPointQueue(Int32 initialCapacity, Int32 extendLength)
         {
-            this.endPointToTransmitter = new Dictionary<EndPoint, IDatagramTransmitter>();
-            this.endPointList = new List<EndPoint>();
+            //if(extendLength < 1) throw new ArgumentOutOfRangeException();
+            this.extendLength = extendLength;
+
+            this.queue = new CdpBufferPoolDatagramAndEndPoint[initialCapacity];
+            this.queueCount = 0;
         }
 
-        public IDatagramTransmitter NewTransmitter(EndPoint remoteEndPoint, ITransmitterFactory factory)
+        public void QueueSend(Int32 payloadID, Byte[] datagram, Int32 length)
         {
-            IDatagramTransmitter transmitter = factory.Create(remoteEndPoint);
-            if (!endPointToTransmitter.ContainsKey(remoteEndPoint))
+            if (queue.Length <= queueCount)
             {
-                endPointList.Add(remoteEndPoint);
-                endPointToTransmitter.Add(remoteEndPoint, transmitter);
+                CdpBufferPoolDatagramAndEndPoint[] newQueue = new CdpBufferPoolDatagramAndEndPoint[queue.Length + extendLength];
+                Array.Copy(queue, newQueue, queue.Length);
+                queue = newQueue;
+            }
+
+            if (queueCount <= 0)
+            {
+                queue[0].datagram = datagram;
+                queue[0].length = length;
+                queueCount = 1;
+                firstPayloadIDInQueue = payloadID;
             }
             else
             {
-                endPointToTransmitter[remoteEndPoint] = transmitter;
+                if (payloadID != firstPayloadIDInQueue + queueCount) throw new InvalidOperationException(
+                     String.Format("You queued datagram with payload ID '{0}' but the queue has {1} datagram(s) and the first payload id in the queue is {2}",
+                     payloadID, queueCount, firstPayloadIDInQueue));
+                queue[queueCount].datagram = datagram;
+                queue[queueCount].length = length;
+                queueCount++;
             }
-            return transmitter;
+        }
+
+        public void EmptyAndFree()
+        {
+            for (int i = 0; i < queueCount; i++)
+            {
+                Cdp.BufferPool.FreeBuffer(queue[i].datagram);
+                queue[i].datagram = null; // get rid of the reference
+            }
+            queueCount = 0;
         }
     }
+
+    public class UdpServerSocket
+    {
+        readonly IUnroutedDatagramTransmitter unroutedTransmitter;
+        readonly Int32 maximumReceiveDatagram;
+
+        readonly DatagramQueue datagramQueue;
+        
+        readonly Dictionary<EndPoint, CdpServerDatagramHandler> endPointToHandler;
+
+        public UdpServerSocket(IUnroutedDatagramTransmitter unroutedTransmitter, Int32 maximumReceiveDatagram)
+        {
+            this.unroutedTransmitter = unroutedTransmitter;
+            this.maximumReceiveDatagram = maximumReceiveDatagram;
+
+            this.datagramQueue = new DatagramQueue(0, 1); // TODO: change this
+
+            this.endPointToHandler = new Dictionary<EndPoint, CdpServerDatagramHandler>();
+        }
+        void ReceiveNonBlockingFrom(EndPoint endPoint, Byte[] buffer, Int32 offset, Int32 maxLength)
+        {
+            while (unroutedTransmitter.DatagramAvailable)
+            {
+                //Int32 bytesRead = unroutedTransmitter.ReceiveNonBlocking(buffer, offset, maxLength);
+
+            }
+        }
+    }
+
+
     */
 
 
 
 
 
-    public class VirtualDatagramTransmitter : IDatagramTransmitter
+    public class VirtualDatagramTransmitter : IConnectedDatagramTransmitter
     {
         public Int32 DefaultInitialCapacity = 1024;
 
@@ -246,19 +264,9 @@ namespace Marler.NetworkTools
             this.otherTransmitter = otherTransmitter;
             this.sendQueue = new Queue<Datagram>();
         }
-        public int MaximumDatagramSize {get { return 0xFFFF; }}
-        public EndPoint RemoteEndPoint
-        {
-            get { return null; }
-        }
-        public void Bind(EndPoint localEndPoint)
-        {
-            throw new NotSupportedException();
-        }
-        public void Connect(EndPoint remoteEndPoint)
-        {
-            throw new NotSupportedException();
-        }
+        public int MaximumDatagramSize { get { return 0xFFFF; } }
+        public EndPoint LocalEndPoint { get { return null; } }
+        public EndPoint RemoteEndPoint { get { return null; } }
         public void Send(Byte[] data, Int32 offset, Int32 length)
         {
             Byte[] sendBytes = Cdp.BufferPool.GetBuffer(length);
@@ -292,6 +300,7 @@ namespace Marler.NetworkTools
             Array.Copy(datagram.array, 0, buffer, offset, datagram.length);
             return datagram.length;
         }
+
         public Int32 ReceiveBlocking(Byte[] buffer, Int32 offset, Int32 maxLength, Int32 timeoutMillis)
         {
             Datagram datagram = null;
@@ -306,7 +315,11 @@ namespace Marler.NetworkTools
                     }
                     Console.WriteLine("[Debug] Monitor.wait on other transmitter's send queue");
                     Boolean lockAcquired = Monitor.Wait(otherTransmitter.sendQueue, timeoutMillis);
-                    if (!lockAcquired) throw new TimeoutException(String.Format("ReceiveBlocking timed out (timeout is {0} milliseconds)", timeoutMillis));
+                    if (!lockAcquired)
+                    {
+                        Console.WriteLine("[Debug] ReceiveBlocking timed out (timeout is {0} milliseconds)", timeoutMillis);
+                        return -1;
+                    }
                     Console.WriteLine("[Debug] LockAcquired = {0}", lockAcquired);
                 }
             }
@@ -370,113 +383,152 @@ namespace Marler.NetworkTools
             throw new NotImplementedException();
         }
 
-        public int ReceiveHeaderBlocking(int timeoutMillis)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
-        #region IDatagramTransmitter Members
-
-
-        public bool ReceiveHeaderBlocking(byte[] buffer, int offset, int timeoutMillis)
-        {
-            throw new NotImplementedException();
-        }
-
         #endregion
     }
 
-    public class ClumsyTransmitter : IDatagramTransmitter
+    public class ClumsyTransmitter : IConnectedDatagramTransmitter
     {
-        readonly IDatagramTransmitter underlyingTransmitter;
+        readonly IConnectedDatagramTransmitter underlyingTransmitter;
         readonly TextWriter debugLog;
-        Int64 dropSentDatagramsUntil;
 
-        public ClumsyTransmitter(IDatagramTransmitter underlyingTransmitter, TextWriter debugLog)
+        Int64 dropSentDatagramsUntil;
+        Int64 dropReceivedDatagramsUntil;
+
+        readonly Byte[] receiveBuffer;
+
+        public ClumsyTransmitter(IConnectedDatagramTransmitter underlyingTransmitter, TextWriter debugLog)
         {
             this.underlyingTransmitter = underlyingTransmitter;
             this.debugLog = debugLog;
+
             this.dropSentDatagramsUntil = 0;
+            this.dropReceivedDatagramsUntil = 0;
+
+            this.receiveBuffer = new Byte[underlyingTransmitter.MaximumDatagramSize];
         }
+        public EndPoint LocalEndPoint { get { return underlyingTransmitter.LocalEndPoint; } }
+        public EndPoint RemoteEndPoint { get { return underlyingTransmitter.RemoteEndPoint; } }
         public void DropAllSentDatagramsForTheNext(Int32 millis)
         {
             dropSentDatagramsUntil = Stopwatch.GetTimestamp() + millis.MillisToStopwatchTicks();
         }
+        Boolean DropSend()
+        {
+            Int64 now = Stopwatch.GetTimestamp();
+            if (now <= dropSentDatagramsUntil)
+            {
+                if (debugLog != null) debugLog.WriteLine("[ClumsyTransmitter] Send packet dropped. Will drop for another {1} millisecond(s)",
+                     (dropSentDatagramsUntil - now).StopwatchTicksAsInt64Milliseconds());
+                return true;
+            }
+            return false;
+        }
+        public void DropAllReceivedDatagramsForTheNext(Int32 millis)
+        {
+            dropReceivedDatagramsUntil = Stopwatch.GetTimestamp() + millis.MillisToStopwatchTicks();
+        }
+        Boolean DropReceive()
+        {
+            return (Stopwatch.GetTimestamp() <= dropSentDatagramsUntil);
+        }
+        void DropAllAvailableDatagrams()
+        {
+            Int32 droppedDatagrams = 0;
+            while (underlyingTransmitter.DatagramAvailable)
+            {
+                Int32 length = underlyingTransmitter.ReceiveNonBlocking(receiveBuffer, 0, receiveBuffer.Length);
+                if (length < 0) throw new InvalidOperationException(String.Format(
+                    "Underlying transmitter said datagram was available but  ReceiveNoBlocking returned {0}", length));
+
+                if (debugLog != null) debugLog.WriteLine("[ClumsyTransmitter] Receive datagram dropped (length={0}).", length);
+                droppedDatagrams++;
+            }
+            if (droppedDatagrams > 1)
+            {
+                if (debugLog != null) debugLog.WriteLine("[ClumsyTransmitter] Dropped {0} datagrams.", droppedDatagrams);
+            }
+        }
+
         public int MaximumDatagramSize
         {
             get { return underlyingTransmitter.MaximumDatagramSize; }
         }
-        public EndPoint RemoteEndPoint
-        {
-            get { return underlyingTransmitter.RemoteEndPoint; }
-        }
-        /*
-        public void Bind(EndPoint localEndPoint)
-        {
-            underlyingTransmitter.Bind(localEndPoint);
-        }
-        public void Connect(EndPoint remoteEndPoint)
-        {
-            underlyingTransmitter.Connect(remoteEndPoint);
-        }
-        */
+
         public void Send(byte[] data, int offset, int length)
         {
             Int64 now = Stopwatch.GetTimestamp();
-            if(now <= dropSentDatagramsUntil)
+            if (now <= dropSentDatagramsUntil)
             {
-                if(debugLog != null) debugLog.WriteLine("[ClumsyTransmitter] Send packet dropped (length={0}).  Will drop for another {1} milliseconds",
-                    length, (dropSentDatagramsUntil - now).StopwatchTicksAsInt64Milliseconds());
+                if (debugLog != null) debugLog.WriteLine("[ClumsyTransmitter] Send packet dropped (length={0}).  Will drop for another {1} milliseconds",
+                     length, (dropSentDatagramsUntil - now).StopwatchTicksAsInt64Milliseconds());
             }
             else
             {
-                Console.WriteLine("Sent");
                 underlyingTransmitter.Send(data, offset, length);
             }
         }
+        public Boolean DatagramAvailable
+        {
+            get
+            {
+                Boolean available = underlyingTransmitter.DatagramAvailable;
+                if (available && DropReceive())
+                {
+                    DropAllAvailableDatagrams();
+                    return false;
+                }
+
+                return available;
+            }
+        }
+        public int ReceiveHeaderNonBlocking()
+        {
+            if (DropReceive())
+            {
+                DropAllAvailableDatagrams();
+                return -1;
+            }
+
+            return underlyingTransmitter.ReceiveHeaderNonBlocking();
+        }
         public int ReceiveNonBlocking(byte[] buffer, int offset, int maxLength)
         {
+            if (DropReceive())
+            {
+                DropAllAvailableDatagrams();
+                return -1;
+            }
+
             return underlyingTransmitter.ReceiveNonBlocking(buffer, offset, maxLength);
         }
         public int ReceiveBlocking(byte[] buffer, int offset, int maxLength, int timeoutMillis)
         {
+            Int64 diffStopwatchTicks = dropReceivedDatagramsUntil - Stopwatch.GetTimestamp();
+            if (diffStopwatchTicks > 0)
+            {
+                Int32 waitTimeMillis = diffStopwatchTicks.StopwatchTicksAsInt32Milliseconds();
+                DropAllAvailableDatagrams();
+
+                if (timeoutMillis < waitTimeMillis)
+                {
+                    Console.WriteLine("[ClumsyTransmitter] Dropping all packets (timeout {0}) drop time {1} is larger than timeout", timeoutMillis, waitTimeMillis);
+                    Thread.Sleep(timeoutMillis);
+                    DropAllAvailableDatagrams();
+                    return -1;
+                }
+
+                if (debugLog != null)
+                    debugLog.WriteLine("[ClumsyTransmitter] Sleeping for {0} milliseconds until clumsy transmitter can receive again", waitTimeMillis);
+                Thread.Sleep(waitTimeMillis);
+                timeoutMillis -= waitTimeMillis;
+                Console.WriteLine("[ClumsyTransmitter] Old Timeout {0} New Timeout After Drop {1}", timeoutMillis + waitTimeMillis, timeoutMillis);
+            }
+
             return underlyingTransmitter.ReceiveBlocking(buffer, offset, maxLength, timeoutMillis);
         }
         public void Dispose()
         {
-            throw new NotImplementedException();
+            underlyingTransmitter.Dispose();
         }
-
-        #region IDatagramTransmitter Members
-
-
-        public Boolean DatagramAvailable
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public int ReceiveHeaderNonBlocking()
-        {
-            throw new NotImplementedException();
-        }
-
-        public int ReceiveHeaderBlocking(int timeoutMillis)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
-
-        #region IDatagramTransmitter Members
-
-
-        public bool ReceiveHeaderBlocking(byte[] buffer, int offset, int timeoutMillis)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
     }
 }

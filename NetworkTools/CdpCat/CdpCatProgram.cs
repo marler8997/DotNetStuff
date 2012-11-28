@@ -30,80 +30,86 @@ namespace Marler.NetworkTools
             {
                 IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any, optionsParser.listenPort.ArgValue);
                 MyCdpServer cdpServer = new MyCdpServer();
-                Cdp.UdpServerLoop(localEndPoint, new Byte[optionsParser.maxPayload.ArgValue], cdpServer, timeout);
+                Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                Cdp.UdpServerLoop(cdpServer, udpSocket, localEndPoint, new Byte[optionsParser.maxPayload.ArgValue], timeout);
                 return -1;
             }
-
-            if (nonOptionArgs.Count < 2)
+            else
             {
-                Console.WriteLine("Missing command line arguments");
-                optionsParser.PrintUsage();
-                return -1;
+
+                if (nonOptionArgs.Count < 2)
+                {
+                    Console.WriteLine("Missing command line arguments");
+                    optionsParser.PrintUsage();
+                    return -1;
+                }
+
+                IPAddress address = DnsEndPoint.ParseIPOrResolveHost(nonOptionArgs[0]);
+                UInt16 port = UInt16.Parse(nonOptionArgs[1]);
+
+                UdpConnectedClientTransmitter udpTransmitter = new UdpConnectedClientTransmitter(new IPEndPoint(address, port));
+                CdpTransmitter transmitter = new CdpTransmitter(udpTransmitter);
+
+
+
+
+                Int32 offset;
+                Byte[] myMessage;
+                Byte[] payloadBuffer;
+
+
+
+                transmitter.SendHearbeat();
+
+
+
+                myMessage = Encoding.UTF8.GetBytes("This should be a random payload");
+
+                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
+                offset += myMessage.Length;
+                transmitter.ControllerSendRandomPayload(offset);
+
+
+
+
+                myMessage = Encoding.UTF8.GetBytes("This should be the first payload with no immediate ack");
+
+                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
+                offset += myMessage.Length;
+                transmitter.ControllerSendPayloadNoAck(offset);
+
+                myMessage = Encoding.UTF8.GetBytes("This should be the second payload with no immediate ack");
+
+                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
+                offset += myMessage.Length;
+                transmitter.ControllerSendPayloadNoAck(offset);
+
+
+
+
+
+
+                //
+                // Send and wait for ack
+                //
+                myMessage = Encoding.UTF8.GetBytes("This should be a normal payload with an immediate ack");
+
+                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
+                offset += myMessage.Length;
+                transmitter.ControllerSendPayloadWithAck(offset, timeout);
+
+
+
+
+                transmitter.SendHaltNoPayload();
+
+
+                return 0;
             }
-
-            IPAddress address = DnsEndPoint.ParseIPOrResolveHost(nonOptionArgs[0]);
-            UInt16 port = UInt16.Parse(nonOptionArgs[1]);
-
-            Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            udpSocket.Connect(new IPEndPoint(address, port));
-            CdpTransmitter transmitter = new CdpTransmitter(new UdpClientTransmitter(udpSocket));
-
-
-
-            transmitter.SendHearbeat();
-
-
-            Int32 offset;
-            Byte[] myMessage;
-            Byte[] payloadBuffer;
-
-
-            myMessage = Encoding.UTF8.GetBytes("This should be a random payload");
-            
-            payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
-            Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-            offset += myMessage.Length;
-            transmitter.ControllerSendRandomPayload(offset);
-
-
-
-
-            myMessage = Encoding.UTF8.GetBytes("This should be the first payload with no immediate ack");
-
-            payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
-            Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-            offset += myMessage.Length;
-            transmitter.ControllerSendPayloadNoAck(offset);
-
-            myMessage = Encoding.UTF8.GetBytes("This should be the second payload with no immediate ack");
-
-            payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
-            Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-            offset += myMessage.Length;
-            transmitter.ControllerSendPayloadNoAck(offset);
-
-
-
-
-
-
-            //
-            // Send and wait for ack
-            //
-            myMessage = Encoding.UTF8.GetBytes("This should be a normal payload with an immediate ack");
-
-            payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
-            Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-            offset += myMessage.Length;
-            transmitter.ControllerSendPayloadWithAck(offset, timeout);
-
-
-
-
-            transmitter.SendHaltNoPayload();
-
-
-            return 0;
         }
     }
 

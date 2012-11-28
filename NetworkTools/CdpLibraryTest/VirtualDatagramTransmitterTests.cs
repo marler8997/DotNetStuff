@@ -73,19 +73,18 @@ namespace Marler.NetworkTools
         {
             Cdp.TryStaticInit(Cdp.MaxPayloadWithIDOverUdp);
 
-            Int32 sendLength = 32;
-
             VirtualDatagramTransmitter transmitter = new VirtualDatagramTransmitter();
             transmitter.Print(Console.Out);
-            
+
+            Int32 sendLength = 32;
             Byte[] sendBuffer = new Byte[sendLength];
             for(int i = 0; i < sendLength; i++)
             {
                 sendBuffer[i] = (Byte)i;
-            }
-
-            
+            }           
             byte[] receiveBuffer = new byte[sendLength];
+
+
             ReceiveThread receiver = new ReceiveThread("Receiver", transmitter.otherTransmitter, 0, receiveBuffer);
 
             Int64 startTicks = Stopwatch.GetTimestamp();

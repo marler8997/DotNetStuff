@@ -283,8 +283,8 @@ namespace Marler.NetworkTools
         }
         public CdpController(IDatagramTransmitter transmitter, Boolean haveControl, Int32 maxSendBeforeAck)
         {
-            if (maxSendBeforeAck >= 0x8000)
-                throw new ArgumentOutOfRangeException(String.Format("MaxSendBeforeAck must be less than 0x8000 but you gave {0}", maxSendBeforeAck));
+            if (maxSendBeforeAck >= 0x800)
+                throw new ArgumentOutOfRangeException(String.Format("MaxSendBeforeAck must be less than 0x800 but you gave {0}", maxSendBeforeAck));
 
             this.transmitter = transmitter;
 

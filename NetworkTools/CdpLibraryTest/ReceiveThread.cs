@@ -13,10 +13,10 @@ namespace Marler.NetworkTools
         public readonly String name;
         public readonly Int32 timeoutMillis;
         public readonly Byte[] receiveBuffer;
-        readonly IDatagramTransmitter receiveTransmitter;
+        readonly IConnectedDatagramTransmitter receiveTransmitter;
 
         Int64 stopwatchStartTicks;
-        public ReceiveThread(String name, IDatagramTransmitter receiveTransmitter, Int32 timeoutMillis, byte[] receiveBuffer)
+        public ReceiveThread(String name, IConnectedDatagramTransmitter receiveTransmitter, Int32 timeoutMillis, byte[] receiveBuffer)
         {
             this.name = name;
             this.timeoutMillis = timeoutMillis;

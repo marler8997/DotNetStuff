@@ -92,16 +92,16 @@ namespace Marler.NetworkTools
             Console.WriteLine("[Found Tunnel '{0}' that matches New Client {1} and Queued Client {2}]",
                 tunnel, newConnection, matchedConnection);
             
-            ConnectionMessageLogger connectionMessageLogger = new ConnectionMessageLoggerSingleLog(
+            ConnectionMessageLogger messageLogger = new ConnectionMessageLoggerSingleLog(
                 new ConsoleMessageLogger("Tunnel"), String.Format("{0} to {1}", newConnection.endPointName, matchedConnection.endPointName),
                 String.Format("{0} to {1}", matchedConnection.endPointName, newConnection.endPointName));
 
-            IConnectionDataLogger connectionDataLogger = new ConnectionDataLoggerSingleLog(ConsoleDataLogger.Instance,
+            IConnectionDataLogger dataLogger = new ConnectionDataLoggerSingleLog(ConsoleDataLogger.Instance,
                 newConnection.endPointName, matchedConnection.endPointName);
 
-            SocketTunnel socketTunnel = new SocketTunnel(connectionMessageLogger, connectionDataLogger,
-                newConnection.socket, matchedConnection.socket, readBufferSize);
-            socketTunnel.Start();
+            TwoWaySocketTunnel socketTunnel = new TwoWaySocketTunnel(null,
+                newConnection.socket, matchedConnection.socket, readBufferSize, messageLogger, dataLogger);
+            new Thread(socketTunnel.StartOneAndRunOne).Start();
         }
 
         private class ServerServerListenThread

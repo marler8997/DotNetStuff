@@ -7,13 +7,13 @@ using System.Net.Sockets;
 
 namespace Marler.NetworkTools
 {
-    public interface SocketTunnelCallback
+    public interface OneWaySocketTunnelCallback
     {
-        void TunnelClosed(SocketTunnelThread tunnel);
+        void TunnelClosed(OneWaySocketTunnel tunnel);
     }
-    public class SocketTunnelThread
+    public class OneWaySocketTunnel
     {
-        public readonly SocketTunnelCallback callback;
+        public readonly OneWaySocketTunnelCallback callback;
         public readonly Socket inputSocket, outputSocket;
         public readonly Int32 readBufferSize;
 
@@ -22,7 +22,8 @@ namespace Marler.NetworkTools
 
         private Boolean keepRunning;
 
-        public SocketTunnelThread(SocketTunnelCallback callback, Socket inputSocket, Socket outputSocket, Int32 readBufferSize,
+        public OneWaySocketTunnel(OneWaySocketTunnelCallback callback,
+            Socket inputSocket, Socket outputSocket, Int32 readBufferSize,
             MessageLogger messageLogger, IDataLogger dataLogger)
         {
             this.callback = callback;
@@ -40,7 +41,7 @@ namespace Marler.NetworkTools
         {
             this.keepRunning = true;
         }
-        private void Run()
+        public void Run()
         {
             try
             {
@@ -82,6 +83,98 @@ namespace Marler.NetworkTools
             }
         }
     }
+
+
+    public interface TwoWaySocketTunnelCallback
+    {
+        void TunnelClosed(TwoWaySocketTunnel tunnel);
+    }
+    public class TwoWaySocketTunnel : OneWaySocketTunnelCallback
+    {
+        public const Int32 DefaultBufferSize = 1024;
+
+        private readonly TwoWaySocketTunnelCallback callback;
+        private readonly Socket socketA, socketB;
+        private readonly OneWaySocketTunnel tunnelAToB, tunnelBToA;
+        private Boolean tunnelClosed;
+
+        private readonly ConnectionMessageLogger messageLogger;
+        private readonly IConnectionDataLogger dataLogger;
+
+        public TwoWaySocketTunnel(TwoWaySocketTunnelCallback callback,
+            Socket socketA, Socket socketB, Int32 readBufferSize,
+            ConnectionMessageLogger messageLogger, IConnectionDataLogger dataLogger)
+        {
+            if (messageLogger == null) throw new ArgumentNullException("messageLogger");
+            if (dataLogger == null) throw new ArgumentNullException("dataLogger");
+
+            if (socketA == null) throw new ArgumentNullException("socketA");
+            if (socketB == null) throw new ArgumentNullException("socketB");
+
+            this.messageLogger = messageLogger;
+            this.dataLogger = dataLogger;
+
+            this.socketA = socketA;
+            this.socketB = socketB;
+
+            //this.messageLoggerName = (connectionMessageLogger. == null) ? String.Empty : messageLogger.name;
+
+            this.tunnelAToB = new OneWaySocketTunnel(this, socketA, socketB, readBufferSize,
+                messageLogger.AToBMessageLogger, dataLogger.AToBDataLogger);
+            this.tunnelBToA = new OneWaySocketTunnel(this, socketB, socketA, readBufferSize,
+                messageLogger.BToAMessageLogger, dataLogger.BToADataLogger);
+            this.tunnelClosed = false;
+        }
+        public void StartOneAndRunOne()
+        {
+            tunnelAToB.RunPrepare();
+            tunnelBToA.RunPrepare();
+
+            new Thread(tunnelAToB.Run).Start();
+            tunnelBToA.Run();
+        }
+        void OneWaySocketTunnelCallback.TunnelClosed(OneWaySocketTunnel tunnel)
+        {
+            if (!tunnelClosed)
+            {
+                lock (this)
+                {
+                    if (tunnelClosed) return;
+                    tunnelClosed = true;
+                }
+
+                try
+                {
+
+                    if (socketA.Connected) try
+                        {
+                            messageLogger.LogAToB("socketA.Shutdown");
+                            socketA.Shutdown(SocketShutdown.Both);
+                        }
+                        catch (SocketException se) { messageLogger.Log("SocketException in socketA.Shutdown: {0}", se.Message); }
+                        catch (ObjectDisposedException ode) { messageLogger.Log("ObjectDisposedException in socketA.Shutdown: {0}", ode.Message); }
+
+                    if (socketB.Connected) try
+                        {
+                            messageLogger.LogBToA("socketB.Shutdown");
+                            socketB.Shutdown(SocketShutdown.Both);
+                        }
+                        catch (SocketException se) { messageLogger.Log("SocketException in socketB.Shutdown: {0}", se.Message); }
+                        catch (ObjectDisposedException ode) { messageLogger.Log("ObjectDisposedException in socketB.Shutdown: {0}", ode.Message); }
+                }
+                finally
+                {
+                    try { socketA.Close(); } catch(IOException e) { }
+                    try { socketB.Close(); } catch(IOException e) { }
+                    if(callback != null) callback.TunnelClosed(this);
+                }
+            }
+        }
+    }
+
+
+
+
     /*
     public class SocketTunnel
     {

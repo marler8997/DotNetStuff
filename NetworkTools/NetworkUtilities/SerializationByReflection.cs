@@ -44,46 +44,6 @@ namespace Marler.NetworkTools
         public String ToNiceSmallString(ISerializableData instance)                    { return "<void>"; }
         public void ToNiceString(ISerializableData instance, StringBuilder builder)    { builder.Append("<void"); }
     }
-
-
-    /*
-    public class SingleReflectorSerializer : ISerializableData
-    {
-        protected readonly ISerializableReflector serializer;
-        protected SingleReflectorSerializer(ISerializableReflector serializer)
-        {
-            this.serializer = serializer;
-        }
-        public Int32 GetFixedSerializationLength()
-        {
-            return serializer.GetFixedSerializationLength();
-        }
-        public int SerializationLength()
-        {
-            return serializer.SerializationLength(this);
-        }
-        public int Serialize(byte[] array, int offset)
-        {
-            return serializer.Serialize(this, array, offset);
-        }
-        public int Deserialize(byte[] array, int offset, int maxOffset)
-        {
-            return serializer.Deserialize(this, array, offset, maxOffset);
-        }
-        public String ToNiceString()
-        {
-            return serializer.ToNiceString(this);
-        }
-        public void ToNiceString(StringBuilder builder)
-        {
-            serializer.ToNiceString(this, builder);
-        }
-        public String ToNiceSmallString()
-        {
-            return serializer.ToNiceSmallString(this);
-        }
-    }
-    */
     public class ObjectReflectorSerializer : ISerializableData
     {
         protected readonly ISerializableReflector[] serializers;

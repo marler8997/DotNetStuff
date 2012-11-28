@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.Threading;
+using System.IO;
 
 namespace Marler.NetworkTools
 {
