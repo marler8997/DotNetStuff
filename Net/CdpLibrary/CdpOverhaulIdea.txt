@@ -1,0 +1,250 @@
+﻿
+
+
+Right now cdp handles multiple things that may be able to be broken up into multiple protocols.
+
+
+I think the packetization protocols and the controller/handler protocols should be separated.
+
+
+Features:
+	1. Verification: Ability for the sender to verify that its payloads are received.
+	2. ResendNegotiation: Ability to negotiate the resending of lost payloads.
+	2. Sequencing: Ability to reorder received payloads in the order given by the sender.
+	3. Packetization: Ability to break a large block of data into smaller blocks to be transmitted, and then ensuring the reconstruction of the original large data block on the receiving end
+		Requires: Sequencing
+	4. ReversePacketization: Ability to combine multiple blocks of data to be transmitted, and then reconstructing the original data block boundaries.
+	
+
+Let's talk about the controller/handler protocol:
+
+The controller handler protocol is a way of facillitating a "half-duplex" connection froma full-duplex.
+At any time, the controller may 
+1
+
+
+Conversations/exchanges of information can be broken down to different types.
+This protocol requires the application to tell the lower layer which types they would like which allows the lower layer to make optimizations that it otherwise wouldn't be able to.
+
+
+A Cdp conversation always has 2 end points, the "Controller" and the "Handler".
+
+Every piece of information transferred is part of an "exchange".
+Only the controller can initiate an exchange.
+
+Rule: the controller will always have 1 of two reasons to initiate an exchange, it is either a result of a previous exchange or a result of
+an asynchronous event like a user action, another process requests it, or something unrelated to the conversation itself.
+
+
+The Controller can be in any one of the following states:
+	1. Waiting for asynchronous event
+	2. 
+
+
+
+=================================================================================================================
+=================================================================================================================
+=================================================================================================================
+=================================================================================================================
+=================================================================================================================
+=================================================================================================================
+
+
+    --------------
+   |ControllerUser|
+    --------------
+          |
+          |
+          V
+      ----------                   ----------
+     |Controller|---------------->| Handler  |
+      ----------                   ----------
+
+
+
+    1. Notification: The <Notifier> sends a payload to the <Waiter> and DOES NOT expect a synchronous payload in response, therefore, the <Waiter> should immediately send an ack.
+		<Notifier>State: NeedToSendNotification
+        <Waiter>State: WaitingForAsynchronousPayloadFrom<Notifier>
+              
+        [Label:<Notifier>SendsNotificationPayload]
+        <Notifier> sends NotificationPayload
+        <Notifier>State: WaitingForSynchronousAckFrom<Waiter>
+   
+        if(<Waiter> receives NotificationPayload from <Notifier>)
+        {
+            <Waiter> sends ack
+        }
+   
+        if(<Notifier> does not receive ack or times out)
+        {
+            if(<Notifier> has not exceeded retries count or time limit)
+            {
+                goto <Notifier>SendsNotificationPayload;
+            }
+            else
+            {
+	            throw TimeoutException;
+            }
+        }
+        
+        <Notifier>State: WaitingForAsynchronousPayloadFrom<NotifierSource>
+
+    2. Request: The <Requester> sends a payload to the <Responder> and DOES expect a synchronous reponse, therefore, the <Responder> does not need to send an ack but instead the ack will be implied with the response.
+    
+        <Responder>State: WaitingForAsynchronousPayloadFrom<Requester>
+        
+        [Label:<Requester>SendsRequestPayload]
+        <Requester> sends NotificationPayload
+        <Requester>State: WaitingForSynchronousPayloadFrom<Responder>
+   
+        if(<Responder> receives RequestPayload from <Requester>)
+        {
+            <Responder> forms response and either sends a NotificationPayload or a RequestPayload.
+        }
+   
+        if(<Requester> does not receive ack or times out)
+        {
+            if(<Requester> has not exceeded retries count or time limit)
+            {
+                goto <Requester>SendsNotificationPayload;
+            }
+            else
+            {
+	            throw TimeoutException;
+            }
+        }
+
+(ControllerRequest, HandlerRequest)* ControlerNotification
+(ControllerRequest, HandlerRequest)* ControllerRequest, HandlerNotification
+SwitchRoles (Is this needed)?
+
+InitialState:
+    ControllerState:WaitingForAsynchronousPayloadFromUser
+    HandlerState   :WaitingForAsynchronousPayloadFromController
+    
+1. ControllerNotification
+	ControllerUser give NotificationPayload to Controller
+	ControllerState: NeedToSendNotification
+	Notification(Notifier=Controller, Waiter=Handler);
+
+
+
+
+
+        
+        
+        
+=================================================================================================================
+=================================================================================================================
+=================================================================================================================
+=================================================================================================================
+=================================================================================================================
+=================================================================================================================
+
+
+
+
+
+public class CdpSocket
+{
+    CdpSocket(AddressFamily addressFamily);
+	
+	//
+	// Connectionless api
+	//
+    void Notify(EndPoint endPoint, Buffer buffer);
+    Buffer Request(EndPoint endPoint, Buffer buffer);
+    Int32 HandleEventsFrom(EndPoint endPoint, Buffer buffer); // 
+
+    //
+    // Connection Api
+    //
+    void Connect(EndPoint endPoint);
+    void Disconnect();
+    void Notify(Buffer buffer);
+    Buffer Request(Buffer buffer);
+    Int32 HandleEventsFrom(Buffer buffer);
+}
+
+
+
+Cdp Handler:
+
+1. Get a 
+2. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------
+Packetization Protocol
+----------------------------------------------------------------------------
+A packetization protocol is responsible for
+1. Splitting a block of data into segments
+2. Reordering a potentially unordered set of segments to the original block
+
+Information Required For Each Packet:
+1. Segment Length (If lower protocol doesn't include this)
+2. Segment Position
+3. Segemnt data
+
+
+
+Header
+-----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CDP Rule 1: Every single payload in a cdp sequence occurs because
+    1) control is given to the handler and a response is required from the last payload received
+    2) an asynchronous event occurs on the controller side (unrelated to the cdp conversation).
+

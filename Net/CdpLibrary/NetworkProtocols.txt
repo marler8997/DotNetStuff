@@ -1,0 +1,151 @@
+﻿
+
+Types of Network Protocols
+---------------------------------------------------------------
+
+
+------------------------------------
+Request Protocol
+------------------------------------
+
+Algorithm:
+	[Client Connect]
+	while(client keeps connection open)
+	{
+		Client waits till it wants to make a request
+		Client Send Request
+		Server Send Response
+	}
+	Disconnect
+
+Protocols:
+	1. HTTP
+	2. FTP
+	3. DNS
+	4. RPC/NFS
+	
+Simplified Variation Algorithm:
+	Client Connect
+	while(client has requests)
+	{
+		Client Send Request
+		Server Send Response
+	}
+	Disconnect
+
+Protocols:
+	1. HTTP(Sometimes uses simplified variation)
+	2. FTP(Sometimes uses simplified variation)
+
+
+------------------------------------
+Half Duplex Protocol
+------------------------------------
+
+Algorithm:
+	Client Connect	
+	The client or server is designated as either the transmitter and the other is the receiver
+	At any point in time, the transmitter or receiver can close the connection
+	while(true)
+	{
+		Transmitter waits for data to send or to become the receiver
+		if(transmitter wants to become the receiver)
+		{
+			swap transmitter and receiver
+		}
+		else
+		{
+			transmitter sends data
+		}
+	}
+	
+Protocols: 
+
+Simplified Variation Algorithm:
+	Client Connect
+	The client or server is designated as either the transmitter and the other is the receiver
+	At any point in time, the transmitter or receiver can close the connection
+	while(true)
+	{
+		Transmitter waits for data to send
+		Transmitter sends data		
+	}
+	
+	
+
+------------------------------------
+Full Duplex Protocol
+------------------------------------
+
+Algorithm:
+	Client Connect	
+	Both Client and Server can send data or close connection at any time
+	
+Protocols: Telnet,SSH
+
+
+
+
+==================================================================
+Protocol Tools
+==================================================================
+Data Sequencing: The ordering of payloads.
+Data Session: The filtering of payloads to sessions.
+	Data Session Sequencing: The filtering of payloads to a sequence in a session.
+Data Integrity: Verification that received data is not corrupted.
+Data Transmission Acknowledgement: A way for sender of data to know it was received.
+Dynamic Transmission Buffer Size: The dynamic negotiation of a maximum amount of unacknowledged data.
+Routing: The routing of payloads to specific end points
+
+In order for a protocol to be compatible with IP, it must implement its own
+	Data Sequencing, Data Session, Data Integrity
+
+TCP Header to Tool Mapping
+-------------------------
+Source Port > Data Session
+	The source port (along with the source ip) create a unique set of bits that the server can associate with a sequence.
+
+Destination Port > Data Session
+	The destination port differentes a packet to a payload sequence that it meant for a specific application
+	
+Sequence Number > Data Sequencing
+	Allows the recevier to know what part of the sequence the packet belongs to
+
+Acknowledgement number > Data Transmission Acknowledgement
+	Allows the receiver to know if the data it last sent was received.
+	
+Window Size > Dynamic Transmission Buffer Size
+	Allows negotiations of a maximum amount of tcp data that can be transmitted without acknowledgement.
+
+Checksum > Data Integrity
+	Verifies the header is correct
+
+
+
+
+Protocol Requirments:
+
+DNS:
+	1. Data Integrity
+
+HTTP: Implements its own data session
+	1. Data Integrity
+
+
+
+
+
+
+
+==================================================================
+Request Protocol
+==================================================================
+
+One of the most interesting protocols to explore is the Request protocol because if it can be improved it will yield the biggest returns because of how much traffic uses it (HTTP).
+
+The first thing to look at in a request protocol is whether or not is it statefull.
+
+If the protocol is not statefull, then no connection is needed.
+What is needed is the packetization of requests and responses.
+
+Packetization 
