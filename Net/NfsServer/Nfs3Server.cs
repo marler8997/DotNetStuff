@@ -234,7 +234,7 @@ namespace Marler.Net
             if (readCall.count > (UInt32)fileContents.bytes.Length) return new ReadReply(Status.ErrorInvalidArgument, OptionalFileAttributes.None);
 
             Boolean reachedEndOfFile;
-            Int32 bytesRead = FileExtensions.ReadFile(shareObject.AccessFileInfo(), (Int32)readCall.offset, fileContents.bytes, out reachedEndOfFile);
+            Int32 bytesRead = FileExtensions.ReadFile(shareObject.AccessFileInfo(), (Int32)readCall.offset, fileContents.bytes, FileShare.ReadWrite, out reachedEndOfFile);
 
             fileContents.length = bytesRead;
             return new ReadReply(OptionalFileAttributes.None, (UInt32)bytesRead, reachedEndOfFile, fileContents);

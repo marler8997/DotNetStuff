@@ -391,7 +391,7 @@ namespace Marler.Common
             return buffer;
         }
 
-        public static Int32 ReadFile(FileInfo fileInfo, Int32 fileOffset, Byte[] buffer, out Boolean reachedEndOfFile)
+        public static Int32 ReadFile(FileInfo fileInfo, Int32 fileOffset, Byte[] buffer, FileShare shareOptions, out Boolean reachedEndOfFile)
         {
             fileInfo.Refresh();
 
@@ -418,7 +418,7 @@ namespace Marler.Common
             }
             if (readLength <= 0) return 0;
 
-            using (FileStream fileStream = fileInfo.Open(FileMode.Open))
+            using (FileStream fileStream = fileInfo.Open(FileMode.Open, FileAccess.Read, shareOptions))
             {
                 fileStream.Position = fileOffset;
                 fileStream.ReadFullSize(buffer, 0, readLength);

@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Net;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 
 namespace Marler.Net
 {
@@ -20,11 +20,9 @@ namespace Marler.Net
                 return;
             }
 
-
             String shareDirectory = args[0];
-            String shareName = args[1];
+            String shareName      = args[1];
             String listenIPString = args[2];
-
 
             //
             // Options
