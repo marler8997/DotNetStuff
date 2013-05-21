@@ -23,7 +23,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\CE\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE;$(PlatformFamilyName)</DefineConstants>
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
@@ -35,7 +35,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\CE\Release\</OutputPath>
     <DefineConstants>TRACE;$(PlatformFamilyName)</DefineConstants>
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
@@ -57,9 +57,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NetworkUtilities\NetworkUtilitiesCE.csproj">
-      <Project>{C8BDABBD-6A6F-4593-98F8-119FDB74EDDA}</Project>
-      <Name>NetworkUtilitiesCE</Name>
+    <ProjectReference Include="..\..\Common\Marler.Common.CE.csproj">
+      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
+      <Name>Marler.Common.CE</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Marler.Net.CE.csproj">
+      <Project>{708A8043-D2E8-4D13-BB64-3E40D2DD2956}</Project>
+      <Name>Marler.Net.CE</Name>
     </ProjectReference>
     <ProjectReference Include="..\RpcLibrary\RpcLibraryCE.csproj">
       <Project>{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}</Project>

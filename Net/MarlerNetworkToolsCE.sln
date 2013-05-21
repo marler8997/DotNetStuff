@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkUtilitiesCE", "NetworkUtilities\NetworkUtilitiesCE.csproj", "{C8BDABBD-6A6F-4593-98F8-119FDB74EDDA}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RpcLibraryCE", "RpcLibrary\RpcLibraryCE.csproj", "{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NfsLibraryCE", "NfsLibrary\NfsLibraryCE.csproj", "{F7DD73A4-5294-4FB9-8E65-C39DB552FC81}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NfsServerCE", "NfsServer\NfsServerCE.csproj", "{BFAFA06B-9106-4E1C-B146-6646E133FAC0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Net.CE", "Marler.Net.CE.csproj", "{708A8043-D2E8-4D13-BB64-3E40D2DD2956}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Common.CE", "..\Common\Marler.Common.CE.csproj", "{9AF5441B-8208-44E6-9686-A29D8019FBD5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C8BDABBD-6A6F-4593-98F8-119FDB74EDDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C8BDABBD-6A6F-4593-98F8-119FDB74EDDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C8BDABBD-6A6F-4593-98F8-119FDB74EDDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C8BDABBD-6A6F-4593-98F8-119FDB74EDDA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -33,6 +31,14 @@ Global
 		{BFAFA06B-9106-4E1C-B146-6646E133FAC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFAFA06B-9106-4E1C-B146-6646E133FAC0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BFAFA06B-9106-4E1C-B146-6646E133FAC0}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{708A8043-D2E8-4D13-BB64-3E40D2DD2956}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{708A8043-D2E8-4D13-BB64-3E40D2DD2956}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{708A8043-D2E8-4D13-BB64-3E40D2DD2956}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{708A8043-D2E8-4D13-BB64-3E40D2DD2956}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

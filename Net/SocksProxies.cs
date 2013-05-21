@@ -3,6 +3,8 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 
+using Marler.Common;
+
 namespace Marler.Net
 {
     

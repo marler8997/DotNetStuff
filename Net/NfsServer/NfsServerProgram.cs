@@ -54,7 +54,7 @@ namespace Marler.Net
             NfsServerLog.rpcCallLogger                      = Console.Out;
             NfsServerLog.warningLogger                      = Console.Out;
 
-            RpcPerformanceLog.rpcMessageSerializationLogger = Console.Out;
+            RpcPerformanceLog.rpcMessageSerializationLogger = null; // Console.Out;
 
             TextWriter selectServerEventLog                 = null; //Console.Out;
 

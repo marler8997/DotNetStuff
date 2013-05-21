@@ -4,6 +4,12 @@ using System.IO;
 using System.Security;
 using System.Text;
 
+#if WindowsCE
+using EnumNameRetriever = Marler.Common.EnumReflectionWrapper;
+#else
+using EnumNameRetriever = System.Enum;
+#endif
+
 namespace Marler.Common
 {
     public class CommandLineException : SystemException
@@ -190,7 +196,7 @@ namespace Marler.Common
         }
         internal override String UsageArgValues()
         {
-            String[] enumNames = Enum.GetNames(typeof(EnumType));
+            String[] enumNames = EnumNameRetriever.GetNames(typeof(EnumType));
 
             StringBuilder builder = new StringBuilder();
             builder.Append("Values={");
@@ -260,7 +266,13 @@ namespace Marler.Common
         {
             get
             {
-                try { return Console.BufferWidth; }
+                try {
+#if WindowsCE
+                    return 80;
+#else
+                    return Console.BufferWidth;
+#endif
+                    }
                 catch (IOException) { return 80; }
                 catch (SecurityException) { return 80; }
             }

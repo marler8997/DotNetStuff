@@ -5,6 +5,12 @@ using System.Net.Sockets;
 
 using Marler.Common;
 
+#if WindowsCE
+    using IPParser = Marler.Common.IPParser;
+#else
+    using IPParser = System.Net.IPAddress;
+#endif
+
 namespace Marler.Net
 {
     public static class EndPoints
@@ -12,7 +18,7 @@ namespace Marler.Net
         public static EndPoint EndPointFromIPOrHost(String ipOrHost, Int32 port)
         {
             IPAddress address;
-            if (IPAddress.TryParse(ipOrHost, out address)) return new IPEndPoint(address, port);
+            if (IPParser.TryParse(ipOrHost, out address)) return new IPEndPoint(address, port);
             return new DnsEndPoint(ipOrHost, port, false);
         }
         public static IPAddress DnsResolve(this String domainName)
@@ -25,7 +31,7 @@ namespace Marler.Net
         public static IPAddress ParseIPOrResolveHost(this String ipOrHostName)
         {
             IPAddress ip;
-            if (IPAddress.TryParse(ipOrHostName, out ip)) return ip;
+            if (IPParser.TryParse(ipOrHostName, out ip)) return ip;
             IPHostEntry hostEntry = Dns.GetHostEntry(ipOrHostName);
             if (hostEntry == null || hostEntry.AddressList == null || hostEntry.AddressList.Length <= 0)
                 throw new NoAddresForDomainNameException(ipOrHostName);

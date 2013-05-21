@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace Marler.Net
@@ -19,7 +20,7 @@ namespace Marler.Net
             this.function = function;
 
             this.command = command;
-            this.commandLowerCaseInvariant = command.ToLowerInvariant();
+            this.commandLowerCaseInvariant = command.ToLower(CultureInfo.InvariantCulture);
 
             this.aliases = aliases;
             if (aliases == null || aliases.Length <= 0)
@@ -31,7 +32,7 @@ namespace Marler.Net
                 aliasesLowerCaseInvariant = new String[aliases.Length];
                 for (int i = 0; i < aliases.Length; i++)
                 {
-                    aliasesLowerCaseInvariant[i] = aliases[i].ToLowerInvariant();
+                    aliasesLowerCaseInvariant[i] = aliases[i].ToLower(CultureInfo.InvariantCulture);
                 }
             }
 

@@ -183,7 +183,7 @@ namespace Marler.Common
         {
             this.fieldInfo = classThatHasThisField.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             if (this.fieldInfo == null) throw new InvalidOperationException(String.Format(
-                    "The class you provided '{0}' either does not have the field name you provided '{1}'",
+                    "The class you provided '{0}' does not have the field name you provided '{1}'",
                     classThatHasThisField.Name, fieldName));
         }
         protected ClassFieldReflector(Type classThatHasThisField, String fieldName, Type expectedFieldType)

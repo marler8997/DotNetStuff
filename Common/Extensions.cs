@@ -2,10 +2,146 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 
 namespace Marler.Common
 {
+#if WindowsCE
+    public static class IPParser
+    {
+        public static Boolean TryParse(String ipString, out IPAddress address)
+        {
+            try
+            {
+                address = IPAddress.Parse(ipString);
+                return true;
+            }
+            catch (FormatException)
+            {
+                address = null;
+                return false;
+            }
+        }
+    }
+    public static class EnumReflectionWrapper
+    {
+        public static String[] GetNames(Type enumType)
+        {
+            List<String> names = new List<String>();
+            foreach (FieldInfo fieldInfo in enumType.GetFields(BindingFlags.Static | BindingFlags.Public))
+            {
+                names.Add(fieldInfo.Name);
+            }
+            return names.ToArray();
+        }
+    }
+#endif
+    public static class StringExtensions
+    {
+        public static String Peel(this String str, out String rest)
+        {
+            return Peel(str, 0, out rest);
+        }
+
+        // Peel the first string until whitespace
+        public static String Peel(this String str, Int32 offset, out String rest)
+        {
+            if (str == null)
+            {
+                rest = null;
+                return null;
+            }
+
+            Char c;
+
+            //
+            // Skip beginning whitespace
+            //
+            while (true)
+            {
+                if (offset >= str.Length)
+                {
+                    rest = null;
+                    return null;
+                }
+                c = str[offset];
+                if (!Char.IsWhiteSpace(c)) break;
+                offset++;
+            }
+
+            Int32 startOffset = offset;
+
+            //
+            // Find next whitespace
+            //
+            while (true)
+            {
+                offset++;
+                if (offset >= str.Length)
+                {
+                    rest = null;
+                    return str.Substring(startOffset);
+                }
+                c = str[offset];
+                if (Char.IsWhiteSpace(c)) break;
+            }
+
+            Int32 peelLimit = offset;
+
+            //
+            // Remove whitespace till rest
+            //
+            while (true)
+            {
+                offset++;
+                if (offset >= str.Length)
+                {
+                    rest = null;
+                }
+                if (!Char.IsWhiteSpace(str[offset]))
+                {
+                    rest = str.Substring(offset);
+                    break;
+                }
+            }
+            return str.Substring(startOffset, peelLimit - startOffset);
+        }
+        public static Boolean SubstringEquals(String str, Int32 offset, String compare)
+        {
+            if (offset + compare.Length > str.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < compare.Length; i++)
+            {
+                if (str[offset] != compare[i])
+                {
+                    if (Char.IsUpper(str[offset]))
+                    {
+                        if (Char.IsUpper(compare[i])) return false;
+                        if (Char.ToUpper(compare[i]) != str[offset]) return false;
+                    }
+                    else
+                    {
+                        if (Char.IsLower(compare[i])) return false;
+                        if (Char.ToLower(compare[i]) != str[offset]) return false;
+                    }
+                }
+                offset++;
+            }
+            return true;
+        }
+#if WindowsCE
+        public static String ToLowerInvariant(this String str)
+        {
+            return str.ToLower(System.Globalization.CultureInfo.InvariantCulture);
+        }
+#endif
+    }
     public static class ListExtensions
     {
         public static String ToDataString<T>(this List<T> list)
@@ -125,6 +261,54 @@ namespace Marler.Common
             return StopwatchTicksPerMillisecondAsDouble * stopwatchTicks;
         }
     }
+
+    public static class SocketExtensions
+    {
+        public static String SafeRemoteEndPointString(this Socket socket)
+        {
+            try { return socket.RemoteEndPoint.ToString(); } catch (Exception) { return "<disconnected>";  }
+        }
+        public static void ReadFullSize(this Socket socket, byte[] buffer, int offset, int size)
+        {
+            int lastBytesRead;
+
+            do
+            {
+                lastBytesRead = socket.Receive(buffer, offset, size, SocketFlags.None);
+                size -= lastBytesRead;
+
+                if (size <= 0) return;
+
+                offset += lastBytesRead;
+            } while (lastBytesRead > 0);
+
+            throw new IOException(String.Format("reached end of stream: still needed {0} bytes", size));
+        }
+        public static void SendFile(Socket socket, String filename, Byte[] transferBuffer)
+        {
+            if (filename == null)
+            {
+                Console.WriteLine("Please supply a filename");
+                return;
+            }
+
+            FileStream fileStream = null;
+            try
+            {
+                fileStream = new FileStream(filename, FileMode.Open);
+                Int32 bytesRead;
+                while ((bytesRead = fileStream.Read(transferBuffer, 0, transferBuffer.Length)) > 0)
+                {
+                    socket.Send(transferBuffer, 0, bytesRead, SocketFlags.None);
+                }
+            }
+            finally
+            {
+                if (fileStream != null) fileStream.Close();
+            }
+        }
+    }
+
     public static class StreamExtensions
     {
         public static void ReadFullSize(this Stream stream, byte[] buffer, int offset, int size)
