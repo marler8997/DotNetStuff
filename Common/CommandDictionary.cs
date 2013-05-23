@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 
-namespace Marler.Net
+namespace Marler.Common
 {
     public delegate void CommandFunction(String line);
     public class Command

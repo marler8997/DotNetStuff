@@ -4,6 +4,8 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 
+using Marler.Common;
+
 namespace Marler.Net
 {
     public class HttpToCdpClient

@@ -131,11 +131,27 @@ namespace Marler.Net
                     callData = readDirPlusCall;
 
                     break;
+                case (UInt32)Nfs3Command.FSSTAT:
+
+                    FileSystemStatusCall fileSystemInfoCall = new FileSystemStatusCall(callParameters, callOffset, callMaxOffset);
+                    replyParameters = Handle(fileSystemInfoCall);
+                    callData = fileSystemInfoCall;
+
+                    break;
                 case (UInt32)Nfs3Command.FSINFO:
 
-                    FsInfoCall getPortCall = new FsInfoCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(getPortCall);
-                    callData = getPortCall;
+                    FsInfoCall fsInfoCall = new FsInfoCall(callParameters, callOffset, callMaxOffset);
+                    replyParameters = Handle(fsInfoCall);
+                    callData = fsInfoCall;
+
+                    break;
+                case (UInt32) Nfs3Command.COMMIT:
+
+                    // Since this server does not perform unstable writes at the moment, this function is unnecessary
+                    CommitCall commitCall = new CommitCall(callParameters, callOffset, callMaxOffset);
+                    //replyParameters = Handle(getPortCall);
+                    replyParameters = new CommitReply(BeforeAndAfterAttributes.None, null);
+                    callData = commitCall;
 
                     break;
                 default:
@@ -234,7 +250,14 @@ namespace Marler.Net
             if (readCall.count > (UInt32)fileContents.bytes.Length) return new ReadReply(Status.ErrorInvalidArgument, OptionalFileAttributes.None);
 
             Boolean reachedEndOfFile;
-            Int32 bytesRead = FileExtensions.ReadFile(shareObject.AccessFileInfo(), (Int32)readCall.offset, fileContents.bytes, FileShare.ReadWrite, out reachedEndOfFile);
+            Int32 bytesRead;
+            try
+            {
+                bytesRead = FileExtensions.ReadFile(shareObject.AccessFileInfo(), (Int32)readCall.offset, fileContents.bytes, FileShare.ReadWrite, out reachedEndOfFile);
+            }
+            catch (IOException)
+            {
+            }
 
             fileContents.length = bytesRead;
             return new ReadReply(OptionalFileAttributes.None, (UInt32)bytesRead, reachedEndOfFile, fileContents);
@@ -253,6 +276,10 @@ namespace Marler.Net
 
             FileInfo fileInfo = shareObject.AccessFileInfo();
 
+            //
+            // TODO: in the future in order to enhance performance, I could implement UNSTABLE writes,
+            //       which means I could return the reply before the write is finished.
+            //
             using (FileStream fileStream = fileInfo.Open(FileMode.Open))
             {
                 fileStream.Position = (Int64)writeCall.offset;
@@ -473,6 +500,24 @@ namespace Marler.Net
             directoryShareObject.RefreshFileAttributes(sharedFileSystem.permissions);
 
             return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, lastEntry, true);
+        }
+
+        private ISerializer Handle(FileSystemStatusCall fileSystemInfoCall)
+        {
+            ShareDirectory shareDirectory;
+            Nfs3Procedure.Status status = sharedFileSystem.TryGetShareDirectory(fileSystemInfoCall.fileSystemRoot, out shareDirectory);
+            if (status != Nfs3Procedure.Status.Ok) return new FileSystemStatusReply(status, OptionalFileAttributes.None);
+
+            DriveInfo driveInfo = shareDirectory.driveInfo;
+
+            return new FileSystemStatusReply(OptionalFileAttributes.None,
+                (UInt64)driveInfo.TotalSize,
+                (UInt64)driveInfo.TotalFreeSpace,
+                (UInt64)driveInfo.AvailableFreeSpace,
+                99999999,
+                99999999,
+                99999999,
+                0);
         }
         FsInfoReply Handle(FsInfoCall getPortCall)
         {

@@ -1,4 +1,8 @@
-﻿using System;
+﻿//
+// http://www.ietf.org/rfc/rfc1813.txt
+//
+
+using System;
 
 using Marler.Common;
 
@@ -38,7 +42,6 @@ namespace Marler.Net
         PATHCONF    = 20,
         COMMIT      = 21,
     }
-
 
     public static class Nfs3
     {
@@ -1649,6 +1652,110 @@ namespace Marler.Net.Nfs3Procedure
 
 
     //
+    // FileSystemStatus
+    //
+    public class FileSystemStatus : RpcProcedure
+    {
+        public readonly FileSystemStatusReply reply;
+
+        public FileSystemStatus(FileSystemStatusCall call)
+            : base("FileSystemStatus", (UInt32)Nfs3Command.FSSTAT, call)
+        {
+            this.reply = new FileSystemStatusReply();
+            this.responseSerializer = this.reply;
+        }
+    }
+    public class FileSystemStatusCall : ClassSerializer
+    {
+        public static readonly IReflector[] memberSerializers = new IReflector[] {
+            new XdrOpaqueVarLengthReflector(typeof(FileSystemStatusCall), "fileSystemRoot", Nfs3.FileHandleMaxSize),
+        };
+        public Byte[] fileSystemRoot;
+
+        public FileSystemStatusCall()
+            : base(memberSerializers)
+        {
+        }
+        public FileSystemStatusCall(Byte[] data, Int32 offset, Int32 maxOffset)
+            : base(memberSerializers)
+        {
+            Deserialize(data, offset, maxOffset);
+        }
+        public FileSystemStatusCall(Byte[] fileSystemRoot)
+            : base(memberSerializers)
+        {
+            this.fileSystemRoot = fileSystemRoot;
+        }
+    }
+    public class FileSystemStatusReply : ClassSerializer
+    {
+        public static readonly IReflector[] okSerializers = new IReflector[] {
+            new XdrStructFieldReflector<OptionalFileAttributes>(typeof(FileSystemStatusReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
+            new XdrUInt64Reflector(typeof(FileSystemStatusReply), "totalBytes"),
+            new XdrUInt64Reflector(typeof(FileSystemStatusReply), "freeBytes"),
+            new XdrUInt64Reflector(typeof(FileSystemStatusReply), "availableBytes"),
+            new XdrUInt64Reflector(typeof(FileSystemStatusReply), "totalFileSlots"),
+            new XdrUInt64Reflector(typeof(FileSystemStatusReply), "freeFileSlots"),
+            new XdrUInt64Reflector(typeof(FileSystemStatusReply), "availableFileSlots"),
+            new XdrUInt32Reflector(typeof(FileSystemStatusReply), "fileSystemVolatility"),
+        };
+
+        public static readonly IReflector[] memberSerializers = new IReflector[] {
+            new XdrDescriminatedUnionReflector<Status>(
+                new XdrEnumReflector(typeof(FileSystemStatusReply), "status", typeof(Status)), new IReflector[] {
+                new XdrStructFieldReflector<OptionalFileAttributes>(typeof(FileSystemStatusReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
+                new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, okSerializers)
+            ),
+        };
+
+        public Status status;
+        public OptionalFileAttributes optionalFileAttributes;
+
+        UInt64 totalBytes, freeBytes, availableBytes;
+        UInt64 totalFileSlots, freeFileSlots, availableFileSlots;
+        UInt32 fileSystemVolatility;
+
+        public FileSystemStatusReply()
+            : base(memberSerializers)
+        {
+        }
+        public FileSystemStatusReply(Byte[] data, Int32 offset, Int32 maxOffset)
+            : base(memberSerializers)
+        {
+            Deserialize(data, offset, maxOffset);
+        }
+        public FileSystemStatusReply(Status status, OptionalFileAttributes optionalFileAttributes)
+            : base(memberSerializers)
+        {
+            if (status == Status.Ok)
+                throw new InvalidOperationException("Wrong Constructor: this constructor is not meant for an Ok status");
+            this.status = status;
+            this.optionalFileAttributes = optionalFileAttributes;
+        }
+        public FileSystemStatusReply(
+            OptionalFileAttributes optionalFileAttributes,
+            UInt64 totalBytes, UInt64 freeBytes, UInt64 availableBytes,
+            UInt64 totalFileSlots, UInt64 freeFileSlots, UInt64 availableFileSlots,
+            UInt32 fileSystemVolatility)
+            : base(memberSerializers)
+        {
+            this.status = Status.Ok;
+            this.optionalFileAttributes = optionalFileAttributes;
+
+            this.totalBytes = totalBytes;
+            this.freeBytes = freeBytes;
+            this.availableBytes = availableBytes;
+
+            this.totalFileSlots = totalFileSlots;
+            this.freeFileSlots = freeFileSlots;
+            this.availableFileSlots = availableFileSlots;
+
+            this.fileSystemVolatility = fileSystemVolatility;
+        }
+    }
+
+
+    //
     // FileSystemInfo Procedure
     //
     public class FileSystemInfo : RpcProcedure
@@ -1773,6 +1880,91 @@ namespace Marler.Net.Nfs3Procedure
             this.serverTimeGranularityNanoSeconds = serverTimeGranularityNanoSeconds;
 
             this.fileProperties = fileProperties;
+        }
+    }
+
+    //
+    // Commit Procedure
+    //
+    public class Commit : RpcProcedure
+    {
+        public readonly CommitReply reply;
+
+        public Commit(CommitCall call)
+            : base("Commit", (UInt32)Nfs3Command.COMMIT, call)
+        {
+            this.reply = new CommitReply();
+            this.responseSerializer = this.reply;
+        }
+    }
+    public class CommitCall : ClassSerializer
+    {
+        public static readonly IReflector[] memberSerializers = new IReflector[] {
+            new XdrOpaqueVarLengthReflector(typeof(CommitCall), "fileHandle", Nfs3.FileHandleMaxSize),
+            new XdrUInt64Reflector         (typeof(CommitCall), "offset"),
+            new XdrUInt32Reflector         (typeof(CommitCall), "count"),
+        };
+
+        public Byte[] fileHandle;
+        public UInt64 offset;
+        public UInt32 count;
+
+        public CommitCall()
+            : base(memberSerializers)
+        {
+        }
+        public CommitCall(Byte[] data, Int32 offset, Int32 maxOffset)
+            : base(memberSerializers)
+        {
+            Deserialize(data, offset, maxOffset);
+        }
+        public CommitCall(Byte[] fileHandle, UInt64 offset, UInt32 count)
+            : base(memberSerializers)
+        {
+            this.fileHandle = fileHandle;
+            this.offset = offset;
+            this.count = count;
+        }
+    }
+    public class CommitReply : ClassSerializer
+    {
+        public static readonly IReflector[] memberSerializers = new IReflector[] {
+            new XdrDescriminatedUnionReflector<Status>(
+                new XdrEnumReflector(typeof(CommitReply), "status", typeof(Status)), new IReflector[] {
+                    new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(CommitReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
+                }, new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
+                    new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(CommitReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
+                    new XdrOpaqueFixedLengthReflector                    (typeof(CommitReply), "writeVerifier", Nfs3.WriteVerifierSize),
+                }))
+        };
+
+        Status status;
+        BeforeAndAfterAttributes beforeAndAfter;
+        byte[] writeVerifier;
+
+        public CommitReply()
+            : base(memberSerializers)
+        {
+        }
+        public CommitReply(Byte[] data, Int32 offset, Int32 maxOffset)
+            : base(memberSerializers)
+        {
+            Deserialize(data, offset, maxOffset);
+        }
+        public CommitReply(Status status, BeforeAndAfterAttributes beforeAndAfter)
+            : base(memberSerializers)
+        {
+            if (status == Status.Ok)
+                throw new InvalidOperationException("Wrong Constructor: this constructor is not meant for an Ok status");
+            this.status = status;
+            this.beforeAndAfter = beforeAndAfter;
+        }
+        public CommitReply(BeforeAndAfterAttributes beforeAndAfter, Byte[] writeVerifier)
+            : base(memberSerializers)
+        {
+            this.status = Status.Ok;
+            this.beforeAndAfter = beforeAndAfter;
+            this.writeVerifier = writeVerifier;
         }
     }
 }

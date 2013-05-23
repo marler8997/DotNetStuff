@@ -9,6 +9,9 @@ namespace Marler.Net
 {
     public class ShareDirectory
     {
+        public readonly DirectoryInfo directoryInfo;
+        public readonly DriveInfo driveInfo;
+
         public readonly String localShareDirectory;
         public readonly String shareName;
         public ShareObject shareObject;
@@ -16,6 +19,9 @@ namespace Marler.Net
         {
             if (!NfsPath.IsValidUnixFileName(shareName))
                 throw new ArgumentException(String.Format("The share name you provided '{0}' is not valid (cannot have '/')", shareName));
+
+            this.directoryInfo = new DirectoryInfo(localShareDirectory);
+            this.driveInfo = new DriveInfo(directoryInfo.Root.FullName);
 
             this.localShareDirectory = localShareDirectory;
             this.shareName = shareName;
@@ -39,6 +45,7 @@ namespace Marler.Net
 
         public SharedFileSystem(IFileIDsAndHandlesDictionary filesDictionary, IPermissions permissions, ShareDirectory[] shareDirectories)
         {
+
             this.filesDictionary = filesDictionary;
             this.permissions = permissions;
 
@@ -58,6 +65,32 @@ namespace Marler.Net
                 shareDirectory.shareObject = shareObject;
             }
         }
+
+        public Nfs3Procedure.Status TryGetShareDirectory(Byte[] handle, out ShareDirectory outputShareDirectory)
+        {
+            ShareObject shareObject;
+            Nfs3Procedure.Status status = TryGetSharedObject(handle, out shareObject);
+            if (status != Nfs3Procedure.Status.Ok) { outputShareDirectory = null; return status; }
+            if (shareObject == null) { outputShareDirectory = null; return Nfs3Procedure.Status.ErrorNoSuchFileOrDirectory; }
+
+            //
+            // Check that the share object is a root share directory
+            //
+            for (int i = 0; i < shareDirectories.Length; i++)
+            {
+                ShareDirectory shareDirectory = shareDirectories[i];
+                if (shareDirectory.shareObject == shareObject)
+                {
+                    outputShareDirectory = shareDirectory;
+                    return Nfs3Procedure.Status.Ok;
+                }
+            }
+
+            outputShareDirectory = null;
+            return Nfs3Procedure.Status.ErrorBadHandle;
+        }
+
+
         private void DisposeShareObject(ShareObject shareObject)
         {
             if (NfsServerLog.sharedFileSystemLogger != null)

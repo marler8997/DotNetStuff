@@ -11,7 +11,7 @@ using Marler.Common;
     using IPParser = System.Net.IPAddress;
 #endif
 
-namespace Marler.Net
+namespace Marler.Common
 {
     public static class EndPoints
     {
