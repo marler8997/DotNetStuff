@@ -257,6 +257,8 @@ namespace Marler.Net
             }
             catch (IOException)
             {
+                // TODO: what error should i report here since Linux doesn't seem to have this kind of error (file used by another process)
+                return new ReadReply(Status.
             }
 
             fileContents.length = bytesRead;
