@@ -5,7 +5,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 
-namespace Marler.Net
+namespace More.Net
 {
     public delegate void PortSetListenerCallback(UInt32 socketID, UInt16 port, IncomingConnection incomingConnection);
 

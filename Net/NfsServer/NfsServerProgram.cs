@@ -3,29 +3,93 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 
-namespace Marler.Net
+using More;
+
+namespace More.Net
 {
+    public class NfsServerProgramOptions : CLParser
+    {
+        public CLGenericArgument<IPAddress> listenIPAddress;
+
+        public CLGenericArgument<UInt16> debugListenPort;
+
+        public CLGenericArgument<UInt16> npcListenPort;
+
+        public CLSwitch dontLogCallsInternally;
+        public CLSwitch dontLogCallsToConsole;
+        public CLSwitch dontLogFileSystemCallsToConsole;
+        public CLSwitch dontLogWarningsToConsole;
+        public CLSwitch dontLogSerializationPerformanceToConsole;
+        public CLSwitch dontLogServerEventsToConsole;
+        public CLSwitch dontLogNpcEventsToConsole;
+
+        public NfsServerProgramOptions()
+        {
+            listenIPAddress = new CLGenericArgument<IPAddress>(IPAddress.Parse, 'l', "Listen IP Address");
+            listenIPAddress.SetDefault(IPAddress.Parse("0.0.0.0"));
+            Add(listenIPAddress);
+
+
+            //
+            // Debug Server
+            //
+            debugListenPort = new CLGenericArgument<UInt16>(UInt16.Parse, 'd', "DebugListenPort", "The TCP port that the debug server will be listening to (If no port is specified, the debug server will not be running)");
+            Add(debugListenPort);
+
+            //
+            // Npc Server
+            //
+            npcListenPort = new CLGenericArgument<UInt16>(UInt16.Parse, 'n', "NpcListenPort", "The TCP port that the NPC server will be listening to (If no port is specified, the NPC server will not be running)");
+            Add(npcListenPort);
+
+
+            dontLogCallsInternally = new CLSwitch("DontLogCallsInternally", "Log all RPC calls internally to be dumped upon request");
+            Add(dontLogCallsInternally);
+
+            dontLogCallsToConsole = new CLSwitch("DontLogCallsToConsole", "Log all RPC calls to the Console");
+            Add(dontLogCallsToConsole);
+
+            dontLogFileSystemCallsToConsole = new CLSwitch("DontLogFileSystemCalls", "Log all file system calls to Console");
+            Add(dontLogFileSystemCallsToConsole);
+
+            dontLogWarningsToConsole = new CLSwitch("DontLogWarningsToConsole", "Log all warnings to the Console");
+            Add(dontLogWarningsToConsole);
+
+            dontLogSerializationPerformanceToConsole = new CLSwitch("DontLogSerializationPerfToConsole", "Log serialization performance to Console");
+            Add(dontLogSerializationPerformanceToConsole);
+
+            dontLogServerEventsToConsole = new CLSwitch("DontLogServerEventsToConsole", "Log server events to Console");
+            Add(dontLogServerEventsToConsole);
+
+            dontLogNpcEventsToConsole = new CLSwitch("DontLogNpcEventsToConsole", "Log NPC events to Console");
+            Add(dontLogNpcEventsToConsole);
+        }
+
+        public override void PrintUsageHeader()
+        {
+            Console.WriteLine("Usage: NfsServer.exe [options] <share-directory> <share-name>");
+        }
+    }
+
     class Program
     {
-        static void Usage()
-        {
-            Console.WriteLine("Usage: NfsServer.exe <share-directory> <share-name> <listen-ip>");
-            Console.WriteLine("    <listen-ip>  (Use '0.0.0.0' for any ip)");
-        }
         static void Main(String[] args)
         {
-            if (args.Length != 3)
+            NfsServerProgramOptions options = new NfsServerProgramOptions();
+            List<String> nonOptionArguments = options.Parse(args);
+
+
+            if (nonOptionArguments.Count != 2)
             {
-                Usage();
+                options.ErrorAndUsage("Expected 2 non-option arguments but got '{0}'", nonOptionArguments.Count);
                 return;
             }
 
-            String shareDirectory = args[0];
-            String shareName      = args[1];
-            String listenIPString = args[2];
-
+            String shareDirectory = nonOptionArguments[0];
+            String shareName = nonOptionArguments[1];
+            
             //
-            // Options
+            // Options not exposed via command line yet
             //
             Int32 mountListenPort = 59733;
             Int32 backlog = 4;
@@ -36,25 +100,37 @@ namespace Marler.Net
             //
             // Listen IP Address
             //
-            IPAddress listenIPAddress = IPAddress.Parse(listenIPString);
+            IPAddress listenIPAddress = options.listenIPAddress.ArgValue;
 
             //
-            // Control Server
+            // Debug Server
             //
-            Int32 controlServerPort = 1234;
-            IPEndPoint controlServerEndPoint = new IPEndPoint(listenIPAddress, controlServerPort);//null;
+            IPEndPoint debugServerEndPoint = !options.debugListenPort.set ? null :
+                new IPEndPoint(listenIPAddress, options.debugListenPort.ArgValue);
 
+            //
+            // Npc Server
+            //
+            IPEndPoint npcServerEndPoint = !options.npcListenPort.set ? null :
+                new IPEndPoint(listenIPAddress, options.npcListenPort.ArgValue);
+                    
             //
             // Logging Options
             //
-            NfsServerLog.storePerformance                   = true;
-            NfsServerLog.sharedFileSystemLogger             = Console.Out;
-            NfsServerLog.rpcCallLogger                      = Console.Out;
-            NfsServerLog.warningLogger                      = Console.Out;
+            NfsServerLog.storePerformance                   = !options.dontLogCallsInternally.set;
+            NfsServerLog.sharedFileSystemLogger             = options.dontLogFileSystemCallsToConsole.set          ? null : Console.Out;
+            NfsServerLog.rpcCallLogger                      = options.dontLogCallsToConsole.set                    ? null : Console.Out;
+            NfsServerLog.warningLogger                      = options.dontLogWarningsToConsole.set                 ? null : Console.Out;
+            NfsServerLog.npcEventsLogger                    = options.dontLogNpcEventsToConsole.set                ? null : Console.Out;
 
-            RpcPerformanceLog.rpcMessageSerializationLogger = null; // Console.Out;
+            RpcPerformanceLog.rpcMessageSerializationLogger = options.dontLogSerializationPerformanceToConsole.set ? null : Console.Out;
 
-            TextWriter selectServerEventLog                 = null; //Console.Out;
+
+            TextWriter selectServerEventLog                 = options.dontLogServerEventsToConsole.set             ? null : Console.Out;
+
+
+
+
 
             //
             // Permissions
@@ -83,7 +159,8 @@ namespace Marler.Net
             {
                 new RpcServicesManager().Run(
                     selectServerEventLog,
-                    controlServerEndPoint,
+                    debugServerEndPoint,
+                    npcServerEndPoint,
                     listenIPAddress,
                     backlog, sharedFileSystem,
                     Ports.PortMap, mountListenPort, Ports.Nfs,

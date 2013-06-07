@@ -5,9 +5,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading;
 using System.Diagnostics;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     [TestClass]
     public class VirtualDatagramTransmitterTests

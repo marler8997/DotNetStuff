@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Net.Sockets;
 
-namespace Marler.Net
+namespace More.Net
 {
     public interface ITunnel
     {

@@ -2,9 +2,9 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Marler.Net
+namespace More.Net
 {
-
+    /*
     public interface TcpClientHandler
     {
         void NewClient(Socket socket);
@@ -45,4 +45,5 @@ namespace Marler.Net
             }
         }
     }
+    */
 }

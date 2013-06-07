@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Marler.Net
+namespace More.Net
 {
     [TestClass]
     public class SerializationTest
     {
+        /*
         [TestMethod]
         public void TestMethod1()
         {
@@ -19,5 +20,6 @@ namespace Marler.Net
 
             Console.WriteLine(BitConverter.ToString(array));
         }
+        */
     }
 }

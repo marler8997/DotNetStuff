@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public enum RpcReplyStatus
     {
@@ -41,14 +41,14 @@ namespace Marler.Net
         private static String CheckForFailureInReply(RpcCall call, RpcReply reply)
         {
             if (reply.status != RpcReplyStatus.Accepted)
-                return reply.rejectedReply.ToNiceString();
+                return reply.rejectedReply.DataString();
 
             RpcAcceptedReply acceptedReply = reply.acceptedReply;
             if (acceptedReply.status == RpcAcceptStatus.Success) return null;
 
             if (acceptedReply.status == RpcAcceptStatus.ProgramMismatch)
             {
-                return String.Format("ProgramMismatch: {0}", acceptedReply.mismatchInfo.ToNiceString());
+                return String.Format("ProgramMismatch: {0}", acceptedReply.mismatchInfo.DataString());
             }
             else
             {
@@ -59,7 +59,7 @@ namespace Marler.Net
         {
             String failureReason = CheckForFailureInReply(call, reply);
             if (failureReason == null) throw new InvalidOperationException(
-                String.Format("Expected this rpc reply '{0}' to have a failure but did not?", reply.ToNiceString()));
+                String.Format("Expected this rpc reply '{0}' to have a failure but did not?", reply.DataString()));
             return failureReason;
         }
         public static void VerifySuccessfulReply(RpcCall call, RpcReply reply)
@@ -71,7 +71,7 @@ namespace Marler.Net
         }
 
         private RpcCallFailedException(RpcCall call, String failureReason)
-            : base(String.Format("{0} failed: {1}", call.ToNiceString(), failureReason))
+            : base(String.Format("{0} failed: {1}", call.DataString(), failureReason))
         {
         }
 
@@ -80,12 +80,12 @@ namespace Marler.Net
         {
         }
     }
-    public class RpcMismatchInfo : ClassSerializer
+    public class RpcMismatchInfo : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[]{
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(RpcMismatchInfo), "low"),
             new XdrUInt32Reflector(typeof(RpcMismatchInfo), "high"),
-        };
+        });
 
         public UInt32 low,high;
 
@@ -100,22 +100,22 @@ namespace Marler.Net
             this.high = high;
         }
     }
-    public class RpcAcceptedReply : ClassSerializer
+    public class RpcAcceptedReply : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
-            new XdrStructFieldReflector<RpcVerifier>(typeof(RpcAcceptedReply), "verifier", RpcVerifier.memberSerializers),
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+            new ClassFieldReflectors<RpcVerifier>(typeof(RpcAcceptedReply), "verifier", RpcVerifier.memberSerializers),
             new XdrDescriminatedUnionReflector<RpcAcceptStatus>(
 
                 new XdrEnumReflector(typeof(RpcAcceptedReply), "status", typeof(RpcAcceptStatus)),
                 
-                VoidReflector.ArrayInstance,
+                VoidReflector.ReflectorsArray,
 
-                new XdrDescriminatedUnionReflector<RpcAcceptStatus>.KeyAndSerializer(RpcAcceptStatus.Success, VoidReflector.ArrayInstance),
+                new XdrDescriminatedUnionReflector<RpcAcceptStatus>.KeyAndSerializer(RpcAcceptStatus.Success, VoidReflector.ReflectorsArray),
                 new XdrDescriminatedUnionReflector<RpcAcceptStatus>.KeyAndSerializer(RpcAcceptStatus.ProgramMismatch, new IReflector[] {
-                    new XdrStructFieldReflector<RpcMismatchInfo>(typeof(RpcAcceptedReply), "mismatchInfo", RpcMismatchInfo.memberSerializers)})
+                    new ClassFieldReflectors<RpcMismatchInfo>(typeof(RpcAcceptedReply), "mismatchInfo", RpcMismatchInfo.memberSerializers)})
 
             )
-        };
+        });
         public RpcVerifier verifier;
         public RpcAcceptStatus status;
         public RpcMismatchInfo mismatchInfo;
@@ -142,23 +142,23 @@ namespace Marler.Net
             this.status = status;
         }
     }
-    public class RpcRejectedReply : ClassSerializer
+    public class RpcRejectedReply : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<RpcRejectStatus>(
 
                 new XdrEnumReflector(typeof(RpcRejectedReply), "status", typeof(RpcRejectStatus)),
                 
-                VoidReflector.ArrayInstance,
+                VoidReflector.ReflectorsArray,
 
                 new XdrDescriminatedUnionReflector<RpcRejectStatus>.KeyAndSerializer(RpcRejectStatus.RpcMismatch, new IReflector[] {
-                    new XdrStructFieldReflector<RpcMismatchInfo>(typeof(RpcRejectedReply), "mismatchInfo", RpcMismatchInfo.memberSerializers)}),
+                    new ClassFieldReflectors<RpcMismatchInfo>(typeof(RpcRejectedReply), "mismatchInfo", RpcMismatchInfo.memberSerializers)}),
                 new XdrDescriminatedUnionReflector<RpcRejectStatus>.KeyAndSerializer(RpcRejectStatus.AuthenticationError, new IReflector[] {
                     new XdrEnumReflector(typeof(RpcRejectedReply), "authenticationError", typeof(RpcAuthenticationStatus))}
                 )
 
             )
-        };
+        });
 
         public RpcRejectStatus status;
         public RpcMismatchInfo mismatchInfo;
@@ -175,19 +175,19 @@ namespace Marler.Net
             this.mismatchInfo = mismatchInfo;
         }
     }
-    public class RpcReply : ClassSerializer
+    public class RpcReply : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<RpcReplyStatus>(
 
                 new XdrEnumReflector(typeof(RpcReply), "status", typeof(RpcReplyStatus)),
                 null, // No default case
                 new XdrDescriminatedUnionReflector<RpcReplyStatus>.KeyAndSerializer(RpcReplyStatus.Accepted, new IReflector[] {
-                    new XdrStructFieldReflector<RpcAcceptedReply>(typeof(RpcReply), "acceptedReply", RpcAcceptedReply.memberSerializers)}),
+                    new ClassFieldReflectors<RpcAcceptedReply>(typeof(RpcReply), "acceptedReply", RpcAcceptedReply.memberSerializers)}),
                 new XdrDescriminatedUnionReflector<RpcReplyStatus>.KeyAndSerializer(RpcReplyStatus.Denied, new IReflector[] {
-                    new XdrStructFieldReflector<RpcRejectedReply>(typeof(RpcReply), "rejectedReply", RpcRejectedReply.memberSerializers)})
+                    new ClassFieldReflectors<RpcRejectedReply>(typeof(RpcReply), "rejectedReply", RpcRejectedReply.memberSerializers)})
             ),
-        };
+        });
 
         public RpcReplyStatus status;
         public RpcAcceptedReply acceptedReply;

@@ -1,16 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Text;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ConsoleClient
     {
+        delegate void CommandFunction(String line);
+
         readonly Object syncObject = new Object();
 
         readonly Int32 sendFileBufferSize;
@@ -22,7 +25,7 @@ namespace Marler.Net
         MessageLogger messageLogger;
         IConnectionDataLogger connectionLogger;
 
-        readonly CommandProcessor commandProcessor;
+        readonly Dictionary<String,CommandFunction> commandDictionary;
 
         private Socket socket;
         Boolean keepRunning;
@@ -39,15 +42,15 @@ namespace Marler.Net
             this.messageLogger = messageLogger;
             this.connectionLogger = connectionLogger;
 
-            this.commandProcessor = new CommandProcessor();
-            commandProcessor.AddCommand(new Command(OpenCommand, "open", "open a connection", "connect"));
-            commandProcessor.AddCommand(new Command(CloseCommand, "close", "close the connection"));
-            commandProcessor.AddCommand(new Command(SendCommand, "send", "send data"));
-            commandProcessor.AddCommand(new Command(SendFileCommand, "sendfile", "Send data from a file"));
-            commandProcessor.AddCommand(new Command(ProxyCommand, "proxy", "Set the proxy"));
-            commandProcessor.AddCommand(new Command(HelpCommand, "help", "Display the Help", "h"));
-            commandProcessor.AddCommand(new Command(ExitCommand, "exit", "Exit", "quit", "byte"));
-            commandProcessor.AddCommand(new Command(EchoCommand, "echo", "Echo the given string"));
+            commandDictionary = new Dictionary<String, CommandFunction>();
+            commandDictionary.Add("open", OpenCommand);
+            commandDictionary.Add("close", CloseCommand);
+            commandDictionary.Add("send", SendCommand);
+            commandDictionary.Add("sendfile", SendFileCommand);
+            commandDictionary.Add("proxy", ProxyCommand);
+            commandDictionary.Add("help", HelpCommand);
+            commandDictionary.Add("exit", ExitCommand);
+            commandDictionary.Add("echo", EchoCommand);
         }
 
         private byte[] GetData(String str, Int32 offset, out Int32 outLength)
@@ -66,7 +69,7 @@ namespace Marler.Net
             }
 
             offset++;
-            byte[] data = ParseUtilities.ParseLiteralString(str, offset, out outLength);
+            byte[] data = str.ParseStringLiteral(offset, out outLength);
             if(outLength <= 0)
             {
                 Console.WriteLine("Please supply data");
@@ -117,10 +120,14 @@ namespace Marler.Net
                     String command = line.Peel(out line);
                     if (String.IsNullOrEmpty(command)) continue;
 
-
-                    if (!commandProcessor.ProcessCommandLine(command, line))
+                    CommandFunction function;
+                    if (!commandDictionary.TryGetValue(command, out function))
                     {
                         Console.WriteLine("Unknown command '{0}'", command);
+                    }
+                    else
+                    {
+                        function(command);
                     }
                 }
             }
@@ -274,7 +281,10 @@ namespace Marler.Net
         }
         public void HelpCommand(String line)
         {
-            commandProcessor.PrintCommands();
+            foreach (KeyValuePair<String, CommandFunction> pair in commandDictionary)
+            {
+                Console.WriteLine("{0}", pair.Key);
+            }
         }
         public void ExitCommand(String line)
         {

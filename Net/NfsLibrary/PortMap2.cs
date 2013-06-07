@@ -1,8 +1,8 @@
 ﻿using System;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public static class PortMap2
     {
@@ -52,7 +52,7 @@ namespace Marler.Net
         */
     }
 }
-namespace Marler.Net.PortMap2Procedure
+namespace More.Net.PortMap2Procedure
 {
     public class Null : RpcProcedure
     {
@@ -72,14 +72,14 @@ namespace Marler.Net.PortMap2Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class GetPortCall : ClassSerializer
+    public class GetPortCall : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(GetPortCall), "program"),
             new XdrUInt32Reflector(typeof(GetPortCall), "programVersion"),
             new XdrUInt32Reflector(typeof(GetPortCall), "transportProtocol"),
             new XdrUInt32Reflector(typeof(GetPortCall), "port"),
-        };
+        });
 
         public UInt32 program;
         public UInt32 programVersion;
@@ -99,11 +99,11 @@ namespace Marler.Net.PortMap2Procedure
             Deserialize(data, offset, maxOffset);
         }
     }
-    public class GetPortReply : ClassSerializer
+    public class GetPortReply : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(GetPortReply), "port"),
-        };
+        });
 
         public UInt32 port;
         public GetPortReply()

@@ -4,6 +4,6 @@ using System.Linq;
 using System.Text;
 using System.IO;
 
-namespace Marler.Net
+namespace More.Net
 {
 }

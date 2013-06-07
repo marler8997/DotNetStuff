@@ -3,7 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Marler.Net
+namespace More.Net
 {
     [TestClass]
     public class MonitorExploration

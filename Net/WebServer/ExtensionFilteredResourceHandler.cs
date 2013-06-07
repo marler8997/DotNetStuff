@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace Marler.Net
+namespace More.Net
 {
 
     public class ExtensionFilteredResourceHandler : IResourceHandler

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.IO;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ApplicationLayerSelectHandler : StreamSelectServerCallback
     {
@@ -18,7 +18,10 @@ namespace Marler.Net
             this.clients = new Dictionary<Socket, ProxyClientHandler>();
             this.serverSocketsToClientSockets = new Dictionary<Socket, Socket>();
         }
-
+        public void ServerListening(Socket listenSocket)
+        {
+            throw new NotImplementedException();
+        }
         public void ServerStopped()
         {
         } 

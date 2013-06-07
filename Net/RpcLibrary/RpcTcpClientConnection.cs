@@ -2,9 +2,9 @@
 using System.Net.Sockets;
 using System.Net;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class RpcTcpClientConnection : IDisposable
     {
@@ -54,7 +54,7 @@ namespace Marler.Net
 
             if (offset != contentMaxOffset)
                 throw new InvalidOperationException(String.Format("Deserialization of rpc message '{0}' as the following '{1}' resulted in an offset of {2}, but the record had {3} bytes",
-                    reply.ToNiceString(), procedure.responseSerializer.ToNiceString(), offset, contentMaxOffset));
+                    reply.DataString(), procedure.responseSerializer.DataString(), offset, contentMaxOffset));
         }
         public void BindToPrivelegedPort()
         {

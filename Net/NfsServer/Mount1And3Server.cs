@@ -3,10 +3,16 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
+    [NpcInterface]
+    public interface IMount1And3Handler
+    {
+        Mount3Procedure.MountReply Handle(Mount3Procedure.MountCall mountCall);
+    }
+
     public class Mount1And3Server : RpcServerHandler
     {
         private readonly RpcServicesManager servicesManager;
@@ -74,11 +80,11 @@ namespace Marler.Net
                 return new RpcReply(new RpcMismatchInfo(1, 2));
             }
             if (NfsServerLog.warningLogger != null)
-                NfsServerLog.warningLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, callData.ToNiceSmallString(), replyParameters.ToNiceSmallString());
+                NfsServerLog.warningLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, callData.DataSmallString(), replyParameters.DataSmallString());
             return new RpcReply(RpcVerifier.None);
         }
 
-        private Mount3Procedure.MountReply Handle(Mount3Procedure.MountCall mountCall)
+        public Mount3Procedure.MountReply Handle(Mount3Procedure.MountCall mountCall)
         {
             String directoryKey = mountCall.directory;
             ShareObject shareObject;

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Marler.Net
+namespace More.Net
 {
     /// <summary>
     /// Summary description for CdpTest

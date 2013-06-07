@@ -4,11 +4,11 @@ using System.Text;
 using System.IO;
 using System.Security;
 
-using Marler.Common;
+using More;
 
 using Microsoft.Win32;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class DefaultFileResourceHandler : IResourceHandler
     {
@@ -61,7 +61,7 @@ namespace Marler.Net
                         urlStack.Push(urlIterator);
                     }
                     Console.WriteLine("DEBUG: URL STACK({0}) :", urlStack.Count);
-                    urlStack.Print();
+                    urlStack.Print(Console.Out);
 
                     stringBuilder.Append(String.Format("<h1>URL: {0}</h1>\n", request.url));
                     if (urlStack.Count > 0)

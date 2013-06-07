@@ -1,17 +1,17 @@
 ﻿using System;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
-    public class RpcCall : ClassSerializer
+    public class RpcCall : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
-            new XdrStructFieldReflector<RpcProgramHeader>(typeof(RpcCall), "programHeader", RpcProgramHeader.memberSerializers),
-            new XdrUInt32Reflector                       (typeof(RpcCall), "procedure"),
-            new XdrStructFieldReflector<RpcCredentials>  (typeof(RpcCall), "credentials", RpcCredentials.memberSerializers),
-            new XdrStructFieldReflector<RpcVerifier>     (typeof(RpcCall), "verifier"   , RpcVerifier.memberSerializers),
-        };
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+            new ClassFieldReflectors<RpcProgramHeader>(typeof(RpcCall), "programHeader", RpcProgramHeader.memberSerializers),
+            new XdrUInt32Reflector                    (typeof(RpcCall), "procedure"),
+            new ClassFieldReflectors<RpcCredentials>  (typeof(RpcCall), "credentials", RpcCredentials.memberSerializers),
+            new ClassFieldReflectors<RpcVerifier>     (typeof(RpcCall), "verifier"   , RpcVerifier.memberSerializers),
+        });
 
         public readonly RpcProgramHeader programHeader;
         public readonly UInt32 procedure;

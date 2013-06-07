@@ -4,13 +4,123 @@ using System.Text;
 using System.IO;
 using System.Diagnostics;
 
-using Marler.Common;
-using Marler.Net.Nfs3Procedure;
+using More;
+using More.Net.Nfs3Procedure;
 
-namespace Marler.Net
+namespace More.Net
 {
-    public class Nfs3Server : RpcServerHandler
+    [NpcInterface]
+    public interface INfs3ServerNiceInterface
     {
+        String[] ShareNames();
+        ShareObject[] ShareObjects();
+        FSInfoReply FSInfoByName(String shareName);
+    }
+    [NpcInterface]
+    public interface INfs3Server
+    {
+        GetFileAttributesReply GETATTR(GetFileAttributesCall getFileAttributesCall);
+        SetFileAttributesReply SETATTR(SetFileAttributesCall setFileAttributesCall);
+        LookupReply LOOKUP(LookupCall lookupCall);
+        AccessReply ACCESS(AccessCall accessCall);
+        ReadReply READ(ReadCall readCall);
+        WriteReply WRITE(WriteCall writeCall);
+        CreateReply CREATE(CreateCall createCall);
+        MkdirReply MKDIR(MkdirCall mkdirCall);
+        SymLinkReply SYMLINK(SymLinkCall symLinkCall);
+        RemoveReply REMOVE(RemoveCall removeCall);
+        RenameReply RENAME(RenameCall renameCall);
+        ReadDirPlusReply READDIRPLUS(ReadDirPlusCall readDirPlusCall);
+        FileSystemStatusReply FSSTAT(FileSystemStatusCall fileSystemStatusCall);
+        FSInfoReply FSINFO(FSInfoCall fsInfoCall);
+    }
+
+
+    public class Nfs3Server : RpcServerHandler, INfs3Server
+    {
+        public class NfsServerManager : INfs3ServerNiceInterface
+        {
+            readonly Nfs3Server server;
+            public NfsServerManager(Nfs3Server server)
+            {
+                this.server = server;
+            }
+            public String[] ShareNames()
+            {
+                ShareDirectory[] shareDirectories = server.sharedFileSystem.shareDirectories;
+                String[] shareNames = new String[shareDirectories.Length];
+                for (int i = 0; i < shareDirectories.Length; i++)
+                {
+                    shareNames[i] = shareDirectories[i].shareName;
+                }
+                return shareNames;
+            }
+
+
+            public ShareObject[] ShareObjects()
+            {
+                return server.sharedFileSystem.CreateArrayOfShareObjects();
+            }
+
+            public FSInfoReply FSInfoByName(String shareName)
+            {
+                ShareObject shareObject;
+                Status status = server.sharedFileSystem.TryGetSharedDirectory(shareName, out shareObject);
+                if (status != Status.Ok) return new FSInfoReply(status, OptionalFileAttributes.None);
+
+                return server.FSINFO(new FSInfoCall(shareObject.fileHandleBytes));
+            }
+        }
+
+        public static FileSystemStatusReply MakeFileSystemStatusReply(DriveInfo driveInfo, OptionalFileAttributes fileAttributes)
+        {
+            return new Nfs3Procedure.FileSystemStatusReply(fileAttributes,
+                (UInt64)driveInfo.TotalSize,
+                (UInt64)driveInfo.TotalFreeSpace,
+                (UInt64)driveInfo.AvailableFreeSpace,
+                99999999,
+                99999999,
+                99999999,
+                0);
+        }
+        public static Int32 ReadFile(FileInfo fileInfo, Int32 fileOffset, Byte[] buffer, Int32 maxBytesToRead, FileShare shareOptions, out Boolean reachedEndOfFile)
+        {
+            fileInfo.Refresh();
+
+            Int64 fileSize = fileInfo.Length;
+
+            if (fileOffset >= fileSize)
+            {
+                reachedEndOfFile = true;
+                return 0;
+            }
+
+            Int64 fileSizeFromOffset = fileSize - fileOffset;
+
+            Int32 readLength;
+            if (fileSizeFromOffset > (Int64)maxBytesToRead)
+            {
+                reachedEndOfFile = false;
+                readLength = maxBytesToRead;
+            }
+            else
+            {
+                reachedEndOfFile = true;
+                readLength = (Int32)fileSizeFromOffset;
+            }
+            if (readLength <= 0) return 0;
+
+            using (FileStream fileStream = fileInfo.Open(FileMode.Open, FileAccess.Read, shareOptions))
+            {
+                fileStream.Position = fileOffset;
+                fileStream.ReadFullSize(buffer, 0, readLength);
+            }
+
+            return readLength;
+        }
+
+
+
         private readonly RpcServicesManager servicesManager;
         private readonly SharedFileSystem sharedFileSystem;
         private readonly PartialByteArraySerializer fileContents;
@@ -31,132 +141,173 @@ namespace Marler.Net
         }
         public override RpcReply Call(String clientString, RpcCall call, byte[] callParameters, int callOffset, int callMaxOffset, out ISerializer replyParameters)
         {
+            String nfsMethodName;
             ISerializer callData;
-            replyParameters = VoidSerializer.Instance;
 
             Int64 beforeCall = Stopwatch.GetTimestamp();
 
-            Boolean printCall = true;
+            Boolean printCall = true, printReply = true;
 
             switch (call.procedure)
             {
                 case (UInt32)Nfs3Command.NULL:
+                    nfsMethodName = "NULL";
+
                     callData = VoidSerializer.Instance;
+                    replyParameters = VoidSerializer.Instance;
                     break;
                 case (UInt32)Nfs3Command.GETATTR:
+                    nfsMethodName = "GETATTR";
 
                     GetFileAttributesCall getFileAttributesCall = new GetFileAttributesCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(getFileAttributesCall);
-                    callData = getFileAttributesCall;
+                    callData = getFileAttributesCall.CreateSerializer();
+
+                    replyParameters = GETATTR(getFileAttributesCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.SETATTR:
+                    nfsMethodName = "SETATTR";
 
                     SetFileAttributesCall setFileAttributesCall = new SetFileAttributesCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(setFileAttributesCall);
-                    callData = setFileAttributesCall;
+                    callData = setFileAttributesCall.CreateSerializer();
+
+                    replyParameters = SETATTR(setFileAttributesCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.LOOKUP:
+                    nfsMethodName = "LOOKUP";
+                    printReply = false;
 
                     LookupCall lookupCall = new LookupCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(lookupCall);
-                    callData = lookupCall;
+                    callData = lookupCall.CreateSerializer();
+
+                    replyParameters = LOOKUP(lookupCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.ACCESS:
+                    nfsMethodName = "ACCESS";
 
                     AccessCall accessCall = new AccessCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(accessCall);
-                    callData = accessCall;
+                    callData = accessCall.CreateSerializer();
+
+                    replyParameters = ACCESS(accessCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.READ:
+                    nfsMethodName = "READ";
+                    printReply = false;
 
                     ReadCall readCall = new ReadCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(readCall);
-                    callData = readCall;
+                    callData = readCall.CreateSerializer();
+
+                    replyParameters = READ(readCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.WRITE:
+                    nfsMethodName = "WRITE";
+                    printCall = false;
 
                     WriteCall writeCall = new WriteCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(writeCall);
-                    callData = writeCall;
-                    printCall = false;
+                    callData = writeCall.CreateSerializer();
+
+                    replyParameters = WRITE(writeCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.CREATE:
+                    nfsMethodName = "CREATE";
 
                     CreateCall createCall = new CreateCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(createCall);
-                    callData = createCall;
+                    callData = createCall.CreateSerializer();
+
+                    replyParameters = CREATE(createCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.MKDIR:
+                    nfsMethodName = "MKDIR";
 
                     MkdirCall mkdirCall = new MkdirCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(mkdirCall);
-                    callData = mkdirCall;
+                    callData = mkdirCall.CreateSerializer();
+
+                    replyParameters = MKDIR(mkdirCall).CreateSerializer();
 
                     break;
 
                 case (UInt32)Nfs3Command.SYMLINK:
+                    nfsMethodName = "SYMLINK";
 
                     SymLinkCall symLinkCall = new SymLinkCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(symLinkCall);
-                    callData = symLinkCall;
+                    callData = symLinkCall.CreateSerializer();
+
+                    replyParameters = SYMLINK(symLinkCall).CreateSerializer();
                     
                     break;
 
                 case (UInt32)Nfs3Command.REMOVE:
                 case (UInt32)Nfs3Command.RMDIR:
-                    
+                    nfsMethodName = "REMOVE/RMDIR";
+
                     RemoveCall removeCall = new RemoveCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(removeCall);
-                    callData = removeCall;
+                    callData = removeCall.CreateSerializer();
+
+                    replyParameters = REMOVE(removeCall).CreateSerializer();
                     break;
 
                 case (UInt32)Nfs3Command.RENAME:
+                    nfsMethodName = "RENAME";
 
                     RenameCall renameCall = new RenameCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(renameCall);
-                    callData = renameCall;
+                    callData = renameCall.CreateSerializer();
+
+                    replyParameters = RENAME(renameCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.READDIRPLUS:
+                    nfsMethodName = "READDIRPLUS";
+                    printReply = false;
 
                     ReadDirPlusCall readDirPlusCall = new ReadDirPlusCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(readDirPlusCall);
-                    callData = readDirPlusCall;
+                    callData = readDirPlusCall.CreateSerializer();
+
+                    replyParameters = READDIRPLUS(readDirPlusCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.FSSTAT:
+                    nfsMethodName = "FSSTAT";
 
                     FileSystemStatusCall fileSystemInfoCall = new FileSystemStatusCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(fileSystemInfoCall);
-                    callData = fileSystemInfoCall;
+                    callData = fileSystemInfoCall.CreateSerializer();
+
+                    replyParameters = FSSTAT(fileSystemInfoCall).CreateSerializer();
 
                     break;
                 case (UInt32)Nfs3Command.FSINFO:
+                    nfsMethodName = "FSINFO";
 
-                    FsInfoCall fsInfoCall = new FsInfoCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(fsInfoCall);
-                    callData = fsInfoCall;
+                    //
+                    // Deserialize
+                    //
+                    FSInfoCall fsInfoCall = new FSInfoCall(callParameters, callOffset, callMaxOffset);
+                    callData = fsInfoCall.CreateSerializer();
+
+                    replyParameters = FSINFO(fsInfoCall).CreateSerializer();
 
                     break;
-                case (UInt32) Nfs3Command.COMMIT:
+                case (UInt32)Nfs3Command.COMMIT:
+                    nfsMethodName = "COMMIT";
 
                     // Since this server does not perform unstable writes at the moment, this function is unnecessary
                     CommitCall commitCall = new CommitCall(callParameters, callOffset, callMaxOffset);
-                    //replyParameters = Handle(getPortCall);
-                    replyParameters = new CommitReply(BeforeAndAfterAttributes.None, null);
-                    callData = commitCall;
+                    callData = commitCall.CreateSerializer();
+
+                    //replyParameters = Handle(commitCall).CreateSerializer();
+                    CommitReply commitReply = new CommitReply(BeforeAndAfterAttributes.None, null);
+                    replyParameters = commitReply.CreateSerializer();
 
                     break;
                 default:
                     if (NfsServerLog.warningLogger != null)
                         NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] client '{1}' sent unknown procedure number {2}", serviceName, clientString, call.procedure);
+                    replyParameters = VoidSerializer.Instance;
                     return new RpcReply(RpcVerifier.None, RpcAcceptStatus.ProcedureUnavailable);
             }
 
@@ -164,9 +315,10 @@ namespace Marler.Net
             Int64 callStopwatchTicks = afterCall - beforeCall;
             if (NfsServerLog.rpcCallLogger != null)
             {
-                String callString = printCall ? callData.ToNiceSmallString() : callData.GetType().Name;
-                NfsServerLog.rpcCallLogger.WriteLine("[{0}] Rpc {1} => {2} {3:0.00} milliseconds", serviceName, callString,
-                    replyParameters.GetType().Name, callStopwatchTicks.StopwatchTicksAsDoubleMilliseconds());
+                NfsServerLog.rpcCallLogger.WriteLine("[{0}] {1} {2} => {3} {4:0.00} milliseconds", serviceName, nfsMethodName,
+                    printCall ? callData.DataSmallString() : "[Call Ommited From Log]",
+                    printReply ? replyParameters.DataSmallString() : "[Reply Ommited From Log]" ,
+                    callStopwatchTicks.StopwatchTicksAsDoubleMilliseconds());
             }
             if (NfsServerLog.storePerformance)
             {
@@ -176,16 +328,16 @@ namespace Marler.Net
             //servicesManager.PrintPerformance();
             return new RpcReply(RpcVerifier.None);
         }
-        GetFileAttributesReply Handle(GetFileAttributesCall getFileAttributesCall)
+        public GetFileAttributesReply GETATTR(GetFileAttributesCall getFileAttributesCall)
         {
             ShareObject shareObject;
-            Status status = sharedFileSystem.TryGetSharedObject(getFileAttributesCall.fileHandle, out shareObject);
+            Status status = sharedFileSystem.TryGetSharedObject(getFileAttributesCall.handle, out shareObject);
             if (status != Status.Ok) return new GetFileAttributesReply(status);
 
             shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
             return new GetFileAttributesReply(shareObject.fileAttributes);
         }
-        SetFileAttributesReply Handle(SetFileAttributesCall setFileAttributesCall)
+        public SetFileAttributesReply SETATTR(SetFileAttributesCall setFileAttributesCall)
         {
             ShareObject shareObject;
             Status status = sharedFileSystem.TryGetSharedObject(setFileAttributesCall.fileHandle, out shareObject);
@@ -199,7 +351,7 @@ namespace Marler.Net
 
             return new SetFileAttributesReply(Status.Ok, new BeforeAndAfterAttributes(before, shareObject.fileAttributes));
         }
-        LookupReply Handle(LookupCall lookupCall)
+        public LookupReply LOOKUP(LookupCall lookupCall)
         {
             //
             // Get Directory Object
@@ -226,7 +378,7 @@ namespace Marler.Net
             return new LookupReply(fileShareObject.fileHandleBytes, directoryShareObject.optionalFileAttributes,
                 fileShareObject.optionalFileAttributes);
         }
-        AccessReply Handle(AccessCall accessCall)
+        public AccessReply ACCESS(AccessCall accessCall)
         {
             ShareObject shareObject;
             Status status = sharedFileSystem.TryGetSharedObject(accessCall.fileHandle, out shareObject);
@@ -239,7 +391,7 @@ namespace Marler.Net
                 AccessFlags.Delete | AccessFlags.Execute | AccessFlags.Extend |
                 AccessFlags.Lookup | AccessFlags.Modify | AccessFlags.Read);
         }
-        ReadReply Handle(ReadCall readCall)
+        public ReadReply READ(ReadCall readCall)
         {
             ShareObject shareObject;
             Status status = sharedFileSystem.TryGetSharedObject(readCall.fileHandle, out shareObject);
@@ -253,18 +405,22 @@ namespace Marler.Net
             Int32 bytesRead;
             try
             {
-                bytesRead = FileExtensions.ReadFile(shareObject.AccessFileInfo(), (Int32)readCall.offset, fileContents.bytes, FileShare.ReadWrite, out reachedEndOfFile);
+                bytesRead = ReadFile(shareObject.AccessFileInfo(), (Int32)readCall.offset, fileContents.bytes, (Int32)readCall.count, FileShare.ReadWrite, out reachedEndOfFile);
             }
             catch (IOException)
             {
-                // TODO: what error should i report here since Linux doesn't seem to have this kind of error (file used by another process)
-                return new ReadReply(Status.
+                //
+                // Note: Linux does not support preventing a file open based on another process having the file open,
+                //       so in turn, NFS does not have an error code to that effect.  The best error code fit seems to
+                //       be and ACCESS error.
+                //
+                return new ReadReply(Status.ErrorAccess, OptionalFileAttributes.None);
             }
 
             fileContents.length = bytesRead;
             return new ReadReply(OptionalFileAttributes.None, (UInt32)bytesRead, reachedEndOfFile, fileContents);
         }
-        WriteReply Handle(WriteCall writeCall)
+        public WriteReply WRITE(WriteCall writeCall)
         {
             ShareObject shareObject;
             Status status = sharedFileSystem.TryGetSharedObject(writeCall.fileHandle, out shareObject);
@@ -293,7 +449,7 @@ namespace Marler.Net
             return new WriteReply(new BeforeAndAfterAttributes(sizeAndTimesBeforeWrite, shareObject.fileAttributes),
                 (UInt32)writeCall.data.Length, writeCall.stableHow, null);
         }
-        CreateReply Handle(CreateCall createCall)
+        public CreateReply CREATE(CreateCall createCall)
         {
             if(createCall.mode == CreateModeEnum.Exclusive)
                 return new CreateReply(Status.ErrorNotSupported, BeforeAndAfterAttributes.None);
@@ -346,7 +502,7 @@ namespace Marler.Net
                 if (fileStream != null) fileStream.Dispose();
             }
         }
-        MkdirReply Handle(MkdirCall mkdirCall)
+        public MkdirReply MKDIR(MkdirCall mkdirCall)
         {
             ShareObject parentDirectoryShareObject;
             Status status = sharedFileSystem.TryGetSharedObject(mkdirCall.directoryHandle, out parentDirectoryShareObject);
@@ -375,7 +531,7 @@ namespace Marler.Net
                 parentDirectoryShareObject.optionalFileAttributes,
                 new BeforeAndAfterAttributes(directorySizeAndTimesBeforeCreate, parentDirectoryShareObject.fileAttributes));
         }
-        private ISerializer Handle(SymLinkCall symLinkCall)
+        public SymLinkReply SYMLINK(SymLinkCall symLinkCall)
         {
             ShareObject shareObject;
             Status status = sharedFileSystem.TryGetSharedObject(symLinkCall.linkToHandle, out shareObject);
@@ -386,7 +542,7 @@ namespace Marler.Net
             //
             return new SymLinkReply(Status.ErrorNotSupported, BeforeAndAfterAttributes.None);
         }
-        RemoveReply Handle(RemoveCall removeCall)
+        public RemoveReply REMOVE(RemoveCall removeCall)
         {
             ShareObject parentDirectoryShareObject;
             Status status = sharedFileSystem.TryGetSharedObject(removeCall.directoryHandle, out parentDirectoryShareObject);
@@ -403,7 +559,7 @@ namespace Marler.Net
             return new RemoveReply(Status.Ok, new BeforeAndAfterAttributes(directorySizeAndTimesBeforeCreate,
                 parentDirectoryShareObject.fileAttributes));
         }
-        RenameReply Handle(RenameCall renameCall)
+        public RenameReply RENAME(RenameCall renameCall)
         {
             ShareObject oldParentDirectoryShareObject;
             ShareObject newParentDirectoryShareObject;
@@ -433,7 +589,7 @@ namespace Marler.Net
                 new BeforeAndAfterAttributes(oldDirectorySizeAndTimesBeforeCreate, oldParentDirectoryShareObject.fileAttributes),
                 new BeforeAndAfterAttributes(newDirectorySizeAndTimesBeforeCreate, newParentDirectoryShareObject.fileAttributes));
         }
-        ReadDirPlusReply Handle(ReadDirPlusCall readDirPlusCall)
+        public ReadDirPlusReply READDIRPLUS(ReadDirPlusCall readDirPlusCall)
         {
             ShareObject directoryShareObject;
             Status status = sharedFileSystem.TryGetSharedObject(readDirPlusCall.directoryHandle, out directoryShareObject);
@@ -504,7 +660,7 @@ namespace Marler.Net
             return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, lastEntry, true);
         }
 
-        private ISerializer Handle(FileSystemStatusCall fileSystemInfoCall)
+        public FileSystemStatusReply FSSTAT(FileSystemStatusCall fileSystemInfoCall)
         {
             ShareDirectory shareDirectory;
             Nfs3Procedure.Status status = sharedFileSystem.TryGetShareDirectory(fileSystemInfoCall.fileSystemRoot, out shareDirectory);
@@ -512,23 +668,22 @@ namespace Marler.Net
 
             DriveInfo driveInfo = shareDirectory.driveInfo;
 
-            return new FileSystemStatusReply(OptionalFileAttributes.None,
-                (UInt64)driveInfo.TotalSize,
-                (UInt64)driveInfo.TotalFreeSpace,
-                (UInt64)driveInfo.AvailableFreeSpace,
-                99999999,
-                99999999,
-                99999999,
-                0);
+            return MakeFileSystemStatusReply(shareDirectory.driveInfo, OptionalFileAttributes.None);
         }
-        FsInfoReply Handle(FsInfoCall getPortCall)
+        public FSInfoReply FSINFO(FSInfoCall fsInfoCall)
         {
-            return new FsInfoReply(
+            ShareDirectory shareDirectory;
+            Nfs3Procedure.Status status = sharedFileSystem.TryGetShareDirectory(fsInfoCall.handle, out shareDirectory);
+            if (status != Nfs3Procedure.Status.Ok) return new FSInfoReply(status, OptionalFileAttributes.None);
+
+            DriveInfo driveInfo = shareDirectory.driveInfo;
+
+            return new FSInfoReply(
                 OptionalFileAttributes.None,
                 (UInt32)fileContents.bytes.Length, (UInt32)fileContents.bytes.Length, suggestedReadSizeMultiple,
                 0x10000, 0x10000, 0x1000,
                 0x1000,
-                0x10000000000,
+                (UInt64)driveInfo.AvailableFreeSpace,
                 1,
                 0,
                 FileProperties.Fsf3Link | FileProperties.Fsf3SymLink | FileProperties.Fsf3Homogeneous | FileProperties.Fsf3CanSetTime

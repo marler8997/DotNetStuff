@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class WebServerProgram
     {

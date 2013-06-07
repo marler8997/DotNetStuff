@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class DomainNameResolver
     {

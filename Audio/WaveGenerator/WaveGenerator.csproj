@@ -45,10 +45,6 @@
     <Compile Include="WaveWriter.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\Marler.Common.csproj">
-      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
-      <Name>Marler.Common</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Marler.Audio.csproj">
       <Project>{CF327AF6-305E-4B60-9B14-798582D0C86F}</Project>
       <Name>Marler.Audio</Name>

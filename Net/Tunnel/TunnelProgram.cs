@@ -6,9 +6,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Diagnostics;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     class TunnelOptions : CLParser
     {
@@ -171,6 +171,9 @@ namespace Marler.Net
 
             this.socketPairs = new Dictionary<Socket, Socket>();
             expectedSocketCount = 0;
+        }
+        public void ServerListening(Socket listenSocket)
+        {
         }
         public void ServerStopped()
         {

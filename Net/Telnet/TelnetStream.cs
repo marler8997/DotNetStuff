@@ -2,7 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 
-namespace Marler.Net
+namespace More.Net
 {
     public interface ITelnetHandler
     {

@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Net.CE", "Marler.Net
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Common.CE", "..\Common\Marler.Common.CE.csproj", "{9AF5441B-8208-44E6-9686-A29D8019FBD5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Sos.CE", "..\Sos\Marler.Sos.CE.csproj", "{69BF55A9-91A7-48B6-9796-5C963B7343C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Net.Npc.CE", "Marler.Net.Npc\Marler.Net.Npc.CE.csproj", "{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,14 @@ Global
 		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69BF55A9-91A7-48B6-9796-5C963B7343C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69BF55A9-91A7-48B6-9796-5C963B7343C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69BF55A9-91A7-48B6-9796-5C963B7343C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69BF55A9-91A7-48B6-9796-5C963B7343C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

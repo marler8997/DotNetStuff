@@ -1,7 +1,7 @@
 ﻿using System;
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public enum AdapterType { ClientServer, ClientClient, ServerServer };
     public static class AdapterTypeMethods

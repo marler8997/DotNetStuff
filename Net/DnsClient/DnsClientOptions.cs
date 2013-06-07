@@ -1,8 +1,8 @@
 ﻿using System;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     class DnsClientOptions : CLParser
     {

@@ -5,9 +5,9 @@ using System.Net;
 using System.Text;
 using System.Threading;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     //
     // This program will serve like an HTTP proxy, but (when the server supports it)

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class StringBuilderWriter : TextWriter
     {

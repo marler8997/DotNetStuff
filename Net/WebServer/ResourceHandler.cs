@@ -7,7 +7,7 @@ using System.Text;
 using Microsoft.Win32;
 using System.Diagnostics;
 
-namespace Marler.Net
+namespace More.Net
 {
     public interface IResourceHandler
     {

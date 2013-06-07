@@ -3,9 +3,9 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     
     public enum SocksCommand : byte

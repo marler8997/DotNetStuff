@@ -5,7 +5,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.IO;
 
-namespace Marler.Net
+namespace More.Net
 {
     public static class WriterExtensions
     {

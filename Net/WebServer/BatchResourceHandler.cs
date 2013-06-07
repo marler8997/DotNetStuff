@@ -4,9 +4,9 @@ using System.Text;
 using System.IO;
 using System.Diagnostics;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class BatchResourceHandler : IResourceHandler
     {
@@ -29,8 +29,7 @@ namespace Marler.Net
             //
             // TODO: setup environment variabes with http headers
             //
-            ProcessExecutor executor = new ProcessExecutor(process);
-            if (executor.Run(timeout, null, stdout, stderr))
+            if (process.RunWithReadersAndWriters(timeout, null, stdout, stderr))
             {
                 Console.WriteLine("StdError=\"{0}\"", stderr.ToString());
 

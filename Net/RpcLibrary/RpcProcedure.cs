@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
+    //publicIReflectorAccessor
     public class RpcProcedure
     {
         public readonly String procedureName;

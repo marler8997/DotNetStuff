@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net;
 
-namespace Marler.Net
+namespace More.Net
 {
     public static class BufferPoolTestExtensions
     {

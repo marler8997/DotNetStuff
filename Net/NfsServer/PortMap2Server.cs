@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-using Marler.Common;
-using Marler.Net.PortMap2Procedure;
+using More;
+using More.Net.PortMap2Procedure;
 
-namespace Marler.Net
+namespace More.Net
 {
-    class PortMap2Server : RpcServerHandler
+    [NpcInterface]
+    public interface IPortMap2Handler
+    {
+        GetPortReply Handle(GetPortCall getPortCall);
+    }
+
+    class PortMap2Server : RpcServerHandler, IPortMap2Handler
     {
         private readonly RpcServicesManager servicesManager;
         public readonly Int32 mountPort;
@@ -54,11 +60,11 @@ namespace Marler.Net
             }
 
             if (NfsServerLog.rpcCallLogger != null)
-                NfsServerLog.rpcCallLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, callData.ToNiceSmallString(), replyParameters.ToNiceSmallString());
+                NfsServerLog.rpcCallLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, callData.DataSmallString(), replyParameters.DataSmallString());
             return new RpcReply(RpcVerifier.None);
         }
 
-        private GetPortReply Handle(GetPortCall getPortCall)
+        public GetPortReply Handle(GetPortCall getPortCall)
         {
             GetPortReply getPortReply = new GetPortReply(getPortCall.program, getPortCall.programVersion, getPortCall.transportProtocol, 0);
 

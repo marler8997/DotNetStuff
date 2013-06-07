@@ -5,22 +5,22 @@ using System.Net.Sockets;
 using System.Diagnostics;
 using System.Net;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public enum RpcVersion
     {
         One = 1,
         Two = 2,
     }
-    public class RpcProgramHeader : ClassSerializer
+    public class RpcProgramHeader : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(RpcProgramHeader), "rpcVersion"),
             new XdrUInt32Reflector(typeof(RpcProgramHeader), "program"),
             new XdrUInt32Reflector(typeof(RpcProgramHeader), "programVersion"),
-        };
+        });
 
         public readonly UInt32 rpcVersion;
         public readonly UInt32 program;
@@ -43,20 +43,20 @@ namespace Marler.Net
         Call  = 0,
         Reply = 1,
     };
-    public class RpcMessage : ClassSerializer
+    public class RpcMessage : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(RpcMessage), "transmissionID"),
 
             new XdrDescriminatedUnionReflector<RpcMessageType>(
                 new XdrEnumReflector(typeof(RpcMessage), "messageType", typeof(RpcMessageType)),
                 null,                
                 new XdrDescriminatedUnionReflector<RpcMessageType>.KeyAndSerializer(RpcMessageType.Call, new IReflector[] {
-                    new XdrStructFieldReflector<RpcCall>(typeof(RpcMessage), "call", RpcCall.memberSerializers)}),
+                    new ClassFieldReflectors<RpcCall>(typeof(RpcMessage), "call", RpcCall.memberSerializers)}),
                 new XdrDescriminatedUnionReflector<RpcMessageType>.KeyAndSerializer(RpcMessageType.Reply, new IReflector[] {
-                    new XdrStructFieldReflector<RpcReply>(typeof(RpcMessage), "reply", RpcReply.memberSerializers)})
+                    new ClassFieldReflectors<RpcReply>(typeof(RpcMessage), "reply", RpcReply.memberSerializers)})
             ),
-        };
+        });
 
         public UInt32 transmissionID;
         public RpcMessageType messageType;
@@ -138,7 +138,7 @@ namespace Marler.Net
 
             if (offset != totalMessageLength + 4)
                 throw new InvalidOperationException(String.Format("[CodeBug] The caclulated serialization length of RpcMessage '{0}' was {1} but actual size was {2}",
-                    ToNiceString(), totalMessageLength, offset));
+                    DataString(), totalMessageLength, offset));
 
             //
             // Insert the record header
@@ -168,7 +168,7 @@ namespace Marler.Net
 
             if (offset != totalMessageLength)
                 throw new InvalidOperationException(String.Format("[CodeBug] The caclulated serialization length of RpcMessage '{0}' was {1} but actual size was {2}",
-                    ToNiceString(), totalMessageLength, offset));
+                    DataString(), totalMessageLength, offset));
 
             socket.SendTo(buffer.array, 0, totalMessageLength, SocketFlags.None, endPoint);
         }

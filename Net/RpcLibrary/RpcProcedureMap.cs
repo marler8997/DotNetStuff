@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Marler.Net
+namespace More.Net
 {
     public interface IRpcProcedureMap
     {

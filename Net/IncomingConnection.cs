@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Net.Sockets;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class IncomingConnection
     {
         public readonly String endPointName;
         public readonly Socket socket;
-        public readonly UInt16 acceptedOnPort;
+        public readonly UInt16 localPort;
 
-        public IncomingConnection(Socket socket, UInt16 acceptedOnPort)
+        public IncomingConnection(Socket socket, UInt16 localPort)
         {
-            this.endPointName = socket.RemoteEndPoint.ToString();
+            this.endPointName = socket.SafeRemoteEndPointString();
             this.socket = socket;
-            this.acceptedOnPort = acceptedOnPort;
+            this.localPort = localPort;
         }
 
         public override string ToString()

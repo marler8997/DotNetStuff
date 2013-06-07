@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.IO;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ServerInitializer
     {

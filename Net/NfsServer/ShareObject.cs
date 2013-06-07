@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ShareObject
     {
@@ -45,11 +45,8 @@ namespace Marler.Net
                 this.fileAttributes.diskSize = 0;
             }
             this.fileAttributes.lastAccessTime                      = new Nfs3Procedure.Time();
-            this.fileAttributes.lastAccessTime.nanoseconds          = 0;
             this.fileAttributes.lastModifyTime                      = new Nfs3Procedure.Time();
-            this.fileAttributes.lastModifyTime.nanoseconds          = 0;
             this.fileAttributes.lastAttributeModifyTime             = new Nfs3Procedure.Time();
-            this.fileAttributes.lastAttributeModifyTime.nanoseconds = 0;
 
             if (fileType == Nfs3Procedure.FileType.Directory)
             {

@@ -4,10 +4,13 @@ using System.Net.Sockets;
 using System.IO;
 using System.Text;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ControlServer : StreamSelectServerCallback
     {
+        public void ServerListening(Socket listenSocket)
+        {
+        }
         public void ServerStopped()
         {
         }
@@ -19,12 +22,10 @@ namespace Marler.Net
         {
             return ServerInstruction.NoInstruction;
         }
-
         public ServerInstruction ClientCloseCallback(int clientCount, Socket socket)
         {
             return ServerInstruction.NoInstruction;
         }
-
         public ServerInstruction ClientDataCallback(Socket socket, byte[] bytes, int bytesRead)
         {
             if (bytesRead > 0)
@@ -51,7 +52,5 @@ namespace Marler.Net
 
             return ServerInstruction.NoInstruction;
         }
-
-
     }
 }

@@ -5,9 +5,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class TelnetWindowSize
     {

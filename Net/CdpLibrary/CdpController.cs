@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Diagnostics;
 
-namespace Marler.Net
+namespace More.Net
 {
     /*
     public class CdpSingleSendController : ICdpClientController
@@ -95,7 +95,7 @@ namespace Marler.Net
 
         private Byte[] PrepareSendBufferForPayloadWithID(CdpControllerSendFlags extraFlags, Int32 offsetLimit)
         {
-            if (!hasControl) throw new InvalidOperationException("Cannot send beacuse right now you are not the controller");
+            if (!hasControl) throw new InvalidOperationException("Cannot send because right now you are not the controller");
             if (offsetLimit < 3) throw new ArgumentOutOfRangeException(String.Format("The offset you provided ({0}) is out of range (must be >= 3)", offsetLimit));
 
             Byte[] bufferToSend = this.sendBuffer;
@@ -171,7 +171,7 @@ namespace Marler.Net
                 }
             }
 
-            if (!hasControl) throw new InvalidOperationException("Cannott send beacuse right now you are not the controller");
+            if (!hasControl) throw new InvalidOperationException("Cannott send because right now you are not the controller");
 
 
             throw new NotImplementedException();
@@ -364,7 +364,7 @@ namespace Marler.Net
         }
         private Byte[] PrepareSendBuffer(CdpControllerSendFlags extraFlags, Int32 offsetLimit)
         {
-            if (!hasControl) throw new InvalidOperationException("Cannot send beacuse right now you are not the controller");
+            if (!hasControl) throw new InvalidOperationException("Cannot send because right now you are not the controller");
             if (offsetLimit < 3) throw new ArgumentOutOfRangeException(String.Format("The offset you provided ({0}) is out of range (must be >= 3)", offsetLimit));
 
             Byte[] bufferToSend = this.lastSendBufferRequested;
@@ -411,7 +411,7 @@ namespace Marler.Net
 
         public void SendAndGiveControl(int sendBufferOffsetLimit, int maxResponsePayload, ICdpPayloadHandler receiveHandler, ICdpTimeout timeout)
         {
-            if (!hasControl) throw new InvalidOperationException("Cannott send beacuse right now you are not the controller");
+            if (!hasControl) throw new InvalidOperationException("Cannott send because right now you are not the controller");
 
 
             throw new NotImplementedException();

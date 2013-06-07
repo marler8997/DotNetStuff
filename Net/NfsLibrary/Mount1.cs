@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public static class Mount
     {
@@ -68,7 +68,7 @@ namespace Marler.Net
         //public const Int32 FileHandleSize = 32;
     }
 }
-namespace Marler.Net.Mount1Procedure
+namespace More.Net.Mount1Procedure
 {
     public class Null : RpcProcedure
     {
@@ -88,11 +88,11 @@ namespace Marler.Net.Mount1Procedure
         {
         }
     }
-    public class UnmountCall : ClassSerializer
+    public class UnmountCall : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrStringReflector(typeof(UnmountCall), "directory", Mount1.MaxPathLength),
-        };
+        });
 
         public String directory;
 

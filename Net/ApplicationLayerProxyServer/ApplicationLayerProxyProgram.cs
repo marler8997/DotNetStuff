@@ -5,9 +5,9 @@ using System.Net;
 using System.Threading;
 using System.IO;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     class ApplicationLayerProxyProgram
     {

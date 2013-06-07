@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class Ftp
     {

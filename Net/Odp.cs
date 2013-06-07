@@ -5,7 +5,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 
-namespace Marler.Net
+/*
+namespace More.Net
 {
     public static class Odp
     {
@@ -314,3 +315,4 @@ namespace Marler.Net
     }
 
 }
+*/

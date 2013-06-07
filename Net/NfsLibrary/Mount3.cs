@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public static class Mount3
     {
@@ -65,7 +65,7 @@ namespace Marler.Net
         public const Int32 FileHandleSize = 32;
     }
 }
-namespace Marler.Net.Mount3Procedure
+namespace More.Net.Mount3Procedure
 {
     public class Null : RpcProcedure
     {
@@ -89,11 +89,11 @@ namespace Marler.Net.Mount3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class MountCall : ClassSerializer
+    public class MountCall : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrStringReflector(typeof(MountCall), "directory", Mount3.MaxPathLength),
-        };
+        });
 
         public String directory;
 
@@ -112,20 +112,20 @@ namespace Marler.Net.Mount3Procedure
             this.directory = directory;
         }
     }
-    public class MountReply : ClassSerializer
+    public class MountReply : SubclassSerializer
     {
-        private static readonly IReflector[] mountOkSerializers = new IReflector[] {
+        public static readonly IReflector[] mountOkSerializers = new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(MountReply), "fileHandle", Mount3.FileHandleSize),
             new XdrVarLengthArray<XdrEnum<RpcAuthenticationFlavor>>(typeof(MountReply), "authenticationFlavors", -1),
         };
 
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Nfs3Procedure.Status>(
                 new XdrEnumReflector(typeof(MountReply), "status", typeof(Nfs3Procedure.Status)),
-                VoidReflector.ArrayInstance,
+                VoidReflector.ReflectorsArray,
                 new XdrDescriminatedUnionReflector<Nfs3Procedure.Status>.KeyAndSerializer(Nfs3Procedure.Status.Ok, mountOkSerializers)
             ),
-        };
+        });
 
         public Nfs3Procedure.Status status;
         public Byte[] fileHandle;

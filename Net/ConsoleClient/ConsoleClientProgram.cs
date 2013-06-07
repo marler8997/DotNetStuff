@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Net;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ConsoleClientOptions : CLParser
     {

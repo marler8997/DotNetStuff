@@ -5,9 +5,9 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ServerServer
     {
@@ -72,7 +72,7 @@ namespace Marler.Net
                     for (int i = 0; i < connectionList.Count; i++)
                     {
                         IncomingConnection queuedConnection = connectionList[i];
-                        tunnel = tunnelList.IsATunnel(newConnection.acceptedOnPort, queuedConnection.acceptedOnPort);
+                        tunnel = tunnelList.IsATunnel(newConnection.localPort, queuedConnection.localPort);
                         if (tunnel != null)
                         {
                             matchedConnection = queuedConnection;

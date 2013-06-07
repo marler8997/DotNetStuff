@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.IO;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class RecordParser
     {
@@ -90,7 +90,6 @@ namespace Marler.Net
         
         private readonly ByteBuffer sendBuffer;
 
-
         public RpcServerHandler(String serviceName, ByteBuffer sendBuffer)
         {
             this.serviceName = serviceName;
@@ -102,8 +101,11 @@ namespace Marler.Net
 
         public abstract RpcReply Call(String clientString, RpcCall call,
             Byte[] callParameters, Int32 callOffset, Int32 callMaxOffset,
-            out ISerializer replyParameters);  
+            out ISerializer replyParameters);
 
+        public void ServerListening(Socket listenSocket)
+        {
+        }
         public void ServerStopped()
         {
             Console.WriteLine("[{0}] The server has stopped", serviceName);

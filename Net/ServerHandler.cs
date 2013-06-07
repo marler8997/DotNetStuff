@@ -5,7 +5,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 
-namespace Marler.Net
+namespace More.Net
 {
     public interface Handler
     {

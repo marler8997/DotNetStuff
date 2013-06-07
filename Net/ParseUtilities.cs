@@ -6,7 +6,7 @@ using System.IO;
 using System.CodeDom.Compiler;
 using System.CodeDom;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ParseException : FormatException
     {
@@ -19,89 +19,6 @@ namespace Marler.Net
 #if !WindowsCE
     public static class ParseUtilities
     {
-        public static Byte[] ParseLiteralString(String literal, Int32 offset, out Int32 outLength)
-        {
-            /*
-            Escape  Character Name              Unicode encoding
-            ======  ==============              ================
-            \\      Backslash                   0x005C
-            \0      Null                        0x0000
-            \a      Alert                       0x0007
-            \b      Backspace                   0x0008
-            \f      Form feed                   0x000C
-            \n      New line                    0x000A
-            \r      Carriage return             0x000D
-            \t      Horizontal tab              0x0009
-            \v      Vertical tab                0x000B
-            \x      Hexadecimal Byte            \x41 = "A" = 0x41
-            */
-
-            Int32 length = 0;
-            byte[] buffer = new byte[literal.Length];
-
-            Int32 save;
-
-            while (true)
-            {
-                if (offset >= literal.Length)
-                {
-                    outLength = length;
-                    return buffer;
-                    //return builder.ToString();
-                }
-
-                save = offset;
-                while (true)
-                {
-                    if (literal[offset] == '\\') break;
-                    offset++;
-                    if (offset >= literal.Length)
-                    {
-                        do
-                        {
-                            buffer[length++] = (byte)literal[save++]; // do I need to do an Encoding?
-                        } while (save < literal.Length);
-                        outLength = length;
-                        return buffer;
-                    }
-                }
-
-                // the character at i is '\'
-                while(save < offset)
-                {
-                    buffer[length++] = (byte)literal[save++]; // do I need to do an Encoding?
-                }
-                offset++;
-                if (offset >= literal.Length) throw new FormatException("Your literal string ended with '\'");
-
-                char escapeChar = literal[offset];
-                if (escapeChar == 'n') buffer[length++] = (byte)'\n';
-                else if (escapeChar == '\\') buffer[length++] = (byte)'\\';
-                else if (escapeChar == '0') buffer[length++] = (byte)'\0';
-                else if (escapeChar == 'a') buffer[length++] = (byte)'\a';
-                else if (escapeChar == 'r') buffer[length++] = (byte)'\r';
-                else if (escapeChar == 't') buffer[length++] = (byte)'\t';
-                else if (escapeChar == 'v') buffer[length++] = (byte)'\v';
-                else if (escapeChar == 'x')
-                {
-                    offset++;
-                    if (offset + 1 >= literal.Length) throw new FormatException("The escape character 'x' needs at least 2 digits");
-
-                    Byte output;
-                    String sequence = literal.Substring(offset, 2);
-                    if (!Byte.TryParse(sequence, System.Globalization.NumberStyles.HexNumber, null, out output))
-                    {
-                       throw new FormatException(String.Format("Could not parse the hexadecimal escape sequence '\\x{0}' as a hexadecimal byte", sequence));
-                    }
-                    Console.WriteLine("Parsed '\\x{0}' as '{1}' (0x{2:X2}) ((char)0x{3:X2})", sequence, (char)output, output, (byte)(char)output);
-                    buffer[length++] = output;
-                    offset++;
-                }
-                else throw new FormatException(String.Format("Unrecognized escape sequence '\\{0}'", escapeChar));
-
-                offset++;
-            }
-        }
 
         public static IPortTunnel[] ParseTunnels(List<String> tunnelStrings)
         {
@@ -234,7 +151,7 @@ namespace Marler.Net
 
         public static UInt16[] ParsePorts(String portListString)
         {
-            String[] portStrings = ParseUtilities.SplitCorrectly(portListString, ',');
+            String[] portStrings = portListString.SplitCorrectly(',');
             if(portStrings == null || portStrings.Length == 0)
             {
                 return null;
@@ -268,53 +185,6 @@ namespace Marler.Net
             if (port == 0) throw new ParseException("You can't have a port of 0");
 
             return hostString;
-        }
-        public static String[] SplitCorrectly(String str, Char seperator)
-        {
-            if (str == null || str.Length == 0) return null;
-
-            if (str[0] == seperator) throw new FormatException(String.Format("In the string '{0}', the first character can't be a seperator '{1}'", 
-                str, seperator));
-            if (str[str.Length - 1] == seperator) throw new FormatException(String.Format("In the string '{0}', the last character can't be a seperator '{1}'",
-                str, seperator));
-
-            Int32 seperatorCount = 0;
-            for (int i = 1; i < str.Length - 1; i++)
-            {
-                if (str[i] == seperator)
-                {
-                    if (str[i - 1] == seperator)
-                    {
-                        throw new FormatException(String.Format("In the string '{0}', expected something in between the seperator '{1}'", 
-                            str, seperator));
-                    }
-                    seperatorCount++;
-                }
-            }
-
-            String[] splitStrings = new String[seperatorCount + 1];
-            Int32 splitOffset = 0;
-
-            Int32 lastOffset = 0;
-            Int32 currentOffset = 1;
-            while(currentOffset < str.Length)
-            {
-                if (str[currentOffset] == seperator)
-                {
-                    splitStrings[splitOffset++] = str.Substring(lastOffset, currentOffset - lastOffset);
-                    lastOffset = currentOffset + 1;
-                    currentOffset += 2;
-                }
-                else
-                {
-                    currentOffset++;
-                }
-
-            }
-            
-            splitStrings[splitOffset++] = str.Substring(lastOffset, currentOffset - lastOffset);
-
-            return splitStrings;
         }
     }
 #endif

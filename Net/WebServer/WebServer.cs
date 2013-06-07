@@ -3,11 +3,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class WebServer
     {
-        public const String Name = "MarlerHTTPServer/1.0.*";
+        public const String Name = "MoreHTTPServer/1.0.*";
 
         public readonly IResourceHandler resourceHandler;
         public readonly UInt16 listenPort;

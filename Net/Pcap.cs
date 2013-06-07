@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Text;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     // Types found at http://www.tcpdump.org/linktypes.html
     public enum PcapDataLinkType : uint
@@ -14,9 +14,9 @@ namespace Marler.Net
         // More can be added from http://www.tcpdump.org/linktypes.html
     }
 
-    public class PcapGlobalHeader : ClassSerializer
+    public class PcapGlobalHeader : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "MagicNumber"),
             new SimpleUInt16Reflector(typeof(PcapGlobalHeader), "CurrentVersionMajor"),
             new SimpleUInt16Reflector(typeof(PcapGlobalHeader), "CurrentVersionMinor"),
@@ -24,7 +24,7 @@ namespace Marler.Net
             new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "timestampSigFigs"),
             new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "maxPacketLength"),
             new SimpleEnumReflector  (typeof(PcapGlobalHeader), "dataLinkType", typeof(PcapDataLinkType)),
-        };
+        });
 
         public const UInt32 MagicNumber         = 0xa1b2c3d4;
         public const UInt16 CurrentVersionMajor = 2;
@@ -46,14 +46,14 @@ namespace Marler.Net
         }
     }
 
-    public class PcapPacket : ClassSerializer
+    public class PcapPacket : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "timestampSeconds"),
             new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "timestampMicroseconds"),
             new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "captureLength"),
             new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "actualLength"),
-        };
+        });
 
         public UInt32 timestampSeconds;
         public UInt32 timestampMicroseconds;

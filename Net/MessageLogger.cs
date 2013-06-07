@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace Marler.Net
+namespace More.Net
 {
     public abstract class MessageLogger
     {

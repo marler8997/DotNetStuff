@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ConsoleBrowserOptions : CLParser
     {

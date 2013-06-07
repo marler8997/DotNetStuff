@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.IO;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class HttpToCtpSelectServerHandler : StreamSelectServerCallback
     {
@@ -19,6 +19,9 @@ namespace Marler.Net
             this.serverSocketsToClientSockets = new Dictionary<Socket, Socket>();
         }
 
+        public void ServerListening(Socket listenSocket)
+        {
+        }
         public void ServerStopped()
         {
         } 

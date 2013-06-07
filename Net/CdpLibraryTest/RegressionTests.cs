@@ -8,9 +8,9 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Diagnostics;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     [TestClass]
     public class RegressionTests

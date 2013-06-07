@@ -2,7 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Marler.Net
+namespace More.Net
 {
     public interface IConnectedTransmitterFactory
     {

@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Net.Sockets;
 
-using Marler.Net;
+using More.Net;
 
 namespace TcpGateway
 {

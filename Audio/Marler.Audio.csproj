@@ -35,8 +35,6 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Wave.cs" />
@@ -44,9 +42,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Common\Marler.Common.csproj">
+    <ProjectReference Include="..\More\More.csproj">
       <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
-      <Name>Marler.Common</Name>
+      <Name>More</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

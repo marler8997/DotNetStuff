@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public interface IBufferPool
     {

@@ -4,7 +4,7 @@ using System.Text;
 using System.Net;
 using System.Diagnostics;
 
-namespace Marler.Net
+namespace More.Net
 {
     public static class SnmpManagerProgram
     {

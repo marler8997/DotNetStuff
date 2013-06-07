@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net.Sockets;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class SocketExceptionWithExtraMessage : SocketException
     {

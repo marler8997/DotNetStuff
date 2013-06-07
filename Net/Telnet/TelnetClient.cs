@@ -4,7 +4,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class TelnetClient : ITelnetHandler
     {

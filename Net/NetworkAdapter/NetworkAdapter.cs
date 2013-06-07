@@ -4,7 +4,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class NetworkAdapter
     {

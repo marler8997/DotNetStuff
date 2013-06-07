@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public static class Xdr
     {
@@ -34,9 +34,10 @@ namespace Marler.Net
             this.value = (array[offset + 3] == 0) ? false : true;
             return offset + 4;
         }
-        public String ToNiceString()                    { return value.ToString();          }
-        public void ToNiceString(StringBuilder builder) { builder.Append(value.ToString()); }
-        public String ToNiceSmallString()               { return value.ToString();          }
+        public String DataString()                         { return value.ToString();          }
+        public void DataString(StringBuilder builder)      { builder.Append(value.ToString()); }
+        public String DataSmallString()                    { return value.ToString();          }
+        public void DataSmallString(StringBuilder builder) { builder.Append(value.ToString()); }
     }
     public struct XdrInt32 : ISerializer
     {
@@ -61,9 +62,10 @@ namespace Marler.Net
                        (0x000000FF & (array[offset + 3]      )) );
             return offset + 4;
         }
-        public String ToNiceString()                    { return value.ToString();          }
-        public void ToNiceString(StringBuilder builder) { builder.Append(value.ToString()); }
-        public String ToNiceSmallString()               { return value.ToString();          }
+        public String DataString()                         { return value.ToString();          }
+        public void DataString(StringBuilder builder)      { builder.Append(value.ToString()); }
+        public String DataSmallString()                    { return value.ToString();          }
+        public void DataSmallString(StringBuilder builder) { builder.Append(value.ToString()); }
     }
     public struct XdrUInt32 : ISerializer
     {
@@ -88,9 +90,10 @@ namespace Marler.Net
                        (0x000000FF & (array[offset + 3]      )) );
             return offset + 4;
         }
-        public String ToNiceString()                    { return value.ToString();          }
-        public void ToNiceString(StringBuilder builder) { builder.Append(value.ToString()); }
-        public String ToNiceSmallString()               { return value.ToString();          }
+        public String DataString()                         { return value.ToString();          }
+        public void DataString(StringBuilder builder)      { builder.Append(value.ToString()); }
+        public String DataSmallString()                    { return value.ToString();          }
+        public void DataSmallString(StringBuilder builder) { builder.Append(value.ToString()); }
     }
     public struct XdrEnum<EnumType> : ISerializer
     {
@@ -118,9 +121,10 @@ namespace Marler.Net
 
             return offset + 4;
         }
-        public String ToNiceString()                    { return value.ToString();          }
-        public void ToNiceString(StringBuilder builder) { builder.Append(value.ToString()); }
-        public String ToNiceSmallString()               { return value.ToString();          }
+        public String DataString()                         { return value.ToString();          }
+        public void DataString(StringBuilder builder)      { builder.Append(value.ToString()); }
+        public String DataSmallString()                    { return value.ToString();          }
+        public void DataSmallString(StringBuilder builder) { builder.Append(value.ToString()); }
     }
     public class XdrBooleanReflector : ClassFieldReflector
     {
@@ -132,11 +136,11 @@ namespace Marler.Net
         {
             return 4;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             Boolean value = (Boolean)fieldInfo.GetValue(instance);
             array[offset]     = 0;
@@ -146,12 +150,12 @@ namespace Marler.Net
             return offset + 4;
 
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             fieldInfo.SetValue(instance, (array[offset + 3] == 0) ? false : true);
             return offset + 4;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, (Boolean)fieldInfo.GetValue(instance));
         }
@@ -166,11 +170,11 @@ namespace Marler.Net
         {
             return 4;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             Int32 value       = (Int32)fieldInfo.GetValue(instance);
             array[offset    ] = (Byte)(value >> 24);
@@ -180,7 +184,7 @@ namespace Marler.Net
             return offset + 4;
 
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Int32 value = (Int32)(
                 (Int32)(0xFF000000 & (array[offset    ] << 24)) |
@@ -190,7 +194,7 @@ namespace Marler.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, (Int32)fieldInfo.GetValue(instance));
         }
@@ -205,11 +209,11 @@ namespace Marler.Net
         {
             return 4;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             UInt32 value = (UInt32)fieldInfo.GetValue(instance);
             array[offset] = (Byte)(value >> 24);
@@ -219,7 +223,7 @@ namespace Marler.Net
             return offset + 4;
 
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             UInt32 value = (UInt32)(
                 (Int32)(0xFF000000 & (array[offset] << 24)) |
@@ -229,7 +233,7 @@ namespace Marler.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, (UInt32)fieldInfo.GetValue(instance));
         }
@@ -246,11 +250,11 @@ namespace Marler.Net
         {
             return 4;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             Enum valueAsEnum  = (Enum)fieldInfo.GetValue(instance);
             Int32 value = Convert.ToInt32(valueAsEnum);
@@ -260,7 +264,7 @@ namespace Marler.Net
             array[offset + 3] = (Byte)(value      );
             return offset + 4;
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Int32 value = (Int32)(
                 (Int32)(0xFF000000 & (array[offset    ] << 24)) |
@@ -270,7 +274,7 @@ namespace Marler.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, fieldInfo.GetValue(instance));
         }
@@ -285,11 +289,11 @@ namespace Marler.Net
         {
             return 8;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             return 8;
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             UInt64 value = (UInt64)fieldInfo.GetValue(instance);
             array[offset    ] = (Byte)(value >> 56);
@@ -303,7 +307,7 @@ namespace Marler.Net
             return offset + 8;
 
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             UInt64 value =
                 (0xFF00000000000000UL & ((UInt64)array[offset]     << 56)) |
@@ -317,7 +321,7 @@ namespace Marler.Net
             fieldInfo.SetValue(instance, value);
             return offset + 8;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, (UInt64)fieldInfo.GetValue(instance));
         }
@@ -338,11 +342,11 @@ namespace Marler.Net
         {
             return dataLengthNearestContainingMod4;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             return dataLengthNearestContainingMod4;
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             if (dataLength <= 0) return offset;
 
@@ -370,7 +374,7 @@ namespace Marler.Net
 
             return offset + dataLengthNearestContainingMod4;
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Byte[] data = new Byte[dataLength];
             Array.Copy(array, offset, data, 0, dataLength);
@@ -379,7 +383,7 @@ namespace Marler.Net
 
             return offset + dataLengthNearestContainingMod4;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             String dataString;
 
@@ -406,13 +410,13 @@ namespace Marler.Net
         {
             return -1;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return 4;
             return 4 + Xdr.UpToNearestMod4(((Byte[])valueAsObject).Length);
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
@@ -442,7 +446,7 @@ namespace Marler.Net
 
             return offset + valueAsArrayMod4Length;
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Int32 length = (Int32)(
                 (Int32)(0xFF000000 & (array[offset] << 24)) |
@@ -466,7 +470,7 @@ namespace Marler.Net
 
             return offset + lengthMod4;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             String dataString;
 
@@ -497,7 +501,7 @@ namespace Marler.Net
         {
             return -1;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return 4;
@@ -505,7 +509,7 @@ namespace Marler.Net
             SerializationType value = (SerializationType)valueAsObject;
             return 4 + Xdr.UpToNearestMod4(value.SerializationLength());
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
@@ -536,7 +540,7 @@ namespace Marler.Net
 
             return offset;
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Int32 length = (Int32)(
                 (Int32)(0xFF000000 & (array[offset] << 24)) |
@@ -560,7 +564,7 @@ namespace Marler.Net
 
             return offset + lengthMod4 - length;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             String dataString;
 
@@ -572,11 +576,11 @@ namespace Marler.Net
             else
             {
                 SerializationType value = (SerializationType)valueAsObject;
-                dataString = value.ToNiceString();
+                dataString = value.DataString();
             }
             return String.Format("{0}:{1}", fieldInfo.Name, dataString);
         }
-        public override String ToNiceSmallString(ISerializer instance)
+        public override String DataSmallString(Object instance)
         {
             String dataString;
 
@@ -588,7 +592,7 @@ namespace Marler.Net
             else
             {
                 SerializationType value = (SerializationType)valueAsObject;
-                dataString = value.ToNiceSmallString();
+                dataString = value.DataSmallString();
             }
             return String.Format("{0}:{1}", fieldInfo.Name, dataString);
         }
@@ -610,13 +614,13 @@ namespace Marler.Net
         {
             return -1;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return 0;
             return 4 + Xdr.UpToNearestMod4(((String)valueAsObject).Length);
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
@@ -649,7 +653,7 @@ namespace Marler.Net
 
             return offset;
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Int32 length = (Int32)(
                 (Int32)(0xFF000000 & (array[offset] << 24)) |
@@ -671,7 +675,7 @@ namespace Marler.Net
 
             return offset + lengthMod4;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             String dataString;
 
@@ -701,7 +705,7 @@ namespace Marler.Net
         {
             return -1;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return 4;
@@ -723,7 +727,7 @@ namespace Marler.Net
 
             return 4 + dataLength;
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
@@ -750,7 +754,7 @@ namespace Marler.Net
 
             return offset;
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Int32 length = (Int32)(
                 (Int32)(0xFF000000 & (array[offset] << 24)) |
@@ -777,13 +781,13 @@ namespace Marler.Net
 
             return offset;
         }
-        public override string ToNiceString(ISerializer instance)
+        public override string DataString(Object instance)
         {
             StringBuilder builder = new StringBuilder();
-            ToNiceString(instance, builder);
+            DataString(instance, builder);
             return builder.ToString();
         }
-        public override void ToNiceString(ISerializer instance, StringBuilder builder)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             builder.Append(fieldInfo.Name);
             builder.Append(':');
@@ -801,42 +805,32 @@ namespace Marler.Net
             for (int i = 0; i < valueAsArray.Length; i++)
             {
                 if (i > 0) builder.Append(", ");
-                valueAsArray[i].ToNiceString(builder);
+                valueAsArray[i].DataString(builder);
             }
             builder.Append(']');
         }
 
     }
 
+    /*
     public class XdrStructFieldReflector<CSharpType> : ClassFieldReflector where CSharpType : ISerializer, new()
     {
         private Int32 fixedSerializationLength;
-        private IReflector[] fieldSerializers;
+        private IReflector[] fieldReflectors;
 
-        public XdrStructFieldReflector(Type typeThatContainsThisField, String fieldName, params IReflector[] fieldSerializers)
+        public XdrStructFieldReflector(Type typeThatContainsThisField, String fieldName, IReflectors fieldReflectors)
             : base(typeThatContainsThisField, fieldName)
         {
-            this.fieldSerializers = fieldSerializers;
-
-            this.fixedSerializationLength = 0;
-            for (int i = 0; i < fieldSerializers.Length; i++)
-            {
-                Int32 fieldFixedSerializationLength = fieldSerializers[i].FixedSerializationLength();
-                if (fieldFixedSerializationLength < 0)
-                {
-                    this.fixedSerializationLength = -1; // length is not fixed
-                    return;
-                }
-                this.fixedSerializationLength += fieldFixedSerializationLength;
-            }
+            this.fieldReflectors = fieldReflectors.reflectors;
+            this.fixedSerializationLength = fieldReflectors.fixedSerializationLength;
         }
         public override Int32 FixedSerializationLength()
         {
             return fixedSerializationLength;
         }
-        public override Int32 SerializationLength(ISerializer instance)
+        public override Int32 SerializationLength(Object instance)
         {
-            if (fieldSerializers == null) return 0;
+            if (fieldReflectors == null) return 0;
             if (fixedSerializationLength >= 0) return fixedSerializationLength;
 
             ISerializer structInstance = (ISerializer)fieldInfo.GetValue(instance);
@@ -848,7 +842,7 @@ namespace Marler.Net
             }
             return length;
         }
-        public override Int32 Serialize(ISerializer instance, Byte[] array, Int32 offset)
+        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
         {
             if (fieldSerializers == null) return offset;
 
@@ -861,7 +855,7 @@ namespace Marler.Net
             }
             return offset;
         }
-        public override Int32 Deserialize(ISerializer instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             if (fieldSerializers == null) return offset;
 
@@ -877,13 +871,13 @@ namespace Marler.Net
 
             return offset;
         }
-        public override String ToNiceString(ISerializer instance)
+        public override String DataString(Object instance)
         {
             StringBuilder builder = new StringBuilder();
-            ToNiceString(instance, builder);
+            DataString(instance, builder);
             return builder.ToString();
         }
-        public override void ToNiceString(ISerializer instance, StringBuilder builder)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             builder.Append(fieldInfo.Name);
             builder.Append(':');
@@ -904,12 +898,12 @@ namespace Marler.Net
                     if (i > 0) builder.Append(", ");
 
                     IReflector serializer = fieldSerializers[i];
-                    builder.Append(serializer.ToNiceString(structInstance));
+                    builder.Append(serializer.DataString(structInstance));
                 }
             }
             builder.Append("}");
         }
-        public override string ToNiceSmallString(ISerializer instance)
+        public override string DataSmallString(Object instance)
         {
             ISerializer structInstance = (ISerializer)fieldInfo.GetValue(instance);
 
@@ -928,14 +922,16 @@ namespace Marler.Net
                     if (i > 0) builder.Append(", ");
 
                     IReflector serializer = fieldSerializers[i];
-                    builder.Append(serializer.ToNiceSmallString(structInstance));
+                    builder.Append(serializer.DataSmallString(structInstance));
                 }
             }
             builder.Append("}");
             return builder.ToString();
         }
     }
-    
+    */
+
+
     public class XdrBooleanDescriminateReflector : IReflector
     {
         public readonly Int32 fixedSerializationLength;
@@ -945,51 +941,27 @@ namespace Marler.Net
         readonly IReflector[] falseReflectors;
 
         public XdrBooleanDescriminateReflector(XdrBooleanReflector descriminate,
-            IReflector[] trueReflectors, IReflector[] falseReflectors)
+            IReflectors trueReflectors, IReflectors falseReflectors)
         {
             this.descriminate = descriminate;
-            this.trueReflectors = trueReflectors;
-            this.falseReflectors = falseReflectors;
+            this.trueReflectors = trueReflectors.reflectors;
+            this.falseReflectors = falseReflectors.reflectors;
 
             //
             // Determine if serialization length is fixed
             //
-            Int32 totalTrueFixedSerializationLength = 0;
-            for (int i = 0; i < trueReflectors.Length; i++)
+            if (trueReflectors.fixedSerializationLength >= 0 &&
+                falseReflectors.fixedSerializationLength >= 0 &&
+                trueReflectors.fixedSerializationLength == falseReflectors.fixedSerializationLength)
             {
-                IReflector trueReflector = trueReflectors[i];
-                Int32 trueFixedSerializationLength = trueReflector.FixedSerializationLength();
-                if (trueFixedSerializationLength < 0)
-                {
-                    this.fixedSerializationLength = -1;
-                    return;
-                }
-                totalTrueFixedSerializationLength += trueFixedSerializationLength;
-            }
-
-            Int32 totalFalseFixedSerializationLength = 0;
-            for (int i = 0; i < falseReflectors.Length; i++)
-            {
-                IReflector falseReflector = falseReflectors[i];
-                Int32 falseFixedSerializationLength = falseReflector.FixedSerializationLength();
-                if (falseFixedSerializationLength < 0)
-                {
-                    this.fixedSerializationLength = -1;
-                    return;
-                }
-                totalFalseFixedSerializationLength += falseFixedSerializationLength;
-            }
-
-            if (totalTrueFixedSerializationLength == totalFalseFixedSerializationLength)
-            {
-                this.fixedSerializationLength = totalTrueFixedSerializationLength + 4;
+                this.fixedSerializationLength = trueReflectors.fixedSerializationLength + 4;
             }
             else
             {
                 this.fixedSerializationLength = -1;
             }           
         }
-        private IReflector[] GetReflectors(ISerializer instance)
+        private IReflector[] GetReflectors(Object instance)
         {
             if (instance == null)
                 throw new InvalidOperationException("Cannot retreive the descriminate value because the instance of this object is null");
@@ -1000,7 +972,7 @@ namespace Marler.Net
         {
             return fixedSerializationLength;
         }
-        public int SerializationLength(ISerializer instance)
+        public int SerializationLength(Object instance)
         {
             if (fixedSerializationLength >= 0) return fixedSerializationLength;
 
@@ -1014,7 +986,7 @@ namespace Marler.Net
 
             return length;
         }
-        public int Serialize(ISerializer instance, byte[] array, int offset)
+        public int Serialize(Object instance, byte[] array, int offset)
         {
             offset = descriminate.Serialize(instance, array, offset);
 
@@ -1026,7 +998,7 @@ namespace Marler.Net
 
             return offset;
         }
-        public int Deserialize(ISerializer instance, byte[] array, int offset, Int32 maxOffset)
+        public int Deserialize(Object instance, byte[] array, int offset, Int32 maxOffset)
         {
             offset = descriminate.Deserialize(instance, array, offset, maxOffset);
 
@@ -1038,33 +1010,44 @@ namespace Marler.Net
 
             return offset;
         }
-        public String ToNiceString(ISerializer instance)
+        public String DataString(Object instance)
         {
             StringBuilder builder = new StringBuilder();
-            ToNiceString(instance, builder);
+            DataString(instance, builder);
             return builder.ToString();
         }
-        public void ToNiceString(ISerializer instance, StringBuilder builder)
+        public void DataString(Object instance, StringBuilder builder)
         {
-            descriminate.ToNiceString(instance, builder);
+            descriminate.DataString(instance, builder);
 
             IReflector[] fieldReflectors = GetReflectors(instance);
             for (int i = 0; i < fieldReflectors.Length; i++)
             {
                 builder.Append(',');
-                fieldReflectors[i].ToNiceString(instance, builder);
+                fieldReflectors[i].DataString(instance, builder);
             }
         }
-        public String ToNiceSmallString(ISerializer instance)
+        public String DataSmallString(Object instance)
         {
-            String smallString = descriminate.ToNiceSmallString(instance);
+            String smallString = descriminate.DataSmallString(instance);
 
             IReflector[] fieldReflectors = GetReflectors(instance);
             for (int i = 0; i < fieldReflectors.Length; i++)
             {
-                smallString = smallString + "," + fieldReflectors[i].ToNiceSmallString(instance);
+                smallString = smallString + "," + fieldReflectors[i].DataSmallString(instance);
             }
             return smallString;
+        }
+        public void DataSmallString(Object instance, StringBuilder builder)
+        {
+            descriminate.DataSmallString(instance, builder);
+
+            IReflector[] fieldReflectors = GetReflectors(instance);
+            for (int i = 0; i < fieldReflectors.Length; i++)
+            {
+                builder.Append(',');
+                fieldReflectors[i].DataSmallString(instance, builder);
+            }
         }
     }
     public class XdrDescriminatedUnionReflector<DescriminateCSharpType> : IReflector
@@ -1109,7 +1092,7 @@ namespace Marler.Net
                     keyAndSerializer.fieldReflectors);
             }
         }
-        private IReflector[] GetFieldReflectors(ISerializer instance)
+        private IReflector[] GetFieldReflectors(Object instance)
         {
             if (instance == null)
             {
@@ -1134,7 +1117,7 @@ namespace Marler.Net
         {
             return -1; // TODO: Maybe I should check for fixed length later?
         }
-        public int SerializationLength(ISerializer instance)
+        public int SerializationLength(Object instance)
         {
             int length = descriminate.SerializationLength(instance);
 
@@ -1147,7 +1130,7 @@ namespace Marler.Net
 
             return length;
         }
-        public int Serialize(ISerializer instance, byte[] array, int offset)
+        public int Serialize(Object instance, byte[] array, int offset)
         {
             offset = descriminate.Serialize(instance, array, offset);
             
@@ -1158,7 +1141,7 @@ namespace Marler.Net
             }
             return offset;
         }
-        public int Deserialize(ISerializer instance, byte[] array, int offset, Int32 maxOffset)
+        public int Deserialize(Object instance, byte[] array, int offset, Int32 maxOffset)
         {
             offset = descriminate.Deserialize(instance, array, offset, maxOffset);
 
@@ -1170,33 +1153,44 @@ namespace Marler.Net
 
             return offset;
         }
-        public String ToNiceString(ISerializer instance)
+        public String DataString(Object instance)
         {
             StringBuilder builder = new StringBuilder();
-            ToNiceString(instance, builder);
+            DataString(instance, builder);
             return builder.ToString();
         }
-        public void ToNiceString(ISerializer instance, StringBuilder builder)
+        public void DataString(Object instance, StringBuilder builder)
         {
-            descriminate.ToNiceString(instance, builder);
+            descriminate.DataString(instance, builder);
 
             IReflector[] fieldReflectors = GetFieldReflectors(instance);
             for (int i = 0; i < fieldReflectors.Length; i++)
             {
                 builder.Append(',');
-                fieldReflectors[i].ToNiceString(instance, builder);
+                fieldReflectors[i].DataString(instance, builder);
             }
         }
-        public String ToNiceSmallString(ISerializer instance)
+        public String DataSmallString(Object instance)
         {
-            String smallString = descriminate.ToNiceSmallString(instance);
+            String smallString = descriminate.DataSmallString(instance);
 
             IReflector[] fieldReflectors = GetFieldReflectors(instance);
             for (int i = 0; i < fieldReflectors.Length; i++)
             {
-                smallString = smallString + "," + fieldReflectors[i].ToNiceSmallString(instance);
+                smallString = smallString + "," + fieldReflectors[i].DataSmallString(instance);
             }
             return smallString;
+        }
+        public void DataSmallString(Object instance, StringBuilder builder)
+        {
+            descriminate.DataSmallString(instance, builder);
+
+            IReflector[] fieldReflectors = GetFieldReflectors(instance);
+            for (int i = 0; i < fieldReflectors.Length; i++)
+            {
+                builder.Append(',');
+                fieldReflectors[i].DataSmallString(instance, builder);
+            }
         }
     }
 }

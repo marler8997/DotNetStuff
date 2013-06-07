@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Marler.Net")]
+[assembly: AssemblyTitle("More.Net")]
 [assembly: AssemblyDescription("Class library for network programs")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Marler")]
-//[assembly: AssemblyProduct("Marler.Net")]
+[assembly: AssemblyCompany("More")]
+//[assembly: AssemblyProduct("More.Net")]
 [assembly: AssemblyCopyright("Copyright © Microsoft 2011")]
 //[assembly: AssemblyTrademark("")]
 //[assembly: AssemblyCulture("")]

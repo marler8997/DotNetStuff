@@ -5,7 +5,7 @@ using System.IO;
 
 using FileID = System.UInt64;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ShareDirectory
     {
@@ -38,14 +38,13 @@ namespace Marler.Net
         private readonly IFileIDsAndHandlesDictionary filesDictionary;
         public readonly IPermissions permissions;
 
-        private readonly ShareDirectory[] shareDirectories;
+        public readonly ShareDirectory[] shareDirectories;
 
         private readonly Dictionary<Byte[], ShareObject> shareObjectsByHandle;
         private readonly Dictionary<String, ShareObject> shareObjectsByLocalPath;
 
         public SharedFileSystem(IFileIDsAndHandlesDictionary filesDictionary, IPermissions permissions, ShareDirectory[] shareDirectories)
         {
-
             this.filesDictionary = filesDictionary;
             this.permissions = permissions;
 
@@ -64,6 +63,18 @@ namespace Marler.Net
                 }
                 shareDirectory.shareObject = shareObject;
             }
+        }
+
+        public ShareObject[] CreateArrayOfShareObjects()
+        {
+            ShareObject[] shareObjects = new ShareObject[shareObjectsByLocalPath.Count];
+            int i = 0;
+            foreach(KeyValuePair<String,ShareObject> pair in shareObjectsByLocalPath)
+            {
+                shareObjects[i] = pair.Value;
+                i++;
+            }
+            return shareObjects;
         }
 
         public Nfs3Procedure.Status TryGetShareDirectory(Byte[] handle, out ShareDirectory outputShareDirectory)

@@ -4,7 +4,7 @@
 
 using System;
 
-using Marler.Common;
+using More;
 
 using FileID   = System.UInt64;
 using Uid      = System.UInt32;
@@ -15,7 +15,7 @@ using Count    = System.UInt32;
 using Cookie   = System.UInt64;
 using FileName = System.String;
 
-namespace Marler.Net
+namespace More.Net
 {
 
     public enum Nfs3Command {
@@ -116,7 +116,7 @@ namespace Marler.Net
         public const Int32 WriteVerifierSize  =  8;
     }
 }    
-namespace Marler.Net.Nfs3Procedure
+namespace More.Net.Nfs3Procedure
 {
     public enum FileType
     {
@@ -188,42 +188,36 @@ namespace Marler.Net.Nfs3Procedure
         Fsf3Homogeneous = 0x008,
         Fsf3CanSetTime = 0x010,
     }
-    public class Time : ClassSerializer
+    public class Time// : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[]{
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(Time), "seconds"),
             new XdrUInt32Reflector(typeof(Time), "nanoseconds"),
-        };
+        });
 
         public UInt32 seconds, nanoseconds;
 
         public Time()
-            : base(memberSerializers)
         {
         }
         public Time(UInt32 seconds, UInt32 nanoseconds)
-            : base(memberSerializers)
         {
             this.seconds = seconds;
             this.nanoseconds = nanoseconds;
         }
     }
-    public class SizeAndTimes : ClassSerializer
+    public class SizeAndTimes
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
-            new XdrUInt64Reflector           (typeof(SizeAndTimes), "fileSize"),
-            new XdrStructFieldReflector<Time>(typeof(SizeAndTimes), "lastModifyTime", Time.memberSerializers),
-            new XdrStructFieldReflector<Time>(typeof(SizeAndTimes), "lastAttributeModifyTime", Time.memberSerializers),
-        };
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+            new XdrUInt64Reflector        (typeof(SizeAndTimes), "fileSize"),
+            new ClassFieldReflectors<Time>(typeof(SizeAndTimes), "lastModifyTime", Time.memberSerializers),
+            new ClassFieldReflectors<Time>(typeof(SizeAndTimes), "lastAttributeModifyTime", Time.memberSerializers),
+        });
 
         public Size fileSize;
         public Time lastModifyTime;
         public Time lastAttributeModifyTime;
 
-        public SizeAndTimes()
-            : base(memberSerializers)
-        {
-        }
         public SizeAndTimes(FileAttributes fileAttributes)
         {
             this.fileSize = fileAttributes.fileSize;
@@ -231,9 +225,9 @@ namespace Marler.Net.Nfs3Procedure
             this.lastAttributeModifyTime = new Time(fileAttributes.lastAttributeModifyTime.seconds, fileAttributes.lastAttributeModifyTime.nanoseconds);
         }
     }
-    public class FileAttributes : ClassSerializer
+    public class FileAttributes
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrEnumReflector  (typeof(FileAttributes), "fileType", typeof(FileType)),
             new XdrEnumReflector  (typeof(FileAttributes), "protectionMode", typeof(ModeFlags)),
             new XdrUInt32Reflector(typeof(FileAttributes), "hardLinks"),
@@ -245,10 +239,10 @@ namespace Marler.Net.Nfs3Procedure
             new XdrUInt32Reflector(typeof(FileAttributes), "specialData2"),
             new XdrUInt64Reflector(typeof(FileAttributes), "fileSystemID"),
             new XdrUInt64Reflector(typeof(FileAttributes), "fileID"),
-            new XdrStructFieldReflector<Time>(typeof(FileAttributes), "lastAccessTime", Time.memberSerializers),
-            new XdrStructFieldReflector<Time>(typeof(FileAttributes), "lastModifyTime", Time.memberSerializers),
-            new XdrStructFieldReflector<Time>(typeof(FileAttributes), "lastAttributeModifyTime", Time.memberSerializers),
-        };
+            new ClassFieldReflectors<Time>(typeof(FileAttributes), "lastAccessTime", Time.memberSerializers),
+            new ClassFieldReflectors<Time>(typeof(FileAttributes), "lastModifyTime", Time.memberSerializers),
+            new ClassFieldReflectors<Time>(typeof(FileAttributes), "lastAttributeModifyTime", Time.memberSerializers),
+        });
 
         public FileType fileType;
         public ModeFlags protectionMode;
@@ -265,10 +259,8 @@ namespace Marler.Net.Nfs3Procedure
         public Time lastAttributeModifyTime;
 
         public FileAttributes()
-            : base(memberSerializers)
         {
         }
-
         public FileAttributes(
             FileType fileType,
             ModeFlags protectionMode,
@@ -284,7 +276,6 @@ namespace Marler.Net.Nfs3Procedure
             Time lastAccessTime,
             Time lastModifyTime,
             Time lastAttributeModifyTime)
-            : base(memberSerializers)
         {
             this.fileType = fileType;
             this.protectionMode = protectionMode;
@@ -302,18 +293,18 @@ namespace Marler.Net.Nfs3Procedure
             this.lastAttributeModifyTime = lastAttributeModifyTime;
         }
     }
-    public class BeforeAndAfterAttributes : ClassSerializer
+    public class BeforeAndAfterAttributes
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(BeforeAndAfterAttributes), "beforeIncluded"),
-                new IReflector[] {new XdrStructFieldReflector<SizeAndTimes>  (typeof(BeforeAndAfterAttributes), "before", SizeAndTimes.memberSerializers)},
-                VoidReflector.ArrayInstance),
+                new IReflectors(new ClassFieldReflectors<SizeAndTimes>  (typeof(BeforeAndAfterAttributes), "before", SizeAndTimes.memberSerializers)),
+                VoidReflector.Reflectors),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(BeforeAndAfterAttributes), "afterIncluded"),
-                new IReflector[] {new XdrStructFieldReflector<FileAttributes>(typeof(BeforeAndAfterAttributes), "after", FileAttributes.memberSerializers)},
-                VoidReflector.ArrayInstance),            
-        };
+                new IReflectors(new ClassFieldReflectors<FileAttributes>(typeof(BeforeAndAfterAttributes), "after", FileAttributes.memberSerializers)),
+                VoidReflector.Reflectors),            
+        });
 
         private static BeforeAndAfterAttributes none = null;
         public static BeforeAndAfterAttributes None
@@ -331,12 +322,7 @@ namespace Marler.Net.Nfs3Procedure
         public Boolean afterIncluded;
         public FileAttributes after;
 
-        public BeforeAndAfterAttributes()
-            : base(memberSerializers)
-        {
-        }
         public BeforeAndAfterAttributes(SizeAndTimes before, FileAttributes after)
-            : base(memberSerializers)
         {
             this.beforeIncluded = (before == null) ? false : true;
             this.before = before;
@@ -345,27 +331,27 @@ namespace Marler.Net.Nfs3Procedure
             this.after = after;
         }
     }
-    public class OptionalFileAttributes : ClassSerializer
+    public class OptionalFileAttributes
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(OptionalFileAttributes), "fileAttributesIncluded"),
-                new IReflector[] {new XdrStructFieldReflector<FileAttributes>(typeof(OptionalFileAttributes), "fileAttributes", FileAttributes.memberSerializers)},
-                VoidReflector.ArrayInstance
+                new IReflectors(new ClassFieldReflectors<FileAttributes>(typeof(OptionalFileAttributes), "fileAttributes", FileAttributes.memberSerializers)),
+                VoidReflector.Reflectors
             )
-        };
+        });
 
         public static OptionalFileAttributes None = new OptionalFileAttributes();
 
         public Boolean fileAttributesIncluded;
         public FileAttributes fileAttributes;
 
-        public OptionalFileAttributes()
-            : base(memberSerializers)
+        private OptionalFileAttributes()
         {
+            this.fileAttributesIncluded = false;
+            this.fileAttributes = null;
         }
         public OptionalFileAttributes(FileAttributes fileAttributes)
-            : base(memberSerializers)
         {
             if (fileAttributes == null)
             {
@@ -378,27 +364,27 @@ namespace Marler.Net.Nfs3Procedure
             }
         }
     }
-    public class OptionalFileHandle : ClassSerializer
+    public class OptionalFileHandle
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(OptionalFileHandle), "fileHandleIncluded"),
-                new IReflector[] {new XdrOpaqueVarLengthReflector(typeof(OptionalFileHandle), "fileHandle", Nfs3.FileHandleMaxSize)},
-                VoidReflector.ArrayInstance
+                new IReflectors(new XdrOpaqueVarLengthReflector(typeof(OptionalFileHandle), "fileHandle", Nfs3.FileHandleMaxSize)),
+                VoidReflector.Reflectors
             )
-        };
+        });
 
         public static OptionalFileHandle None = new OptionalFileHandle();
 
         public Boolean fileHandleIncluded;
         public Byte[] fileHandle;
 
-        public OptionalFileHandle()
-            : base(memberSerializers)
+        private OptionalFileHandle()
         {
+            this.fileHandleIncluded = false;
+            this.fileHandle = null;
         }
         public OptionalFileHandle(Byte[] fileHandle)
-            : base(memberSerializers)
         {
             if(fileHandle == null) throw new ArgumentNullException("fileHandle");
 
@@ -406,40 +392,40 @@ namespace Marler.Net.Nfs3Procedure
             this.fileHandle = fileHandle;
         }
     }
-    public class SetAttributesStruct : ClassSerializer
+    public class SetAttributesStruct
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setMode"),
-                new IReflector[] {new XdrEnumReflector             (typeof(SetAttributesStruct), "mode", typeof(ModeFlags))},
-                VoidReflector.ArrayInstance
+                new IReflectors(new XdrEnumReflector             (typeof(SetAttributesStruct), "mode", typeof(ModeFlags))),
+                VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setUid"),
-                new IReflector[] {new XdrUInt32Reflector           (typeof(SetAttributesStruct), "uid")},
-                VoidReflector.ArrayInstance
+                new IReflectors(new XdrUInt32Reflector           (typeof(SetAttributesStruct), "uid")),
+                VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setGid"),
-                new IReflector[] {new XdrUInt32Reflector           (typeof(SetAttributesStruct), "gid")},
-                VoidReflector.ArrayInstance
+                new IReflectors(new XdrUInt32Reflector           (typeof(SetAttributesStruct), "gid")),
+                VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setSize"),
-                new IReflector[] {new XdrUInt64Reflector           (typeof(SetAttributesStruct), "size")},
-                VoidReflector.ArrayInstance
+                new IReflectors(new XdrUInt64Reflector           (typeof(SetAttributesStruct), "size")),
+                VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setLastAccessTime"),
-                new IReflector[] {new XdrStructFieldReflector<Time>(typeof(SetAttributesStruct), "lastAccessTime", Time.memberSerializers)},
-                VoidReflector.ArrayInstance
+                new IReflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastAccessTime", Time.memberSerializers)),
+                VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setLastModifyTime"),
-                new IReflector[] {new XdrStructFieldReflector<Time>(typeof(SetAttributesStruct), "lastModifyTime", Time.memberSerializers)},
-                VoidReflector.ArrayInstance
+                new IReflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastModifyTime", Time.memberSerializers)),
+                VoidReflector.Reflectors
             ),
-        };
+        });
 
         public Boolean setMode;
         public ModeFlags mode;
@@ -460,7 +446,6 @@ namespace Marler.Net.Nfs3Procedure
         public Time lastModifyTime;
 
         public SetAttributesStruct()
-            : base(memberSerializers)
         {
         }
         public SetAttributesStruct(
@@ -499,6 +484,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // GetFileAttributes Procedure
     //
+    /*
     public class GetFileAttributes : RpcProcedure
     {
         public readonly GetFileAttributesReply reply;
@@ -510,59 +496,45 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class GetFileAttributesCall : ClassSerializer
+    */
+    public class GetFileAttributesCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
-            new XdrOpaqueVarLengthReflector(typeof(GetFileAttributesCall), "fileHandle", Nfs3.FileHandleMaxSize),
-        };
-        public Byte[] fileHandle;
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+            new XdrOpaqueVarLengthReflector(typeof(GetFileAttributesCall), "handle", Nfs3.FileHandleMaxSize),
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
-        public GetFileAttributesCall()
-            : base(memberSerializers)
-        {
-        }
+        public Byte[] handle;
+        
         public GetFileAttributesCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
-        public GetFileAttributesCall(Byte[] fileHandle)
-            : base(memberSerializers)
+        public GetFileAttributesCall(Byte[] handle)
         {
-            this.fileHandle = fileHandle;
+            this.handle = handle;
         }
     }
-    public class GetFileAttributesReply : ClassSerializer
+    public class GetFileAttributesReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(GetFileAttributesReply), "status", typeof(Status)),
-                VoidReflector.ArrayInstance,
+                VoidReflector.ReflectorsArray,
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
-                    new XdrStructFieldReflector<FileAttributes>(typeof(GetFileAttributesReply), "fileAttributes", FileAttributes.memberSerializers)})
+                    new ClassFieldReflectors<FileAttributes>(typeof(GetFileAttributesReply), "fileAttributes", FileAttributes.memberSerializers)})
             ),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public FileAttributes fileAttributes;
-
-        public GetFileAttributesReply()
-            : base(memberSerializers)
-        {
-        }
-        public GetFileAttributesReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public GetFileAttributesReply(FileAttributes fileAttributes)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.fileAttributes = fileAttributes;
         }
         public GetFileAttributesReply(Status status)
-            : base(memberSerializers)
         {
             if(status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -573,6 +545,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // SetFileAttributes Procedure
     //
+    /*
     public class SetFileAttributes : RpcProcedure
     {
         public readonly SetFileAttributesReply reply;
@@ -584,34 +557,30 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class SetFileAttributesCall : ClassSerializer
+    */
+    public class SetFileAttributesCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector                 (typeof(SetFileAttributesCall), "fileHandle", Nfs3.FileHandleMaxSize),
-            new XdrStructFieldReflector<SetAttributesStruct>(typeof(SetFileAttributesCall), "setAttributes"),
+            new ClassFieldReflectors<SetAttributesStruct>(typeof(SetFileAttributesCall), "setAttributes", SetAttributesStruct.memberSerializers),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(SetFileAttributesCall), "checkGuardTime"),
-                new IReflector[] {new XdrStructFieldReflector<Time>(typeof(SetFileAttributesCall), "guardTime", Time.memberSerializers)},
-                VoidReflector.ArrayInstance),
-        };
+                new IReflectors(new ClassFieldReflectors<Time>(typeof(SetFileAttributesCall), "guardTime", Time.memberSerializers)),
+                VoidReflector.Reflectors),
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] fileHandle;
         public SetAttributesStruct setAttributes;
 
         public Boolean checkGuardTime;
         public Time guardTime;
-
-        public SetFileAttributesCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public SetFileAttributesCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public SetFileAttributesCall(Byte[] fileHandle, SetAttributesStruct setAttributes, Time guardTime)
-            : base(memberSerializers)
         {
             this.fileHandle = fileHandle;
             this.setAttributes = setAttributes;
@@ -626,27 +595,18 @@ namespace Marler.Net.Nfs3Procedure
             }
         }
     }
-    public class SetFileAttributesReply : ClassSerializer
+    public class SetFileAttributesReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrEnumReflector(typeof(SetFileAttributesReply), "status", typeof(Status)),
-            new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(SetFileAttributesReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
-        };
+            new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(SetFileAttributesReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public BeforeAndAfterAttributes beforeAndAfter;
 
-        public SetFileAttributesReply()
-            : base(memberSerializers)
-        {
-        }
-        public SetFileAttributesReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public SetFileAttributesReply(Status status, BeforeAndAfterAttributes beforeAndAfter)
-            : base(memberSerializers)
         {
             this.status = status;
             this.beforeAndAfter = beforeAndAfter;
@@ -656,6 +616,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // Lookup Procedure
     //
+    /*
     public class Lookup : RpcProcedure
     {
         public readonly LookupReply reply;
@@ -667,44 +628,42 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class LookupCall : ClassSerializer
+    */
+    public class LookupCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(LookupCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(LookupCall), "fileName", -1),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
+
         public Byte[] directoryHandle;
         public String fileName;
-
-        public LookupCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public LookupCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public LookupCall(Byte[] directoryHandle, String fileName)
-            : base(memberSerializers)
         {
             this.directoryHandle = directoryHandle;
             this.fileName = fileName;
         }
     }
-    public class LookupReply : ClassSerializer
+    public class LookupReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(LookupReply), "status", typeof(Status)),
-                new IReflector[] {new XdrStructFieldReflector<OptionalFileAttributes>(typeof(LookupReply), "optionalFailAttributes", OptionalFileAttributes.memberSerializers)},
+                new IReflector[] {new ClassFieldReflectors<OptionalFileAttributes>(typeof(LookupReply), "optionalFailAttributes", OptionalFileAttributes.memberSerializers)},
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
                     new XdrOpaqueVarLengthReflector(typeof(LookupReply), "fileHandle", Nfs3.FileHandleMaxSize),
-                    new XdrStructFieldReflector<OptionalFileAttributes>(typeof(LookupReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
-                    new XdrStructFieldReflector<OptionalFileAttributes>(typeof(LookupReply), "optionalDirectoryAttributes", OptionalFileAttributes.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileAttributes>(typeof(LookupReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileAttributes>(typeof(LookupReply), "optionalDirectoryAttributes", OptionalFileAttributes.memberSerializers),
                 })           
             ),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileAttributes optionalFailAttributes;
@@ -712,17 +671,7 @@ namespace Marler.Net.Nfs3Procedure
         public Byte[] fileHandle;
         public OptionalFileAttributes optionalDirectoryAttributes, optionalFileAttributes;
 
-        public LookupReply()
-            : base(memberSerializers)
-        {
-        }
-        public LookupReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public LookupReply(Status status, OptionalFileAttributes optionalFailAttributes)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -731,7 +680,6 @@ namespace Marler.Net.Nfs3Procedure
             this.optionalFailAttributes = optionalFailAttributes;
         }
         public LookupReply(Byte[] fileHandle, OptionalFileAttributes optionalDirectoryAttributes, OptionalFileAttributes optionalFileAttributes)
-            : base(memberSerializers)
         {
             this.fileHandle = fileHandle;
             this.optionalDirectoryAttributes = optionalDirectoryAttributes;
@@ -752,6 +700,7 @@ namespace Marler.Net.Nfs3Procedure
         Delete  = 0x0010,
         Execute = 0x0020,
     }
+    /*
     public class Access : RpcProcedure
     {
         public readonly AccessReply reply;
@@ -763,67 +712,53 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class AccessCall : ClassSerializer
+    */
+    public class AccessCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(AccessCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new XdrEnumReflector           (typeof(AccessCall), "accessFlags", typeof(AccessFlags)),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] fileHandle;
         public AccessFlags accessFlags;
-
-        public AccessCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public AccessCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public AccessCall(Byte[] fileHandle, AccessFlags accessFlags)
-            : base(memberSerializers)
         {
             this.fileHandle = fileHandle;
             this.accessFlags = accessFlags;
         }
     }
-    public class AccessReply : ClassSerializer
+    public class AccessReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(AccessReply), "status", typeof(Status)),
-                new IReflector[] {new XdrStructFieldReflector<OptionalFileAttributes>(typeof(AccessReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
+                new IReflector[] {new ClassFieldReflectors<OptionalFileAttributes>(typeof(AccessReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
-                    new XdrStructFieldReflector<OptionalFileAttributes>(typeof(AccessReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileAttributes>(typeof(AccessReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
                     new XdrEnumReflector(typeof(AccessReply), "accessFlags", typeof(AccessFlags)),
                 })
             ),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileAttributes optionalFileAttributes;
         public AccessFlags accessFlags;
 
-        public AccessReply()
-            : base(memberSerializers)
-        {
-        }
-        public AccessReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public AccessReply(OptionalFileAttributes optionalFileAttributes, AccessFlags accessFlags)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.optionalFileAttributes = optionalFileAttributes;
             this.accessFlags = accessFlags;
         }
         public AccessReply(Status status, OptionalFileAttributes optionalFileAttributes)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -835,6 +770,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // Read Procedure
     //
+    /*
     public class Read : RpcProcedure
     {
         public readonly ReadReply reply;
@@ -846,49 +782,46 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class ReadCall : ClassSerializer
+    */
+    public class ReadCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(ReadCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new XdrUInt64Reflector         (typeof(ReadCall), "offset"),
             new XdrUInt32Reflector         (typeof(ReadCall), "count"),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] fileHandle;
         public Offset offset;
         public Count count;
-
-        public ReadCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public ReadCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public ReadCall(Byte[] fileHandle, Offset offset, Count count)
-            : base(memberSerializers)
         {
             this.fileHandle = fileHandle;
             this.offset = offset;
             this.count = count;
         }
     }
-    public class ReadReply : ClassSerializer
+    public class ReadReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(ReadReply), "status", typeof(Status)),
-                new IReflector[] {new XdrStructFieldReflector<OptionalFileAttributes>(typeof(ReadReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
+                new IReflector[] {new ClassFieldReflectors<OptionalFileAttributes>(typeof(ReadReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
-                    new XdrStructFieldReflector<OptionalFileAttributes>(typeof(ReadReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileAttributes>(typeof(ReadReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
                     new XdrUInt32Reflector                             (typeof(ReadReply), "count"),
                     new XdrBooleanReflector                            (typeof(ReadReply), "endOfFile"),
                     new XdrOpaqueVarLengthReflector<PartialByteArraySerializer>(typeof(ReadReply), "fileData", -1),
                 })
             ),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileAttributes optionalFileAttributes;
@@ -896,17 +829,7 @@ namespace Marler.Net.Nfs3Procedure
         public Boolean endOfFile;
         public PartialByteArraySerializer fileData;
 
-        public ReadReply()
-            : base(memberSerializers)
-        {
-        }
-        public ReadReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public ReadReply(OptionalFileAttributes optionalFileAttributes, Count count, Boolean endOfFile, PartialByteArraySerializer fileData)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.optionalFileAttributes = optionalFileAttributes;
@@ -915,7 +838,6 @@ namespace Marler.Net.Nfs3Procedure
             this.fileData = fileData;
         }
         public ReadReply(Status status, OptionalFileAttributes optionalFileAttributes)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -933,6 +855,7 @@ namespace Marler.Net.Nfs3Procedure
         DataSync = 1,
         FileSync = 2,
     }
+    /*
     public class Write : RpcProcedure
     {
         public readonly WriteReply reply;
@@ -944,33 +867,29 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class WriteCall : ClassSerializer
+    */
+    public class WriteCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(WriteCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new XdrUInt64Reflector         (typeof(WriteCall), "offset"),
             new XdrUInt32Reflector         (typeof(WriteCall), "count"),
             new XdrEnumReflector           (typeof(WriteCall), "stableHow", typeof(StableHowEnum)),
             new XdrOpaqueVarLengthReflector(typeof(WriteCall), "data", -1),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] fileHandle;
         public Offset offset;
         public Count count;
         public StableHowEnum stableHow;
         public Byte[] data;
-
-        public WriteCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public WriteCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public WriteCall(Byte[] fileHandle, StableHowEnum stableHow, Byte[] data, Offset offset, Count count)
-            : base(memberSerializers)
         {
             this.fileHandle = fileHandle;
             this.data = data;
@@ -979,12 +898,12 @@ namespace Marler.Net.Nfs3Procedure
             this.stableHow = stableHow;
         }
     }
-    public class WriteReply : ClassSerializer
+    public class WriteReply : ISerializerCreator
     {
-        private static readonly XdrStructFieldReflector<BeforeAndAfterAttributes> fileAttributesSerializer =
-            new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(WriteReply), "fileAttributes", BeforeAndAfterAttributes.memberSerializers);
+        private static readonly ClassFieldReflectors<BeforeAndAfterAttributes> fileAttributesSerializer =
+            new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(WriteReply), "fileAttributes", BeforeAndAfterAttributes.memberSerializers);
 
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector                             (typeof(WriteReply), "status", typeof(Status)),
                 new IReflector[] {fileAttributesSerializer},
@@ -995,7 +914,8 @@ namespace Marler.Net.Nfs3Procedure
                     new XdrOpaqueFixedLengthReflector            (typeof(WriteReply), "writeVerifier", Nfs3.WriteVerifierSize),
                 })
             )
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public BeforeAndAfterAttributes fileAttributes;
@@ -1003,17 +923,7 @@ namespace Marler.Net.Nfs3Procedure
         public StableHowEnum stableHow;
         public Byte[] writeVerifier;
 
-        public WriteReply()
-            : base(memberSerializers)
-        {
-        }
-        public WriteReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public WriteReply(BeforeAndAfterAttributes fileAttributes, Count count, StableHowEnum stableHow, Byte[] writeVerifier)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.fileAttributes = fileAttributes;
@@ -1022,7 +932,6 @@ namespace Marler.Net.Nfs3Procedure
             this.writeVerifier = writeVerifier;
         }
         public WriteReply(Status status, BeforeAndAfterAttributes fileAttributes)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -1040,6 +949,7 @@ namespace Marler.Net.Nfs3Procedure
         Guarded   = 1,
         Exclusive = 2,
     }
+    /*
     public class Create : RpcProcedure
     {
         public readonly CreateReply reply;
@@ -1051,12 +961,13 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class CreateCall : ClassSerializer
+    */
+    public class CreateCall : ISerializerCreator
     {
-        public static XdrStructFieldReflector<SetAttributesStruct> setAttributesSerializer =
-            new XdrStructFieldReflector<SetAttributesStruct>(typeof(CreateCall), "setAttributes", SetAttributesStruct.memberSerializers);
+        public static ClassFieldReflectors<SetAttributesStruct> setAttributesSerializer =
+            new ClassFieldReflectors<SetAttributesStruct>(typeof(CreateCall), "setAttributes", SetAttributesStruct.memberSerializers);
 
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(CreateCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(CreateCall), "newFileName", -1),
             new XdrDescriminatedUnionReflector<CreateModeEnum>(
@@ -1067,7 +978,8 @@ namespace Marler.Net.Nfs3Procedure
                 new XdrDescriminatedUnionReflector<CreateModeEnum>.KeyAndSerializer(CreateModeEnum.Exclusive, new IReflector[] {
                     new XdrOpaqueFixedLengthReflector(typeof(CreateCall), "createVerifier", Nfs3.CreateVerifierSize)})
             ),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] directoryHandle;
         public String newFileName;
@@ -1075,18 +987,12 @@ namespace Marler.Net.Nfs3Procedure
         public CreateModeEnum mode;
         public SetAttributesStruct setAttributes;
         public Byte[] createVerifier;
-
-        public CreateCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public CreateCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public CreateCall(Byte[] directoryHandle, String newFileName, CreateModeEnum mode, SetAttributesStruct setAttributes)
-            : base(memberSerializers)
         {
             if(mode != CreateModeEnum.Unchecked && mode != CreateModeEnum.Guarded)
                 throw new InvalidOperationException(String.Format(
@@ -1098,36 +1004,27 @@ namespace Marler.Net.Nfs3Procedure
             this.setAttributes = setAttributes;
         }
     }
-    public class CreateReply : ClassSerializer
+    public class CreateReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector                                   (typeof(CreateReply), "status", typeof(Status)),
-                VoidReflector.ArrayInstance,
+                VoidReflector.ReflectorsArray,
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
-                    new XdrStructFieldReflector<OptionalFileHandle>    (typeof(CreateReply), "optionalFileHandle", OptionalFileHandle.memberSerializers),
-                    new XdrStructFieldReflector<OptionalFileAttributes>(typeof(CreateReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileHandle>    (typeof(CreateReply), "optionalFileHandle", OptionalFileHandle.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileAttributes>(typeof(CreateReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
                 })
             ),
-            new XdrStructFieldReflector<BeforeAndAfterAttributes>      (typeof(CreateReply), "directoryAttributes", BeforeAndAfterAttributes.memberSerializers)
-        };
+            new ClassFieldReflectors<BeforeAndAfterAttributes>      (typeof(CreateReply), "directoryAttributes", BeforeAndAfterAttributes.memberSerializers)
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileHandle optionalFileHandle;
         public OptionalFileAttributes optionalFileAttributes;
         public BeforeAndAfterAttributes directoryAttributes;
 
-        public CreateReply()
-            : base(memberSerializers)
-        {
-        }
-        public CreateReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public CreateReply(OptionalFileHandle optionalFileHandle, OptionalFileAttributes optionalFileAttributes, BeforeAndAfterAttributes directoryAttributes)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.optionalFileHandle = optionalFileHandle;
@@ -1136,7 +1033,7 @@ namespace Marler.Net.Nfs3Procedure
 
         }
         public CreateReply(Status status, BeforeAndAfterAttributes directoryAttributes)
-            : base(memberSerializers)
+
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -1149,6 +1046,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // Mkdir Procedure
     //
+    /*
     public class Mkdir : RpcProcedure
     {
         public readonly MkdirReply reply;
@@ -1160,66 +1058,53 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class MkdirCall : ClassSerializer
+    */
+    public class MkdirCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(MkdirCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(MkdirCall), "newDirectoryName", -1),
-            new XdrStructFieldReflector<SetAttributesStruct>(typeof(MkdirCall), "setAttributes", SetAttributesStruct.memberSerializers),
-        };
+            new ClassFieldReflectors<SetAttributesStruct>(typeof(MkdirCall), "setAttributes", SetAttributesStruct.memberSerializers),
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] directoryHandle;
         public String newDirectoryName;
 
         public SetAttributesStruct setAttributes;
-
-        public MkdirCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public MkdirCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public MkdirCall(Byte[] directoryHandle, String newDirectoryName, SetAttributesStruct setAttributes)
-            : base(memberSerializers)
         {
             this.directoryHandle = directoryHandle;
             this.newDirectoryName = newDirectoryName;
             this.setAttributes = setAttributes;
         }
     }
-    public class MkdirReply : ClassSerializer
+    public class MkdirReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector                                   (typeof(MkdirReply), "status", typeof(Status)),
-                VoidReflector.ArrayInstance,
+                VoidReflector.ReflectorsArray,
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
-                    new XdrStructFieldReflector<OptionalFileHandle>    (typeof(MkdirReply), "optionalFileHandle", OptionalFileHandle.memberSerializers),
-                    new XdrStructFieldReflector<OptionalFileAttributes>(typeof(MkdirReply), "optionalAttributes", OptionalFileAttributes.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileHandle>    (typeof(MkdirReply), "optionalFileHandle", OptionalFileHandle.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileAttributes>(typeof(MkdirReply), "optionalAttributes", OptionalFileAttributes.memberSerializers),
                 })
             ),
-            new XdrStructFieldReflector<BeforeAndAfterAttributes>      (typeof(MkdirReply), "parentDirectoryAttributes", BeforeAndAfterAttributes.memberSerializers)
-        };
+            new ClassFieldReflectors<BeforeAndAfterAttributes>      (typeof(MkdirReply), "parentDirectoryAttributes", BeforeAndAfterAttributes.memberSerializers)
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileHandle optionalFileHandle;
         public OptionalFileAttributes optionalAttributes;
         public BeforeAndAfterAttributes parentDirectoryAttributes;
 
-        public MkdirReply()
-            : base(memberSerializers)
-        {
-        }
-        public MkdirReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public MkdirReply(OptionalFileHandle optionalFileHandle, OptionalFileAttributes optionalAttributes, BeforeAndAfterAttributes parentDirectoryAttributes)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.optionalFileHandle = optionalFileHandle;
@@ -1228,7 +1113,6 @@ namespace Marler.Net.Nfs3Procedure
 
         }
         public MkdirReply(Status status, BeforeAndAfterAttributes parentDirectoryAttributes)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -1241,6 +1125,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // SymLink Procedure
     //
+    /*
     public class SymLink : RpcProcedure
     {
         public readonly SymLinkReply reply;
@@ -1252,32 +1137,28 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class SymLinkCall : ClassSerializer
+    */
+    public class SymLinkCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(SymLinkCall), "linkToHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(SymLinkCall), "linkName", -1),
-            new XdrStructFieldReflector<SetAttributesStruct>(typeof(SymLinkCall), "attributes", SetAttributesStruct.memberSerializers),
+            new ClassFieldReflectors<SetAttributesStruct>(typeof(SymLinkCall), "attributes", SetAttributesStruct.memberSerializers),
             new XdrStringReflector         (typeof(SymLinkCall), "data", -1),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] linkToHandle;
         public String linkName;
 
         public SetAttributesStruct attributes;
         public String data;
-
-        public SymLinkCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public SymLinkCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public SymLinkCall(Byte[] linkToHandle, String linkName, SetAttributesStruct attributes, String data)
-            : base(memberSerializers)
         {
             this.linkToHandle = linkToHandle;
             this.linkName = linkName;
@@ -1285,36 +1166,27 @@ namespace Marler.Net.Nfs3Procedure
             this.data = data;
         }
     }
-    public class SymLinkReply : ClassSerializer
+    public class SymLinkReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector                                   (typeof(SymLinkReply), "status", typeof(Status)),
-                VoidReflector.ArrayInstance,
+                VoidReflector.ReflectorsArray,
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
-                    new XdrStructFieldReflector<OptionalFileHandle>    (typeof(SymLinkReply), "optionalFileHandle", OptionalFileHandle.memberSerializers),
-                    new XdrStructFieldReflector<OptionalFileAttributes>(typeof(SymLinkReply), "optionalAttributes", OptionalFileAttributes.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileHandle>    (typeof(SymLinkReply), "optionalFileHandle", OptionalFileHandle.memberSerializers),
+                    new ClassFieldReflectors<OptionalFileAttributes>(typeof(SymLinkReply), "optionalAttributes", OptionalFileAttributes.memberSerializers),
                 })
             ),
-            new XdrStructFieldReflector<BeforeAndAfterAttributes>      (typeof(SymLinkReply), "attributes", BeforeAndAfterAttributes.memberSerializers)
-        };
+            new ClassFieldReflectors<BeforeAndAfterAttributes>      (typeof(SymLinkReply), "attributes", BeforeAndAfterAttributes.memberSerializers)
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileHandle optionalFileHandle;
         public OptionalFileAttributes optionalAttributes;
         public BeforeAndAfterAttributes attributes;
 
-        public SymLinkReply()
-            : base(memberSerializers)
-        {
-        }
-        public SymLinkReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public SymLinkReply(OptionalFileHandle optionalFileHandle, OptionalFileAttributes optionalAttributes, BeforeAndAfterAttributes attributes)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.optionalFileHandle = optionalFileHandle;
@@ -1323,7 +1195,6 @@ namespace Marler.Net.Nfs3Procedure
 
         }
         public SymLinkReply(Status status, BeforeAndAfterAttributes attributes)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -1334,6 +1205,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // Remove Procedure
     //
+    /*
     public class Remove : RpcProcedure
     {
         public readonly RemoveReply reply;
@@ -1345,53 +1217,40 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class RemoveCall : ClassSerializer
+    */
+    public class RemoveCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(RemoveCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(RemoveCall), "fileName", -1),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] directoryHandle;
         public String fileName;
-
-        public RemoveCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public RemoveCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public RemoveCall(Byte[] directoryHandle, String fileName)
-            : base(memberSerializers)
         {
             this.directoryHandle = directoryHandle;
             this.fileName = fileName;
         }
     }
-    public class RemoveReply : ClassSerializer
+    public class RemoveReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrEnumReflector                                 (typeof(RemoveReply), "status", typeof(Status)),
-            new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(RemoveReply), "directoryAttributes", BeforeAndAfterAttributes.memberSerializers)
-        };
+            new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(RemoveReply), "directoryAttributes", BeforeAndAfterAttributes.memberSerializers)
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public BeforeAndAfterAttributes directoryAttributes;
 
-        public RemoveReply()
-            : base(memberSerializers)
-        {
-        }
-        public RemoveReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public RemoveReply(Status status, BeforeAndAfterAttributes directoryAttributes)
-            : base(memberSerializers)
         {
             this.status = status;
             this.directoryAttributes = directoryAttributes;
@@ -1402,6 +1261,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // Rmdir Procedure
     //
+    /*
     public class Rmdir : RpcProcedure
     {
         public readonly RemoveReply reply;
@@ -1413,12 +1273,14 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
+    */
     //RmdirCall and RmdirReply are same as Remove
 
 
     //
     // Rename Procedure
     //
+    /*
     public class Rename : RpcProcedure
     {
         public readonly RenameReply reply;
@@ -1430,32 +1292,28 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class RenameCall : ClassSerializer
+    */
+    public class RenameCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(RenameCall), "oldDirectoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(RenameCall), "oldName", -1),
             new XdrOpaqueVarLengthReflector(typeof(RenameCall), "newDirectoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(RenameCall), "newName", -1),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] oldDirectoryHandle;
         public String oldName;
 
         public Byte[] newDirectoryHandle;
         public String newName;
-
-        public RenameCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public RenameCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public RenameCall(Byte[] oldDirectoryHandle, String oldName, Byte[] newDirectoryHandle, String newName)
-            : base(memberSerializers)
         {
             this.oldDirectoryHandle = oldDirectoryHandle;
             this.oldName = oldName;
@@ -1463,29 +1321,20 @@ namespace Marler.Net.Nfs3Procedure
             this.newName = newName;
         }
     }
-    public class RenameReply : ClassSerializer
+    public class RenameReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrEnumReflector                                 (typeof(RenameReply), "status", typeof(Status)),
-            new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(RenameReply), "oldDirectoryAttributes", BeforeAndAfterAttributes.memberSerializers),
-            new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(RenameReply), "newDirectoryAttributes", BeforeAndAfterAttributes.memberSerializers),
-        };
+            new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(RenameReply), "oldDirectoryAttributes", BeforeAndAfterAttributes.memberSerializers),
+            new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(RenameReply), "newDirectoryAttributes", BeforeAndAfterAttributes.memberSerializers),
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public BeforeAndAfterAttributes oldDirectoryAttributes;
         public BeforeAndAfterAttributes newDirectoryAttributes;
 
-        public RenameReply()
-            : base(memberSerializers)
-        {
-        }
-        public RenameReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public RenameReply(Status status, BeforeAndAfterAttributes oldDirectoryAttributes, BeforeAndAfterAttributes newDirectoryAttributes)
-            : base(memberSerializers)
         {
             this.status = status;
             this.oldDirectoryAttributes = oldDirectoryAttributes;
@@ -1495,6 +1344,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // ReadDirPlus Procedure
     //
+    /*
     public class ReadDirPlus : RpcProcedure
     {
         public readonly ReadDirPlusReply reply;
@@ -1506,33 +1356,29 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class ReadDirPlusCall : ClassSerializer
+    */
+    public class ReadDirPlusCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector  (typeof(ReadDirPlusCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrUInt64Reflector           (typeof(ReadDirPlusCall), "cookie"),
             new XdrOpaqueFixedLengthReflector(typeof(ReadDirPlusCall), "cookieVerifier", Nfs3.CookieVerifierSize),
             new XdrUInt32Reflector           (typeof(ReadDirPlusCall), "maxDirectoryBytes"),
             new XdrUInt32Reflector(typeof(ReadDirPlusCall), "maxRpcReplyMessageBytes"),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] directoryHandle;
         public Cookie cookie;
         public Byte[] cookieVerifier;
         public Count maxDirectoryBytes;
         public Count maxRpcReplyMessageBytes;
-
-        public ReadDirPlusCall()
-            : base(memberSerializers)
-        {
-        }
+        
         public ReadDirPlusCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public ReadDirPlusCall(Byte[] directoryHandle, Cookie cookie, Byte[] cookieVerifier, Count maxDirectoryBytes, Count maxRpcReplyMessageBytes)
-            : base(memberSerializers)
         {
             this.directoryHandle = directoryHandle;
             this.cookie = cookie;
@@ -1541,27 +1387,49 @@ namespace Marler.Net.Nfs3Procedure
             this.maxRpcReplyMessageBytes = maxRpcReplyMessageBytes;
         }
     }
-    public class EntryPlus : ClassSerializer
+    /*
++        public static readonly IReflector[] memberSerializers = new IReflector[] {
++            new XdrUInt64Reflector                             (typeof(EntryPlus), "fileID"),
++            new XdrStringReflector                             (typeof(EntryPlus), "fileName", -1),
++            new XdrUInt64Reflector                             (typeof(EntryPlus), "cookie"),
++            new XdrStructFieldReflector<OptionalFileAttributes>(typeof(EntryPlus), "optionalAttributes", OptionalFileAttributes.memberSerializers),
++            new XdrStructFieldReflector<OptionalFileHandle>    (typeof(EntryPlus), "optionalHandle", OptionalFileHandle.memberSerializers),
++            null // Placeholder
++        };
++        private static readonly XdrStructFieldReflector<EntryPlus> nextEntryReflector =
++            new XdrStructFieldReflector<EntryPlus>(typeof(EntryPlus), "nextEntry", memberSerializers);
++        static EntryPlus()
++        {
++            memberSerializers[5] = new XdrBooleanDescriminateReflector(
++                new XdrBooleanReflector(typeof(EntryPlus), "nextEntryIncluded"),
++                new IReflector[] {nextEntryReflector}, VoidReflector.ArrayInstance);
++        }*/
+    public class EntryPlus : ISerializerCreator
     {
+        static IReflector NextEntryReflectorCreator(IReflectors reflectorsReference)
+        {
+            return new XdrBooleanDescriminateReflector(
+
+                new XdrBooleanReflector(typeof(EntryPlus), "nextEntryIncluded"),
+
+                new IReflectors(new ClassFieldReflectors<EntryPlus>(typeof(EntryPlus), "nextEntry", reflectorsReference)),
+
+                VoidReflector.Reflectors);
+        }
+
         //
         // These serializers have to be created weirdly because there are some circular references in it
         //
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
-            new XdrUInt64Reflector                             (typeof(EntryPlus), "fileID"),
-            new XdrStringReflector                             (typeof(EntryPlus), "fileName", -1),
-            new XdrUInt64Reflector                             (typeof(EntryPlus), "cookie"),
-            new XdrStructFieldReflector<OptionalFileAttributes>(typeof(EntryPlus), "optionalAttributes", OptionalFileAttributes.memberSerializers),
-            new XdrStructFieldReflector<OptionalFileHandle>    (typeof(EntryPlus), "optionalHandle", OptionalFileHandle.memberSerializers),
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+            new XdrUInt64Reflector                           (typeof(EntryPlus), "fileID"),
+            new XdrStringReflector                           (typeof(EntryPlus), "fileName", -1),
+            new XdrUInt64Reflector                           (typeof(EntryPlus), "cookie"),
+            new ClassFieldReflectors<OptionalFileAttributes>(typeof(EntryPlus), "optionalAttributes", OptionalFileAttributes.memberSerializers),
+            new ClassFieldReflectors<OptionalFileHandle>    (typeof(EntryPlus), "optionalHandle", OptionalFileHandle.memberSerializers),
             null // Placeholder
-        };
-        private static readonly XdrStructFieldReflector<EntryPlus> nextEntryReflector =
-            new XdrStructFieldReflector<EntryPlus>(typeof(EntryPlus), "nextEntry", memberSerializers);
-        static EntryPlus()
-        {
-            memberSerializers[5] = new XdrBooleanDescriminateReflector(
-                new XdrBooleanReflector(typeof(EntryPlus), "nextEntryIncluded"),
-                new IReflector[] {nextEntryReflector}, VoidReflector.ArrayInstance);
-        }
+        },
+            NextEntryReflectorCreator);
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public FileID fileID;
         public String fileName;
@@ -1571,9 +1439,10 @@ namespace Marler.Net.Nfs3Procedure
         public Boolean nextEntryIncluded;
         public EntryPlus nextEntry;
 
-        public EntryPlus()
-            : base(memberSerializers)
+        //public EntryPlus() { }
+        public EntryPlus(Byte[] data, Int32 offset, Int32 maxOffset)
         {
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public EntryPlus(
             FileID fileID,
@@ -1582,7 +1451,6 @@ namespace Marler.Net.Nfs3Procedure
             OptionalFileAttributes optionalAttributes,
             OptionalFileHandle optionalHandle,
             EntryPlus nextEntry)
-            : base(memberSerializers)
         {
             this.fileID = fileID;
             this.fileName = fileName;
@@ -1593,26 +1461,27 @@ namespace Marler.Net.Nfs3Procedure
             this.nextEntry = nextEntry;
         }
     }
-    public class ReadDirPlusReply : ClassSerializer
+    public class ReadDirPlusReply : ISerializerCreator
     {
-        public static readonly IReflector[] okSerializers = new IReflector[] {
-            new XdrStructFieldReflector<OptionalFileAttributes>(typeof(ReadDirPlusReply), "optionalDirectoryAttributes", OptionalFileAttributes.memberSerializers),
+        static readonly IReflector[] okSerializers = new IReflector[] {
+            new ClassFieldReflectors<OptionalFileAttributes>(typeof(ReadDirPlusReply), "optionalDirectoryAttributes", OptionalFileAttributes.memberSerializers),
             new XdrOpaqueFixedLengthReflector                  (typeof(ReadDirPlusReply), "cookieVerifier", Nfs3.CookieVerifierSize),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(ReadDirPlusReply), "entriesIncluded"),
-                new IReflector[] {
-                    new XdrStructFieldReflector<EntryPlus>(typeof(ReadDirPlusReply), "entry", EntryPlus.memberSerializers),
-                    new XdrBooleanReflector               (typeof(ReadDirPlusReply), "endOfFile")},
-                VoidReflector.ArrayInstance),
+                new IReflectors(new IReflector[] {
+                    new ClassFieldReflectors<EntryPlus>(typeof(ReadDirPlusReply), "entry", EntryPlus.memberSerializers),
+                    new XdrBooleanReflector               (typeof(ReadDirPlusReply), "endOfFile")}),
+                VoidReflector.Reflectors),
         };
 
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(ReadDirPlusReply), "status", typeof(Status)),
-                new IReflector[] {new XdrStructFieldReflector<OptionalFileAttributes>(typeof(ReadDirPlusReply), "optionalDirectoryAttributes", OptionalFileAttributes.memberSerializers)}, 
+                new IReflector[] {new ClassFieldReflectors<OptionalFileAttributes>(typeof(ReadDirPlusReply), "optionalDirectoryAttributes", OptionalFileAttributes.memberSerializers)}, 
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, okSerializers)
             ),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileAttributes optionalDirectoryAttributes;
@@ -1621,17 +1490,7 @@ namespace Marler.Net.Nfs3Procedure
         public EntryPlus entry;
         public Boolean endOfFile;
 
-        public ReadDirPlusReply()
-            : base(memberSerializers)
-        {
-        }
-        public ReadDirPlusReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public ReadDirPlusReply(OptionalFileAttributes optionalDirectoryAttributes, Byte[] cookieVerifier, EntryPlus entry, Boolean endOfFile)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.optionalDirectoryAttributes = optionalDirectoryAttributes;
@@ -1641,7 +1500,6 @@ namespace Marler.Net.Nfs3Procedure
             this.endOfFile = endOfFile;
         }
         public ReadDirPlusReply(Status status, OptionalFileAttributes optionalDirectoryAttributes)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("WrongConstructor: This constructor is meant for enum values other than Ok");
@@ -1654,6 +1512,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // FileSystemStatus
     //
+    /*
     public class FileSystemStatus : RpcProcedure
     {
         public readonly FileSystemStatusReply reply;
@@ -1665,32 +1524,29 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class FileSystemStatusCall : ClassSerializer
+    */
+    public class FileSystemStatusCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(FileSystemStatusCall), "fileSystemRoot", Nfs3.FileHandleMaxSize),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
+
         public Byte[] fileSystemRoot;
 
-        public FileSystemStatusCall()
-            : base(memberSerializers)
-        {
-        }
         public FileSystemStatusCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public FileSystemStatusCall(Byte[] fileSystemRoot)
-            : base(memberSerializers)
         {
             this.fileSystemRoot = fileSystemRoot;
         }
     }
-    public class FileSystemStatusReply : ClassSerializer
+    public class FileSystemStatusReply : ISerializerCreator
     {
         public static readonly IReflector[] okSerializers = new IReflector[] {
-            new XdrStructFieldReflector<OptionalFileAttributes>(typeof(FileSystemStatusReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
+            new ClassFieldReflectors<OptionalFileAttributes>(typeof(FileSystemStatusReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
             new XdrUInt64Reflector(typeof(FileSystemStatusReply), "totalBytes"),
             new XdrUInt64Reflector(typeof(FileSystemStatusReply), "freeBytes"),
             new XdrUInt64Reflector(typeof(FileSystemStatusReply), "availableBytes"),
@@ -1700,13 +1556,14 @@ namespace Marler.Net.Nfs3Procedure
             new XdrUInt32Reflector(typeof(FileSystemStatusReply), "fileSystemVolatility"),
         };
 
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(FileSystemStatusReply), "status", typeof(Status)), new IReflector[] {
-                new XdrStructFieldReflector<OptionalFileAttributes>(typeof(FileSystemStatusReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
+                new ClassFieldReflectors<OptionalFileAttributes>(typeof(FileSystemStatusReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, okSerializers)
             ),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileAttributes optionalFileAttributes;
@@ -1715,17 +1572,7 @@ namespace Marler.Net.Nfs3Procedure
         UInt64 totalFileSlots, freeFileSlots, availableFileSlots;
         UInt32 fileSystemVolatility;
 
-        public FileSystemStatusReply()
-            : base(memberSerializers)
-        {
-        }
-        public FileSystemStatusReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public FileSystemStatusReply(Status status, OptionalFileAttributes optionalFileAttributes)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("Wrong Constructor: this constructor is not meant for an Ok status");
@@ -1737,7 +1584,6 @@ namespace Marler.Net.Nfs3Procedure
             UInt64 totalBytes, UInt64 freeBytes, UInt64 availableBytes,
             UInt64 totalFileSlots, UInt64 freeFileSlots, UInt64 availableFileSlots,
             UInt32 fileSystemVolatility)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.optionalFileAttributes = optionalFileAttributes;
@@ -1758,63 +1604,60 @@ namespace Marler.Net.Nfs3Procedure
     //
     // FileSystemInfo Procedure
     //
+    /*
     public class FileSystemInfo : RpcProcedure
     {
-        public readonly FsInfoReply reply;
+        //public readonly FsInfoReply reply;
 
         public FileSystemInfo(FsInfoCall call)
             : base("FileSystemInfo", (UInt32)Nfs3Command.FSINFO, call)
         {
-            this.reply = new FsInfoReply();
-            this.responseSerializer = this.reply;
+            //this.reply = new FsInfoReply();
+            this.responseSerializer = null; //FsInfoReply.classSerializer;
         }
     }
-    public class FsInfoCall : ClassSerializer
+    */
+    public class FSInfoCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
-            new XdrOpaqueVarLengthReflector(typeof(FsInfoCall), "fileHandle", Nfs3.FileHandleMaxSize),
-        };
-        public Byte[] fileHandle;
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+            new XdrOpaqueVarLengthReflector(typeof(FSInfoCall), "handle", Nfs3.FileHandleMaxSize),
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
-        public FsInfoCall()
-            : base(memberSerializers)
+        public Byte[] handle;
+
+        public FSInfoCall(Byte[] data, Int32 offset, Int32 maxOffset)
         {
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
-        public FsInfoCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
+        public FSInfoCall(Byte[] handle)
         {
-            Deserialize(data, offset, maxOffset);
-        }
-        public FsInfoCall(Byte[] fileHandle)
-            : base(memberSerializers)
-        {
-            this.fileHandle = fileHandle;
+            this.handle = handle;
         }
     }
-    public class FsInfoReply : ClassSerializer
+    public class FSInfoReply : ISerializerCreator
     {
-        public static readonly IReflector[] okSerializers = new IReflector[] {
-            new XdrStructFieldReflector<OptionalFileAttributes>(typeof(FsInfoReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "readSizeMax"),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "readSizePreference"),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "readSizeMultiple"),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "writeSizeMax"),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "writeSizePreference"),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "writeSizeMultiple"),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "readDirSizePreference"),
-            new XdrUInt64Reflector(typeof(FsInfoReply), "maxFileSize"),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "serverTimeGranularitySeconds"),
-            new XdrUInt32Reflector(typeof(FsInfoReply), "serverTimeGranularityNanoSeconds"),
-            new XdrEnumReflector  (typeof(FsInfoReply), "fileProperties", typeof(FileProperties)),
-        };
-
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
-                new XdrEnumReflector(typeof(FsInfoReply), "status", typeof(Status)), new IReflector[] {
-                new XdrStructFieldReflector<OptionalFileAttributes>(typeof(FsInfoReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
-                new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, okSerializers)
+                new XdrEnumReflector(typeof(FSInfoReply), "status", typeof(Status)), new IReflector[] {
+                new ClassFieldReflectors<OptionalFileAttributes>(typeof(FSInfoReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
+                new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
+                    new ClassFieldReflectors<OptionalFileAttributes>(typeof(FSInfoReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "readSizeMax"),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "readSizePreference"),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "readSizeMultiple"),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "writeSizeMax"),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "writeSizePreference"),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "writeSizeMultiple"),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "readDirSizePreference"),
+                    new XdrUInt64Reflector(typeof(FSInfoReply), "maxFileSize"),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "serverTimeGranularitySeconds"),
+                    new XdrUInt32Reflector(typeof(FSInfoReply), "serverTimeGranularityNanoSeconds"),
+                    new XdrEnumReflector  (typeof(FSInfoReply), "fileProperties", typeof(FileProperties)),
+                })
             ),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Status status;
         public OptionalFileAttributes optionalFileAttributes;
@@ -1836,31 +1679,20 @@ namespace Marler.Net.Nfs3Procedure
 
         public FileProperties fileProperties;
 
-        public FsInfoReply()
-            : base(memberSerializers)
-        {
-        }
-        public FsInfoReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
-        public FsInfoReply(Status status, OptionalFileAttributes optionalFileAttributes)
-            : base(memberSerializers)
+        public FSInfoReply(Status status, OptionalFileAttributes optionalFileAttributes)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("Wrong Constructor: this constructor is not meant for an Ok status");
             this.status = status;
             this.optionalFileAttributes = optionalFileAttributes;
         }
-        public FsInfoReply(
+        public FSInfoReply(
             OptionalFileAttributes optionalFileAttributes, 
             UInt32 readSizeMax, UInt32 readSizePreference, UInt32 readSizeMultiple,
             UInt32 writeSizeMax, UInt32 writeSizePreference, UInt32 writeSizeMultiple,
             UInt32 readDirSizePreference, UInt64 maxFileSize,
             UInt32 serverTimeGranularitySeconds, UInt32 serverTimeGranularityNanoSeconds,
             FileProperties fileProperties)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.optionalFileAttributes = optionalFileAttributes;
@@ -1886,6 +1718,7 @@ namespace Marler.Net.Nfs3Procedure
     //
     // Commit Procedure
     //
+    /*
     public class Commit : RpcProcedure
     {
         public readonly CommitReply reply;
@@ -1897,62 +1730,49 @@ namespace Marler.Net.Nfs3Procedure
             this.responseSerializer = this.reply;
         }
     }
-    public class CommitCall : ClassSerializer
+    */
+    public class CommitCall : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(CommitCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new XdrUInt64Reflector         (typeof(CommitCall), "offset"),
             new XdrUInt32Reflector         (typeof(CommitCall), "count"),
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public Byte[] fileHandle;
         public UInt64 offset;
         public UInt32 count;
 
-        public CommitCall()
-            : base(memberSerializers)
-        {
-        }
         public CommitCall(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            memberSerializers.Deserialize(this, data, offset, maxOffset);
         }
         public CommitCall(Byte[] fileHandle, UInt64 offset, UInt32 count)
-            : base(memberSerializers)
         {
             this.fileHandle = fileHandle;
             this.offset = offset;
             this.count = count;
         }
     }
-    public class CommitReply : ClassSerializer
+    public class CommitReply : ISerializerCreator
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(CommitReply), "status", typeof(Status)), new IReflector[] {
-                    new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(CommitReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
+                    new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(CommitReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
                 }, new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
-                    new XdrStructFieldReflector<BeforeAndAfterAttributes>(typeof(CommitReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
+                    new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(CommitReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
                     new XdrOpaqueFixedLengthReflector                    (typeof(CommitReply), "writeVerifier", Nfs3.WriteVerifierSize),
                 }))
-        };
+        });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         Status status;
         BeforeAndAfterAttributes beforeAndAfter;
         byte[] writeVerifier;
 
-        public CommitReply()
-            : base(memberSerializers)
-        {
-        }
-        public CommitReply(Byte[] data, Int32 offset, Int32 maxOffset)
-            : base(memberSerializers)
-        {
-            Deserialize(data, offset, maxOffset);
-        }
         public CommitReply(Status status, BeforeAndAfterAttributes beforeAndAfter)
-            : base(memberSerializers)
         {
             if (status == Status.Ok)
                 throw new InvalidOperationException("Wrong Constructor: this constructor is not meant for an Ok status");
@@ -1960,7 +1780,6 @@ namespace Marler.Net.Nfs3Procedure
             this.beforeAndAfter = beforeAndAfter;
         }
         public CommitReply(BeforeAndAfterAttributes beforeAndAfter, Byte[] writeVerifier)
-            : base(memberSerializers)
         {
             this.status = Status.Ok;
             this.beforeAndAfter = beforeAndAfter;

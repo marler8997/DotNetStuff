@@ -6,9 +6,9 @@ using System.Net;
 using System.Text;
 using System.Threading;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     //
     // Note: Maybe in the future it would be nice to have an option for single threaded using select or multi threaded

@@ -5,7 +5,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net.Sockets;
 
-namespace Marler.Net
+namespace More.Net
 {
     [TestClass]
     public class ProxyTests

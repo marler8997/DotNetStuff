@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Marler.Net
+namespace More.Net
 {
     /*
     public static class SocketExtensions

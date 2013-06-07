@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public enum RpcAuthenticationFlavor
     {
@@ -13,12 +13,12 @@ namespace Marler.Net
         Short  = 2,
     }
 
-    public class RpcCredentials : ClassSerializer
+    public class RpcCredentials : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrEnumReflector           (typeof(RpcCredentials), "authenticationFlavor", typeof(RpcAuthenticationFlavor)),
             new XdrOpaqueVarLengthReflector(typeof(RpcCredentials), "body", 400),
-        };
+        });
 
         public static RpcCredentials CreateUnixCredentials(RpcUnixCredentials unixCredentials)
         {
@@ -54,15 +54,15 @@ namespace Marler.Net
             this.body = body;
         }
     }
-    public class RpcUnixCredentials : ClassSerializer
+    public class RpcUnixCredentials : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(RpcUnixCredentials), "stamp"),
             new XdrStringReflector(typeof(RpcUnixCredentials), "machineName", 255),
             new XdrUInt32Reflector(typeof(RpcUnixCredentials), "uid"),
             new XdrUInt32Reflector(typeof(RpcUnixCredentials), "gid"),
             new XdrVarLengthArray<XdrUInt32>(typeof(RpcUnixCredentials), "auxilaryGids", 16)
-        };
+        });
 
         public UInt32 stamp;
         public String machineName;
@@ -87,12 +87,12 @@ namespace Marler.Net
             Deserialize(data, offset, maxOffset);
         }
     }
-    public class RpcVerifier : ClassSerializer
+    public class RpcVerifier : SubclassSerializer
     {
-        public static readonly IReflector[] memberSerializers = new IReflector[] {
+        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
             new XdrEnumReflector           (typeof(RpcVerifier), "authenticationFlavor", typeof(RpcAuthenticationFlavor)),
             new XdrOpaqueVarLengthReflector(typeof(RpcVerifier), "body", 400),
-        };
+        });
 
         private static RpcVerifier none = null;
         public static RpcVerifier None

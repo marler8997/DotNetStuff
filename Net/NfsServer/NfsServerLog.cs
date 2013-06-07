@@ -3,17 +3,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Diagnostics;
 
-using Marler.Common;
+using More;
 
 using FileID = System.UInt64;
 
-namespace Marler.Net
+namespace More.Net
 {
     public static class NfsServerLog
     {
         public static TextWriter rpcCallLogger;
         public static TextWriter warningLogger;
         public static TextWriter sharedFileSystemLogger;
+        public static TextWriter npcEventsLogger;
 
         public static Boolean storePerformance;
 

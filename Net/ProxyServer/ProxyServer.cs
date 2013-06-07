@@ -5,9 +5,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ProxyServerOptions : CLParser
     {
@@ -32,7 +32,7 @@ namespace Marler.Net
     }
     public class ProxyServer
     {
-        public const String Name = "MarlerProxyServer/1.0.*";
+        public const String Name = "MoreProxyServer/1.0.*";
 
         public readonly UInt16 listenPort;
         public readonly Int32 socketBackLog;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class ResourceTracker
     {

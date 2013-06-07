@@ -5,7 +5,7 @@ using System.Net;
 using System.Threading;
 using System.IO;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class NetworkAdapterProgram
     {

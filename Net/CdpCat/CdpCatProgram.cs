@@ -6,9 +6,9 @@ using System.Net;
 using System.IO;
 using System.Threading;
 
-using Marler.Common;
+using More;
 
-namespace Marler.Net
+namespace More.Net
 {
     public class CdpCatProgram
     {
