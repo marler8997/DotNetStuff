@@ -41,7 +41,7 @@
   <ItemGroup>
     <Compile Include="ContextTypeFinder.cs" />
     <Compile Include="Enumerators.cs" />
-    <Compile Include="AsciiLineParser.cs" />
+    <Compile Include="LineParser.cs" />
     <Compile Include="BinaryStream.cs" />
     <Compile Include="ByteBuffer.cs" />
     <Compile Include="IniParser.cs" />
@@ -54,6 +54,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Sos.cs" />
     <Compile Include="SosTypes.cs" />
+    <Compile Include="StringBuilderWriter.cs" />
     <Compile Include="ThreadModel.cs" />
     <Compile Include="CommandLineParser.cs" />
     <Compile Include="ObjectManager.cs" />

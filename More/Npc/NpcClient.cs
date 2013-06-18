@@ -19,8 +19,12 @@ namespace More
         void UpdateAndVerifyEnumAndObjectTypes();
         void VerifyMethodDefinitions(Boolean forceMethodUpdateFromServer, SosMethodDefinition[] expectedMethods);
         Object Call(String methodName, params Object[] parameters);
-        Object Call(Type returnType, String methodName, params Object[] parameters);
+        Object Call(Type expectedReturnType, String methodName, params Object[] parameters);
     }
+
+    //
+    // Note that this class is NOT thread safe
+    //
     public class NpcClient : INpcClientCaller
     {
         //
@@ -44,6 +48,7 @@ namespace More
         //
         // Sharing NPC Clients
         //
+        /*
         static Dictionary<EndPoint, NpcClient> sharedClientsByEndPoint;
         static NpcClient SharedClient(EndPoint endPoint)
         {
@@ -66,10 +71,10 @@ namespace More
             }
             return npcClient;
         }
-
+        */
 
         public readonly EndPoint serverEndPoint;
-        private AsciiSocket asciiSocket;
+        private SocketLineReader socketLineReader;
 
         readonly List<Type> enumAndObjectTypes;
         List<SosMethodDefinition> methodsFromServer;
@@ -77,8 +82,7 @@ namespace More
         public NpcClient(EndPoint serverEndPoint)
         {
             this.serverEndPoint = serverEndPoint;
-
-            this.asciiSocket = null;
+            this.socketLineReader = null;
 
             this.enumAndObjectTypes = new List<Type>();
             InitializeStaticClientTypeFinder();
@@ -86,16 +90,18 @@ namespace More
         public NpcClient(Socket socket)
         {
             this.serverEndPoint = socket.RemoteEndPoint;
+            
 
-            this.asciiSocket = new AsciiSocket(socket);
+            this.socketLineReader = (socket == null || !socket.Connected) ? null :
+                new SocketLineReader(socket, Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
 
             this.enumAndObjectTypes = new List<Type>();
             InitializeStaticClientTypeFinder();
         }
-        void UnexpectedClose()
+        InvalidOperationException UnexpectedClose()
         {
             Dispose();
-            throw new InvalidOperationException("Server closed unexpectedly");
+            return new InvalidOperationException("Server closed unexpectedly");
         }
         public void ConnectNow()
         {
@@ -106,19 +112,20 @@ namespace More
         }
         void Connect()
         {
-            if (asciiSocket == null || asciiSocket.socket == null || !asciiSocket.socket.Connected)
+            if (socketLineReader == null || socketLineReader.socket == null || !socketLineReader.socket.Connected)
             {
-                if (asciiSocket != null) asciiSocket.Dispose();
+                if (socketLineReader != null) socketLineReader.Dispose();
 
-                asciiSocket = new AsciiSocket(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
-                asciiSocket.socket.Connect(serverEndPoint);
+                socketLineReader = new SocketLineReader(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
+                    Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
+                socketLineReader.socket.Connect(serverEndPoint);
             }
         }
         public void Dispose()
         {
-            AsciiSocket cachedAsciiSocket = this.asciiSocket;
-            this.asciiSocket = null;
-            if (cachedAsciiSocket != null) cachedAsciiSocket.Dispose();
+            SocketLineReader cachedSocketLineReader = this.socketLineReader;
+            this.socketLineReader = null;
+            if (cachedSocketLineReader != null) cachedSocketLineReader.Dispose();
         }
         public void VerifyMethodDefinitions(Boolean forceUpdateMethodsFromServer, SosMethodDefinition[] expectedMethods)
         {
@@ -194,52 +201,90 @@ namespace More
         {
             if (methodsFromServer == null || forceUpdateFromServer)
             {
-                Connect();
-                asciiSocket.socket.Send(Encoding.ASCII.GetBytes("methods\n"));
-
-                this.methodsFromServer = new List<SosMethodDefinition>();
-                while (true)
+                //
+                // The reason for the retry logic is because if the underlying socket is disconnected, it may not
+                // fail until after a send and a receive...so the socket should be reconnected and the request should
+                // be repeated only once.
+                //
+                Boolean retryOnSocketException = true;
+            RETRY_LOCATION:
+                try
                 {
-                    String methodDefinitionLine = asciiSocket.ReadLine();
-                    if (methodDefinitionLine == null) throw new InvalidOperationException("Server closed unexpectedly");
-                    if (methodDefinitionLine.Length <= 0) break; // empty line
+                    Connect();
+                    socketLineReader.socket.Send(Encoding.ASCII.GetBytes("methods\n"));
 
-                    SosMethodDefinition methodDefinition = SosTypes.ParseMethodDefinition(methodDefinitionLine, 0);
-                    methodsFromServer.Add(methodDefinition);
+                    this.methodsFromServer = new List<SosMethodDefinition>();
+                    while (true)
+                    {
+                        String methodDefinitionLine = socketLineReader.ReadLine();
+                        if (methodDefinitionLine == null) UnexpectedClose();
+                        if (methodDefinitionLine.Length <= 0) break; // empty line
+
+                        SosMethodDefinition methodDefinition = SosTypes.ParseMethodDefinition(methodDefinitionLine, 0);
+                        methodsFromServer.Add(methodDefinition);
+                    }
+                }
+                catch (SocketException)
+                {
+                    if (retryOnSocketException)
+                    {
+                        retryOnSocketException = false;
+                        goto RETRY_LOCATION;
+                    }
+                    throw;
                 }
             }
             return methodsFromServer;
         }
         public void UpdateAndVerifyEnumAndObjectTypes()
         {
-            Connect();
-            asciiSocket.socket.Send(Encoding.UTF8.GetBytes("type\n"));
-
-            enumAndObjectTypes.Clear();
-
-            while (true)
+            //
+            // The reason for the retry logic is because if the underlying socket is disconnected, it may not
+            // fail until after a send and a receive...so the socket should be reconnected and the request should
+            // be repeated only once.
+            //
+            Boolean retryOnSocketException = true;
+        RETRY_LOCATION:
+            try
             {
-                String typeDefinitionLine = asciiSocket.ReadLine();
-                if (typeDefinitionLine == null) UnexpectedClose();
-                if (typeDefinitionLine.Length == 0) break; // empty line
+                Connect();
+                socketLineReader.socket.Send(Encoding.UTF8.GetBytes("type\n"));
 
-                Int32 spaceIndex = typeDefinitionLine.IndexOf(' ');
-                String sosTypeName = typeDefinitionLine.Remove(spaceIndex);
-                String typeDefinition = typeDefinitionLine.Substring(spaceIndex + 1);
+                enumAndObjectTypes.Clear();
 
-                Type type = GetTypeFromSosTypeName(sosTypeName);
-
-                if (typeDefinition.StartsWith("Enum"))
+                while (true)
                 {
-                    SosEnumDefinition enumDefinition = SosTypes.ParseSosEnumTypeDefinition(typeDefinition, 4);
-                    enumDefinition.VerifyType(type);
+                    String typeDefinitionLine = socketLineReader.ReadLine();
+                    if (typeDefinitionLine == null) UnexpectedClose();
+                    if (typeDefinitionLine.Length == 0) break; // empty line
+
+                    Int32 spaceIndex = typeDefinitionLine.IndexOf(' ');
+                    String sosTypeName = typeDefinitionLine.Remove(spaceIndex);
+                    String typeDefinition = typeDefinitionLine.Substring(spaceIndex + 1);
+
+                    Type type = GetTypeFromSosTypeName(sosTypeName);
+
+                    if (typeDefinition.StartsWith("Enum"))
+                    {
+                        SosEnumDefinition enumDefinition = SosTypes.ParseSosEnumTypeDefinition(typeDefinition, 4);
+                        enumDefinition.VerifyType(type);
+                    }
+                    else
+                    {
+                        SosObjectDefinition objectDefinition = SosTypes.ParseSosObjectTypeDefinition(typeDefinition, 0);
+                        objectDefinition.VerifyType(type);
+                    }
+                    enumAndObjectTypes.Add(type);
                 }
-                else
+            }
+            catch (SocketException)
+            {
+                if (retryOnSocketException)
                 {
-                    SosObjectDefinition objectDefinition = SosTypes.ParseSosObjectTypeDefinition(typeDefinition, 0);
-                    objectDefinition.VerifyType(type);
+                    retryOnSocketException = false;
+                    goto RETRY_LOCATION;
                 }
-                enumAndObjectTypes.Add(type);
+                throw;
             }
         }
         Type GetTypeFromSosTypeName(String typeName)
@@ -342,38 +387,60 @@ namespace More
         // each assembly for the type
         Object PerformCall(Type expectedReturnType, String methodName, String rawNpcLine)
         {
-            Connect();
-
-            asciiSocket.socket.Send(Encoding.UTF8.GetBytes(rawNpcLine.ToString()));
-
-            NpcReturnLine returnLine = new NpcReturnLine(asciiSocket.ReadLine());
-
-            if (returnLine.exceptionMessage != null) ThrowExceptionFromCall(methodName, returnLine);
-
-            if (expectedReturnType == null)
+            //
+            // The reason for the retry logic is because if the underlying socket is disconnected, it may not
+            // fail until after a send and a receive...so the socket should be reconnected and the request should
+            // be repeated only once.
+            //
+            Boolean retryOnSocketException = true;
+        RETRY_LOCATION:
+            try
             {
-                if (returnLine.sosTypeName.Equals("Void")) return null;
-                expectedReturnType = GetTypeFromSosTypeName(returnLine.sosTypeName);
+                Connect();
+
+                socketLineReader.socket.Send(Encoding.UTF8.GetBytes(rawNpcLine.ToString()));
+
+                String returnLineString = socketLineReader.ReadLine();
+                if (returnLineString == null) UnexpectedClose();
+
+                NpcReturnLine returnLine = new NpcReturnLine(returnLineString);
+
+                if (returnLine.exceptionMessage != null) ThrowExceptionFromCall(methodName, returnLine);
+
+                if (expectedReturnType == null)
+                {
+                    if (returnLine.sosTypeName.Equals("Void")) return null;
+                    expectedReturnType = GetTypeFromSosTypeName(returnLine.sosTypeName);
+                }
+                else
+                {
+                    if (!returnLine.sosTypeName.Equals(expectedReturnType.SosTypeName()))
+                        throw new InvalidOperationException(String.Format("Expected return type to be {0} but was {1}",
+                            expectedReturnType.SosTypeName(), returnLine.sosTypeName));
+                }
+
+                if (expectedReturnType == typeof(void)) return null;
+
+                Object returnObject;
+                Int32 valueStringOffset = Sos.Deserialize(out returnObject, expectedReturnType,
+                    returnLine.sosSerializationString, 0, returnLine.sosSerializationString.Length);
+
+                if (valueStringOffset != returnLine.sosSerializationString.Length)
+                    throw new InvalidOperationException(String.Format(
+                        "Used {0} characters to deserialize object of type '{1}' but the serialization string had {2} characters",
+                        valueStringOffset, expectedReturnType.SosTypeName(), returnLine.sosSerializationString.Length));
+
+                return returnObject;               
             }
-            else
+            catch (SocketException)
             {
-                if (!returnLine.sosTypeName.Equals(expectedReturnType.SosTypeName()))
-                    throw new InvalidOperationException(String.Format("Expected return type to be {0} but was {1}",
-                        expectedReturnType.SosTypeName(), returnLine.sosTypeName));
+                if (retryOnSocketException)
+                {
+                    retryOnSocketException = false;
+                    goto RETRY_LOCATION;
+                }
+                throw;
             }
-
-            if (expectedReturnType == typeof(void)) return null;
-
-            Object returnObject;
-            Int32 valueStringOffset = Sos.Deserialize(out returnObject, expectedReturnType,
-                returnLine.sosSerializationString, 0, returnLine.sosSerializationString.Length);
-
-            if (valueStringOffset != returnLine.sosSerializationString.Length)
-                throw new InvalidOperationException(String.Format(
-                    "Used {0} characters to deserialize object of type '{1}' but the serialization string had {2} characters",
-                    valueStringOffset, expectedReturnType.SosTypeName(), returnLine.sosSerializationString.Length));
-
-            return returnObject;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace More
 
     public class NpcDataHandler : NpcHandler
     {
-        readonly AsciiLineParser lineParser;
+        readonly LineParser lineParser;
         Boolean atFirstLine;
         Boolean done;
         public Boolean Done { get { return done; } }
@@ -35,7 +35,7 @@ namespace More
         public NpcDataHandler(INpcServerCallback callback, Socket socket, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
             : base(callback, socket, npcExecutor, npcHtmlGenerator)
         {
-            this.lineParser = new AsciiLineParser();
+            this.lineParser = new LineParser(Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
             this.atFirstLine = true;
             this.done = false;
         }
@@ -84,7 +84,7 @@ namespace More
                 //
                 // Get first line
                 //
-                String line = asciiSocket.ReadLine();
+                String line = socketLineReader.ReadLine();
                 if (line == null) return;
 
                 if (line.StartsWith("GET"))
@@ -100,7 +100,7 @@ namespace More
                     {
                         HandleLine(line);
 
-                        line = asciiSocket.ReadLine();
+                        line = socketLineReader.ReadLine();
                         if (line == null) return;
                     }
                 }
@@ -111,7 +111,7 @@ namespace More
             }
             finally
             {
-                if (asciiSocket.socket.Connected)
+                if (socketLineReader.socket.Connected)
                 {
                     Thread.Sleep(500);
                     Dispose();
@@ -123,7 +123,7 @@ namespace More
     {
         protected readonly INpcServerCallback callback;
 
-        protected AsciiSocket asciiSocket;
+        protected SocketLineReader socketLineReader;
         protected readonly String clientString;
 
         protected readonly NpcExecutor npcExecutor;
@@ -137,7 +137,7 @@ namespace More
 
             this.callback = callback;
 
-            this.asciiSocket = new AsciiSocket(socket);
+            this.socketLineReader = new SocketLineReader(socket, Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
             this.clientString = socket.RemoteEndPoint.ToString();
 
             this.npcExecutor = npcExecutor;
@@ -145,8 +145,8 @@ namespace More
         }
         public void Dispose()
         {
-            AsciiSocket asciiSocket = this.asciiSocket;
-            if (asciiSocket != null) asciiSocket.Dispose();
+            SocketLineReader cachedSocketLineReader = this.socketLineReader;
+            if (cachedSocketLineReader != null) cachedSocketLineReader.Dispose();
         }
         protected void HandleHttpRequest(String firstLineOfHttpRequest)
         {
@@ -161,8 +161,8 @@ namespace More
             if (resourceString.Equals("/favicon.ico"))
             {
                 Byte[] respose404 = Encoding.UTF8.GetBytes(String.Format("{0} 404 Not Found\r\n\r\n", httpVersionString));
-                asciiSocket.socket.Send(respose404);
-                asciiSocket.Dispose();
+                socketLineReader.socket.Send(respose404);
+                socketLineReader.Dispose();
                 return;
             }
 
@@ -307,8 +307,8 @@ namespace More
             //
             // Send Response
             //
-            asciiSocket.socket.Send(headerBytes, 0, headerBytes.Length, SocketFlags.None);
-            asciiSocket.socket.Send(contents, 0, contents.Length, SocketFlags.None);
+            socketLineReader.socket.Send(headerBytes, 0, headerBytes.Length, SocketFlags.None);
+            socketLineReader.socket.Send(contents, 0, contents.Length, SocketFlags.None);
 
             return;
         }
@@ -338,7 +338,7 @@ namespace More
             }
             else if (command.Equals("exit", StringComparison.InvariantCultureIgnoreCase))
             {
-                asciiSocket.Dispose();
+                socketLineReader.Dispose();
                 return;
             }
             else
@@ -346,7 +346,7 @@ namespace More
                 callback.GotInvalidData(clientString, String.Format("Unknown Command from line '{0}'", line));
                 response = GenerateHelpMessage(String.Format("Unknown Command '{0}', expected 'help', 'exit', 'methods', 'type' or 'call'", command));
             }
-            if (response != null) asciiSocket.socket.Send(response);
+            if (response != null) socketLineReader.socket.Send(response);
         }
 
         private String NpcError(NpcErrorCode errorCode, String errorMessage)

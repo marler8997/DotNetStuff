@@ -20,7 +20,9 @@ Let's talk about the controller/handler protocol:
 
 The controller handler protocol is a way of facillitating a "half-duplex" connection froma full-duplex.
 At any time, the controller may 
-1
+
+Handler actions:
+	1. 
 
 
 Conversations/exchanges of information can be broken down to different types.
@@ -42,6 +44,10 @@ The Controller can be in any one of the following states:
 
 
 
+
+
+
+
 =================================================================================================================
 =================================================================================================================
 =================================================================================================================
@@ -59,6 +65,88 @@ The Controller can be in any one of the following states:
       ----------                   ----------
      |Controller|---------------->| Handler  |
       ----------                   ----------
+
+From an initial state, all activity is initiated by the Controller User.
+The Controller user always has 3 actions:
+	1. Notification: The ControllerUser provides data to the Controller to send to the handler for the "Notification"
+	    Controller: Send data, Wait for ack, Return to original state
+	        //
+	        // Check that data can be sent
+	        //
+	        int retries = 0;
+	        int sendAckTimeout = DEFAULT_INITIAL_SEND_ACK_TIMEOUT;
+	        while(true)
+	        {
+	            Send(data);
+	            Boolean timedOut = WaitForAck(sendAckTimeout);
+	            If(timedOut)
+	            {
+	                sendAckTimeout = Callback(retries, int totalTimeMillis); // The callback allows the application to inform the user that
+	                                                                         // the notification has not received an ack in a while
+	                                                                         // and the user may choose to close the connection
+	                if(sendAckTimeout <= 0) throw CommunicationError;
+	                retries++;
+	            }
+	            else
+	            {
+	                break;
+	            }
+	         }
+	    Handler: Receive data, Send ack, Return to original state
+	2. Request
+	    Controller: Send data, Wait for response, Return to original state
+	        // Code is same as Notification except you are waiting for a response instead of just an ack
+	    Handler: Receive data, 
+	3. GiveControl: Send data, Wait for ack, The controller now goes into the handler state
+
+
+
+
+//
+// Controller Architecture
+//
+
+
+
+
+=============================================================================================
+How to design a protocol on top of CDP
+=============================================================================================
+When designing a protocol on top of CDP there are a couple things to considier.
+
+1. For every transfer of data, what is the initiator?
+    Examples of initiator:
+        1. The ControllerUser
+        2. A response
+        
+Let's say that we want to implement HTTP over CDP.  Lets look at the questions.
+First we'll list every example of a data excahange.
+
+1. Name: "GET/POST Request"
+       InitiatedBy: Controller User
+2. Name: "GET/POST Response"
+       InitiatedBy: "GET/POST Request"
+        
+HTTP Flow:
+
+ControllerUser: "GET/POST Request"
+Controller:  CdpRequest
+Handler: CdpResponse
+
+if(CdpResponse contains more resources)
+{
+    ControllerUser parses response to form another GET/POST Request (ideally the Controller user
+        will combine all known resources into one request)
+    goto Beginning
+}
+
+
+=============================================================================================
+
+
+
+
+
 
 
 

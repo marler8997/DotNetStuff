@@ -4,21 +4,24 @@ using System.Net.Sockets;
 
 namespace More
 {
-    public class AsciiLineParser
+    public class LineParser
     {
+        public readonly Encoding encoding;
+
         readonly ByteBuffer buffer;
         Int32 nextStartOfLineOffset;
         Int32 nextIndexToCheck;
         Int32 dataOffsetLimit;
 
-        public AsciiLineParser()
+        public LineParser(Encoding encoding, Int32 lineBufferInitialCapacity, Int32 lineBufferExpandLength)
         {
-            this.buffer = new ByteBuffer();
+            this.encoding = encoding;
+
+            this.buffer = new ByteBuffer(lineBufferInitialCapacity, lineBufferExpandLength);
             this.nextStartOfLineOffset = 0;
             this.nextIndexToCheck = 0;
             this.dataOffsetLimit = 0;
         }
-
         public void Add(Byte[] data)
         {
             buffer.EnsureCapacity(this.dataOffsetLimit + data.Length);
@@ -31,14 +34,13 @@ namespace More
             Array.Copy(data, offset, buffer.array, this.dataOffsetLimit, length);
             this.dataOffsetLimit += length;
         }
-
         public String GetLine()
         {
             while (this.nextIndexToCheck < this.dataOffsetLimit)
             {
                 if (buffer.array[this.nextIndexToCheck] == '\n')
                 {
-                    String line = Encoding.ASCII.GetString(buffer.array, this.nextStartOfLineOffset, this.nextIndexToCheck + 
+                    String line = encoding.GetString(buffer.array, this.nextStartOfLineOffset, this.nextIndexToCheck + 
                         ((this.nextIndexToCheck > this.nextStartOfLineOffset && buffer.array[nextIndexToCheck - 1] == '\r') ? -1 : 0) - this.nextStartOfLineOffset);
 
                     this.nextIndexToCheck++;
@@ -63,16 +65,16 @@ namespace More
         }
     }
 
-    public class AsciiSocket : IDisposable
+    public class SocketLineReader : IDisposable
     {
         public readonly Socket socket;
-        readonly AsciiLineParser lineParser;
+        readonly LineParser lineParser;
         readonly Byte[] receiveBuffer;
 
-        public AsciiSocket(Socket socket)
+        public SocketLineReader(Socket socket, Encoding encoding, Int32 lineBufferInitialCapacity, Int32 lineBufferExpandLength)
         {
             this.socket = socket;
-            this.lineParser = new AsciiLineParser();
+            this.lineParser = new LineParser(encoding, lineBufferInitialCapacity, lineBufferExpandLength);
             this.receiveBuffer = new Byte[512];
         }
 

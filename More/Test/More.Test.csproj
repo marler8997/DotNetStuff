@@ -41,6 +41,7 @@
     <Compile Include="AsciiLineParserTest.cs" />
     <Compile Include="CommandLineParserTest.cs" />
     <Compile Include="ExtensionTests.cs" />
+    <Compile Include="IniParserTests.cs" />
     <Compile Include="PerformanceChecks.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SortedListTest.cs" />

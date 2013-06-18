@@ -70,7 +70,6 @@
     <Compile Include="SocketThread.cs" />
     <Compile Include="SocketTunnel.cs" />
     <Compile Include="SortedList.cs" />
-    <Compile Include="StringBuilderWriter.cs" />
     <Compile Include="TcpListener.cs" />
     <Compile Include="Telnet.cs" />
     <Compile Include="Tunnel.cs" />

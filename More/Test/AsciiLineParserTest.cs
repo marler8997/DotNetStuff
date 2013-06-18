@@ -5,56 +5,57 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace More
 {
     [TestClass]
-    public class AsciiLineParserTest
+    public class LineParserTest
     {
         [TestMethod]
         public void TestMethod()
         {
-            AsciiLineParser lineParser = new AsciiLineParser();
+            Encoding encoding = Encoding.ASCII;
+            LineParser lineParser = new LineParser(encoding, 3, 3);
 
 
-            lineParser.Add(Encoding.ASCII.GetBytes("abcd\n"));
+            lineParser.Add(encoding.GetBytes("abcd\n"));
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
 
-            lineParser.Add(Encoding.ASCII.GetBytes("abcd\r\n"));
+            lineParser.Add(encoding.GetBytes("abcd\r\n"));
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
 
-            lineParser.Add(Encoding.ASCII.GetBytes("abcd\nefgh\r\n"));
+            lineParser.Add(encoding.GetBytes("abcd\nefgh\r\n"));
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.AreEqual("efgh", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
 
-            lineParser.Add(Encoding.ASCII.GetBytes("abcd\r\nefghijkl"));
+            lineParser.Add(encoding.GetBytes("abcd\r\nefghijkl"));
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
-            lineParser.Add(Encoding.ASCII.GetBytes("\n"));
+            lineParser.Add(encoding.GetBytes("\n"));
             Assert.AreEqual("efghijkl", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
 
 
-            lineParser.Add(Encoding.ASCII.GetBytes("abcd\n"));
-            lineParser.Add(Encoding.ASCII.GetBytes("abcd\r\n"));
-            lineParser.Add(Encoding.ASCII.GetBytes("abcd\n"));
+            lineParser.Add(encoding.GetBytes("abcd\n"));
+            lineParser.Add(encoding.GetBytes("abcd\r\n"));
+            lineParser.Add(encoding.GetBytes("abcd\n"));
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
 
-            lineParser.Add(Encoding.ASCII.GetBytes("a"));
+            lineParser.Add(encoding.GetBytes("a"));
             Assert.IsNull(lineParser.GetLine());
-            lineParser.Add(Encoding.ASCII.GetBytes("bc"));
+            lineParser.Add(encoding.GetBytes("bc"));
             Assert.IsNull(lineParser.GetLine());
-            lineParser.Add(Encoding.ASCII.GetBytes("d"));
+            lineParser.Add(encoding.GetBytes("d"));
             Assert.IsNull(lineParser.GetLine());
-            lineParser.Add(Encoding.ASCII.GetBytes("\r\ntu"));
-            lineParser.Add(Encoding.ASCII.GetBytes("v"));
+            lineParser.Add(encoding.GetBytes("\r\ntu"));
+            lineParser.Add(encoding.GetBytes("v"));
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
-            lineParser.Add(Encoding.ASCII.GetBytes("\r"));
+            lineParser.Add(encoding.GetBytes("\r"));
             Assert.IsNull(lineParser.GetLine());
-            lineParser.Add(Encoding.ASCII.GetBytes("\n"));
+            lineParser.Add(encoding.GetBytes("\n"));
             Assert.AreEqual("tuv", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
         }

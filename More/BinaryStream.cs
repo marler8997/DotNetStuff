@@ -64,12 +64,10 @@ namespace More
         {
             this.stream = stream;
         }
-
         public void Skip(Int32 length)
         {
             stream.Position += length;
         }
-
         public Byte[] ReadFullSize(Int32 length)
         {
             Byte[] buffer = new Byte[length];
