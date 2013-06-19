@@ -481,7 +481,7 @@ namespace More
     }
     public static class StreamExtensions
     {
-        public static void ReadFullSize(this Stream stream, byte[] buffer, int offset, int size)
+        public static void ReadFullSize(this Stream stream, Byte[] buffer, Int32 offset, Int32 size)
         {
             int lastBytesRead;
 
@@ -493,6 +493,23 @@ namespace More
                 if (size <= 0) return;
 
                 offset += lastBytesRead;
+            } while (lastBytesRead > 0);
+
+            throw new IOException(String.Format("Reached end of stream but still expected {0} bytes", size));
+        }
+
+        public static void ReadFullSize(this Stream stream, StringBuilder builder, Encoding encoding, Byte[] buffer, Int32 size)
+        {
+            int lastBytesRead;
+
+            do
+            {
+                lastBytesRead = stream.Read(buffer, 0, buffer.Length);
+                size -= lastBytesRead;
+
+                if (size <= 0) return;
+
+                builder.Append(encoding.GetString(buffer, 0, lastBytesRead));
             } while (lastBytesRead > 0);
 
             throw new IOException(String.Format("Reached end of stream but still expected {0} bytes", size));
@@ -560,6 +577,29 @@ namespace More
 
             return buffer;
         }
+        public static String ReadFileToString(String filename)
+        {
+            FileStream fileStream = null;
+            StreamReader reader = null;
+            try
+            {
+                fileStream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+                reader = new StreamReader(fileStream);
+
+                return reader.ReadToEnd();
+            }
+            finally
+            {
+                if(reader != null)
+                {
+                    reader.Dispose();
+                }
+                else
+                {
+                    if (fileStream != null) fileStream.Dispose();
+                }
+            }
+        }
 
         public static Int32 ReadFile(FileInfo fileInfo, Int32 fileOffset, Byte[] buffer, FileShare shareOptions, out Boolean reachedEndOfFile)
         {
@@ -596,5 +636,31 @@ namespace More
 
             return readLength;
         }
+
+
+        public static void SaveStringToFile(String filename, FileMode mode, String contents)
+        {
+            FileStream fileStream = null;
+            StreamWriter writer = null;
+            try
+            {
+                fileStream = new FileStream(filename, mode, FileAccess.Write);
+                writer = new StreamWriter(fileStream);
+
+                writer.Write(contents);
+            }
+            finally
+            {
+                if (writer != null)
+                {
+                    writer.Dispose();
+                }
+                else
+                {
+                    if (fileStream != null) fileStream.Dispose();
+                }
+            }
+        }
+
     }
 }
