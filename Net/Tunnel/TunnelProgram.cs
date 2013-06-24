@@ -78,7 +78,7 @@ namespace More.Net
                 // Parse End Point
                 //
                 ISocketConnector proxyConnector;
-                EndPoint serverEndPoint = ConnectorParser.Parse(endPointString, out proxyConnector);
+                EndPoint serverEndPoint = ConnectorParser.Parse(endPointString, -1, out proxyConnector);
 
                 //
                 // Parse Protocol and Port Set

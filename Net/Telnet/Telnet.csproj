@@ -31,10 +31,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="OptionsParser, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\OptionsParser\Options\bin\Release\OptionsParser.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -44,7 +40,6 @@
     <Compile Include="TelnetClient.cs" />
     <Compile Include="TelnetProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TelnetStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\More\More.csproj">

@@ -62,7 +62,7 @@ namespace More.Net
         //
         // EndPoint: [proxy-type:proxy-ip-or-hostname:proxy-port%]ip-or-hostname:port
         //
-        public static EndPoint Parse(String endPointString, out ISocketConnector proxyConnector)
+        public static EndPoint Parse(String endPointString, Int32 defaultPort, out ISocketConnector proxyConnector)
         {
             //
             // Check for proxy
@@ -85,19 +85,30 @@ namespace More.Net
             // Parse host and port
             //
             Int32 colonIndex = endPointString.IndexOf(':');
-            if (colonIndex < 0) throw new ParseException(String.Format("'{0}' needs a port, i.e. '{0}:80' would work", endPointString));
-            if (colonIndex == 0) throw new ParseException(String.Format("'{0}' needs a host before the colon at the beginning", endPointString));
-            if (colonIndex >= endPointString.Length - 1) throw new ParseException(String.Format("'{0}' needs a port after the colon", endPointString));
 
-            String ipOrHostName = endPointString.Remove(colonIndex);
-            String portString = endPointString.Substring(colonIndex + 1);
-
+            String ipOrHostName;
             UInt16 port;
-            if (!UInt16.TryParse(portString, out port))
+
+            //if (colonIndex == 0) throw new ParseException(String.Format("'{0}' needs a host before the colon at the beginning", endPointString));
+            //if (colonIndex >= endPointString.Length - 1) throw new ParseException(String.Format("'{0}' needs a port after the colon", endPointString));
+            if (colonIndex < 0)
             {
-                throw new ParseException(String.Format("Port '{0}', could not be parsed as a 2 byte unsigned integer", portString));
+                if (defaultPort <= 0) throw new ParseException(String.Format("'{0}' needs a port, i.e. '{0}:80' would work", endPointString));
+
+                ipOrHostName = endPointString;
+                port = (UInt16)defaultPort;
             }
-            if (port == 0) throw new ParseException("You can't have a port of 0");
+            else
+            {
+                ipOrHostName = endPointString.Remove(colonIndex);
+
+                String portString = endPointString.Substring(colonIndex + 1);
+                if (!UInt16.TryParse(portString, out port))
+                {
+                    throw new ParseException(String.Format("Port '{0}', could not be parsed as a 2 byte unsigned integer", portString));
+                }
+                if (port == 0) throw new ParseException("You can't have a port of 0");
+            }
 
             return EndPoints.EndPointFromIPOrHost(ipOrHostName, port);
         }

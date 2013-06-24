@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Path to build directory -->
+  <PropertyGroup>
+    <BuildToolsPath>$(MSBuildProjectDirectory)\..\..\..\..\..\Build\Tools</BuildToolsPath>
+    <DefaultPlatform>Any CPU</DefaultPlatform>
+  </PropertyGroup>
+  <Import Project="$(BuildToolsPath)\Common.include" />
+  <Import Project="$(BuildToolsPath)\CommonCompilerOptions.include" />
+  <PropertyGroup>
+    <ProjectGuid>{DAF8FBE2-82DB-434A-8DF5-B090737F2A3B}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>HP.Libraries.Npc</RootNamespace>
+    <AssemblyName>NpcClientGenerator</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HP.Libraries.Npc.csproj">
+      <Project>{5371BF58-7B13-473C-B75C-C043733EE1FA}</Project>
+      <Name>HP.Libraries.Npc</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(FrameworkImportFile)" />
+</Project>

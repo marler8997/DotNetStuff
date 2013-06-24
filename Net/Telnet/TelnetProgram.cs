@@ -83,7 +83,7 @@ namespace More.Net
             EndPoint serverEndPoint = null;
             if (nonOptionArgs.Count == 1)
             {
-                serverEndPoint = ConnectorParser.Parse(nonOptionArgs[0], out connector);
+                serverEndPoint = ConnectorParser.Parse(nonOptionArgs[0], 23, out connector);
             }
 
             TelnetClient client = new TelnetClient(optionsParser.wantServerEcho.set);

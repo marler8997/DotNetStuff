@@ -118,8 +118,6 @@ namespace More.Net
                     client.ReceiveLoopDone(potentialException);
                 }
             }
-
         }
-
     }
 }

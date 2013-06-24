@@ -188,7 +188,6 @@ namespace More
     }
     public class NpcServerLoggerCallback : INpcServerCallback
     {
-        public static NpcServerLoggerCallback ConsoleLogger = new NpcServerLoggerCallback(Console.Out);
         private readonly TextWriter log;
 
         public NpcServerLoggerCallback(TextWriter log)
@@ -224,6 +223,43 @@ namespace More
         {
             log.WriteLine("[{0}] Unhandled Exception: {1}" + Environment.NewLine + e.StackTrace,
                 clientString, e.GetType().Name + ": " + e.Message);            
+        }
+    }
+    public class NpcServerConsoleLoggerCallback : INpcServerCallback
+    {
+        public static readonly NpcServerConsoleLoggerCallback Instance = new NpcServerConsoleLoggerCallback();
+        private NpcServerConsoleLoggerCallback()
+        {
+        }
+        public void ServerListening(Socket listenSocket)
+        {
+        }
+        public void FunctionCall(string clientString, String methodName)
+        {
+            Console.Out.WriteLine("[{0}] Called '{1}'", clientString, methodName);
+        }
+        public void FunctionCallThrewException(string clientString, string methodName, Exception e)
+        {
+            Console.Out.WriteLine("[{0}] Called '{1}' threw exception '{2}'", clientString, methodName, e.GetType().Name + ": " + e.Message);
+        }
+        public void GotInvalidData(string clientString, string message)
+        {
+            Console.Out.WriteLine("[{0}] Invalid Data: {1}", clientString, message);
+        }
+        public void ExceptionDuringExecution(string clientString, string methodName, Exception e)
+        {
+            Console.Out.WriteLine("[{0}] Exception During Execution of '{1}': {2}" + Environment.NewLine + e.StackTrace,
+                clientString, methodName, e.GetType().Name + ": " + e.Message);
+        }
+        public void ExceptionWhileGeneratingHtml(string clientString, Exception e)
+        {
+            Console.Out.WriteLine("[{0}] Exception During Html generation: {1}",
+                clientString, e.GetType().Name + ": " + e.Message);
+        }
+        public void UnhandledException(string clientString, Exception e)
+        {
+            Console.Out.WriteLine("[{0}] Unhandled Exception: {1}" + Environment.NewLine + e.StackTrace,
+                clientString, e.GetType().Name + ": " + e.Message);
         }
     }
 }

@@ -226,6 +226,11 @@ namespace More
                 }
                 catch (SocketException)
                 {
+                    if (socketLineReader != null)
+                    {
+                        socketLineReader.Dispose();
+                        socketLineReader = null;
+                    }
                     if (retryOnSocketException)
                     {
                         retryOnSocketException = false;
@@ -279,6 +284,11 @@ namespace More
             }
             catch (SocketException)
             {
+                if (socketLineReader != null)
+                {
+                    socketLineReader.Dispose();
+                    socketLineReader = null;
+                }
                 if (retryOnSocketException)
                 {
                     retryOnSocketException = false;
@@ -434,6 +444,11 @@ namespace More
             }
             catch (SocketException)
             {
+                if (socketLineReader != null)
+                {
+                    socketLineReader.Dispose();
+                    socketLineReader = null;
+                }
                 if (retryOnSocketException)
                 {
                     retryOnSocketException = false;

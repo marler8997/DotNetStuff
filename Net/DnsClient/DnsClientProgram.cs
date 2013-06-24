@@ -6,6 +6,13 @@ using System.Net;
 
 namespace More.Net
 {
+    class DnsClientOptions : CLParser
+    {
+        public override void PrintUsageHeader()
+        {
+            Console.WriteLine("DnsClient [options] [host]");
+        }
+    }
     class DnsClientProgram
     {
         static Int32 Main(string[] args)
@@ -24,7 +31,7 @@ namespace More.Net
             EndPoint endPoint = null;
             if (nonOptionArgs.Count == 1)
             {
-                endPoint = ConnectorParser.Parse(nonOptionArgs[0], out connector);
+                endPoint = ConnectorParser.Parse(nonOptionArgs[0], -1, out connector);
             }
 
 

@@ -37,7 +37,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DnsClientOptions.cs" />
     <Compile Include="DnsClientProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

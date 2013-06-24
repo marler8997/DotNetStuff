@@ -76,6 +76,8 @@ namespace More
     [TestClass]
     public class HighLevelRegressionTests
     {
+
+
         const Int32 TestTcpPort = 65508;
 
         [TestMethod]
@@ -83,34 +85,92 @@ namespace More
         {
             NpcMethodsForTest npcMethodsForTest = new NpcMethodsForTest();
             NpcReflector reflector = new NpcReflector(npcMethodsForTest);
-            using (NpcServerSingleThreaded server = new NpcServerSingleThreaded(NpcServerLoggerCallback.ConsoleLogger,
-                    reflector, new DefaultNpcHtmlGenerator("Npc", reflector), TestTcpPort))
-            {
-                //server.RunPrepare();
-                new Thread(server.Run).Start();
-                Thread.Sleep(100);
 
-                NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort));
+            NpcServerSingleThreaded server = new NpcServerSingleThreaded(NpcServerConsoleLoggerCallback.Instance,
+                    reflector, new DefaultNpcHtmlGenerator("Npc", reflector), TestTcpPort);
 
-                client.Call("NpcMethodsForTest.EmptyCall");
-                client.Call("NpcMethodsForTest.EmptyCall");
-                client.Call("NpcMethodsForTest.EmptyCall");
-                client.Call("NpcMethodsForTest.EmptyCall");
+            Thread serverThread = new Thread(server.Run);
+            serverThread.Start();
+            Thread.Sleep(100);
 
-                client.Call("NpcMethodsForTest.SetDay", DayOfWeek.Tuesday);
-                Assert.AreEqual(DayOfWeek.Tuesday, client.Call("NpcMethodsForTest.GetDay"));
+            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort));
 
-                Int32[] integers = new Int32[] { 1, 2, 3, 1, 2, 0404, 8281, 3020, -1883, 0211 };
-                client.Call("NpcMethodsForTest.SetIntegers", integers);
-                Assert.IsNull(integers.Diff(client.Call("NpcMethodsForTest.GetIntegers")));
+            client.Call("NpcMethodsForTest.EmptyCall");
+            client.Call("NpcMethodsForTest.EmptyCall");
+            client.Call("NpcMethodsForTest.EmptyCall");
+            client.Call("NpcMethodsForTest.EmptyCall");
 
-                AnObjectType[] customObjects = new AnObjectType[] {
-                    new AnObjectType(DayOfWeek.Friday, "A random name", new Int32[]{Int32.MinValue, Int32.MaxValue, 0}),
-                };
+            client.Call("NpcMethodsForTest.SetDay", DayOfWeek.Tuesday);
+            Assert.AreEqual(DayOfWeek.Tuesday, client.Call("NpcMethodsForTest.GetDay"));
 
-                client.Call("NpcMethodsForTest.SetCustomObjects", new Object[] {customObjects});
-                Assert.IsNull(customObjects.Diff(client.Call("NpcMethodsForTest.GetCustomObjects")));
-            }
+            Int32[] integers = new Int32[] { 1, 2, 3, 1, 2, 0404, 8281, 3020, -1883, 0211 };
+            client.Call("NpcMethodsForTest.SetIntegers", integers);
+            Assert.IsNull(integers.Diff(client.Call("NpcMethodsForTest.GetIntegers")));
+
+            AnObjectType[] customObjects = new AnObjectType[] {
+                new AnObjectType(DayOfWeek.Friday, "A random name", new Int32[]{Int32.MinValue, Int32.MaxValue, 0}),
+            };
+
+            client.Call("NpcMethodsForTest.SetCustomObjects", new Object[] {customObjects});
+            Assert.IsNull(customObjects.Diff(client.Call("NpcMethodsForTest.GetCustomObjects")));
+
+            server.Dispose();
+            serverThread.Join();
+        }
+
+        [TestMethod]
+        public void ServerRestartTest()
+        {
+            NpcMethodsForTest npcMethodsForTest = new NpcMethodsForTest();
+            NpcReflector reflector = new NpcReflector(npcMethodsForTest);
+
+            NpcServerSingleThreaded server = new NpcServerSingleThreaded(NpcServerConsoleLoggerCallback.Instance,
+                    reflector, new DefaultNpcHtmlGenerator("Npc", reflector), TestTcpPort);
+            Thread serverThread = new Thread(server.Run);
+            serverThread.Start();
+
+            Thread.Sleep(100);
+
+            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort));
+
+            client.Call("NpcMethodsForTest.EmptyCall");
+            client.Call("NpcMethodsForTest.EmptyCall");
+            client.Call("NpcMethodsForTest.EmptyCall");
+            client.Call("NpcMethodsForTest.EmptyCall");
+
+            client.Call("NpcMethodsForTest.SetDay", DayOfWeek.Tuesday);
+            Assert.AreEqual(DayOfWeek.Tuesday, client.Call("NpcMethodsForTest.GetDay"));
+
+            Int32[] integers = new Int32[] { 1, 2, 3, 1, 2, 0404, 8281, 3020, -1883, 0211 };
+            client.Call("NpcMethodsForTest.SetIntegers", integers);
+            Assert.IsNull(integers.Diff(client.Call("NpcMethodsForTest.GetIntegers")));
+
+            AnObjectType[] customObjects = new AnObjectType[] {
+                new AnObjectType(DayOfWeek.Friday, "A random name", new Int32[]{Int32.MinValue, Int32.MaxValue, 0}),
+            };
+
+            client.Call("NpcMethodsForTest.SetCustomObjects", new Object[] { customObjects });
+            Assert.IsNull(customObjects.Diff(client.Call("NpcMethodsForTest.GetCustomObjects")));
+
+            //
+            // Restart the Server
+            //
+            Console.WriteLine("Resetting server");
+            server.Dispose();
+            serverThread.Join();
+            
+            server = new NpcServerSingleThreaded(NpcServerConsoleLoggerCallback.Instance,
+                reflector, new DefaultNpcHtmlGenerator("Npc", reflector), TestTcpPort);
+            serverThread = new Thread(server.Run);
+            serverThread.Start();
+
+            Thread.Sleep(100);
+
+            client.Call("NpcMethodsForTest.EmptyCall");
+            client.Call("NpcMethodsForTest.EmptyCall");
+
+            server.Dispose();
+            serverThread.Join();
         }
     }
 }

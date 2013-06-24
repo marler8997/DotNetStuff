@@ -49,7 +49,7 @@ namespace More.Net
 
 
                 ISocketConnector clientSideServerConnector;
-                EndPoint clientSideServerEndPoint = ConnectorParser.Parse(clientSideConnectorString, out clientSideServerConnector);
+                EndPoint clientSideServerEndPoint = ConnectorParser.Parse(clientSideConnectorString, -1, out clientSideServerConnector);
                 ClientConnectWaitMode clientConnectWaitMode = ClientConnectWaitModeMethods.Parse(clientSideWaitModeString);
 
                 PortSet listenPortSet = ParseUtilities.ParsePortSet(listenPortsString);
