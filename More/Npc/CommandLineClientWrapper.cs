@@ -15,7 +15,7 @@ namespace More
             Console.WriteLine("<InteractiveMode> {0} <server>", programName);
             Console.WriteLine("<CommandLineMode> {0} <server> <interface> <method> <args>", programName);
         }
-        public static Int32 Run(String programName, String[] args, Int32 defaultPort, InterfaceMapping interfaceMapping)
+        public static Int32 Run(String programName, String[] args, UInt16 defaultPort, InterfaceMapping interfaceMapping)
         {
             if (args.Length < 1)
             {
@@ -23,9 +23,10 @@ namespace More
                 return 1;
             }
 
-            String server = args[0];
+            String serverIPOrHostAndOptionalPort = args[0];
 
-            CommandLineClient client = new CommandLineClient(EndPoints.EndPointFromIPOrHost(server, defaultPort), interfaceMapping);
+            CommandLineClient client = new CommandLineClient(
+                EndPoints.EndPointFromIPOrHostAndOptionalPort(serverIPOrHostAndOptionalPort, defaultPort), interfaceMapping);
 
             String line;
 

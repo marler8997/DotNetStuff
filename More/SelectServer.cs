@@ -154,8 +154,10 @@ namespace More.Net
                     // debug
                     Socket.Select(selectSockets, null, null, Int32.MaxValue);
 
-                    foreach (Socket readSocket in selectSockets)
+                    for(int i = 0; i < selectSockets.Count; i++)
                     {
+                        Socket readSocket = selectSockets[i];
+
                         if (readSocket == listenSocket)
                         {
                             // Accept and store the new client's socket
@@ -414,8 +416,10 @@ namespace More.Net
                         }
                     }
 
-                    foreach (Socket readSocket in selectSockets)
+                    for (int i = 0; i < selectSockets.Count; i++)
                     {
+                        Socket readSocket = selectSockets[i];
+
                         //
                         // Check if it is a stream socket
                         //

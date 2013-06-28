@@ -11,23 +11,31 @@ namespace More.Net
 {
     public class ServerServer
     {
+        readonly SelectTunnelsThread tunnelsThread;
+
         private readonly TunnelList tunnelList;
         public readonly Int32 socketBackLog;
         public readonly Int32 readBufferSize;
+        readonly Boolean logData;
+        readonly Boolean logTransferMessages;
 
         private ServerServerListenThread[] threads;
         private readonly List<IncomingConnection> connectionList;
 
-        public ServerServer(TunnelList tunnelSet, Int32 socketBackLog, Int32 readBufferSize)
+        public ServerServer(TunnelList tunnelSet, Int32 socketBackLog, Int32 readBufferSize, Boolean logData, 
+            Boolean logTransferMessages)
         {
             if (tunnelSet == null) throw new ArgumentNullException("tunnelSet");
+
+            this.tunnelsThread = new SelectTunnelsThread(2048);
 
             this.tunnelList = tunnelSet;
             this.socketBackLog = socketBackLog;
             this.readBufferSize = readBufferSize;
+            this.logData = logData;
+            this.logTransferMessages = logTransferMessages;
 
             this.threads = null;
-
             this.connectionList = new List<IncomingConnection>();
         }
 
@@ -94,16 +102,21 @@ namespace More.Net
             Console.WriteLine("[Found Tunnel '{0}' that matches New Client {1} and Queued Client {2}]",
                 tunnel, newConnection, matchedConnection);
             
+            /*
             ConnectionMessageLogger messageLogger = new ConnectionMessageLoggerSingleLog(
                 new ConsoleMessageLogger("Tunnel"), String.Format("{0} to {1}", newConnection.endPointName, matchedConnection.endPointName),
                 String.Format("{0} to {1}", matchedConnection.endPointName, newConnection.endPointName));
 
-            IConnectionDataLogger dataLogger = new ConnectionDataLoggerSingleLog(ConsoleDataLogger.Instance,
-                newConnection.endPointName, matchedConnection.endPointName);
+            IConnectionDataLogger dataLogger = (logData) ? new ConnectionDataLoggerSingleLog(ConsoleDataLogger.Instance,
+                newConnection.endPointName, matchedConnection.endPointName) :
+                ConnectionDataLogger.Null;
 
             TwoWaySocketTunnel socketTunnel = new TwoWaySocketTunnel(
                 newConnection.socket, matchedConnection.socket, readBufferSize, messageLogger, dataLogger);
             new Thread(socketTunnel.StartOneAndRunOne).Start();
+            */
+            tunnelsThread.Add(newConnection.socket, matchedConnection.socket);
+
         }
 
         private class ServerServerListenThread
@@ -130,7 +143,7 @@ namespace More.Net
                 if (listenThread == null)
                 {
                     listenThread = new Thread(Run);
-                    listenThread.IsBackground = true;
+                    listenThread.IsBackground = false;
                     listenThread.Name = String.Format("Port {0} Listener", listenPort);
                     keepRunning = true;
                     listenThread.Start();

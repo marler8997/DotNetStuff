@@ -83,7 +83,8 @@ namespace More.Net
             {
                 String serverConnectorString = nonOptionArgs[0];
                 ISocketConnector connector;
-                EndPoint serverEndPoint = ConnectorParser.Parse(serverConnectorString, -1, out connector);
+                String serverIPAndPort = ConnectorParser.ParseConnector(serverConnectorString, out connector);
+                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHostAndPort(serverIPAndPort);
 
                 connectedSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 

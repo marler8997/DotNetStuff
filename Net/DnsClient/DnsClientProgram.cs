@@ -31,7 +31,8 @@ namespace More.Net
             EndPoint endPoint = null;
             if (nonOptionArgs.Count == 1)
             {
-                endPoint = ConnectorParser.Parse(nonOptionArgs[0], -1, out connector);
+                String ipOrHostAndPort = ConnectorParser.ParseConnector(nonOptionArgs[0], out connector);
+                endPoint = EndPoints.EndPointFromIPOrHostAndPort(ipOrHostAndPort);
             }
 
 

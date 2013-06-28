@@ -74,7 +74,7 @@ namespace More.Net
         {
             if (headers.StartsWith("CONNECT"))
             {
-                Int32 serverPort;
+                UInt16 serverPort;
                 String serverString = ParseConnectLine(headers.Remove(headers.IndexOfAny(newlineSet)), out serverPort);
                 if (serverString == null) return ServerInstruction.NoInstruction;
 
@@ -135,7 +135,7 @@ namespace More.Net
                 }
 
                 String serverString = hostHeaderValue;
-                Int32 serverPort = 80;
+                UInt16 serverPort = 80;
 
                 if (serverString.StartsWith("http://")) serverString = serverString.Substring("http://".Length);
                 else if (serverString.StartsWith("https://")) { serverString = serverString.Substring("https://".Length); serverPort = 443; }
@@ -148,7 +148,7 @@ namespace More.Net
                 {
                     String portString = serverString.Substring(lastColonIndex + 1);
                     serverString = serverString.Substring(0, lastColonIndex);
-                    if (!Int32.TryParse(portString, out serverPort))
+                    if (!UInt16.TryParse(portString, out serverPort))
                     {
                         if (HttpToCtpLogger.errorLogger != null)
                             HttpToCtpLogger.errorLogger.WriteLine(
@@ -195,7 +195,7 @@ namespace More.Net
 
 
         // returns the host name to connect to and sets the forward port
-        private String ParseConnectLine(String connectLine, out Int32 forwardPort)
+        private String ParseConnectLine(String connectLine, out UInt16 forwardPort)
         {
             //
             // Parse the Host Name and Port
@@ -231,7 +231,7 @@ namespace More.Net
             uri = uri.Substring(0, lastColonIndex);
 
             // GET PORT
-            if (!Int32.TryParse(portString, out forwardPort))
+            if (!UInt16.TryParse(portString, out forwardPort))
             {
                 if (HttpToCtpLogger.errorLogger != null)
                     HttpToCtpLogger.errorLogger.WriteLine(

@@ -47,9 +47,9 @@ namespace More.Net
                 String clientSideWaitModeString = nonOptionArgs[1];
                 String listenPortsString = nonOptionArgs[2];
 
-
-                ISocketConnector clientSideServerConnector;
-                EndPoint clientSideServerEndPoint = ConnectorParser.Parse(clientSideConnectorString, -1, out clientSideServerConnector);
+                ISocketConnector clientSideServerProxyConnector;
+                String clientSideServerIPOrHostAndPort = ConnectorParser.ParseConnector(clientSideConnectorString, out clientSideServerProxyConnector);
+                EndPoint clientSideServerEndPoint = EndPoints.EndPointFromIPOrHostAndPort(clientSideServerIPOrHostAndPort);
                 ClientConnectWaitMode clientConnectWaitMode = ClientConnectWaitModeMethods.Parse(clientSideWaitModeString);
 
                 PortSet listenPortSet = ParseUtilities.ParsePortSet(listenPortsString);
@@ -60,8 +60,9 @@ namespace More.Net
                 //
                 // Run
                 //
-                ClientServer clientServer = new ClientServer(clientSideServerEndPoint, clientSideServerConnector,
-                    clientConnectWaitMode, listenPortSet, optionsParser.socketBackLog.ArgValue, optionsParser.readBufferSize.ArgValue);
+                ClientServer clientServer = new ClientServer(clientSideServerEndPoint, clientSideServerProxyConnector,
+                    clientConnectWaitMode, listenPortSet, optionsParser.socketBackLog.ArgValue,
+                    optionsParser.readBufferSize.ArgValue, optionsParser.logData.set);
                 clientServer.Start();
 
                 Thread.CurrentThread.Priority = ThreadPriority.Lowest;
@@ -98,7 +99,7 @@ namespace More.Net
                 // Run
                 //
                 ServerServer serverServer = new ServerServer(tunnelList, optionsParser.socketBackLog.ArgValue, 
-                    optionsParser.readBufferSize.ArgValue);
+                    optionsParser.readBufferSize.ArgValue, optionsParser.logData.set, !optionsParser.noTransferMessages.set);
                 serverServer.Start();
                 Console.ReadLine();
             }

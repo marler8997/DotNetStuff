@@ -66,11 +66,11 @@ namespace More.Net
                 //
                 // Get Command Line Arguments
                 //
-                String endPointString = nonOptionArgs[arg];
+                String connector = nonOptionArgs[arg];
                 arg++;
                 if (arg >= nonOptionArgs.Count)
                 {
-                    Console.WriteLine("EndPoint '{0}' is missing a protocol 'tcp|udp' and a listen port set", endPointString);
+                    Console.WriteLine("EndPoint '{0}' is missing a protocol 'tcp|udp' and a listen port set", connector);
                     optionsParser.PrintUsage();
                     return -1;
                 }
@@ -78,7 +78,8 @@ namespace More.Net
                 // Parse End Point
                 //
                 ISocketConnector proxyConnector;
-                EndPoint serverEndPoint = ConnectorParser.Parse(endPointString, -1, out proxyConnector);
+                String ipOrHostAndPort = ConnectorParser.ParseConnector(connector, out proxyConnector);
+                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHostAndPort(ipOrHostAndPort);
 
                 //
                 // Parse Protocol and Port Set
@@ -102,7 +103,7 @@ namespace More.Net
 
                 if (protocolAndPortSet.Length < 4)
                 {
-                    Console.WriteLine("ProtocolAndPortSet '{0}' Protocol '{1}' is missing a listen port set", endPointString, protocolAndPortSet);
+                    Console.WriteLine("ProtocolAndPortSet '{0}' Protocol '{1}' is missing a listen port set", connector, protocolAndPortSet);
                     optionsParser.PrintUsage();
                     return -1;
                 }
@@ -110,7 +111,7 @@ namespace More.Net
                 String portSetString = protocolAndPortSet.Substring(3);
                 if (String.IsNullOrEmpty(portSetString))
                 {
-                    Console.WriteLine("EndPoint '{0}' Protocol '{1}' is missing a listen port set", endPointString, protocolAndPortSet);
+                    Console.WriteLine("EndPoint '{0}' Protocol '{1}' is missing a listen port set", connector, protocolAndPortSet);
                     optionsParser.PrintUsage();
                     return -1;
                 }

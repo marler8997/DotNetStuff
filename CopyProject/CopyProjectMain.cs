@@ -108,9 +108,6 @@ namespace CopyProject
             Console.WriteLine("Dest Proj File   : {0}", destProj);
 
 
-
-
-
             //
             //
             //
@@ -206,8 +203,6 @@ namespace CopyProject
                 }
             }
 
-
-
             //
             //
             //
@@ -234,7 +229,6 @@ namespace CopyProject
                     propertyChanges.Add(new PropertyChange(change.Remove(colonIndex), change.Substring(colonIndex + 1)));
                 }
             }
-
 
 
             if (propertyChanges.Count > 0)

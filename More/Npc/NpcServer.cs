@@ -62,9 +62,9 @@ namespace More
                 {
                     Socket clientSocket = listenSocket.Accept();
 
-                    String clientString = clientSocket.RemoteEndPoint.ToString();
+                    String clientString = clientSocket.SafeRemoteEndPointString();
 
-                    NpcBlockingThreadHander npcHandler = new NpcBlockingThreadHander(callback, clientSocket, npcExecutor, htmlGenerator);
+                    NpcBlockingThreadHander npcHandler = new NpcBlockingThreadHander(clientString, callback, clientSocket, npcExecutor, htmlGenerator);
                     Thread handlerThread = new Thread(npcHandler.Run);
                     handlerThread.Start();
                 }
@@ -165,7 +165,8 @@ namespace More
         }
         public ServerInstruction ClientOpenCallback(int clientCount, System.Net.Sockets.Socket socket)
         {
-            clientMap[socket] = new NpcDataHandler(callback, socket, npcExecutor, htmlGenerator);
+            clientMap[socket] = new NpcDataHandler(socket.SafeRemoteEndPointString(), callback,
+                new SocketDataHandler(socket), npcExecutor, htmlGenerator);
             return ServerInstruction.NoInstruction;
         }
         public ServerInstruction ClientCloseCallback(int clientCount, System.Net.Sockets.Socket socket)

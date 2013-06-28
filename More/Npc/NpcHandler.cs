@@ -32,19 +32,22 @@ namespace More
         Boolean done;
         public Boolean Done { get { return done; } }
 
-        public NpcDataHandler(INpcServerCallback callback, Socket socket, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
-            : base(callback, socket, npcExecutor, npcHtmlGenerator)
+        public NpcDataHandler(String clientString, INpcServerCallback callback, IDataHandler responseHandler, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
+            : base(clientString, callback, responseHandler, npcExecutor, npcHtmlGenerator)
         {
             this.lineParser = new LineParser(Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
             this.atFirstLine = true;
             this.done = false;
         }
-
         public void Handle(Byte[] buffer, Int32 bytesRead)
+        {
+            Handle(buffer, 0, bytesRead);
+        }
+        public void Handle(Byte[] buffer, Int32 offset, Int32 bytesRead)
         {
             if (done == true) return;
 
-            lineParser.Add(buffer, 0, bytesRead);
+            lineParser.Add(buffer, offset, bytesRead);
 
             String line = lineParser.GetLine();
             if(line == null) return;
@@ -72,10 +75,13 @@ namespace More
 
     public class NpcBlockingThreadHander : NpcHandler
     {
-        public NpcBlockingThreadHander(INpcServerCallback callback, Socket socket,
+        protected SocketLineReader socketLineReader;
+
+        public NpcBlockingThreadHander(String clientString, INpcServerCallback callback, Socket socket,
             NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
-            : base(callback, socket, npcExecutor, npcHtmlGenerator)
+            : base(clientString, callback, new SocketDataHandler(socket), npcExecutor, npcHtmlGenerator)
         {
+            this.socketLineReader = new SocketLineReader(socket, Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
         }
         public void Run()
         {
@@ -121,32 +127,28 @@ namespace More
     }
     public abstract class NpcHandler : IDisposable
     {
-        protected readonly INpcServerCallback callback;
-
-        protected SocketLineReader socketLineReader;
         protected readonly String clientString;
-
+        protected readonly INpcServerCallback callback;
+        protected readonly IDataHandler responseHandler;
         protected readonly NpcExecutor npcExecutor;
         protected readonly INpcHtmlGenerator npcHtmlGenerator;
 
-        protected NpcHandler(INpcServerCallback callback, Socket socket, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
+        protected NpcHandler(String clientString, INpcServerCallback callback, IDataHandler responseHandler, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
         {
             if (callback == null) throw new ArgumentNullException("callback");
+            if (responseHandler == null) throw new ArgumentNullException("responseHandler");
             if (npcExecutor == null) throw new ArgumentNullException("npcExecutor");
             if (npcHtmlGenerator == null) throw new ArgumentNullException("npcHtmlGenerator");
 
+            this.clientString = clientString;
             this.callback = callback;
-
-            this.socketLineReader = new SocketLineReader(socket, Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
-            this.clientString = socket.RemoteEndPoint.ToString();
-
+            this.responseHandler = responseHandler;
             this.npcExecutor = npcExecutor;
             this.npcHtmlGenerator = npcHtmlGenerator;
         }
         public void Dispose()
         {
-            SocketLineReader cachedSocketLineReader = this.socketLineReader;
-            if (cachedSocketLineReader != null) cachedSocketLineReader.Dispose();
+            responseHandler.Dispose();
         }
         protected void HandleHttpRequest(String firstLineOfHttpRequest)
         {
@@ -160,9 +162,9 @@ namespace More
 
             if (resourceString.Equals("/favicon.ico"))
             {
-                Byte[] respose404 = Encoding.UTF8.GetBytes(String.Format("{0} 404 Not Found\r\n\r\n", httpVersionString));
-                socketLineReader.socket.Send(respose404);
-                socketLineReader.Dispose();
+                Byte[] response404 = Encoding.UTF8.GetBytes(String.Format("{0} 404 Not Found\r\n\r\n", httpVersionString));
+                responseHandler.HandleData(response404, 0, response404.Length);
+                responseHandler.Dispose();
                 return;
             }
 
@@ -307,8 +309,8 @@ namespace More
             //
             // Send Response
             //
-            socketLineReader.socket.Send(headerBytes, 0, headerBytes.Length, SocketFlags.None);
-            socketLineReader.socket.Send(contents, 0, contents.Length, SocketFlags.None);
+            responseHandler.HandleData(headerBytes, 0, headerBytes.Length);
+            responseHandler.HandleData(contents, 0, contents.Length);
 
             return;
         }
@@ -338,7 +340,7 @@ namespace More
             }
             else if (command.Equals("exit", StringComparison.InvariantCultureIgnoreCase))
             {
-                socketLineReader.Dispose();
+                responseHandler.Dispose();
                 return;
             }
             else
@@ -346,7 +348,7 @@ namespace More
                 callback.GotInvalidData(clientString, String.Format("Unknown Command from line '{0}'", line));
                 response = GenerateHelpMessage(String.Format("Unknown Command '{0}', expected 'help', 'exit', 'methods', 'type' or 'call'", command));
             }
-            if (response != null) socketLineReader.socket.Send(response);
+            if (response != null) responseHandler.HandleData(response, 0, response.Length);
         }
 
         private String NpcError(NpcErrorCode errorCode, String errorMessage)

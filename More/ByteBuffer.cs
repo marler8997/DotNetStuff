@@ -20,9 +20,6 @@ namespace More
         }
         public ByteBuffer(Int32 initialCapacity, Int32 expandLength)
         {
-            if (expandLength <= 0) throw new ArgumentOutOfRangeException(
-                 "expandLength", String.Format("Expand length must be positive but it is {0}", expandLength));
-
             this.expandLength = expandLength;
             this.array = new Byte[initialCapacity];
         }

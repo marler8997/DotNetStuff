@@ -56,6 +56,8 @@ namespace More.Net
         public readonly CLStringArgument specialPortList;
         public readonly CLInt32Argument readBufferSize;
         public readonly CLInt32Argument socketBackLog;
+        public readonly CLSwitch logData;
+        public readonly CLSwitch noTransferMessages;
 
         private Boolean adapterTypeModeIsSet;
         private AdapterType adapterTypeMode;
@@ -77,6 +79,12 @@ namespace More.Net
             socketBackLog.SetDefault(32);
             Add(socketBackLog);
 
+            logData = new CLSwitch('d', "log-data", "Log the socket data");
+            Add(logData);
+
+            noTransferMessages = new CLSwitch('t', "no-transfer-messages", "Do not log transfer messages");
+            Add(noTransferMessages);
+
             this.adapterTypeModeIsSet = false;
         }
 
@@ -95,7 +103,7 @@ namespace More.Net
             }
             if (!adapterTypeModeIsSet || (adapterTypeMode == AdapterType.ClientServer))
             {
-                Console.WriteLine("NetworkAdapter cs|client-server [options] <server-host> <server-port> <listen-port-list>");
+                Console.WriteLine("NetworkAdapter cs|client-server [options] <server-connector> <connect-wait-mode> <listen-port-list>");
             }
             if(!adapterTypeModeIsSet || (adapterTypeMode == AdapterType.ClientClient))
             {

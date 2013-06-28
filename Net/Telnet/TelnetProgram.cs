@@ -77,17 +77,16 @@ namespace More.Net
                 optionsParser.PrintUsage();
                 return -1;
             }
-
             
             ISocketConnector connector = null;
             EndPoint serverEndPoint = null;
             if (nonOptionArgs.Count == 1)
             {
-                serverEndPoint = ConnectorParser.Parse(nonOptionArgs[0], 23, out connector);
+                String serverIPOrHostAndOptionalPort = ConnectorParser.ParseConnector(nonOptionArgs[0], out connector);
+                serverEndPoint = EndPoints.EndPointFromIPOrHostAndOptionalPort(serverIPOrHostAndOptionalPort, 23);
             }
 
             TelnetClient client = new TelnetClient(optionsParser.wantServerEcho.set);
-
 
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             if (serverEndPoint != null)

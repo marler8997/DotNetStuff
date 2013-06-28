@@ -467,7 +467,7 @@ namespace More
 
             throw new IOException(String.Format("reached end of stream: still needed {0} bytes", size));
         }
-        public static void SendFile(Socket socket, String filename, Byte[] transferBuffer)
+        public static void SendFile(this Socket socket, String filename, Byte[] transferBuffer)
         {
             using(FileStream fileStream = new FileStream(filename, FileMode.Open))
             {
@@ -476,6 +476,23 @@ namespace More
                 {
                     socket.Send(transferBuffer, 0, bytesRead, SocketFlags.None);
                 }
+            }
+        }
+        public static void ShutdownAndDispose(this Socket socket)
+        {
+            if (socket != null)
+            {
+                try
+                {
+                    if (socket.Connected)
+                    {
+                        socket.Shutdown(SocketShutdown.Both);
+                    }
+                }
+                catch (Exception e)
+                {
+                }
+                socket.Close();
             }
         }
     }
