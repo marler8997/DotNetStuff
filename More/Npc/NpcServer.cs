@@ -166,7 +166,7 @@ namespace More
         public ServerInstruction ClientOpenCallback(int clientCount, System.Net.Sockets.Socket socket)
         {
             clientMap[socket] = new NpcDataHandler(socket.SafeRemoteEndPointString(), callback,
-                new SocketDataHandler(socket), npcExecutor, htmlGenerator);
+                new SocketSendDataHandler(socket), npcExecutor, htmlGenerator);
             return ServerInstruction.NoInstruction;
         }
         public ServerInstruction ClientCloseCallback(int clientCount, System.Net.Sockets.Socket socket)

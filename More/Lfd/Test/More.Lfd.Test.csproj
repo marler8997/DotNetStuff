@@ -46,10 +46,6 @@
       <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
       <Name>More</Name>
     </ProjectReference>
-    <ProjectReference Include="..\More.Lfd.csproj">
-      <Project>{18CC54E3-552B-48E7-9F82-7E2377794790}</Project>
-      <Name>More.Lfd</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

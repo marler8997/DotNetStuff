@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblerTest", "AssemblerT
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OptimusCompiler", "OptimusCompiler\OptimusCompiler.csproj", "{2626B6F8-D78C-49B5-8F92-0DD116F45BEF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More", "..\More\More.csproj", "{9AF5441B-8208-44E6-9686-A29D8019FBD5}"
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = RuntimeAnalyzer.vsmdi
@@ -58,6 +60,10 @@ Global
 		{2626B6F8-D78C-49B5-8F92-0DD116F45BEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2626B6F8-D78C-49B5-8F92-0DD116F45BEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2626B6F8-D78C-49B5-8F92-0DD116F45BEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

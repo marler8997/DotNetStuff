@@ -10,13 +10,14 @@ namespace More.Net
 {
     public static class HiddenServerStreamHandlerExtension
     {
-        public static void HandleBytes(this FrameAndHeartbeatDataReceiver handler, Byte[] bytes)
+        public static void HandleBytes(this FrameAndHeartbeatReceiverFilter filter,
+            FrameAndHeartbeatTestCommandHandler testHandler, Byte[] bytes)
         {
-            handler.HandleData(bytes, 0, bytes.Length);
+            filter.FilterTo(testHandler.HandleData, testHandler.HandleHeartbeat, bytes, 0, bytes.Length);
         }
     }
 
-    class FrameAndHeartbeatTestCommandHandler : IDataAndHeartbeatHandler
+    public class FrameAndHeartbeatTestCommandHandler : IDataHandler
     {
         Int32 expectedHeartbeats;
         readonly List<Byte[]> nextExpectedFrames = new List<Byte[]>();
@@ -78,75 +79,75 @@ namespace More.Net
         public void TestHeartbeat()
         {
             FrameAndHeartbeatTestCommandHandler testCommandHandler = new FrameAndHeartbeatTestCommandHandler();
-            FrameAndHeartbeatDataReceiver processor = new FrameAndHeartbeatDataReceiver(testCommandHandler);
+            FrameAndHeartbeatReceiverFilter filter = new FrameAndHeartbeatReceiverFilter();
 
             testCommandHandler.ExpectHeartbeats(1);
-            processor.HandleBytes(FrameAndHeartbeatData.HeartBeatPacket);
+            filter.HandleBytes(testCommandHandler, FrameAndHeartbeatProtocol.HeartBeatPacket);
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
 
             testCommandHandler.ExpectHeartbeats(2);
-            processor.HandleBytes(new Byte[] { FrameAndHeartbeatData.Heartbeat, FrameAndHeartbeatData.Heartbeat });
+            filter.HandleBytes(testCommandHandler, new Byte[] { FrameAndHeartbeatProtocol.Heartbeat, FrameAndHeartbeatProtocol.Heartbeat });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
         }
         [TestMethod]
         public void TestMultipleHandleBytesPerCommand()
         {
             FrameAndHeartbeatTestCommandHandler testCommandHandler = new FrameAndHeartbeatTestCommandHandler();
-            FrameAndHeartbeatDataReceiver processor = new FrameAndHeartbeatDataReceiver(testCommandHandler);
+            FrameAndHeartbeatReceiverFilter filter = new FrameAndHeartbeatReceiverFilter();
 
-            processor.HandleBytes(new Byte[] { 0, 0, 1 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0, 0, 1 });
             testCommandHandler.ExpectFrames(new Byte[] { 0x72 });
-            processor.HandleBytes(new Byte[] { 0x72 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0x72 });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
 
-            processor.HandleBytes(new Byte[] { 0, 0 });
-            processor.HandleBytes(new Byte[] { 2 });
-            processor.HandleBytes(new Byte[] { 0x84 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0, 0 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 2 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0x84 });
             testCommandHandler.ExpectFrames(new Byte[] { 0x84, 0xF0 });
-            processor.HandleBytes(new Byte[] { 0xF0 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0xF0 });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
 
-            processor.HandleBytes(new Byte[] { 0 });
-            processor.HandleBytes(new Byte[] { 0, 10 });
-            processor.HandleBytes(new Byte[] { 0x12, 0x34, 0x56, 0x78 });
-            processor.HandleBytes(new Byte[] { 0x9A, 0xBC });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0, 10 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0x12, 0x34, 0x56, 0x78 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0x9A, 0xBC });
             testCommandHandler.ExpectFrames(new Byte[] { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x12, 0x34 });
-            processor.HandleBytes(new Byte[] { 0xDE, 0xF0, 0x12, 0x34 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0xDE, 0xF0, 0x12, 0x34 });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
         }
         [TestMethod]
         public void TestMultipleCommandsPerHandleBytes()
         {
             FrameAndHeartbeatTestCommandHandler testCommandHandler = new FrameAndHeartbeatTestCommandHandler();
-            FrameAndHeartbeatDataReceiver processor = new FrameAndHeartbeatDataReceiver(testCommandHandler);
+            FrameAndHeartbeatReceiverFilter filter = new FrameAndHeartbeatReceiverFilter();
 
             testCommandHandler.ExpectHeartbeats(3);
             testCommandHandler.ExpectFrames(new Byte[] { 0xA4 }, new Byte[] { 0x73, 0xF3, 0x29, 0x44 });
-            processor.HandleBytes(new Byte[] { FrameAndHeartbeatData.Heartbeat, 0, 0, 1, 0xA4, FrameAndHeartbeatData.Heartbeat, 0, 0, 4, 0x73, 0xF3, 0x29, 0x44, FrameAndHeartbeatData.Heartbeat });
+            filter.HandleBytes(testCommandHandler, new Byte[] { FrameAndHeartbeatProtocol.Heartbeat, 0, 0, 1, 0xA4, FrameAndHeartbeatProtocol.Heartbeat, 0, 0, 4, 0x73, 0xF3, 0x29, 0x44, FrameAndHeartbeatProtocol.Heartbeat });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
         }
         [TestMethod]
         public void TestOverlappingHandleBytePerCommand()
         {
             FrameAndHeartbeatTestCommandHandler testCommandHandler = new FrameAndHeartbeatTestCommandHandler();
-            FrameAndHeartbeatDataReceiver processor = new FrameAndHeartbeatDataReceiver(testCommandHandler);
+            FrameAndHeartbeatReceiverFilter filter = new FrameAndHeartbeatReceiverFilter();
 
             testCommandHandler.ExpectHeartbeats(1);
             testCommandHandler.ExpectFrames(new Byte[] { 0xA4 });
-            processor.HandleBytes(new Byte[] { FrameAndHeartbeatData.Heartbeat, 0, 0, 1, 0xA4, 0 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { FrameAndHeartbeatProtocol.Heartbeat, 0, 0, 1, 0xA4, 0 });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
 
             testCommandHandler.ExpectFrames(new Byte[] { 0x73, 0xF3, 0x29, 0x44 });
-            processor.HandleBytes(new Byte[] { 0, 4, 0x73, 0xF3, 0x29, 0x44, 0, 0 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0, 4, 0x73, 0xF3, 0x29, 0x44, 0, 0 });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
 
             testCommandHandler.ExpectFrames(new Byte[] { 0x43, 0xAB, 0x71 });
-            processor.HandleBytes(new Byte[] { 3, 0x43, 0xAB, 0x71, 0, 0, 1 });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 3, 0x43, 0xAB, 0x71, 0, 0, 1 });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
 
             testCommandHandler.ExpectHeartbeats(2);
             testCommandHandler.ExpectFrames(new Byte[] { 0xF0 }, new Byte[] { }, new Byte[] { 0x12, 0x34 });
-            processor.HandleBytes(new Byte[] { 0xF0, 0, 0, 0, FrameAndHeartbeatData.Heartbeat, 0, 0, 2, 0x12, 0x34, FrameAndHeartbeatData.Heartbeat });
+            filter.HandleBytes(testCommandHandler, new Byte[] { 0xF0, 0, 0, 0, FrameAndHeartbeatProtocol.Heartbeat, 0, 0, 2, 0x12, 0x34, FrameAndHeartbeatProtocol.Heartbeat });
             testCommandHandler.AssertNoMoreExpectedCommandsOrHeartbeats();
         }
     }

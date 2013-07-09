@@ -3,17 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using More;
-
-namespace More.Lfd
+namespace More
 {
-    public class LineParser
+    public class OffsetLineParser
     {
         readonly ByteBuffer buffer;
         Int32 count;
         Int32 nextLineStart;
 
-        public LineParser(ByteBuffer buffer)
+        public OffsetLineParser(ByteBuffer buffer)
         {
             this.buffer = buffer;
             this.count = 0;

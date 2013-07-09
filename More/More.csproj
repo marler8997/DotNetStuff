@@ -42,10 +42,15 @@
     <Compile Include="ContextTypeFinder.cs" />
     <Compile Include="Enumerators.cs" />
     <Compile Include="IDataHandler.cs" />
+    <Compile Include="LfdFormatException.cs" />
+    <Compile Include="LfdLine.cs" />
+    <Compile Include="OffsetLineParser.cs" />
+    <Compile Include="LfdReader.cs" />
     <Compile Include="LineParser.cs" />
     <Compile Include="BinaryStream.cs" />
     <Compile Include="ByteBuffer.cs" />
     <Compile Include="IniParser.cs" />
+    <Compile Include="Pdl.cs" />
     <Compile Include="ProgramSettings.cs" />
     <Compile Include="EndPoints.cs" />
     <Compile Include="MissingInWindowsCE.cs" />
@@ -56,6 +61,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Sos.cs" />
     <Compile Include="SosTypes.cs" />
+    <Compile Include="StaticData.cs" />
     <Compile Include="StringBuilderWriter.cs" />
     <Compile Include="ThreadModel.cs" />
     <Compile Include="CommandLineParser.cs" />

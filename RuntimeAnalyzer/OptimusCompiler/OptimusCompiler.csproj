@@ -47,6 +47,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\More\More.csproj">
+      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
+      <Name>More</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Assembler\Assembler.csproj">
       <Project>{36D31436-0B99-4332-86AB-5DFA880C3332}</Project>
       <Name>Assembler</Name>

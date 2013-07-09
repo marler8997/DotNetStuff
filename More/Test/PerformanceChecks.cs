@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
@@ -12,6 +14,110 @@ namespace More
     [TestClass]
     public class PerformanceChecks
     {
+
+
+        [TestMethod]
+        public void PerformanceTestByteArraySerialization()
+        {
+            long before;
+
+            Int32 value;
+            Byte[] array = new Byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                value = (Int32)(
+                    (0xFF000000 & (array[0] << 24)) |
+                    (0x00FF0000 & (array[1] << 16)) |
+                    (0x0000FF00 & (array[2] << 8)) |
+                    (0x000000FF & (array[3])));
+                Console.WriteLine(value);
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                value = BitConverter.ToInt32(array, 0);
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+        }
+
+
+        class SocketEqualityComparer : IEqualityComparer<Socket>
+        {
+            public bool Equals(Socket x, Socket y)
+            {
+                return ((IPEndPoint)x.LocalEndPoint).Port == ((IPEndPoint)y.LocalEndPoint).Port;
+            }
+            public int GetHashCode(Socket socket)
+            {
+                return ((IPEndPoint)socket.LocalEndPoint).Port;
+            }
+        }
+
+        [TestMethod]
+        public void PerformanceTestSocketDictionary()
+        {
+            SocketDictionaryTest(20);
+        }
+        void SocketDictionaryTest(int socketCount)
+        {
+            Socket[] sockets = new Socket[socketCount];
+
+            try
+            {
+                for(int i = 0; i < socketCount; i++)
+                {
+                    sockets[i] = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    sockets[i].Bind(new IPEndPoint(IPAddress.Any, 0));
+                }
+
+                Dictionary<Socket, Object> defaultDictionary = new Dictionary<Socket, Object>();
+                Dictionary<Socket, Object> customDictionary = new Dictionary<Socket, Object>(new SocketEqualityComparer());
+
+                long before;
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 100; i++)
+                {
+                    for(int j = 0; j < socketCount; j++)
+                    {
+                        defaultDictionary.Add(sockets[j], null);
+                    }
+                    defaultDictionary.Clear();
+                }
+                Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 100; i++)
+                {
+                    for (int j = 0; j < socketCount; j++)
+                    {
+                        customDictionary.Add(sockets[j], null);
+                    }
+                    customDictionary.Clear();
+                }
+                Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+            }
+            finally
+            {
+                for(int i = 0; i < sockets.Length; i++)
+                {
+                    try
+                    {
+                        sockets[i].Close();
+                    }
+                    catch(Exception){}
+                }
+            }
+        }
+
+
+
+
+
         [TestMethod]
         public void PerformanceTestStringSerializationOptions()
         {

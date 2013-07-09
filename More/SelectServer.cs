@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 using More;
 
@@ -569,6 +570,432 @@ namespace More.Net
                         udpListeners[i].callback.ServerStopped();
                     }
                 }
+            }
+        }
+    }
+
+
+
+    public class SocketHandlerMethods
+    {
+        public Boolean swallowExceptions;
+        public SocketReceiveHandler receiveHandler;
+        public SocketClosedHandler socketClosedHandler;
+        public SocketHandlerMethods(Boolean swallowExceptions, SocketReceiveHandler receiveHandler, SocketClosedHandler socketClosedHandler)
+        {
+            this.swallowExceptions = swallowExceptions;
+            this.receiveHandler = receiveHandler;
+            this.socketClosedHandler = socketClosedHandler;
+        }
+    }
+
+    public class SocketReceiveHandlerToDataHandler
+    {
+        readonly DataHandler dataHandler;
+        public SocketReceiveHandlerToDataHandler(DataHandler dataHandler)
+        {
+            this.dataHandler = dataHandler;
+        }
+        public Boolean ReceiveHandler(Socket socket, ByteBuffer safeBuffer, ref SocketReceiveHandler receiveHandler)
+        {
+            Int32 bytesRead = socket.Receive(safeBuffer.array);
+            if (bytesRead <= 0) return true;
+
+            dataHandler(safeBuffer.array, 0, bytesRead);
+            return false;
+        }
+    }
+
+    // return null to close the client
+    public delegate SocketHandlerMethods AcceptHandler(Socket listenSocket, Socket socket);
+
+    // return true to close client
+    public delegate void SocketReceiveHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods receiveHandler);
+    public delegate void SocketClosedHandler(Socket socket);
+
+    public class TcpListener
+    {
+        public readonly Socket boundSocket;
+        public readonly Int32 socketBackLog;
+        public readonly AcceptHandler acceptHandler;
+        public TcpListener(Int32 listenPort, Int32 socketBackLog, AcceptHandler acceptHandler)
+        {
+            this.boundSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            this.boundSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
+            this.socketBackLog = socketBackLog;
+            this.acceptHandler = acceptHandler;
+        }
+        public TcpListener(EndPoint listenEndPoint, Int32 socketBackLog, AcceptHandler acceptHandler)
+        {
+            this.boundSocket = new Socket(listenEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            this.boundSocket.Bind(listenEndPoint);
+            this.socketBackLog = socketBackLog;
+            this.acceptHandler = acceptHandler;
+        }
+        public TcpListener(Socket boundSocket, Int32 socketBackLog, AcceptHandler acceptHandler)
+        {
+            if (!boundSocket.IsBound) throw new InvalidOperationException("You must bind the socket before using this constructor");
+            this.boundSocket = boundSocket;
+            this.socketBackLog = socketBackLog;
+            this.acceptHandler = acceptHandler;
+        }
+    }
+    public class SelectServerStaticTcpListeners : IDisposable
+    {
+        //
+        // Listen Sockets
+        //
+        readonly Socket[] tcpListenSockets;
+        readonly IDictionary<Socket, AcceptHandler> tcpListenSocketMap;
+
+        //
+        // Receive Sockets
+        //
+        readonly List<Socket> tcpReceiveSocketList;
+        readonly IDictionary<Socket, SocketHandlerMethods> tcpReceiveSocketMap;
+
+        readonly ByteBuffer safeBuffer;
+
+        Boolean keepRunning;
+
+        public SelectServerStaticTcpListeners(IList<TcpListener> tcpListeners,
+            Int32 safeBufferInitialCapacity, Int32 safeBufferExpandLength)
+        {
+            if(tcpListeners.Count <= 0) throw new InvalidOperationException("You have provided 0 tcp listeners");
+
+            this.tcpListenSockets = new Socket[tcpListeners.Count];
+            this.tcpListenSocketMap = new Dictionary<Socket, AcceptHandler>(tcpListeners.Count);
+            for(int i = 0; i < tcpListeners.Count; i++)
+            {
+                TcpListener tcpListener = tcpListeners[i];
+                this.tcpListenSockets[i] = tcpListener.boundSocket;
+                this.tcpListenSocketMap.Add(tcpListener.boundSocket, tcpListener.acceptHandler);
+                tcpListener.boundSocket.Listen(tcpListener.socketBackLog);
+            }
+
+            this.tcpReceiveSocketList = new List<Socket>();
+            this.tcpReceiveSocketMap = new Dictionary<Socket, SocketHandlerMethods>();
+
+            this.safeBuffer = new ByteBuffer(safeBufferInitialCapacity, safeBufferExpandLength);
+
+            this.keepRunning = true;
+        }
+        public void Dispose()
+        {
+            this.keepRunning = false;
+
+            lock (tcpListenSockets)
+            {
+                //
+                // Close all listen sockets
+                //
+                for (int i = 0; i < tcpListenSockets.Length; i++)
+                {
+                    tcpListenSockets[i].Close();
+                }
+
+                //
+                // Close all receive sockets
+                //
+                for (int i = 0; i < tcpReceiveSocketList.Count; i++)
+                {
+                    tcpReceiveSocketList[i].ShutdownAndDispose();
+                }
+                tcpReceiveSocketList.Clear();
+                tcpReceiveSocketMap.Clear();
+            }
+        }
+        public void Run()
+        {
+            List<Socket> selectSockets = new List<Socket>();
+
+            try
+            {
+                while (keepRunning)
+                {
+                    //
+                    // Perform the select
+                    //
+                    selectSockets.Clear();
+                    selectSockets.AddRange(tcpListenSockets);
+                    selectSockets.AddRange(tcpReceiveSocketList);
+                    
+                    Socket.Select(selectSockets, null, null, Int32.MaxValue);
+
+                    if (selectSockets.Count <= 0) continue;
+
+                    lock(tcpListenSockets)
+                    {
+                        for (int i = 0; i < selectSockets.Count; i++)
+                        {
+                            Socket socket = selectSockets[i];
+
+                            SocketHandlerMethods handlerMethods;
+                            AcceptHandler acceptHandler;
+
+                            if (tcpReceiveSocketMap.TryGetValue(socket, out handlerMethods))
+                            {
+                                try
+                                {
+                                    handlerMethods.receiveHandler(
+                                        socket, safeBuffer, ref handlerMethods);
+                                }
+                                catch (SocketException)
+                                {
+                                    if (handlerMethods != null)
+                                    {
+                                        handlerMethods.receiveHandler = null;
+                                    }
+                                }
+                                catch (Exception)
+                                {
+                                    if (handlerMethods != null)
+                                    {
+                                        handlerMethods.receiveHandler = null;
+                                        if (!handlerMethods.swallowExceptions) throw;
+                                    }
+                                }
+
+                                if (!socket.Connected || handlerMethods == null || handlerMethods.receiveHandler == null)
+                                {
+                                    socket.ShutdownAndDispose();
+
+                                    tcpReceiveSocketList.Remove(socket);
+                                    tcpReceiveSocketMap.Remove(socket);
+
+                                    if (handlerMethods.socketClosedHandler != null)
+                                        handlerMethods.socketClosedHandler(socket);
+                                }
+                            }
+                            else if (tcpListenSocketMap.TryGetValue(socket, out acceptHandler))
+                            {
+                                Socket newReceiveSocket = socket.Accept();
+
+                                handlerMethods = acceptHandler(socket, newReceiveSocket);
+
+                                if (handlerMethods == null || handlerMethods.receiveHandler == null)
+                                {
+                                    socket.ShutdownAndDispose();
+                                    if (handlerMethods.socketClosedHandler != null) handlerMethods.socketClosedHandler(newReceiveSocket);
+                                }
+                                else
+                                {
+                                    tcpReceiveSocketList.Add(newReceiveSocket);
+                                    tcpReceiveSocketMap.Add(newReceiveSocket, handlerMethods);
+                                }
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException(String.Format(
+                                    "CodeBug: The SelectSocket list had a socket that was not a recognized listen or receive socket (LocalEndPoint='{0}', RemoteEndPoint='{1}')",
+                                    socket.SafeLocalEndPointString(), socket.SafeRemoteEndPointString()));
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                Dispose();
+            }
+        }
+    }
+    public class SelectServerDynamicTcpListeners : IDisposable
+    {
+        //
+        // Pop Socket
+        //
+        readonly Socket popSocket;
+        readonly EndPoint popSocketEndPoint;
+
+        //
+        // Listen Sockets
+        //
+        readonly List<Socket> tcpListenSockets;
+        readonly IDictionary<Socket, AcceptHandler> tcpListenSocketMap;
+
+        //
+        // Receive Sockets
+        //
+        readonly List<Socket> tcpReceiveSocketList;
+        readonly IDictionary<Socket, SocketHandlerMethods> tcpReceiveSocketMap;
+
+        readonly ByteBuffer safeBuffer;
+
+        Boolean keepRunning;
+
+        public SelectServerDynamicTcpListeners(Int32 safeBufferInitialCapacity, Int32 safeBufferExpandLength)
+        {
+            this.popSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            this.popSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+            this.popSocketEndPoint = popSocket.LocalEndPoint;
+
+            this.tcpListenSockets = new List<Socket>();
+            this.tcpListenSocketMap = new Dictionary<Socket, AcceptHandler>();
+
+            this.tcpReceiveSocketList = new List<Socket>();
+            this.tcpReceiveSocketMap = new Dictionary<Socket, SocketHandlerMethods>();
+
+            this.safeBuffer = new ByteBuffer(safeBufferInitialCapacity, safeBufferExpandLength);
+
+            this.keepRunning = true;
+        }
+        public void Dispose()
+        {
+            this.keepRunning = false;
+
+            lock (tcpListenSockets)
+            {
+                //
+                // Close pop socket
+                //
+                popSocket.Close();
+
+                //
+                // Close all listen sockets
+                //
+                for (int i = 0; i < tcpListenSockets.Count; i++)
+                {
+                    tcpListenSockets[i].Close();
+                }
+                tcpListenSockets.Clear();
+                tcpListenSocketMap.Clear();
+
+                //
+                // Close all receive sockets
+                //
+                for (int i = 0; i < tcpReceiveSocketList.Count; i++)
+                {
+                    tcpReceiveSocketList[i].ShutdownAndDispose();
+                }
+                tcpReceiveSocketList.Clear();
+                tcpReceiveSocketMap.Clear();
+            }
+        }
+        public void AddListener(UInt16 port, Int32 backlog, AcceptHandler acceptHandler)
+        {
+            AddListener(new IPEndPoint(IPAddress.Any, port), backlog, acceptHandler);
+        }
+        public void AddListener(IPEndPoint listenEndPoint, Int32 backlog, AcceptHandler acceptHandler)
+        {
+            Socket listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            listenSocket.Bind(listenEndPoint);
+            AddListener(listenSocket, backlog, acceptHandler);
+        }
+        public void AddListener(Socket boundSocket, Int32 backlog, AcceptHandler acceptHandler)
+        {
+            if (!boundSocket.IsBound) throw new InvalidOperationException("This method requires that the socket is bound");
+            boundSocket.Listen(backlog);
+
+            lock (tcpListenSockets)
+            {
+                tcpListenSockets.Add(boundSocket);
+                tcpListenSocketMap.Add(boundSocket, acceptHandler);
+            }
+
+            popSocket.SendTo(StaticData.ZeroByteArray, popSocketEndPoint);
+        }
+        public void Run()
+        {
+            List<Socket> selectSockets = new List<Socket>();
+
+            try
+            {
+                while (keepRunning)
+                {
+                    //
+                    // Perform the select
+                    //
+                    selectSockets.Clear();
+                    selectSockets.Add(popSocket);
+
+                    lock (tcpListenSockets)
+                    {
+                        selectSockets.AddRange(tcpListenSockets);
+                        selectSockets.AddRange(tcpReceiveSocketList);
+                    }
+                    
+                    Socket.Select(selectSockets, null, null, Int32.MaxValue);
+
+                    if (selectSockets.Count <= 0) continue;
+
+                    lock (tcpListenSockets)
+                    {
+                        for (int i = 0; i < selectSockets.Count; i++)
+                        {
+                            Socket socket = selectSockets[i];
+
+                            SocketHandlerMethods handlerMethods;
+                            AcceptHandler acceptHandler;
+
+                            if (tcpReceiveSocketMap.TryGetValue(socket, out handlerMethods))
+                            {
+                                try
+                                {
+                                    handlerMethods.receiveHandler(
+                                        socket, safeBuffer, ref handlerMethods);
+                                }
+                                catch (SocketException)
+                                {
+                                    if (handlerMethods != null)
+                                    {
+                                        handlerMethods.receiveHandler = null;
+                                    }
+                                }
+                                catch (Exception)
+                                {
+                                    if (handlerMethods != null)
+                                    {
+                                        handlerMethods.receiveHandler = null;
+                                        if (!handlerMethods.swallowExceptions) throw;
+                                    }
+                                }
+
+                                if (!socket.Connected || handlerMethods == null || handlerMethods.receiveHandler == null)
+                                {
+                                    socket.ShutdownAndDispose();
+
+                                    tcpReceiveSocketList.Remove(socket);
+                                    tcpReceiveSocketMap.Remove(socket);
+
+                                    if (handlerMethods.socketClosedHandler != null)
+                                        handlerMethods.socketClosedHandler(socket);
+                                }
+                            }
+                            else if (tcpListenSocketMap.TryGetValue(socket, out acceptHandler))
+                            {
+                                Socket newReceiveSocket = socket.Accept();
+
+                                handlerMethods = acceptHandler(socket, newReceiveSocket);
+
+                                if (handlerMethods == null || handlerMethods.receiveHandler == null)
+                                {
+                                    socket.ShutdownAndDispose();
+                                    if (handlerMethods.socketClosedHandler != null) handlerMethods.socketClosedHandler(newReceiveSocket);
+                                }
+                                else
+                                {
+                                    tcpReceiveSocketList.Add(newReceiveSocket);
+                                    tcpReceiveSocketMap.Add(newReceiveSocket, handlerMethods);
+                                }
+                            }
+                            else if (socket == popSocket)
+                            {
+                                popSocket.Receive(safeBuffer.array);
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException(String.Format(
+                                     "CodeBug: The SelectSocket list had a socket that was not a recognized listen or receive socket (RemoteEndPoint={0})",
+                                     socket.SafeRemoteEndPointString()));
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                Dispose();
             }
         }
     }

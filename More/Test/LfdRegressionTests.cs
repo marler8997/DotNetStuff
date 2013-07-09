@@ -5,9 +5,7 @@ using System.Text;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using More;
-
-namespace More.Lfd
+namespace More
 {
     /// <summary>
     /// Summary description for UnitTest1
@@ -28,7 +26,7 @@ namespace More.Lfd
 
             using (LfdReader reader = new LfdReader(new StringReader(builder.ToString())))
             {
-                Line line = reader.ReadLine();
+                LfdLine line = reader.ReadLine();
 
                 Assert.AreEqual("LineWithNoValues", line.idOriginalCase);
 
@@ -55,7 +53,7 @@ namespace More.Lfd
             //
             // Test using line parser
             //
-            LineParser lineParser = new LineParser(new ByteBuffer(0, 1));
+            OffsetLineParser lineParser = new OffsetLineParser(new ByteBuffer(0, 1));
             Byte[] linesAsBytes = Encoding.UTF8.GetBytes(builder.ToString());
             lineParser.Add(linesAsBytes, linesAsBytes.Length);
 
@@ -117,7 +115,7 @@ namespace More.Lfd
 
             using (LfdReader reader = new LfdReader(new StringReader(builder.ToString())))
             {
-                Line line;
+                LfdLine line;
 
                 line = reader.ReadLine();
                 Assert.AreEqual("LineFieldWithWhitespace", line.idOriginalCase);
@@ -149,7 +147,7 @@ namespace More.Lfd
 
             using (LfdReader reader = new LfdReader(new StringReader(builder.ToString())))
             {
-                Line line;
+                LfdLine line;
 
                 line = reader.ReadLine();
                 Assert.AreEqual("line1", line.idOriginalCase);
@@ -159,7 +157,6 @@ namespace More.Lfd
 
                 Assert.IsNull(reader.ReadLine());
             }
-
         }
 
         [TestMethod]
@@ -180,7 +177,7 @@ namespace More.Lfd
 
             using (LfdReader reader = new LfdReader(new StringReader(builder.ToString())))
             {
-                Line line;
+                LfdLine line;
 
                 line = reader.ReadLine();
                 Assert.AreEqual("Parent1Context", line.idOriginalCase);
@@ -226,7 +223,7 @@ namespace More.Lfd
 
             using (LfdReader reader = new LfdReader(new StringReader(builder.ToString())))
             {
-                Line line;
+                LfdLine line;
 
                 line = reader.ReadLine();
                 Assert.AreEqual("LineThatIsContinued", line.idOriginalCase);
@@ -269,6 +266,5 @@ namespace More.Lfd
                 catch (FormatException e) { Console.WriteLine("Caught expected FormatException: {0}", e.Message); }
             }
         }
-
     }
 }

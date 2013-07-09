@@ -5,106 +5,50 @@ using System.Net.Sockets;
 namespace More.Net
 {
     //
-    // These classes are used in order to allow two clients to send heartbeats
-    // and data to eachother using the same tcp connection
+    // These classes implement the FrameAndHeartbeat Protocol
     //
-    // Every heartbeat packet is a 1 byte value 0x80
-    // Every frame packet is 3 size bytes (in network host order)
-    // followed by that amount of data.
-    // i.e. byte[] {0, 0, 5, 1, 2, 3, 4, 5}
-    //      this would induce GotFrame( byte[]{0,0,5,1,2,3,4,5}, 3, 5);
+    // Uses: This protocol can be used to both implement heartbeats and reestablish data frame
+    //       boundaries after it has been written to a stream interface (such as TCP).
     //
-    public interface IDataAndHeartbeatHandler : IDataHandler
+    // Heartbeat Packet:
+    //   [0xFF]
+    // Frame Packet:
+    //   [FrameSizeByte1, FrameSizeByte2, FrameSizeByte3, FrameData...]
+    //   i.e. [0,0,0] (an empty frame)
+    //   i.e. [0,0,6,1,2,3,4,5,6] (a frame of the numbers 1 through 6)
+    //   Note: FrameSizeByte1 cannot be 0xFF, otherwise that byte will be interpreted
+    //         as a heartbeat packet.
+    //
+    // Restrictions:
+    // 1 It is important that when someone writes to a FrameAndHeartbeat stream, they must
+    //   make sure that they either write each frame all at once, or they lock the stream
+    //   when they are making multiple writes for a single frame.  Otherwise, frame data and
+    //   heartbeats can become intermixed and corrupt the data.
+    // 2 Since FrameSizeByte1 cannot be 0xFF, the maximum frame size is 0xEFFFFF (15,728,639) bytes
+    //
+    public static class FrameAndHeartbeatProtocol
     {
-        void HandleHeartbeat();
-    }
-    public class DefaultHeartbeatAndDataHandler : IDataAndHeartbeatHandler
-    {
-        Int64 lastHeartbeat;
-        public Int64 LastHeartbeat { get { return lastHeartbeat; } }
-
-        readonly IDataHandler passTo;
-
-        public DefaultHeartbeatAndDataHandler(IDataHandler passTo)
-        {
-            lastHeartbeat = 0;
-            this.passTo = passTo;
-        }
-        public void HandleHeartbeat()
-        {
-            lastHeartbeat = Stopwatch.GetTimestamp();
-        }
-        public void HandleData(Byte[] data, Int32 offset, Int32 length)
-        {
-            passTo.HandleData(data, offset, length);
-        }
-        public void Dispose()
-        {
-            passTo.Dispose();
-        }
-    }
-    public class SocketHeartbeatAndDataHandler : IDataAndHeartbeatHandler
-    {
-        readonly Socket socket;
-        public SocketHeartbeatAndDataHandler(Socket socket)
-        {
-
-        }
-        public void HandleHeartbeat()
-        {
-        }
-        public void HandleData(byte[] data, int offset, int length)
-        {
-            socket.Send(data, offset, length, SocketFlags.None);
-        }
-        public void Dispose()
-        {
-            socket.ShutdownAndDispose();
-        }
-    }
-
-    /*
-    public class FrameAndHeartbeatDataHandlerFactory : IDataHandlerChainFactory
-    {
-        static FrameAndHeartbeatDataHandlerFactory instance;
-        public static FrameAndHeartbeatDataHandlerFactory Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new FrameAndHeartbeatDataHandlerFactory();
-                }
-                return instance;
-            }
-        }
-        private FrameAndHeartbeatDataHandlerFactory()
-        {
-        }
-        public IDataHandler CreateDataHandlerChain(IDataHandler passTo)
-        {
-            return new FrameAndHeartbeatDataHandler(new DefaultHeartbeatAndDataHandler(passTo));
-        }
-    }
-    */
-
-    public static class FrameAndHeartbeatData
-    {
-        public const Byte Heartbeat = 0x80;
+        public const Byte Heartbeat = 0xFF;
         public static readonly Byte[] HeartBeatPacket = new Byte[] { Heartbeat };
-    }
 
-    public class FrameAndHeartbeatDataSender : IDataHandler
-    {
         public static void InsertLength(Byte[] buffer, Int32 offset, Int32 length)
         {
-            if (length > 0x7FFFFF) throw new InvalidOperationException(String.Format("Max length is {0} but you provided {1}",
-                 0x7FFFFF, length));
+            if (length > 0xEFFFFF) throw new InvalidOperationException(String.Format(
+                "Max length is {0} but you provided {1}", 0xEFFFFF, length));
             buffer[offset    ] = (Byte)(length >> 16);
             buffer[offset + 1] = (Byte)(length >>  8);
             buffer[offset + 2] = (Byte)(length      );
         }
+        public static Byte[] AllocateFrame(Int32 offset, Int32 length)
+        {
+            Byte[] frame = new Byte[offset + length + 3];
+            InsertLength(frame, offset, length);
+            return frame;
+        }
+    }
 
+    public class FrameAndHeartbeatDataSender : IDataHandler
+    {
         readonly IDataHandler passDataTo;
         public FrameAndHeartbeatDataSender(IDataHandler passDataTo)
         {
@@ -113,7 +57,7 @@ namespace More.Net
         public void HandleData(byte[] data, int offset, int length)
         {
             Byte[] newData = new Byte[length + 3];
-            InsertLength(newData, 0, length);
+            FrameAndHeartbeatProtocol.InsertLength(newData, 0, length);
             Array.Copy(data, offset, newData, 3, length);
             passDataTo.HandleData(newData, 0, newData.Length);
         }
@@ -123,23 +67,47 @@ namespace More.Net
         }
     }
 
-    public class FrameAndHeartbeatDataReceiver : IDataHandler
-    {
-        readonly IDataAndHeartbeatHandler handler;
-        readonly ByteBuffer buffer;
-        Int32 currentBufferLength;
 
-        public FrameAndHeartbeatDataReceiver(IDataAndHeartbeatHandler handler)
+    public class FrameAndHeartbeatReceiverHandler : IDataHandler
+    {
+        readonly DataHandler dataHandler;
+        readonly Action heartbeatHandler;
+        readonly Action disposeHandler;
+        readonly FrameAndHeartbeatReceiverFilter filter;
+
+        public FrameAndHeartbeatReceiverHandler(DataHandler dataHandler, Action heartbeatHandler, Action disposeHandler)
         {
-            this.handler = handler;
-            this.buffer = new ByteBuffer();
-            this.currentBufferLength = 0;
+            this.dataHandler = dataHandler;
+            this.heartbeatHandler = heartbeatHandler;
+            this.disposeHandler = disposeHandler;
+            this.filter = new FrameAndHeartbeatReceiverFilter();
+        }
+        public void HandleData(byte[] data, int offset, int length)
+        {
+            filter.FilterTo(dataHandler, heartbeatHandler, data, offset, length);
         }
         public void Dispose()
         {
-            handler.Dispose();
+            if (disposeHandler != null) disposeHandler();
         }
-        public void HandleData(byte[] data, int offset, int length)
+    }
+
+    public class FrameAndHeartbeatReceiverFilter : IDataFilter
+    {
+        readonly ByteBuffer buffer;
+        Int32 currentBufferLength;
+
+        public FrameAndHeartbeatReceiverFilter()
+        {
+            this.buffer = new ByteBuffer();
+            this.currentBufferLength = 0;
+        }
+        public void FilterTo(DataHandler handler, byte[] data, int offset, int length)
+        {
+            FilterTo(handler, null, data, offset, length);
+        }
+        public void FilterTo(DataHandler handler, Action heartbeatCallback,
+            byte[] data, int offset, int length)
         {
             if (length <= 0) return;
 
@@ -166,9 +134,10 @@ namespace More.Net
                 processArray = buffer.array;
             }
 
-            CommonHandleData(processArray, processOffset, processLength);
+            CommonHandleData(handler, heartbeatCallback, processArray, processOffset, processLength);
         }
-        void CommonHandleData(Byte[] processArray, Int32 processOffset, Int32 processLength)
+        void CommonHandleData(DataHandler handler, Action heartbeatCallback,
+            Byte[] processArray, Int32 processOffset, Int32 processLength)
         {
             //
             // Process the array
@@ -178,9 +147,9 @@ namespace More.Net
                 //
                 // Check for heartbeats
                 //
-                while (processArray[processOffset] == FrameAndHeartbeatData.Heartbeat)
+                while (processArray[processOffset] == FrameAndHeartbeatProtocol.Heartbeat)
                 {
-                    handler.HandleHeartbeat();
+                    if (heartbeatCallback != null) heartbeatCallback();
 
                     processOffset++;
                     processLength--;
@@ -228,7 +197,7 @@ namespace More.Net
                     return;
                 }
 
-                handler.HandleData(processArray, processOffset + 3, frameLength - 3);
+                handler(processArray, processOffset + 3, frameLength - 3);
                 processOffset += frameLength;
                 processLength -= frameLength;
 

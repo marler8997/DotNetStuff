@@ -2,18 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Marler.OptionsParser;
+
+using More;
 
 namespace Marler.RuntimeAnalyzer
 {
-    public class OptimusCompilerProgramOptions : Options
+    public class OptimusCompilerProgramOptions : CLParser
     {
         public OptimusCompilerProgramOptions()
         {
         }
-
-
-        public override void PrintHeader()
+        public override void PrintUsageHeader()
         {
             Console.WriteLine("Assembler [options] <assembly-file>");
         }

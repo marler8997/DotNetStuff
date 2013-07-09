@@ -14,6 +14,9 @@ namespace More.Net
     {
         public readonly CLGenericArgument<UInt16> heartbeatSeconds;
         public readonly CLGenericArgument<UInt16> reconnectWaitSeconds;
+
+        public readonly CLStringArgument authenticationFile;
+
         public readonly CLGenericArgument<UInt32> receiveBufferLength;
 
         public TmpHiddenServerOptions()
@@ -26,16 +29,20 @@ namespace More.Net
             reconnectWaitSeconds.SetDefault(Tmp.DefaultReconnectWaitSeconds);
             Add(reconnectWaitSeconds);
 
+            authenticationFile = new CLStringArgument('a', "auth", "Authentication file");
+            Add(authenticationFile);
+
             receiveBufferLength = new CLGenericArgument<UInt32>(UInt32.Parse, 'r', "receive-buffer-length", "Receive buffer length");
             receiveBufferLength.SetDefault(4096);
             Add(receiveBufferLength);
         }
         public override void PrintUsageHeader()
         {
-            Console.WriteLine("TmpHiddenServer.exe [options] <TmpAccessorConnector1> <TmpAccessorConnect2> ...");
+            Console.WriteLine("Connect Mode: TmpHiddenServer.exe [options] <ServerName> <TmpAccessorConnector>");
+            Console.WriteLine("Listen Mode : TmpHiddenServer.exe [options] <ServerName> <ListenPort>");
         }
     }
-    class TmpHiddenServerMain
+    class TmpServerMain
     {
         static void Main(string[] args)
         {
@@ -43,24 +50,28 @@ namespace More.Net
 
             List<String> nonOptionArgs = options.Parse(args);
 
-            if (nonOptionArgs.Count < 1)
+            if (nonOptionArgs.Count != 2)
             {
-                options.ErrorAndUsage("Expected at least 1 non option argument but got non");
+                options.ErrorAndUsage("Expected 2 non option argument but got none");
                 return;
             }
-            
-            Int32 heartbeatMillis = options.heartbeatSeconds.ArgValue * 1000;
-            Int32 reconnectWaitMillis = options.reconnectWaitSeconds.ArgValue * 1000;
 
-            if (nonOptionArgs.Count == 1)
+            String serverName = nonOptionArgs[0];
+            String accessorConnector = nonOptionArgs[1];
+
+            TlsSettings tlsSettings;
+            if (!options.authenticationFile.set)
             {
-                SingleAccessor.Run(nonOptionArgs[0], heartbeatMillis, reconnectWaitMillis, options.receiveBufferLength.ArgValue);
+                tlsSettings = new TlsSettings(false);
             }
             else
             {
-                throw new NotImplementedException("Multiple accessors not yet implemented");
-                //MultipleAccessors.Run(nonOptionArgs, heartbeatMillis, reconnectWaitMillis);
+                throw new NotImplementedException("Authentication file not yet implemented");
             }
+
+            TunnelManipulationReverseServer.Run(tlsSettings, serverName, accessorConnector,
+                options.heartbeatSeconds.ArgValue,
+                options.reconnectWaitSeconds.ArgValue, options.receiveBufferLength.ArgValue);
         }
     }
 }

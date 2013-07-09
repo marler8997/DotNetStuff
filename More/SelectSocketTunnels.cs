@@ -124,11 +124,11 @@ namespace More
                 //
                 while (pairList.Count <= 0)
                 {
-                    Console.WriteLine("[Debug] Waiting for tunnels...");
+                    //Console.WriteLine("[Debug] Waiting for tunnels...");
                     haveTunnels.WaitOne();
                     if (pairList.Count > 0)
                     {
-                        Console.WriteLine("[Debug] Now serving tunnels...");
+                        //Console.WriteLine("[Debug] Now serving tunnels...");
                     }
                 }
                 

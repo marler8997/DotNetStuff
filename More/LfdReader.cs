@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace More.Lfd
+namespace More
 {
     public class LfdReader : IDisposable
     {
         private readonly TextReader reader;
-        private Stack<Line> context;
+        private Stack<LfdLine> context;
         private UInt32 lineNumber;
 
         public LfdReader(TextReader reader)
@@ -16,7 +16,7 @@ namespace More.Lfd
             if (reader == null) throw new ArgumentNullException("reader");
 
             this.reader = reader;
-            this.context = new Stack<Line>();
+            this.context = new Stack<LfdLine>();
             this.lineNumber = 0;
         }
 
@@ -27,18 +27,25 @@ namespace More.Lfd
         {
             reader.Dispose();
         }
-
         private FormatException FormatError(String line, String msg)
         {
             return new LfdFormatException(lineNumber, line, msg);
         }
-
         private FormatException FormatError(String line, String fmt, params Object[] obj)
         {
             return new LfdFormatException(lineNumber, line,String.Format(fmt, obj));
         }
-
-        public Line ReadLine()
+        public LfdLine ReadLineIgnoreComments()
+        {
+            LfdLine line;
+            while (true)
+            {
+                line = ReadLine();
+                if (line == null) return null;
+                if (!line.idOriginalCase.StartsWith("#")) return line;
+            }
+        }
+        public LfdLine ReadLine()
         {
             while (true)
             {
@@ -109,7 +116,7 @@ namespace More.Lfd
                         offset++;
                         if (offset >= line.Length)
                         {
-                            return new Line((context.Count > 0) ? context.Peek() : null,
+                            return new LfdLine((context.Count > 0) ? context.Peek() : null,
                                 line.Substring(saveOffset), null, lineNumber);
                         }
                         if (line[offset] == '{')
@@ -123,7 +130,7 @@ namespace More.Lfd
                                 if (!Char.IsWhiteSpace(line[offset])) throw FormatError(line, "The '{' character just after the line Id can only be followed by whitespace");
                             }
 
-                            Line newLine = new Line((context.Count > 0) ? context.Peek() : null,
+                            LfdLine newLine = new LfdLine((context.Count > 0) ? context.Peek() : null,
                                 lineIdSpecialCase, null, lineNumber);
                             context.Push(newLine);
                             return newLine;
@@ -139,7 +146,7 @@ namespace More.Lfd
                         offset++;
                         if (offset >= line.Length)
                         {
-                            return new Line((context.Count > 0) ? context.Peek() : null,
+                            return new LfdLine((context.Count > 0) ? context.Peek() : null,
                                 lineId, null, lineNumber);
                         }
                         if (!Char.IsWhiteSpace(line[offset])) break;
@@ -229,7 +236,6 @@ namespace More.Lfd
                                     }
                                 }
                             }
-
                         }
                         //
                         // An Open Brace field which must be the last field
@@ -244,7 +250,7 @@ namespace More.Lfd
                                 if (!Char.IsWhiteSpace(line[offset])) throw FormatError(line, "A Field starting with the '{' character can only be followed by whitespace unless escaped with '\\{'");
                             }
 
-                            Line newLine = new Line((context.Count > 0) ? context.Peek() : null,
+                            LfdLine newLine = new LfdLine((context.Count > 0) ? context.Peek() : null,
                                 lineId, fields.ToArray(), lineNumber);
                             context.Push(newLine);
                             return newLine;
@@ -275,7 +281,7 @@ namespace More.Lfd
                                         if (offset >= line.Length)
                                         {
                                             fields.Add(line.Substring(fieldStart));
-                                            return new Line((context.Count > 0) ? context.Peek() : null,
+                                            return new LfdLine((context.Count > 0) ? context.Peek() : null,
                                                 lineId, fields.ToArray(), lineNumber);
                                         }
                                         if (Char.IsWhiteSpace(line[offset]))
@@ -315,7 +321,7 @@ namespace More.Lfd
                                 if (offset >= line.Length)
                                 {
                                     fields.Add(line.Substring(fieldStart));
-                                    return new Line((context.Count > 0) ? context.Peek() : null,
+                                    return new LfdLine((context.Count > 0) ? context.Peek() : null,
                                         lineId, fields.ToArray(), lineNumber);
                                 }
                                 if (Char.IsWhiteSpace(line[offset]))
@@ -333,7 +339,7 @@ namespace More.Lfd
                         {
                             if (offset >= line.Length)
                             {
-                                return new Line((context.Count > 0) ? context.Peek() : null,
+                                return new LfdLine((context.Count > 0) ? context.Peek() : null,
                                     lineId, fields.ToArray(), lineNumber);
                             }
                             if (!Char.IsWhiteSpace(line[offset])) break;

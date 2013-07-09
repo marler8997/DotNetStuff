@@ -45,7 +45,6 @@ namespace More
             }
         }
     }
-
     public class ArrayBuilder
     {
         const Int32 InitialArraySize = 16;
@@ -367,7 +366,6 @@ namespace More
             builder.Append('}');
         }
     }
-
     public static class StackExtensions
     {
         public static void Print<T>(this Stack<T> stack, TextWriter writer)
@@ -385,8 +383,6 @@ namespace More
             }
         } 
     }
-
-
     public static class DateTimeExtensions
     {
         public static readonly DateTime UnixZeroTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -396,7 +392,6 @@ namespace More
             return (double)(dateTime - UnixZeroTime).TotalSeconds;
         }
     }
-
     public static class StopwatchExtensions
     {
         private static Double StopwatchTicksPerMillisecondAsDouble = 1000.0 / Stopwatch.Frequency;
@@ -421,12 +416,10 @@ namespace More
                 return stopwatchTickIntervalString;
             }
         }
-
         public static Int64 MillisToStopwatchTicks(this Int32 millis)
         {
             return Stopwatch.Frequency * (Int64)millis / 1000L;
         }
-
         public static Int64 StopwatchTicksAsMicroseconds(this Int64 stopwatchTicks)
         {
             return stopwatchTicks * 1000000L / Stopwatch.Frequency;
@@ -444,9 +437,13 @@ namespace More
             return StopwatchTicksPerMillisecondAsDouble * stopwatchTicks;
         }
     }
-
     public static class SocketExtensions
     {
+        public static String SafeLocalEndPointString(this Socket socket)
+        {
+            try { return socket.LocalEndPoint.ToString(); }
+            catch (Exception) { return "<not-bound>"; }
+        }
         public static String SafeRemoteEndPointString(this Socket socket)
         {
             try { return socket.RemoteEndPoint.ToString(); } catch (Exception) { return "<disconnected>";  }
@@ -494,6 +491,30 @@ namespace More
                 }
                 socket.Close();
             }
+        }
+    }
+    public static class TextWriterExtensions
+    {
+        public static void WriteLine(this TextWriter writer, UInt32 spaces, String fmt, params Object[] obj)
+        {
+            writer.Write(String.Format("{{0,{0}}}", spaces), String.Empty);
+            writer.WriteLine(fmt, obj);
+        }
+        public static void WriteLine(this TextWriter writer, UInt32 spaces, String str)
+        {
+            writer.Write(String.Format("{{0,{0}}}", spaces), String.Empty);
+            writer.WriteLine(str);
+        }
+
+        public static void Write(this TextWriter writer, UInt32 spaces, String fmt, params Object[] obj)
+        {
+            writer.Write(String.Format("{{0,{0}}}", spaces), String.Empty);
+            writer.Write(fmt, obj);
+        }
+        public static void Write(this TextWriter writer, UInt32 spaces, String str)
+        {
+            writer.Write(String.Format("{{0,{0}}}", spaces), String.Empty);
+            writer.Write(str);
         }
     }
     public static class StreamExtensions

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace More.Lfd
+namespace More
 {
     public class LfdFormatException : FormatException
     {

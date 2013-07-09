@@ -1,0 +1,41 @@
+
+Flags Byte AccessorConnectionInfo {
+  0 TmpRequiresTls
+}
+
+Flags Byte ServerConnectionInfo {
+  0 IsTunnel
+  1 RequireTls
+}
+
+
+
+
+
+ServerInfo {
+  Byte[Byte] Name
+  UInt16 SecondsPerHeartbeat
+  UInt16 SecondsPerReconnect
+}
+ 
+Flags Byte TunnelOptions {
+  0 RequireTls
+}
+
+#
+# Note that if security is a concern, and the tunnel is not required to be TLS
+# then it is VERY important for the TunnelKey to be random (not incremental)
+#
+OpenAccessorTunnelRequest {
+  TunnelOptions Options
+  Byte[Byte] TargetHost
+  UInt16 TargetPort  
+  Byte[Byte] TunnelKey  
+}
+OpenTunnelRequest {
+  TunnelOptions Options
+  Byte[Byte] TargetHost
+  UInt16 TargetPort
+  Byte[Byte] OtherTargetHost
+  UInt16 OtherTargetPort 
+}

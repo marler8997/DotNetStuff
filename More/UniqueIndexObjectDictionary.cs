@@ -75,6 +75,15 @@ namespace More
         {
             return objects[uniqueIndex];
         }
+        public Int32 Add(ObjectType newObject)
+        {
+            Int32 uniqueIndex = GetFreeUniqueIndex();
+
+            objects[uniqueIndex] = newObject;
+            objectToIndexDictionary.Add(newObject, uniqueIndex);
+
+            return uniqueIndex;
+        }
         public ObjectType GenerateNewObject(out Int32 uniqueIndex, IObjectGenerator objectGenerator)
         {
             uniqueIndex = GetFreeUniqueIndex();

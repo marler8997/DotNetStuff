@@ -79,7 +79,7 @@ namespace More
 
         public NpcBlockingThreadHander(String clientString, INpcServerCallback callback, Socket socket,
             NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
-            : base(clientString, callback, new SocketDataHandler(socket), npcExecutor, npcHtmlGenerator)
+            : base(clientString, callback, new SocketSendDataHandler(socket), npcExecutor, npcHtmlGenerator)
         {
             this.socketLineReader = new SocketLineReader(socket, Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
         }

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace More.Lfd
+namespace More
 {
-    public class LineFields
+    public static class LineFields
     {
         public static void ParseLine(List<String> fields, Byte[] line, Int32 offset, Int32 offsetPlusLength)
         {
@@ -74,17 +74,15 @@ namespace More.Lfd
             }
         }
     }
-
-
-    public class Line
+    public class LfdLine
     {
-        public readonly Line parent;
+        public readonly LfdLine parent;
         public readonly String idOriginalCase, idLowerInvariantCase;
         public readonly String [] fields;
 
         public readonly UInt32 actualLineNumber;
 
-        public Line(Line parent, String id, String[] fields, UInt32 actualLineNumber)
+        public LfdLine(LfdLine parent, String id, String[] fields, UInt32 actualLineNumber)
         {
             if (id == null) throw new ArgumentNullException("id");
 
@@ -94,11 +92,10 @@ namespace More.Lfd
 
             this.fields = fields;
         }
-
         public String CreateContextString()
         {
-            Line currentParent = parent;
-            Stack<Line> parents = new Stack<Line>();
+            LfdLine currentParent = parent;
+            Stack<LfdLine> parents = new Stack<LfdLine>();
             while (currentParent != null)
             {
                 parents.Push(currentParent);
@@ -119,7 +116,6 @@ namespace More.Lfd
             stringBuilder.Append(idLowerInvariantCase);
             return stringBuilder.ToString();
         }
-
         public override String ToString()
         {
             if(fields == null || fields.Length <= 0) return idOriginalCase;

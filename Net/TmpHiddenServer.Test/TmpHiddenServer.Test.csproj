@@ -45,10 +45,6 @@
       <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
       <Name>More</Name>
     </ProjectReference>
-    <ProjectReference Include="..\TmpHiddenServer\TmpHiddenServer.csproj">
-      <Project>{9D215ADD-F374-4BAC-A839-1D0BA006D919}</Project>
-      <Name>TmpHiddenServer</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Tmp\More.Tmp.csproj">
       <Project>{D2549C5C-0531-4D9C-A756-A5D5A7FBBFB2}</Project>
       <Name>More.Tmp</Name>

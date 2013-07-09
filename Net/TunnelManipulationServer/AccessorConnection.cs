@@ -1,41 +1,18 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
 namespace More.Net
 {
-    public class NpcFrameAndHeartbeatHandler : IDataAndHeartbeatHandler
-    {
-        readonly Accessor accessor;
-        readonly NpcDataHandler dataHandler;
-
-        public NpcFrameAndHeartbeatHandler(Accessor accessor, NpcDataHandler dataHandler)
-        {
-            this.accessor = accessor;
-            this.dataHandler = dataHandler;
-        }
-        public void HandleHeartbeat()
-        {
-            Console.WriteLine("{0} [{1}] Got hearbeat", DateTime.Now, accessor.accessorEndPoint);
-        }
-        public void HandleData(byte[] data, int offset, int length)
-        {
-            this.dataHandler.Handle(data, offset, length);
-        }
-        public void Dispose()
-        {
-            dataHandler.Dispose();
-        }
-    }
-
-    public class Accessor
+    public class AccessorConnection
     {
         public readonly String accessorIPOrHost;
         public readonly EndPoint accessorEndPoint;
         public readonly ISocketConnector connector;
 
         Socket accessorSocket;
-        FrameAndHeartbeatDataReceiver dataHandler;
+        DataFilterHandler accessorReceiveHandler;
 
         public Boolean Connected
         {
@@ -51,25 +28,38 @@ namespace More.Net
             {
                 try
                 {
-                    accessorSocket.Send(FrameAndHeartbeatData.HeartBeatPacket);
+                    accessorSocket.Send(FrameAndHeartbeatProtocol.HeartBeatPacket);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("{0} [{1}] Sending heartbeat threw exception : {2}", DateTime.Now, accessorEndPoint, e.ToString());
                     accessorSocket = null;
-                    dataHandler = null;
+                    accessorReceiveHandler = null;
                 }
             }
         }
 
-        public Accessor(String connectorString)
+        public AccessorConnection(String connectorString)
         {
             String accessorIPOrHostAndOptionalPort = ConnectorParser.ParseConnector(connectorString, out connector);
             this.accessorIPOrHost = EndPoints.RemoveOptionalPort(accessorIPOrHostAndOptionalPort);
 
-            this.accessorEndPoint = EndPoints.EndPointFromIPOrHostAndOptionalPort(accessorIPOrHostAndOptionalPort, Tmp.TmpAccessorPort);
+            this.accessorEndPoint = EndPoints.EndPointFromIPOrHostAndOptionalPort(accessorIPOrHostAndOptionalPort, Tmp.DefaultPort);
         }
-        public Socket MakeSocketAndConnectOnPort(UInt16 port)
+        public Socket MakeNewSocketAndConnect()
+        {
+            Socket socket = new Socket(accessorEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            if (connector == null)
+            {
+                socket.Connect(accessorEndPoint);
+            }
+            else
+            {
+                connector.Connect(socket, accessorEndPoint);
+            }
+            return socket;
+        }
+        public Socket MakeNewSocketAndConnectOnPort(UInt16 port)
         {
             EndPoint thisPortEndPoint = EndPoints.EndPointFromIPOrHost(accessorIPOrHost, port);
 
@@ -84,17 +74,7 @@ namespace More.Net
             }
             return socket;
         }
-        // return true on success
-        public Boolean TryConnect(ref Int32 connectedCount, INpcServerCallback npcServerCallback, NpcExecutor npcExecutor)
-        {
-            Boolean connected = TryConnect(npcServerCallback, npcExecutor);
-            if (connected)
-            {
-                connectedCount++;
-            }
-            return connected;
-        }
-        public Boolean TryConnect(INpcServerCallback npcServerCallback, NpcExecutor npcExecutor)
+        public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, ServerInfo serverInfo, SelectTunnelsThread tunnelsThread)
         {
             if (Connected) throw new InvalidOperationException(String.Format(
                 "You called Connect() on accessor '{0}' but its already connected", accessorEndPoint));
@@ -113,16 +93,52 @@ namespace More.Net
 
                 this.accessorSocket = socket;
 
-                this.dataHandler = new FrameAndHeartbeatDataReceiver(new NpcFrameAndHeartbeatHandler(this,
-                    new NpcDataHandler(accessorEndPoint.ToString(), npcServerCallback,
-                    new FrameAndHeartbeatDataSender(new SocketDataHandler(accessorSocket)),
-                    npcExecutor, new DefaultNpcHtmlGenerator("Tunnel Manipulation", npcExecutor))));
+                //
+                // Send initial connection information
+                //
+                Boolean setupTls = tlsSettings.requireTlsForTmpConnections;
+
+                Byte[] connectionInfoPacket = new Byte[] {Tmp.CreateConnectionInfoFromTmpServerToAccessor(
+                    tlsSettings.requireTlsForTmpConnections, false)};
+                socket.Send(connectionInfoPacket);
+
+                //
+                // Only receive packet if tls was not required
+                //
+                if (!tlsSettings.requireTlsForTmpConnections)
+                {
+                    int bytesRead = socket.Receive(connectionInfoPacket, 0, 1, SocketFlags.None);
+                    if (bytesRead <= 0) throw new SocketException();
+
+                    setupTls = Tmp.ReadTlsRequirementFromAccessorToTmpServer(connectionInfoPacket[0]);
+                }
+
+
+                DataHandler accessorSendHandler = new SocketSendDataHandler(socket).HandleData;
+                this.accessorReceiveHandler = new DataFilterHandler(new FrameAndHeartbeatReceiverFilter(),
+                        new TmpServerHandler(this, tlsSettings, tunnelsThread));
+
+                //
+                // Initiate a tls connection if required
+                //
+                if (setupTls)
+                {
+                    throw new NotImplementedException("Tls not yet implemented");
+                }
+
+                //
+                // Send server info
+                //
+                Byte[] serverInfoPacket = Tmp.CreateCommandPacket(Tmp.ToAccessorServerInfoID,
+                    ServerInfo.Reflector, serverInfo, 0);
+                accessorSendHandler(serverInfoPacket, 0, serverInfoPacket.Length);                
+
                 return true;
             }
             catch (Exception)
             {
                 this.accessorSocket = null;
-                this.dataHandler = null;
+                this.accessorReceiveHandler = null;
                 return false;
             }
         }
@@ -140,7 +156,7 @@ namespace More.Net
             {
                 Console.WriteLine("{0} [{1}] Select threw exception : {2}", DateTime.Now, accessorEndPoint, e.ToString());
                 accessorSocket = null;
-                dataHandler = null;
+                accessorReceiveHandler = null;
                 return;
             }
 
@@ -158,11 +174,11 @@ namespace More.Net
                 if (bytesRead <= 0)
                 {
                     accessorSocket = null;
-                    dataHandler = null;
+                    accessorReceiveHandler = null;
                 }
                 else
                 {
-                    dataHandler.HandleData(receiveBuffer, 0, bytesRead);
+                    accessorReceiveHandler.HandleData(receiveBuffer, 0, bytesRead);
                 }
             }
         }
