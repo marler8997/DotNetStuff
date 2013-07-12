@@ -175,8 +175,8 @@ namespace More.Net
                 }
                 finally
                 {
-                    try { socketA.Close(); } catch(IOException e) { }
-                    try { socketB.Close(); } catch(IOException e) { }
+                    try { socketA.Close(); } catch(IOException) { }
+                    try { socketB.Close(); } catch(IOException) { }
                 }
             }
         }

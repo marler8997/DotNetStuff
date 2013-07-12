@@ -1,0 +1,20 @@
+
+AByte {
+  Byte value
+}
+AnSByte {
+  SByte value
+}
+AUInt16 {
+  UInt16 value
+}
+AnInt16 {
+  Int16 value
+}
+AUInt24 {
+  UInt24 value
+}
+
+#
+# White Box Testing for Code Generator
+#

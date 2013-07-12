@@ -14,32 +14,36 @@ namespace More
     [TestClass]
     public class PerformanceChecks
     {
-
-
         [TestMethod]
         public void PerformanceTestByteArraySerialization()
         {
             long before;
 
-            Int32 value;
-            Byte[] array = new Byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
+            UInt32 value;
+            Byte[] array = new Byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
             before = Stopwatch.GetTimestamp();
-            for (int i = 0; i < 1000000; i++)
+            for (int i = 0; i < 10000000; i++)
             {
-                value = (Int32)(
+                value = (UInt32)(
                     (0xFF000000 & (array[0] << 24)) |
                     (0x00FF0000 & (array[1] << 16)) |
                     (0x0000FF00 & (array[2] << 8)) |
                     (0x000000FF & (array[3])));
-                Console.WriteLine(value);
             }
             Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
 
             before = Stopwatch.GetTimestamp();
-            for (int i = 0; i < 1000000; i++)
+            for (int i = 0; i < 10000000; i++)
             {
-                value = BitConverter.ToInt32(array, 0);
+                value = BitConverter.ToUInt32(array, 1);
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000000; i++)
+            {
+                value = array.BigEndianReadUInt32(1);
             }
             Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
         }

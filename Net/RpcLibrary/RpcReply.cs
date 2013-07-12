@@ -41,14 +41,14 @@ namespace More.Net
         private static String CheckForFailureInReply(RpcCall call, RpcReply reply)
         {
             if (reply.status != RpcReplyStatus.Accepted)
-                return reply.rejectedReply.DataString();
+                return ISerializerString.DataString(reply.rejectedReply);
 
             RpcAcceptedReply acceptedReply = reply.acceptedReply;
             if (acceptedReply.status == RpcAcceptStatus.Success) return null;
 
             if (acceptedReply.status == RpcAcceptStatus.ProgramMismatch)
             {
-                return String.Format("ProgramMismatch: {0}", acceptedReply.mismatchInfo.DataString());
+                return String.Format("ProgramMismatch: {0}", ISerializerString.DataString(acceptedReply.mismatchInfo));
             }
             else
             {
@@ -59,7 +59,7 @@ namespace More.Net
         {
             String failureReason = CheckForFailureInReply(call, reply);
             if (failureReason == null) throw new InvalidOperationException(
-                String.Format("Expected this rpc reply '{0}' to have a failure but did not?", reply.DataString()));
+                String.Format("Expected this rpc reply '{0}' to have a failure but did not?", ISerializerString.DataString(reply)));
             return failureReason;
         }
         public static void VerifySuccessfulReply(RpcCall call, RpcReply reply)
@@ -71,7 +71,7 @@ namespace More.Net
         }
 
         private RpcCallFailedException(RpcCall call, String failureReason)
-            : base(String.Format("{0} failed: {1}", call.DataString(), failureReason))
+            : base(String.Format("{0} failed: {1}", ISerializerString.DataString(call), failureReason))
         {
         }
 
@@ -82,7 +82,7 @@ namespace More.Net
     }
     public class RpcMismatchInfo : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(RpcMismatchInfo), "low"),
             new XdrUInt32Reflector(typeof(RpcMismatchInfo), "high"),
         });
@@ -102,7 +102,7 @@ namespace More.Net
     }
     public class RpcAcceptedReply : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new ClassFieldReflectors<RpcVerifier>(typeof(RpcAcceptedReply), "verifier", RpcVerifier.memberSerializers),
             new XdrDescriminatedUnionReflector<RpcAcceptStatus>(
 
@@ -144,7 +144,7 @@ namespace More.Net
     }
     public class RpcRejectedReply : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<RpcRejectStatus>(
 
                 new XdrEnumReflector(typeof(RpcRejectedReply), "status", typeof(RpcRejectStatus)),
@@ -177,7 +177,7 @@ namespace More.Net
     }
     public class RpcReply : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<RpcReplyStatus>(
 
                 new XdrEnumReflector(typeof(RpcReply), "status", typeof(RpcReplyStatus)),

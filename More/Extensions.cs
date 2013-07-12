@@ -9,6 +9,13 @@ using System.Text;
 
 namespace More
 {
+    public static class GenericExtensions
+    {
+        public static void DataString<T>(this T value, StringBuilder builder)
+        {
+            builder.Append(value.ToString());
+        }
+    }
     public static class GCExtensions
     {
         static Int32[] lastGenCount;
@@ -312,6 +319,327 @@ namespace More
             }
         }
     }
+    public static class Int24
+    {
+        public const Int32 MinValue = -0x800000;
+        public const Int32 MaxValue =  0x7FFFFF;
+    }
+    public static class UInt24
+    {
+        public const Int32 MinValue = 0;
+        public const Int32 MaxValue = 0xFFFFFF;
+    }
+    public static class ByteArray
+    {
+        //
+        // Set 1-yte types
+        //
+        public static void SetByteEnum<EnumType>(this Byte[] bytes, Int32 offset, EnumType value)
+        {
+            bytes[offset] = Convert.ToByte(value);
+        }
+        //
+        // Read 1-byte types
+        //
+        public static EnumType ReadByteEnum<EnumType>(this Byte[] bytes, Int32 offset)
+        {
+            return (EnumType)Enum.ToObject(typeof(EnumType), bytes[offset]);
+        }
+        //
+        // Set 2-byte types
+        //
+        public static void BigEndianSetUInt16(this Byte[] bytes, Int32 offset, UInt16 value)
+        {
+            bytes[offset    ] = (Byte)(value >> 8);
+            bytes[offset + 1] = (Byte)value;
+        }
+        public static void BigEndianSetInt16(this Byte[] bytes, Int32 offset, Int16 value)
+        {
+            bytes[offset    ] = (Byte)(value >> 8);
+            bytes[offset + 1] = (Byte)value;
+        }
+        public static void BigEndianSetUInt16Enum<EnumType>(this Byte[] bytes, Int32 offset, EnumType value)
+        {
+            UInt16 valueAsUInt16 = Convert.ToUInt16(value);
+            bytes[offset    ] = (Byte)(valueAsUInt16 >> 8);
+            bytes[offset + 1] = (Byte)valueAsUInt16;
+        }
+        //
+        // Read 2-byte types
+        //
+        public static UInt16 BigEndianReadUInt16(this Byte[] bytes, Int32 offset)
+        {
+            return (UInt16)(bytes[offset] << 8 | bytes[offset + 1]);
+        }
+        public static Int16 BigEndianReadInt16(this Byte[] bytes, Int32 offset)
+        {
+            return (Int16)(bytes[offset] << 8 | bytes[offset + 1]);
+        }
+        public static EnumType BigEndianReadUInt16Enum<EnumType>(this Byte[] bytes, Int32 offset)
+        {
+            return (EnumType)Enum.ToObject(typeof(EnumType), (UInt16)(
+                (0xFF00U & (bytes[offset    ] << 8)) |
+                (0x00FFU & (bytes[offset + 1]))));
+        }
+        //
+        // Set 3-byte types
+        //
+        public static void BigEndianSetUInt24(this Byte[] bytes, Int32 offset, UInt32 value)
+        {
+            bytes[offset    ] = (Byte)(value >> 16);
+            bytes[offset + 1] = (Byte)(value >> 8);
+            bytes[offset + 2] = (Byte)value;
+        }
+        public static void BigEndianSetUInt24Enum<EnumType>(this Byte[] bytes, Int32 offset, EnumType value)
+        {
+            UInt32 valueAsUInt32 = Convert.ToUInt32(value);
+            bytes[offset    ] = (Byte)(valueAsUInt32 >> 16);
+            bytes[offset + 1] = (Byte)(valueAsUInt32 >> 8);
+            bytes[offset + 2] = (Byte)valueAsUInt32;
+        }
+        public static void BigEndianSetInt24(this Byte[] bytes, Int32 offset, Int32 value)
+        {
+            bytes[offset    ] = (Byte)(value >> 16);
+            bytes[offset + 1] = (Byte)(value >> 8);
+            bytes[offset + 2] = (Byte)value;
+        }
+        //
+        // Read 3-byte types
+        //
+        public static UInt32 BigEndianReadUInt24(this Byte[] bytes, Int32 offset)
+        {
+            return (UInt32)(
+                (0x00FF0000U & (bytes[offset    ] << 16)) |
+                (0x0000FF00U & (bytes[offset + 1] <<  8)) |
+                (0x000000FFU & (bytes[offset + 2]      )) );
+        }
+        public static EnumType BigEndianReadUInt24Enum<EnumType>(this Byte[] bytes, Int32 offset)
+        {
+            return (EnumType)Enum.ToObject(typeof(EnumType), (UInt32)(
+                (0x00FF0000U & (bytes[offset    ] << 16)) |
+                (0x0000FF00U & (bytes[offset + 1] <<  8)) |
+                (0x000000FFU & (bytes[offset + 2]      )) ));
+        }
+        public static Int32 BigEndianReadInt24(this Byte[] bytes, Int32 offset)
+        {
+            return (Int32)(
+                ( ((bytes[offset] & 0x80) == 0x80) ? 0xFF000000 : 0) | // Sign Extend
+                (0x00FF0000U & (bytes[offset    ] << 16)) |
+                (0x0000FF00U & (bytes[offset + 1] <<  8)) |
+                (0x000000FFU & (bytes[offset + 2]      )) );
+        }
+        //
+        // Set 4-byte types
+        //
+        public static void BigEndianSetUInt32(this Byte[] bytes, Int32 offset, UInt32 value)
+        {
+            bytes[offset    ] = (Byte)(value >> 24);
+            bytes[offset + 1] = (Byte)(value >> 16);
+            bytes[offset + 2] = (Byte)(value >> 8);
+            bytes[offset + 3] = (Byte)value;
+        }
+        public static void BigEndianSetUInt32Enum<EnumType>(this Byte[] bytes, Int32 offset, EnumType value)
+        {
+            UInt32 valueAsUInt32 = Convert.ToUInt32(value);
+            bytes[offset    ] = (Byte)(valueAsUInt32 >> 24);
+            bytes[offset + 1] = (Byte)(valueAsUInt32 >> 16);
+            bytes[offset + 2] = (Byte)(valueAsUInt32 >> 8);
+            bytes[offset + 3] = (Byte)valueAsUInt32;
+        }
+        public static void BigEndianSetInt32(this Byte[] bytes, Int32 offset, Int32 value)
+        {
+            bytes[offset    ] = (Byte)(value >> 24);
+            bytes[offset + 1] = (Byte)(value >> 16);
+            bytes[offset + 2] = (Byte)(value >> 8);
+            bytes[offset + 3] = (Byte)value;
+        }
+        //
+        // Read 4-byte types
+        //
+        public static UInt32 BigEndianReadUInt32(this Byte[] bytes, Int32 offset)
+        {
+            return (UInt32) (
+                (bytes[offset    ] << 24) |
+                (bytes[offset + 1] << 16) |
+                (bytes[offset + 2] <<  8) |
+                (bytes[offset + 3]      ) );
+        }
+        public static EnumType BigEndianReadUInt32Enum<EnumType>(this Byte[] bytes, Int32 offset)
+        {
+            return (EnumType)Enum.ToObject(typeof(EnumType), (UInt32) (
+                (bytes[offset    ] << 24) |
+                (bytes[offset + 1] << 16) |
+                (bytes[offset + 2] <<  8) |
+                (bytes[offset + 3]      ) ));
+        }
+        public static Int32 BigEndianReadInt32(this Byte[] bytes, Int32 offset)
+        {
+            return (Int32)(
+                (0xFF000000U & (bytes[offset    ] << 24)) |
+                (0x00FF0000U & (bytes[offset + 1] << 16)) |
+                (0x0000FF00U & (bytes[offset + 2] <<  8)) |
+                (0x000000FFU & (bytes[offset + 3]      )) );
+        }
+        //
+        // Set 8-byte types
+        //
+        public static void BigEndianSetUInt64(this Byte[] bytes, Int32 offset, UInt64 value)
+        {
+            bytes[offset    ] = (Byte)(value >> 56);
+            bytes[offset + 1] = (Byte)(value >> 48);
+            bytes[offset + 2] = (Byte)(value >> 40);
+            bytes[offset + 3] = (Byte)(value >> 32);
+            bytes[offset + 4] = (Byte)(value >> 24);
+            bytes[offset + 5] = (Byte)(value >> 16);
+            bytes[offset + 6] = (Byte)(value >>  8);
+            bytes[offset + 7] = (Byte)value;
+        }
+        /*
+        public static void BigEndianSetUInt32Enum<EnumType>(this Byte[] bytes, Int32 offset, EnumType value)
+        {
+            UInt32 valueAsUInt32 = Convert.ToUInt32(value);
+            bytes[offset    ] = (Byte)(valueAsUInt32 >> 24);
+            bytes[offset + 1] = (Byte)(valueAsUInt32 >> 16);
+            bytes[offset + 2] = (Byte)(valueAsUInt32 >> 8);
+            bytes[offset + 3] = (Byte)valueAsUInt32;
+        }
+        public static void BigEndianSetInt32(this Byte[] bytes, Int32 offset, Int32 value)
+        {
+            bytes[offset    ] = (Byte)(value >> 24);
+            bytes[offset + 1] = (Byte)(value >> 16);
+            bytes[offset + 2] = (Byte)(value >> 8);
+            bytes[offset + 3] = (Byte)value;
+        }
+        */
+
+        public static Boolean IsInRange(UInt32 value, Byte byteCount)
+        {
+            switch (byteCount)
+            {
+                case 1:
+                    return ((value & 0xFF) == value);
+                case 2:
+                    return ((value & 0xFFFF) == value);
+                case 3:
+                    return ((value & 0xFFFFFF) == value);
+                case 4:
+                    return ((value & 0xFFFFFFFF) == value);
+            }
+            throw new InvalidOperationException(String.Format("Expected byteCount to be 1,2,3 or 4 but was {0}", byteCount));
+        }
+        public static int BigEndianSetUInt32Subtype(this byte[] array, int offset, UInt32 value, Byte byteCount)
+        {
+            switch (byteCount)
+            {
+                case 1:
+                    array[offset] = (Byte)value;
+                    return offset + 1;
+                case 2:
+                    array[offset    ] = (Byte)(value >> 8);
+                    array[offset + 1] = (Byte)value;
+                    return offset + 2;
+                case 3:
+                    array[offset    ] = (Byte)(value >> 16);
+                    array[offset + 1] = (Byte)(value >> 8);
+                    array[offset + 2] = (Byte)value;
+                    return offset + 3;
+                case 4:
+                    array[offset    ] = (Byte)(value >> 24);
+                    array[offset + 1] = (Byte)(value >> 16);
+                    array[offset + 2] = (Byte)(value >> 8);
+                    array[offset + 3] = (Byte)value;
+                    return offset + 4;
+            }
+            throw new InvalidOperationException(String.Format("Expected byteCount to be 1,2,3 or 4 but was {0}", byteCount));
+        }
+        public static UInt32 BigEndianReadUInt32Subtype(this byte[] bytes, int offset, Byte byteCount)
+        {
+            switch (byteCount)
+            {
+                case 1:
+                    return (Byte)(
+                        (0x000000FFU & (bytes[offset])));
+                case 2:
+                    return (UInt16)(
+                        (0x0000FF00U & (bytes[offset    ] << 8)) |
+                        (0x000000FFU & (bytes[offset + 1])));
+                case 3:
+                    return (UInt32)(
+                        (0x00FF0000U & (bytes[offset    ] << 16)) |
+                        (0x0000FF00U & (bytes[offset + 1] <<  8)) |
+                        (0x000000FFU & (bytes[offset + 2]      )) );
+                case 4:
+                    return (UInt32) (
+                        (bytes[offset    ] << 24) |
+                        (bytes[offset + 1] << 16) |
+                        (bytes[offset + 2] <<  8) |
+                        (bytes[offset + 3]      ) );
+            }
+            throw new InvalidOperationException(String.Format("Expected byteCount to be 1,2,3 or 4 but was {0}", byteCount));
+        }
+
+        public static UInt16 LittleEndianReadUInt16(this Byte[] bytes, Int32 offset)
+        {
+            return (UInt16)(
+                (0xFF00 & (bytes[offset + 1] << 8)) |
+                (0x00FF & (bytes[offset])));
+        }
+        public static UInt32 LittleEndianReadUInt32(this Byte[] bytes, Int32 offset)
+        {
+            return (UInt32)(
+                (0xFF000000U & (bytes[offset + 3] << 24)) |
+                (0x00FF0000U & (bytes[offset + 2] << 16)) |
+                (0x0000FF00U & (bytes[offset + 1] << 8)) |
+                (0x000000FFU & (bytes[offset])));
+        }
+        public static String ToHexString(this Byte[] bytes, Int32 offset, Int32 length)
+        {
+            Char[] hexBuffer = new Char[length * 2];
+
+            Int32 hexOffset = 0;
+            Int32 offsetLimit = offset + length;
+
+            while (offset < offsetLimit)
+            {
+                String hex = bytes[offset].ToString("X2");
+                hexBuffer[hexOffset] = hex[0];
+                hexBuffer[hexOffset + 1] = hex[1];
+                offset++;
+                hexOffset += 2;
+            }
+            return new String(hexBuffer);
+        }
+        public static String ToHexString(this Char[] chars, Int32 offset, Int32 length)
+        {
+            Char[] hexBuffer = new Char[length * 2];
+
+            Int32 hexOffset = 0;
+            Int32 offsetLimit = offset + length;
+
+            while (offset < offsetLimit)
+            {
+                String hex = ((Byte)chars[offset]).ToString("X2");
+                hexBuffer[hexOffset] = hex[0];
+                hexBuffer[hexOffset + 1] = hex[1];
+                offset++;
+                hexOffset += 2;
+            }
+            return new String(hexBuffer);
+        }
+        public static void ParseHex(this Byte[] bytes, Int32 offset, String hexString, Int32 hexStringOffset, Int32 hexStringLength)
+        {
+            if (hexStringLength % 2 == 1) throw new InvalidOperationException(String.Format(
+                 "The input hex string length must be even but you provided an odd length {0}", hexStringLength));
+            Int32 hexStringLimit = hexStringOffset + hexStringLength;
+            while (hexStringOffset < hexStringLimit)
+            {
+                bytes[offset++] = (Byte)(
+                    (Sos.HexValue(hexString[hexStringOffset]) << 4) +
+                    Sos.HexValue(hexString[hexStringOffset + 1]));
+                hexStringOffset += 2;
+            }
+        }
+    }
     public static class ListExtensions
     {
         public static String ToDataString<T>(this List<T> list)
@@ -387,9 +715,15 @@ namespace More
     {
         public static readonly DateTime UnixZeroTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
-        public static double ToUnixTime(this DateTime dateTime)
+        /*
+        public static double ToUnixTimeDouble(this DateTime dateTime)
         {
             return (double)(dateTime - UnixZeroTime).TotalSeconds;
+        }
+        */
+        public static UInt32 ToUnixTime(this DateTime dateTime)
+        {
+            return (UInt32)(dateTime - UnixZeroTime).TotalSeconds;
         }
     }
     public static class StopwatchExtensions
@@ -479,16 +813,8 @@ namespace More
         {
             if (socket != null)
             {
-                try
-                {
-                    if (socket.Connected)
-                    {
-                        socket.Shutdown(SocketShutdown.Both);
-                    }
-                }
-                catch (Exception e)
-                {
-                }
+                try { if (socket.Connected) { socket.Shutdown(SocketShutdown.Both); } }
+                catch (Exception) { }
                 socket.Close();
             }
         }

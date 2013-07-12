@@ -16,14 +16,14 @@ namespace More.Net
 
     public class PcapGlobalHeader : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
-            new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "MagicNumber"),
-            new SimpleUInt16Reflector(typeof(PcapGlobalHeader), "CurrentVersionMajor"),
-            new SimpleUInt16Reflector(typeof(PcapGlobalHeader), "CurrentVersionMinor"),
-            new SimpleInt32Reflector (typeof(PcapGlobalHeader), "gmtToLocalCorrection"),
-            new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "timestampSigFigs"),
-            new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "maxPacketLength"),
-            new SimpleEnumReflector  (typeof(PcapGlobalHeader), "dataLinkType", typeof(PcapDataLinkType)),
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
+            new BigEndianUInt32Reflector(typeof(PcapGlobalHeader), "MagicNumber"),
+            new BigEndianUInt16Reflector(typeof(PcapGlobalHeader), "CurrentVersionMajor"),
+            new BigEndianUInt16Reflector(typeof(PcapGlobalHeader), "CurrentVersionMinor"),
+            new BigEndianInt32Reflector (typeof(PcapGlobalHeader), "gmtToLocalCorrection"),
+            new BigEndianUInt32Reflector(typeof(PcapGlobalHeader), "timestampSigFigs"),
+            new BigEndianUInt32Reflector(typeof(PcapGlobalHeader), "maxPacketLength"),
+            new BigEndianUnsignedEnumReflector<PcapDataLinkType>(typeof(PcapGlobalHeader), "dataLinkType", 4),
         });
 
         public const UInt32 MagicNumber         = 0xa1b2c3d4;
@@ -48,11 +48,11 @@ namespace More.Net
 
     public class PcapPacket : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
-            new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "timestampSeconds"),
-            new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "timestampMicroseconds"),
-            new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "captureLength"),
-            new SimpleUInt32Reflector(typeof(PcapGlobalHeader), "actualLength"),
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
+            new BigEndianUInt32Reflector(typeof(PcapGlobalHeader), "timestampSeconds"),
+            new BigEndianUInt32Reflector(typeof(PcapGlobalHeader), "timestampMicroseconds"),
+            new BigEndianUInt32Reflector(typeof(PcapGlobalHeader), "captureLength"),
+            new BigEndianUInt32Reflector(typeof(PcapGlobalHeader), "actualLength"),
         });
 
         public UInt32 timestampSeconds;

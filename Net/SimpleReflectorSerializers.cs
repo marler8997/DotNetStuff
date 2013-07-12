@@ -5,6 +5,7 @@ using More;
 
 namespace More.Net
 {
+    /*
     public class SimpleInt32Reflector : ClassFieldReflector
     {
         public SimpleInt32Reflector(Type typeThatContainsThisField, String fieldName)
@@ -38,7 +39,7 @@ namespace More.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, (Int32)fieldInfo.GetValue(instance));
         }
@@ -73,7 +74,7 @@ namespace More.Net
             fieldInfo.SetValue(instance, value);
             return offset + 2;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, (UInt16)fieldInfo.GetValue(instance));
         }
@@ -112,7 +113,7 @@ namespace More.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, (UInt32)fieldInfo.GetValue(instance));
         }
@@ -153,9 +154,10 @@ namespace More.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             return String.Format("{0}:{1}", fieldInfo.Name, fieldInfo.GetValue(instance));
         }
     }
+    */
 }

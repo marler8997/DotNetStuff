@@ -91,7 +91,7 @@ namespace More.Net.Mount3Procedure
     }
     public class MountCall : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrStringReflector(typeof(MountCall), "directory", Mount3.MaxPathLength),
         });
 
@@ -119,7 +119,7 @@ namespace More.Net.Mount3Procedure
             new XdrVarLengthArray<XdrEnum<RpcAuthenticationFlavor>>(typeof(MountReply), "authenticationFlavors", -1),
         };
 
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Nfs3Procedure.Status>(
                 new XdrEnumReflector(typeof(MountReply), "status", typeof(Nfs3Procedure.Status)),
                 VoidReflector.ReflectorsArray,

@@ -16,7 +16,7 @@ namespace More.Net
     }
     public class RpcProgramHeader : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(RpcProgramHeader), "rpcVersion"),
             new XdrUInt32Reflector(typeof(RpcProgramHeader), "program"),
             new XdrUInt32Reflector(typeof(RpcProgramHeader), "programVersion"),
@@ -45,7 +45,7 @@ namespace More.Net
     };
     public class RpcMessage : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(RpcMessage), "transmissionID"),
 
             new XdrDescriminatedUnionReflector<RpcMessageType>(
@@ -138,7 +138,7 @@ namespace More.Net
 
             if (offset != totalMessageLength + 4)
                 throw new InvalidOperationException(String.Format("[CodeBug] The caclulated serialization length of RpcMessage '{0}' was {1} but actual size was {2}",
-                    DataString(), totalMessageLength, offset));
+                    ISerializerString.DataString(this), totalMessageLength, offset));
 
             //
             // Insert the record header
@@ -168,7 +168,7 @@ namespace More.Net
 
             if (offset != totalMessageLength)
                 throw new InvalidOperationException(String.Format("[CodeBug] The caclulated serialization length of RpcMessage '{0}' was {1} but actual size was {2}",
-                    DataString(), totalMessageLength, offset));
+                    ISerializerString.DataString(this), totalMessageLength, offset));
 
             socket.SendTo(buffer.array, 0, totalMessageLength, SocketFlags.None, endPoint);
         }

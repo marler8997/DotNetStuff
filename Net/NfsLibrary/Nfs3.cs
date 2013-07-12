@@ -190,7 +190,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class Time// : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(Time), "seconds"),
             new XdrUInt32Reflector(typeof(Time), "nanoseconds"),
         });
@@ -208,7 +208,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class SizeAndTimes
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt64Reflector        (typeof(SizeAndTimes), "fileSize"),
             new ClassFieldReflectors<Time>(typeof(SizeAndTimes), "lastModifyTime", Time.memberSerializers),
             new ClassFieldReflectors<Time>(typeof(SizeAndTimes), "lastAttributeModifyTime", Time.memberSerializers),
@@ -227,7 +227,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class FileAttributes
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrEnumReflector  (typeof(FileAttributes), "fileType", typeof(FileType)),
             new XdrEnumReflector  (typeof(FileAttributes), "protectionMode", typeof(ModeFlags)),
             new XdrUInt32Reflector(typeof(FileAttributes), "hardLinks"),
@@ -295,14 +295,14 @@ namespace More.Net.Nfs3Procedure
     }
     public class BeforeAndAfterAttributes
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(BeforeAndAfterAttributes), "beforeIncluded"),
-                new IReflectors(new ClassFieldReflectors<SizeAndTimes>  (typeof(BeforeAndAfterAttributes), "before", SizeAndTimes.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<SizeAndTimes>  (typeof(BeforeAndAfterAttributes), "before", SizeAndTimes.memberSerializers)),
                 VoidReflector.Reflectors),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(BeforeAndAfterAttributes), "afterIncluded"),
-                new IReflectors(new ClassFieldReflectors<FileAttributes>(typeof(BeforeAndAfterAttributes), "after", FileAttributes.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<FileAttributes>(typeof(BeforeAndAfterAttributes), "after", FileAttributes.memberSerializers)),
                 VoidReflector.Reflectors),            
         });
 
@@ -333,10 +333,10 @@ namespace More.Net.Nfs3Procedure
     }
     public class OptionalFileAttributes
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(OptionalFileAttributes), "fileAttributesIncluded"),
-                new IReflectors(new ClassFieldReflectors<FileAttributes>(typeof(OptionalFileAttributes), "fileAttributes", FileAttributes.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<FileAttributes>(typeof(OptionalFileAttributes), "fileAttributes", FileAttributes.memberSerializers)),
                 VoidReflector.Reflectors
             )
         });
@@ -366,10 +366,10 @@ namespace More.Net.Nfs3Procedure
     }
     public class OptionalFileHandle
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(OptionalFileHandle), "fileHandleIncluded"),
-                new IReflectors(new XdrOpaqueVarLengthReflector(typeof(OptionalFileHandle), "fileHandle", Nfs3.FileHandleMaxSize)),
+                new Reflectors(new XdrOpaqueVarLengthReflector(typeof(OptionalFileHandle), "fileHandle", Nfs3.FileHandleMaxSize)),
                 VoidReflector.Reflectors
             )
         });
@@ -394,35 +394,35 @@ namespace More.Net.Nfs3Procedure
     }
     public class SetAttributesStruct
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setMode"),
-                new IReflectors(new XdrEnumReflector             (typeof(SetAttributesStruct), "mode", typeof(ModeFlags))),
+                new Reflectors(new XdrEnumReflector             (typeof(SetAttributesStruct), "mode", typeof(ModeFlags))),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setUid"),
-                new IReflectors(new XdrUInt32Reflector           (typeof(SetAttributesStruct), "uid")),
+                new Reflectors(new XdrUInt32Reflector           (typeof(SetAttributesStruct), "uid")),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setGid"),
-                new IReflectors(new XdrUInt32Reflector           (typeof(SetAttributesStruct), "gid")),
+                new Reflectors(new XdrUInt32Reflector           (typeof(SetAttributesStruct), "gid")),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setSize"),
-                new IReflectors(new XdrUInt64Reflector           (typeof(SetAttributesStruct), "size")),
+                new Reflectors(new XdrUInt64Reflector           (typeof(SetAttributesStruct), "size")),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setLastAccessTime"),
-                new IReflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastAccessTime", Time.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastAccessTime", Time.memberSerializers)),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setLastModifyTime"),
-                new IReflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastModifyTime", Time.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastModifyTime", Time.memberSerializers)),
                 VoidReflector.Reflectors
             ),
         });
@@ -499,7 +499,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class GetFileAttributesCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(GetFileAttributesCall), "handle", Nfs3.FileHandleMaxSize),
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
@@ -517,7 +517,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class GetFileAttributesReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(GetFileAttributesReply), "status", typeof(Status)),
                 VoidReflector.ReflectorsArray,
@@ -560,12 +560,12 @@ namespace More.Net.Nfs3Procedure
     */
     public class SetFileAttributesCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector                 (typeof(SetFileAttributesCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new ClassFieldReflectors<SetAttributesStruct>(typeof(SetFileAttributesCall), "setAttributes", SetAttributesStruct.memberSerializers),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(SetFileAttributesCall), "checkGuardTime"),
-                new IReflectors(new ClassFieldReflectors<Time>(typeof(SetFileAttributesCall), "guardTime", Time.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetFileAttributesCall), "guardTime", Time.memberSerializers)),
                 VoidReflector.Reflectors),
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
@@ -597,7 +597,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class SetFileAttributesReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrEnumReflector(typeof(SetFileAttributesReply), "status", typeof(Status)),
             new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(SetFileAttributesReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),
         });
@@ -631,7 +631,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class LookupCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(LookupCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(LookupCall), "fileName", -1),
         });
@@ -652,7 +652,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class LookupReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(LookupReply), "status", typeof(Status)),
                 new IReflector[] {new ClassFieldReflectors<OptionalFileAttributes>(typeof(LookupReply), "optionalFailAttributes", OptionalFileAttributes.memberSerializers)},
@@ -715,7 +715,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class AccessCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(AccessCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new XdrEnumReflector           (typeof(AccessCall), "accessFlags", typeof(AccessFlags)),
         });
@@ -736,7 +736,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class AccessReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(AccessReply), "status", typeof(Status)),
                 new IReflector[] {new ClassFieldReflectors<OptionalFileAttributes>(typeof(AccessReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
@@ -785,7 +785,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class ReadCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(ReadCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new XdrUInt64Reflector         (typeof(ReadCall), "offset"),
             new XdrUInt32Reflector         (typeof(ReadCall), "count"),
@@ -809,7 +809,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class ReadReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(ReadReply), "status", typeof(Status)),
                 new IReflector[] {new ClassFieldReflectors<OptionalFileAttributes>(typeof(ReadReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
@@ -870,7 +870,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class WriteCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(WriteCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new XdrUInt64Reflector         (typeof(WriteCall), "offset"),
             new XdrUInt32Reflector         (typeof(WriteCall), "count"),
@@ -903,7 +903,7 @@ namespace More.Net.Nfs3Procedure
         private static readonly ClassFieldReflectors<BeforeAndAfterAttributes> fileAttributesSerializer =
             new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(WriteReply), "fileAttributes", BeforeAndAfterAttributes.memberSerializers);
 
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector                             (typeof(WriteReply), "status", typeof(Status)),
                 new IReflector[] {fileAttributesSerializer},
@@ -967,7 +967,7 @@ namespace More.Net.Nfs3Procedure
         public static ClassFieldReflectors<SetAttributesStruct> setAttributesSerializer =
             new ClassFieldReflectors<SetAttributesStruct>(typeof(CreateCall), "setAttributes", SetAttributesStruct.memberSerializers);
 
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(CreateCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(CreateCall), "newFileName", -1),
             new XdrDescriminatedUnionReflector<CreateModeEnum>(
@@ -1006,7 +1006,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class CreateReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector                                   (typeof(CreateReply), "status", typeof(Status)),
                 VoidReflector.ReflectorsArray,
@@ -1061,7 +1061,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class MkdirCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(MkdirCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(MkdirCall), "newDirectoryName", -1),
             new ClassFieldReflectors<SetAttributesStruct>(typeof(MkdirCall), "setAttributes", SetAttributesStruct.memberSerializers),
@@ -1086,7 +1086,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class MkdirReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector                                   (typeof(MkdirReply), "status", typeof(Status)),
                 VoidReflector.ReflectorsArray,
@@ -1140,7 +1140,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class SymLinkCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(SymLinkCall), "linkToHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(SymLinkCall), "linkName", -1),
             new ClassFieldReflectors<SetAttributesStruct>(typeof(SymLinkCall), "attributes", SetAttributesStruct.memberSerializers),
@@ -1168,7 +1168,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class SymLinkReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector                                   (typeof(SymLinkReply), "status", typeof(Status)),
                 VoidReflector.ReflectorsArray,
@@ -1220,7 +1220,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class RemoveCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(RemoveCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(RemoveCall), "fileName", -1),
         });
@@ -1241,7 +1241,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class RemoveReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrEnumReflector                                 (typeof(RemoveReply), "status", typeof(Status)),
             new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(RemoveReply), "directoryAttributes", BeforeAndAfterAttributes.memberSerializers)
         });
@@ -1295,7 +1295,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class RenameCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(RenameCall), "oldDirectoryHandle", Nfs3.FileHandleMaxSize),
             new XdrStringReflector         (typeof(RenameCall), "oldName", -1),
             new XdrOpaqueVarLengthReflector(typeof(RenameCall), "newDirectoryHandle", Nfs3.FileHandleMaxSize),
@@ -1323,7 +1323,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class RenameReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrEnumReflector                                 (typeof(RenameReply), "status", typeof(Status)),
             new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(RenameReply), "oldDirectoryAttributes", BeforeAndAfterAttributes.memberSerializers),
             new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(RenameReply), "newDirectoryAttributes", BeforeAndAfterAttributes.memberSerializers),
@@ -1359,7 +1359,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class ReadDirPlusCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector  (typeof(ReadDirPlusCall), "directoryHandle", Nfs3.FileHandleMaxSize),
             new XdrUInt64Reflector           (typeof(ReadDirPlusCall), "cookie"),
             new XdrOpaqueFixedLengthReflector(typeof(ReadDirPlusCall), "cookieVerifier", Nfs3.CookieVerifierSize),
@@ -1406,13 +1406,13 @@ namespace More.Net.Nfs3Procedure
 +        }*/
     public class EntryPlus : ISerializerCreator
     {
-        static IReflector NextEntryReflectorCreator(IReflectors reflectorsReference)
+        static IReflector NextEntryReflectorCreator(Reflectors reflectorsReference)
         {
             return new XdrBooleanDescriminateReflector(
 
                 new XdrBooleanReflector(typeof(EntryPlus), "nextEntryIncluded"),
 
-                new IReflectors(new ClassFieldReflectors<EntryPlus>(typeof(EntryPlus), "nextEntry", reflectorsReference)),
+                new Reflectors(new ClassFieldReflectors<EntryPlus>(typeof(EntryPlus), "nextEntry", reflectorsReference)),
 
                 VoidReflector.Reflectors);
         }
@@ -1420,7 +1420,7 @@ namespace More.Net.Nfs3Procedure
         //
         // These serializers have to be created weirdly because there are some circular references in it
         //
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt64Reflector                           (typeof(EntryPlus), "fileID"),
             new XdrStringReflector                           (typeof(EntryPlus), "fileName", -1),
             new XdrUInt64Reflector                           (typeof(EntryPlus), "cookie"),
@@ -1468,13 +1468,13 @@ namespace More.Net.Nfs3Procedure
             new XdrOpaqueFixedLengthReflector                  (typeof(ReadDirPlusReply), "cookieVerifier", Nfs3.CookieVerifierSize),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(ReadDirPlusReply), "entriesIncluded"),
-                new IReflectors(new IReflector[] {
+                new Reflectors(new IReflector[] {
                     new ClassFieldReflectors<EntryPlus>(typeof(ReadDirPlusReply), "entry", EntryPlus.memberSerializers),
                     new XdrBooleanReflector               (typeof(ReadDirPlusReply), "endOfFile")}),
                 VoidReflector.Reflectors),
         };
 
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(ReadDirPlusReply), "status", typeof(Status)),
                 new IReflector[] {new ClassFieldReflectors<OptionalFileAttributes>(typeof(ReadDirPlusReply), "optionalDirectoryAttributes", OptionalFileAttributes.memberSerializers)}, 
@@ -1527,7 +1527,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class FileSystemStatusCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(FileSystemStatusCall), "fileSystemRoot", Nfs3.FileHandleMaxSize),
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
@@ -1556,7 +1556,7 @@ namespace More.Net.Nfs3Procedure
             new XdrUInt32Reflector(typeof(FileSystemStatusReply), "fileSystemVolatility"),
         };
 
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(FileSystemStatusReply), "status", typeof(Status)), new IReflector[] {
                 new ClassFieldReflectors<OptionalFileAttributes>(typeof(FileSystemStatusReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
@@ -1619,7 +1619,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class FSInfoCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(FSInfoCall), "handle", Nfs3.FileHandleMaxSize),
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
@@ -1637,7 +1637,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class FSInfoReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(FSInfoReply), "status", typeof(Status)), new IReflector[] {
                 new ClassFieldReflectors<OptionalFileAttributes>(typeof(FSInfoReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers)},
@@ -1733,7 +1733,7 @@ namespace More.Net.Nfs3Procedure
     */
     public class CommitCall : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(CommitCall), "fileHandle", Nfs3.FileHandleMaxSize),
             new XdrUInt64Reflector         (typeof(CommitCall), "offset"),
             new XdrUInt32Reflector         (typeof(CommitCall), "count"),
@@ -1757,7 +1757,7 @@ namespace More.Net.Nfs3Procedure
     }
     public class CommitReply : ISerializerCreator
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrDescriminatedUnionReflector<Status>(
                 new XdrEnumReflector(typeof(CommitReply), "status", typeof(Status)), new IReflector[] {
                     new ClassFieldReflectors<BeforeAndAfterAttributes>(typeof(CommitReply), "beforeAndAfter", BeforeAndAfterAttributes.memberSerializers),

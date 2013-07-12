@@ -15,7 +15,7 @@ namespace More.Net
 
     public class RpcCredentials : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrEnumReflector           (typeof(RpcCredentials), "authenticationFlavor", typeof(RpcAuthenticationFlavor)),
             new XdrOpaqueVarLengthReflector(typeof(RpcCredentials), "body", 400),
         });
@@ -56,7 +56,7 @@ namespace More.Net
     }
     public class RpcUnixCredentials : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(RpcUnixCredentials), "stamp"),
             new XdrStringReflector(typeof(RpcUnixCredentials), "machineName", 255),
             new XdrUInt32Reflector(typeof(RpcUnixCredentials), "uid"),
@@ -89,7 +89,7 @@ namespace More.Net
     }
     public class RpcVerifier : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrEnumReflector           (typeof(RpcVerifier), "authenticationFlavor", typeof(RpcAuthenticationFlavor)),
             new XdrOpaqueVarLengthReflector(typeof(RpcVerifier), "body", 400),
         });

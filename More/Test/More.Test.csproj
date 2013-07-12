@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsciiLineParserTest.cs" />
+    <Compile Include="TestByteArraySerialization.cs" />
     <Compile Include="CommandLineParserTest.cs" />
     <Compile Include="ExtensionTests.cs" />
     <Compile Include="IniParserTests.cs" />
@@ -57,6 +58,7 @@
     <Compile Include="SosUtil.cs" />
     <Compile Include="SosVerification.cs" />
     <Compile Include="TestPopSocket.cs" />
+    <Compile Include="TestSha1.cs" />
     <Compile Include="WaitEventTest.cs" />
   </ItemGroup>
   <ItemGroup>

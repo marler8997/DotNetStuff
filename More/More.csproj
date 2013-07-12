@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -35,13 +36,14 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BigEndianSerialization.cs" />
     <Compile Include="ContextTypeFinder.cs" />
+    <Compile Include="ArrayReflectors.cs" />
     <Compile Include="Enumerators.cs" />
     <Compile Include="IDataHandler.cs" />
+    <Compile Include="IRandomGenerator.cs" />
     <Compile Include="LfdFormatException.cs" />
     <Compile Include="LfdLine.cs" />
     <Compile Include="OffsetLineParser.cs" />
@@ -59,6 +61,7 @@
     <Compile Include="SelectSocketTunnels.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Sha1.cs" />
     <Compile Include="Sos.cs" />
     <Compile Include="SosTypes.cs" />
     <Compile Include="StaticData.cs" />

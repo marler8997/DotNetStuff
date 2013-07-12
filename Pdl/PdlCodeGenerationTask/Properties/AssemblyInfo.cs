@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PdlCodeGenerator")]
+[assembly: AssemblyTitle("PdlCodeGenerationTask")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("PdlCodeGenerator")]
+[assembly: AssemblyProduct("PdlCodeGenerationTask")]
 [assembly: AssemblyCopyright("Copyright © Microsoft 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("ebdc231b-df0b-4917-bfd4-0318ef6c6c91")]
+[assembly: Guid("bc4bf078-4ebe-4a41-abea-2312b4a72698")]
 
 // Version information for an assembly consists of the following four values:
 //

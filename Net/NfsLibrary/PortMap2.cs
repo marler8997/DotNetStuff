@@ -74,7 +74,7 @@ namespace More.Net.PortMap2Procedure
     }
     public class GetPortCall : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(GetPortCall), "program"),
             new XdrUInt32Reflector(typeof(GetPortCall), "programVersion"),
             new XdrUInt32Reflector(typeof(GetPortCall), "transportProtocol"),
@@ -101,7 +101,7 @@ namespace More.Net.PortMap2Procedure
     }
     public class GetPortReply : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrUInt32Reflector(typeof(GetPortReply), "port"),
         });
 

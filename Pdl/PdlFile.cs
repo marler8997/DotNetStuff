@@ -1,35 +1,42 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace More.Pdl
 {
     public class PdlFile
     {
-        readonly Dictionary<String, EnumOrFlagsDefinition> enumOrFlagsDefinitionDictionary =
+        public const String InputShaPrefix = "InputSha ";
+        public const Int32 ShaByteLength = 20;
+        public const Int32 ShaHexStringLength = ShaByteLength * 2;
+
+        //
+        // Enum Definitions
+        //
+        readonly Dictionary<String, EnumOrFlagsDefinition> enumOrFlagsDefinitionMap =
             new Dictionary<String, EnumOrFlagsDefinition>();
         readonly List<EnumOrFlagsDefinition> enumDefinitions = new List<EnumOrFlagsDefinition>();
         readonly List<EnumOrFlagsDefinition> flagsDefinitions = new List<EnumOrFlagsDefinition>();
 
-        public readonly List<ObjectDefinition> objectDefinitions = new List<ObjectDefinition>();
-
         public IEnumerable<EnumOrFlagsDefinition> EnumOrFlagsDefinitions
-        { get { return enumOrFlagsDefinitionDictionary.Values; } }
+        { get { return enumOrFlagsDefinitionMap.Values; } }
         public IEnumerable<EnumOrFlagsDefinition> EnumDefinitions
         { get { return enumDefinitions; } }
         public IEnumerable<EnumOrFlagsDefinition> FlagsDefinitions
         { get { return flagsDefinitions; } }
 
-        public String MakeDefinitionKey(ObjectDefinition objectDefinedIn, String typeNameLowerInvariant)
-        {
-            return (objectDefinedIn == null) ? typeNameLowerInvariant :
-                String.Format("{0}.{1}", objectDefinedIn.nameLowerInvariantCase, typeNameLowerInvariant);
-        }
+        //
+        // Object Definitions
+        //
+        readonly List<ObjectDefinition> objectDefinitions = new List<ObjectDefinition>();
+        readonly Dictionary<String, ObjectDefinition> objectDefinitionMap = new Dictionary<String, ObjectDefinition>();
+        public IEnumerable<ObjectDefinition> ObjectDefinitions { get { return objectDefinitions; } }
 
         // returns definition key
-        public String Add(EnumOrFlagsDefinition enumOrFlagsDefinition, ObjectDefinition objectDefinedIn)
+        public void AddEnumOrFlagsDefinition(EnumOrFlagsDefinition enumOrFlagsDefinition)
         {
-            String definitionKey = MakeDefinitionKey(objectDefinedIn, enumOrFlagsDefinition.typeNameLowerInvariantCase);
-            enumOrFlagsDefinitionDictionary.Add(definitionKey, enumOrFlagsDefinition);
+            enumOrFlagsDefinitionMap.Add(enumOrFlagsDefinition.globalReferenceNameLowerInvariant, enumOrFlagsDefinition);
             if (enumOrFlagsDefinition.isFlagsDefinition)
             {
                 flagsDefinitions.Add(enumOrFlagsDefinition);
@@ -38,23 +45,51 @@ namespace More.Pdl
             {
                 enumDefinitions.Add(enumOrFlagsDefinition);
             }
-            return definitionKey;
         }
 
-        public EnumOrFlagsDefinition TryGetDefinition(ObjectDefinition currentObject, String typeNameLowerInvariant)
+        public EnumOrFlagsDefinition TryGetEnumOrFlagsDefinition(ObjectDefinition currentObject, String typeNameLowerInvariant)
         {
             EnumOrFlagsDefinition definition;
-            //
-            // Try to get the defintion from any enum defined in the command itself
-            //
-            if (enumOrFlagsDefinitionDictionary.TryGetValue(MakeDefinitionKey(currentObject, typeNameLowerInvariant), out definition))
+            String nameFromCurrentObject = currentObject.globalReferenceNameLowerInvariant + "." + typeNameLowerInvariant;
+
+            // Try to get the defintion from any enum defined in the current object
+            if (enumOrFlagsDefinitionMap.TryGetValue(nameFromCurrentObject, out definition))
             {
                 return definition;
             }
-            //
             // Try to get the definition from a global enum definition
-            //
-            if (enumOrFlagsDefinitionDictionary.TryGetValue(typeNameLowerInvariant, out definition))
+            if (enumOrFlagsDefinitionMap.TryGetValue(typeNameLowerInvariant, out definition))
+            {
+                return definition;
+            }
+
+            return null;
+        }
+
+        // returns definition key
+        public void AddObjectDefinition(ObjectDefinition objectDefinition)
+        {
+            if (objectDefinitionMap.ContainsKey(objectDefinition.globalReferenceNameLowerInvariant))
+            {
+                throw new InvalidOperationException(String.Format("Object '{0}' already exists (globalkey='{1}')",
+                    objectDefinition.name, objectDefinition.globalReferenceNameLowerInvariant));
+            }
+
+            objectDefinitionMap.Add(objectDefinition.globalReferenceNameLowerInvariant, objectDefinition);
+            objectDefinitions.Add(objectDefinition);
+        }
+        public ObjectDefinition TryGetObjectDefinition(ObjectDefinition currentObject, String typeNameLowerInvariant)
+        {
+            ObjectDefinition definition;
+            String nameFromCurrentObject = currentObject.globalReferenceNameLowerInvariant + "." + typeNameLowerInvariant;
+
+            // Try to get the defintion from any object defined in the current object
+            if (objectDefinitionMap.TryGetValue(nameFromCurrentObject, out definition))
+            {
+                return definition;
+            }
+            // Try to get the definition from a global object definition
+            if (objectDefinitionMap.TryGetValue(typeNameLowerInvariant, out definition))
             {
                 return definition;
             }
@@ -97,10 +132,11 @@ namespace More.Pdl
         public readonly Boolean isGlobalType;
 
         public readonly PdlType underlyingIntegerType;
+        public readonly Byte byteCount;
 
         public readonly String typeName;
         public readonly String typeNameLowerInvariantCase;
-        public readonly String definitionKey;
+        public readonly String globalReferenceNameLowerInvariant;
 
         public readonly List<EnumValueDefinition> enumValues;
         public readonly List<FlagsValueDefinition> flagValues;
@@ -108,17 +144,16 @@ namespace More.Pdl
         public EnumOrFlagsDefinition(PdlFile pdlFile, Boolean isFlagsDefinition, ObjectDefinition objectDefinedIn,
             PdlType underlyingIntegerType, String typeName)
         {
-            if (!underlyingIntegerType.IsValidUnderlyingEnumIntegerType()) throw new InvalidOperationException(String.Format(
-                 "'{0}' is not a valid underlying integer type for an enum or flags definition", underlyingIntegerType));
-
             this.isFlagsDefinition = isFlagsDefinition;
             this.isGlobalType = (objectDefinedIn == null);
 
             this.underlyingIntegerType = underlyingIntegerType;
+            this.byteCount = underlyingIntegerType.IntegerTypeByteCount();
 
             this.typeName = typeName;
             this.typeNameLowerInvariantCase = typeName.ToLowerInvariant();
-            this.definitionKey = pdlFile.Add(this, objectDefinedIn);
+            this.globalReferenceNameLowerInvariant = (objectDefinedIn == null) ? typeNameLowerInvariantCase :
+                (objectDefinedIn.globalReferenceNameLowerInvariant + "." + typeNameLowerInvariantCase);
 
             //
             // Add the definition to the static flags or enum definitions list
@@ -135,9 +170,10 @@ namespace More.Pdl
             }
 
             //
-            // Add the defintion to the command
+            // Add the defintion to the object and the pdl file
             //
-            //if (objectDefinedIn != null) objectDefinedIn.ADefinition(this);
+            if (objectDefinedIn != null) objectDefinedIn.AddEnumOrFlagDefinition(this);
+            pdlFile.AddEnumOrFlagsDefinition(this);
         }
         public void Add(EnumValueDefinition definition)
         {

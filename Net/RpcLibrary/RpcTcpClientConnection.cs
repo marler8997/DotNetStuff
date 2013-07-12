@@ -54,7 +54,7 @@ namespace More.Net
 
             if (offset != contentMaxOffset)
                 throw new InvalidOperationException(String.Format("Deserialization of rpc message '{0}' as the following '{1}' resulted in an offset of {2}, but the record had {3} bytes",
-                    reply.DataString(), procedure.responseSerializer.DataString(), offset, contentMaxOffset));
+                    ISerializerString.DataString(reply), ISerializerString.DataString(procedure.responseSerializer), offset, contentMaxOffset));
         }
         public void BindToPrivelegedPort()
         {

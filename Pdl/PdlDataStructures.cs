@@ -53,36 +53,114 @@ namespace More.Pdl
         }
         //public abstract void GenerateReflectorConstructor(TextWriter writer, Int32 tabs, String destination);
     }
+
     public class ObjectDefinition
     {
         public readonly String name;
-        public readonly String nameLowerInvariantCase;
+        public readonly String nameLowerInvariant;
+
+        public readonly String globalReferenceNameLowerInvariant;
 
         public readonly ObjectDefinition objectDefinedIn;
 
-        //List<EnumOrFlagsDefinition> enumOrFlagDefinitions;
+        public List<EnumOrFlagsDefinition> enumOrFlagDefinitions;
+        public List<ObjectDefinition> objectDefinitions;
 
-        public readonly List<ObjectDefinitionField> fields;
+        readonly List<ObjectDefinitionField> fields;
+        public List<ObjectDefinitionField> Fields
+        {
+            get
+            {
+                if (fixedSerializationLength == -2) throw new InvalidOperationException(
+                    "Cannot access fields until serialization length has been calculated");
+                return fields;
+            }
+        }
         //public int firstOptionalFieldIndex;
 
-        public ObjectDefinition(String name, String nameLowerInvariantCase, ObjectDefinition objectDefinedIn)
+        int fixedSerializationLength;
+        public int FixedSerializationLength
+        {
+            get
+            {
+                if (fixedSerializationLength == -2) throw new InvalidOperationException(
+                    "Cannot access FixedSerializationLength until serialization length has been calculated");
+                return fixedSerializationLength;
+            }
+        }
+
+        public ObjectDefinition(PdlFile pdlFile, String name, String nameLowerInvariant, ObjectDefinition objectDefinedIn)
         {
             this.name = name;
-            this.nameLowerInvariantCase = nameLowerInvariantCase;
+            this.nameLowerInvariant = nameLowerInvariant;
+
+            this.globalReferenceNameLowerInvariant = (objectDefinedIn == null) ? nameLowerInvariant :
+                (objectDefinedIn.globalReferenceNameLowerInvariant + "." + nameLowerInvariant);
+
+            this.objectDefinedIn = objectDefinedIn;
 
             this.fields = new List<ObjectDefinitionField>();
             //this.firstOptionalFieldIndex = -1;
 
-            this.objectDefinedIn = objectDefinedIn;
+            this.fixedSerializationLength = -2;
+
+            //
+            // Add definition to pdl file and parent object
+            //
+            pdlFile.AddObjectDefinition(this);
+            if (objectDefinedIn != null) objectDefinedIn.AddObjectDefinition(this);
         }
-        /*
         public void AddEnumOrFlagDefinition(EnumOrFlagsDefinition definition)
         {
             if (enumOrFlagDefinitions == null) enumOrFlagDefinitions = new List<EnumOrFlagsDefinition>();
             enumOrFlagDefinitions.Add(definition);
         }
-        */
+        public void AddObjectDefinition(ObjectDefinition definition)
+        {
+            if (objectDefinitions == null) objectDefinitions = new List<ObjectDefinition>();
+            objectDefinitions.Add(definition);
+        }
+        public void Add(ObjectDefinitionField field)
+        {
+            if (fixedSerializationLength != -2) throw new InvalidOperationException(
+                "Cannot add fields after FixedSerializationLength has been calculated");
+            fields.Add(field);
+        }
+        public void CalculateFixedSerializationLength()
+        {
+            if (fixedSerializationLength != -2) throw new InvalidOperationException(
+                "Cannot calculate FixedSerializationLength after it has already been calculated");
 
+            Int32 length = 0;
+            for (int i = 0; i < fields.Count; i++)
+            {
+                ObjectDefinitionField field = fields[i];
+                TypeReference fieldTypeReference = field.typeReference;
+                Int32 fieldFixedSerializationLength = fieldTypeReference.FixedElementSerializationLength;
+                if (fieldFixedSerializationLength < 0)
+                {
+                    this.fixedSerializationLength = -1;
+                    return;
+                }
+
+                PdlArrayType arrayType = fieldTypeReference.arrayType;
+                if (arrayType == null)
+                {
+                    length += fieldFixedSerializationLength;
+                }
+                else
+                {
+                    if (arrayType.type != PdlArraySizeTypeEnum.Fixed)
+                    {
+                        this.fixedSerializationLength = -1;
+                        return;
+                    }
+                    length += (Int32)arrayType.GetFixedArraySize() * fieldFixedSerializationLength;
+                }
+
+            }
+            this.fixedSerializationLength = length;
+        }
         public void WritePdl(TextWriter writer)
         {
             writer.WriteLine(name + " {");

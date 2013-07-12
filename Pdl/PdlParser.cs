@@ -41,21 +41,41 @@ namespace More.Pdl
         {
             Debug(String.Format(fmt, obj));
         }
-        public static TypeReference ParsePacketFieldType(PdlFile pdlFile, LfdReader reader, ObjectDefinition currentObjectDefinition, LfdLine fieldLine, out LfdLine nextLine)
+        public static void ParseObjectFieldLine(PdlFile pdlFile, LfdReader reader, ObjectDefinition currentObjectDefinition, LfdLine fieldLine, out LfdLine nextLine)
         {
-            String typeString = fieldLine.idOriginalCase;
+            //
+            // Check if it is only a definition (enum or flag)
+            //
+            if (fieldLine.idLowerInvariantCase.Equals("enum"))
+            {
+                ParseEnumOrFlagsDefinition(pdlFile, reader, currentObjectDefinition, fieldLine, out nextLine, false);
+                return;
+            }
+            if (fieldLine.idLowerInvariantCase.Equals("flags"))
+            {
+                ParseEnumOrFlagsDefinition(pdlFile, reader, currentObjectDefinition, fieldLine, out nextLine, true);
+                return;
+            }
 
-            PdlArraySizeType arraySizeType;
+            String typeString = fieldLine.idOriginalCase;
+            String typeStringLowerInvariant = fieldLine.idLowerInvariantCase;
+
+            //
+            // The rest of the fields can have arrayParse the Array Size Type
+            //
+            PdlArrayType arrayType;
 
             int indexOfOpenBracket = typeString.IndexOf('[');
             if(indexOfOpenBracket < 0)
             {
-                arraySizeType = PdlArraySizeType.NotAnArray;
+                arrayType = null;
             }
             else
             {
                 String arraySizeTypeString = typeString.Substring(indexOfOpenBracket + 1);
+
                 typeString = typeString.Remove(indexOfOpenBracket);
+                typeStringLowerInvariant = typeStringLowerInvariant.Remove(indexOfOpenBracket);
 
                 int indexOfCloseBracket = arraySizeTypeString.IndexOf(']');
                 if (indexOfCloseBracket < 0)
@@ -64,64 +84,97 @@ namespace More.Pdl
                     throw new ParseException(fieldLine, "The array size type '{0}' had a closing bracket, but the closing bracket was not the last character", arraySizeTypeString);
 
                 arraySizeTypeString = arraySizeTypeString.Remove(indexOfCloseBracket);
-                if (String.IsNullOrEmpty(arraySizeTypeString))
-                {
-                    arraySizeType = PdlArraySizeType.BasedOnCommandSize;
-                }
-                else
-                {
-                    try
-                    {
-                        arraySizeType = (PdlArraySizeType)Enum.Parse(typeof(PdlArraySizeType), arraySizeTypeString);
-                    }
-                    catch (ArgumentException)
-                    {
-                        throw new ParseException(fieldLine,
-                            "The array size type inside the brackets '{0}' is invalid, expected 'Byte','UInt16' or 'UInt32'", arraySizeTypeString);
-                    }
-                }
+                arrayType = PdlArrayType.Parse(fieldLine, arraySizeTypeString);
             }
 
             //
-            // Parse Object Type
+            // Parse object inline definition
             //
-            if (typeString.Equals("Object", StringComparison.InvariantCultureIgnoreCase))
+            if (typeStringLowerInvariant.Equals("object"))
             {
                 VerifyFieldCount(fieldLine, 1);
 
-                String objectFieldName = fieldLine.fields[0];
-                ObjectDefinition objectTypeDefinition = new ObjectDefinition(objectFieldName, objectFieldName.ToLowerInvariant(), currentObjectDefinition);
-                Debug("Entering Object Type Definition '{0}'", objectTypeDefinition.name);
+                String objectDefinitionAndFieldName = fieldLine.fields[0];
 
-                nextLine = reader.ReadLineIgnoreComments();
-                while (nextLine != null && nextLine.parent == fieldLine)
-                {
-                    VerifyMinFieldCount(nextLine, 1);
-                    String fieldName = nextLine.fields[0];
-                    TypeReference fieldType = ParsePacketFieldType(pdlFile, reader, currentObjectDefinition, nextLine, out nextLine);
-                    objectTypeDefinition.fields.Add(new ObjectDefinitionField(fieldType, fieldName));
-                }
-                return new ObjectTypeReference(String.Format("{0}.{1}", currentObjectDefinition.name, objectFieldName),
-                    objectTypeDefinition, arraySizeType);
+                ObjectDefinition fieldObjectDefinition = ParseObjectDefinition(pdlFile, reader, fieldLine, currentObjectDefinition,
+                    objectDefinitionAndFieldName, out nextLine);
+
+                currentObjectDefinition.Add(new ObjectDefinitionField(
+                    new ObjectTypeReference(objectDefinitionAndFieldName, fieldObjectDefinition, arrayType),
+                    objectDefinitionAndFieldName));
+                return;
             }
 
-            nextLine = reader.ReadLineIgnoreComments(); // Read the next line for the caller
+            //
+            // Check if it is a serializer
+            //
+            if (fieldLine.idLowerInvariantCase.Equals("serializer"))
+            {
+                VerifyFieldCount(fieldLine, 2);
+                String serializerLengthTypeString = fieldLine.fields[0];
+                String serializerFieldName = fieldLine.fields[1];
+                PdlArrayType serializerLengthType = PdlArrayType.Parse(fieldLine, serializerLengthTypeString);
 
-            // Check if it is an enum
-            String typeStringLowerInvariant = typeString.ToLowerInvariant();
+                currentObjectDefinition.Add(new ObjectDefinitionField(new SerializerTypeReference(serializerLengthType, arrayType), serializerFieldName));
 
-            EnumOrFlagsDefinition enumDefinition = pdlFile.TryGetDefinition(currentObjectDefinition, typeStringLowerInvariant);
+                nextLine = reader.ReadLineIgnoreComments();
+                return;
+            }
+
+            //
+            // The field is only one line, so read the next line now for the caller
+            //
+            nextLine = reader.ReadLineIgnoreComments();
+
+
+            EnumOrFlagsDefinition enumDefinition = pdlFile.TryGetEnumOrFlagsDefinition(currentObjectDefinition, typeStringLowerInvariant);
             if (enumDefinition != null)
             {
-                return new EnumOrFlagsTypeReference(typeString, enumDefinition, arraySizeType);
+                VerifyFieldCount(fieldLine, 1);
+                currentObjectDefinition.Add(new ObjectDefinitionField(new EnumOrFlagsTypeReference(typeString, enumDefinition, arrayType),
+                    fieldLine.fields[0]));
+                return;
+            }
+
+            // Check if it is an object type
+            ObjectDefinition objectDefinition = pdlFile.TryGetObjectDefinition(currentObjectDefinition, typeStringLowerInvariant);
+            if (objectDefinition != null)
+            {
+                if (fieldLine.fields == null || fieldLine.fields.Length <= 0)
+                {
+                    //
+                    // Add each field from the object definition to the current object definition
+                    //
+                    List<ObjectDefinitionField> objectDefinitionFields = objectDefinition.Fields;
+                    for (int i = 0; i < objectDefinitionFields.Count; i++)
+                    {
+                        ObjectDefinitionField fieldDefinition = objectDefinitionFields[i];
+                        currentObjectDefinition.Add(fieldDefinition);
+                    }
+                }
+                else if(fieldLine.fields.Length == 1)
+                {
+                    currentObjectDefinition.Add(new ObjectDefinitionField(
+                        new ObjectTypeReference(typeString, objectDefinition, arrayType), fieldLine.fields[0]));
+                }
+                else
+                {
+                    throw new ParseException(fieldLine, "Expected line to have 0 or 1 fields but had {0}", fieldLine.fields.Length);
+                }                
+                return;
             }
 
             //
             // It must be an integer type
             //
+            VerifyFieldCount(fieldLine, 1);
+
             PdlType type = PdlTypeExtensions.ParseIntegerType(typeString);
-            return new IntegerTypeReference(type, arraySizeType);
+            currentObjectDefinition.Add(new ObjectDefinitionField(new IntegerTypeReference(type, arrayType), fieldLine.fields[0]));
         }
+
+
+
 
         static void ParseEnumOrFlagsDefinition(PdlFile pdlFile, LfdReader reader, ObjectDefinition currentObjectDefinition, LfdLine enumDefinitionLine, out LfdLine nextLine, Boolean isFlagsDefinition)
         {
@@ -185,10 +238,38 @@ namespace More.Pdl
                 return ParsePdlFile(lfdReader);
             }
         }
+
+
+
+
+
+
+
+        static ObjectDefinition ParseObjectDefinition(PdlFile pdlFile, LfdReader reader, LfdLine objectDefinitionLine, ObjectDefinition currentObjectDefinition, String objectDefinitionName, out LfdLine nextLine)
+        {
+            ObjectDefinition objectDefinition = new ObjectDefinition(pdlFile, objectDefinitionName,
+                objectDefinitionName.ToLowerInvariant(), currentObjectDefinition);
+
+            Debug("Entering Object Definition '{0}'", objectDefinition.name);
+
+            nextLine = reader.ReadLineIgnoreComments();
+            while (nextLine != null && nextLine.parent == objectDefinitionLine)
+            {
+                ParseObjectFieldLine(pdlFile, reader, objectDefinition, nextLine, out nextLine);
+            }
+
+            objectDefinition.CalculateFixedSerializationLength();
+
+            return objectDefinition;
+        }
         public static PdlFile ParsePdlFile(LfdReader reader)
         {
             PdlFile pdlFile = new PdlFile();
-
+            ParsePdlFile(pdlFile, reader);
+            return pdlFile;
+        }
+        public static void ParsePdlFile(PdlFile pdlFile, LfdReader reader)
+        {
             LfdLine nextLine = reader.ReadLineIgnoreComments();
             while (nextLine != null)
             {
@@ -205,49 +286,9 @@ namespace More.Pdl
                     LfdLine currentCommandLine = nextLine;
 
                     VerifyFieldCount(currentCommandLine, 0);
-                    ObjectDefinition currentObject = new ObjectDefinition(currentCommandLine.idOriginalCase,
-                        currentCommandLine.idLowerInvariantCase, null);
-                    Debug("Entering Object '{0}'", currentObject.name);
-
-                    //
-                    // Read the command
-                    //
-                    nextLine = reader.ReadLineIgnoreComments();
-                    while (nextLine != null && nextLine.parent == currentCommandLine)
-                    {
-                        /*
-                        if (nextLine.idLowerInvariantCase.Equals("extensions"))
-                        {
-                            VerifyFieldCount(nextLine, 0);
-                            if (currentObject.extensionOffset != -1)
-                                throw new ParseException(nextLine, "You've specified Extensions twice in the same command '{0}'", currentObject.name);
-                            currentObject.extensionOffset = currentObject.fields.Count;
-                            nextLine = reader.ReadLineIgnoreComments();
-                        }
-                        */
-                        if (nextLine.idLowerInvariantCase.Equals("enum"))
-                        {
-                            ParseEnumOrFlagsDefinition(pdlFile, reader, currentObject, nextLine, out nextLine, false);
-                        }
-                        else if (nextLine.idLowerInvariantCase.Equals("flags"))
-                        {
-                            ParseEnumOrFlagsDefinition(pdlFile, reader, currentObject, nextLine, out nextLine, true);
-                        }
-                        else
-                        {
-                            VerifyMinFieldCount(nextLine, 1);
-                            String fieldName = nextLine.fields[0];
-                            TypeReference fieldType = ParsePacketFieldType(pdlFile, reader, currentObject, nextLine, out nextLine);
-                            currentObject.fields.Add(new ObjectDefinitionField(fieldType, fieldName));
-                        }
-                    }
-
-                    Debug("Exiting Object '{0}'", currentObject.name);
-                    pdlFile.objectDefinitions.Add(currentObject);
+                    ObjectDefinition objectDefinition = ParseObjectDefinition(pdlFile, reader, currentCommandLine, null, currentCommandLine.idOriginalCase, out nextLine);
                 }
             }
-
-            return pdlFile;
         }
     }
 }

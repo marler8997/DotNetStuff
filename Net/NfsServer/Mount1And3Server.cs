@@ -80,7 +80,7 @@ namespace More.Net
                 return new RpcReply(new RpcMismatchInfo(1, 2));
             }
             if (NfsServerLog.warningLogger != null)
-                NfsServerLog.warningLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, callData.DataSmallString(), replyParameters.DataSmallString());
+                NfsServerLog.warningLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, ISerializerString.DataSmallString(callData), ISerializerString.DataSmallString(replyParameters));
             return new RpcReply(RpcVerifier.None);
         }
 

@@ -75,6 +75,8 @@ namespace More.Net
     public interface AccessorControlInterface
     {
         String[] GetServerNames();
+
+
         //
         // A tunnel listener is a port that the accessor listens on.
         // When accessor gets a connection on that port, it opens a tunnel to the TmpServer and forwards all
@@ -83,6 +85,10 @@ namespace More.Net
         void AddTunnelListener(String serverName, Boolean requireTls, String targetHost, UInt16 targetPort, UInt16 listenPort);
         // returns listen port
         UInt16 AddTunnelListener(String serverName, Boolean requireTls, String targetHost, UInt16 targetPort);
+
+
+
+
     }
     public class TmpConnectionManager : AccessorControlInterface
     {

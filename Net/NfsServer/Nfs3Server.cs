@@ -316,8 +316,8 @@ namespace More.Net
             if (NfsServerLog.rpcCallLogger != null)
             {
                 NfsServerLog.rpcCallLogger.WriteLine("[{0}] {1} {2} => {3} {4:0.00} milliseconds", serviceName, nfsMethodName,
-                    printCall ? callData.DataSmallString() : "[Call Ommited From Log]",
-                    printReply ? replyParameters.DataSmallString() : "[Reply Ommited From Log]" ,
+                    printCall ? ISerializerString.DataSmallString(callData) : "[Call Ommited From Log]",
+                    printReply ? ISerializerString.DataSmallString(replyParameters) : "[Reply Ommited From Log]" ,
                     callStopwatchTicks.StopwatchTicksAsDoubleMilliseconds());
             }
             if (NfsServerLog.storePerformance)

@@ -1,0 +1,66 @@
+
+
+
+ProtocolVersion {
+  Byte MajorVersion
+  Byte MinorVersion
+}
+Enum UInt16 CipherSuite {
+  TlsRsaWitNullNull         0x0000
+  TlsRsaWithNullMd5         0x0001
+  TlsRsaWithNullSha         0x0002
+  TlsRsaExportWithRc4_40Md5 0x0003
+  TlsRsaWithAes128CbcSha    0x002F
+  TlsRsaWithAes256CbcSha    0x0035
+}
+Enum Byte CompressionMethod {
+  Null 0
+}
+
+Extension {
+  UInt16 Type
+  Serializer UInt16 Content
+}
+
+
+TlsRecord {
+  Enum Byte ContentTypeEnum {
+    ChangeCipherSpec 20
+    Alert            21
+    Handshake        22
+    ApplicationData  23
+  }
+  ContentTypeEnum ContentType
+  ProtocolVersion
+  Serializer UInt16 Content
+}
+
+TlsHandshakeRecord {
+  Enum Byte TypeEnum {
+    HelloRequest       0
+    ClientHello        1
+    ServerHello        2
+    Certificate        11
+    ServerKeyExchange  12
+    CertificateRequest 13
+    ServerHelloDone    14
+    CertificateVerify  15
+    ClientKeyExchange  16
+    Finished           20
+  }
+  TypeEnum Type
+  Serializer UInt24 Content
+}
+
+
+
+
+ClientHello {
+  ProtocolVersion
+  UInt32 Time
+  Byte[28] Random
+  Byte[Byte] SessionID
+  CipherSuite[UInt16] CipherSuites
+  CompressionMethod[Byte] CompressionMethods
+  Extension[UInt16] Extensions
+}

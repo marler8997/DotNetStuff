@@ -6,7 +6,7 @@ namespace More.Net
 {
     public class RpcCall : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new ClassFieldReflectors<RpcProgramHeader>(typeof(RpcCall), "programHeader", RpcProgramHeader.memberSerializers),
             new XdrUInt32Reflector                    (typeof(RpcCall), "procedure"),
             new ClassFieldReflectors<RpcCredentials>  (typeof(RpcCall), "credentials", RpcCredentials.memberSerializers),

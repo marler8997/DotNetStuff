@@ -137,7 +137,7 @@ namespace More.Net
 
             {
                 DateTime lastAccessDateTime = fileInfo.LastAccessTime;
-                UInt32 newLastAccessTimeSeconds = (UInt32)lastAccessDateTime.ToUniversalTime().ToUnixTime();
+                UInt32 newLastAccessTimeSeconds = lastAccessDateTime.ToUniversalTime().ToUnixTime();
                 if (fileAttributes.lastAccessTime.seconds != newLastAccessTimeSeconds)
                 {
                     attributesChanged = true;
@@ -146,7 +146,7 @@ namespace More.Net
             }
             {
                 DateTime lastModifyTime = fileInfo.LastWriteTime;
-                UInt32 newLastModifyTimeSeconds = (UInt32)lastModifyTime.ToUniversalTime().ToUnixTime();
+                UInt32 newLastModifyTimeSeconds = lastModifyTime.ToUniversalTime().ToUnixTime();
                 if (fileAttributes.lastModifyTime.seconds != newLastModifyTimeSeconds)
                 {
                     attributesChanged = true;

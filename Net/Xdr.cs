@@ -155,9 +155,9 @@ namespace More.Net
             fieldInfo.SetValue(instance, (array[offset + 3] == 0) ? false : true);
             return offset + 4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
-            return String.Format("{0}:{1}", fieldInfo.Name, (Boolean)fieldInfo.GetValue(instance));
+            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, (Boolean)fieldInfo.GetValue(instance)));
         }
     }
     public class XdrInt32Reflector : ClassFieldReflector
@@ -194,9 +194,9 @@ namespace More.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
-            return String.Format("{0}:{1}", fieldInfo.Name, (Int32)fieldInfo.GetValue(instance));
+            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, (Int32)fieldInfo.GetValue(instance)));
         }
     }
     public class XdrUInt32Reflector : ClassFieldReflector
@@ -233,9 +233,9 @@ namespace More.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
-            return String.Format("{0}:{1}", fieldInfo.Name, (UInt32)fieldInfo.GetValue(instance));
+            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, (UInt32)fieldInfo.GetValue(instance)));
         }
     }
     public class XdrEnumReflector : ClassFieldReflector
@@ -274,9 +274,9 @@ namespace More.Net
             fieldInfo.SetValue(instance, value);
             return offset + 4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
-            return String.Format("{0}:{1}", fieldInfo.Name, fieldInfo.GetValue(instance));
+            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, fieldInfo.GetValue(instance)));
         }
     }
     public class XdrUInt64Reflector : ClassFieldReflector
@@ -321,9 +321,9 @@ namespace More.Net
             fieldInfo.SetValue(instance, value);
             return offset + 8;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
-            return String.Format("{0}:{1}", fieldInfo.Name, (UInt64)fieldInfo.GetValue(instance));
+            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, (UInt64)fieldInfo.GetValue(instance)));
         }
     }
 
@@ -383,15 +383,20 @@ namespace More.Net
 
             return offset + dataLengthNearestContainingMod4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             String dataString;
 
             Byte[] valueAsArray = (Byte[])fieldInfo.GetValue(instance);
-            if (valueAsArray == null) return String.Format("[{0} bytes at value 0]", dataLength);
-            dataString = BitConverter.ToString(valueAsArray);
-
-            return String.Format("{0}:{1}", fieldInfo.Name, dataString);
+            if (valueAsArray == null)
+            {
+                builder.Append(String.Format("[{0} bytes at value 0]", dataLength));
+            }
+            else
+            {
+                dataString = BitConverter.ToString(valueAsArray);
+                builder.Append(String.Format("{0}:{1}", fieldInfo.Name, dataString));
+            }
         }
     }
     //
@@ -470,7 +475,7 @@ namespace More.Net
 
             return offset + lengthMod4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             String dataString;
 
@@ -484,7 +489,7 @@ namespace More.Net
                 Byte[] valueAsArray = (Byte[])valueAsObject;
                 dataString = BitConverter.ToString(valueAsArray);
             }
-            return String.Format("{0}:{1}", fieldInfo.Name, dataString);
+            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, dataString));
         }
     }
 
@@ -564,37 +569,37 @@ namespace More.Net
 
             return offset + lengthMod4 - length;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
-            String dataString;
+            builder.Append(fieldInfo.Name);
+            builder.Append(':');
 
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
             {
-                dataString = "<null>";
+                builder.Append("<null>");
             }
             else
             {
                 SerializationType value = (SerializationType)valueAsObject;
-                dataString = value.DataString();
+                value.DataString(builder);
             }
-            return String.Format("{0}:{1}", fieldInfo.Name, dataString);
         }
-        public override String DataSmallString(Object instance)
+        public override void DataSmallString(Object instance, StringBuilder builder)
         {
-            String dataString;
+            builder.Append(fieldInfo.Name);
+            builder.Append(':');
 
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
             {
-                dataString = "<null>";
+                builder.Append("<null>");
             }
             else
             {
                 SerializationType value = (SerializationType)valueAsObject;
-                dataString = value.DataSmallString();
+                value.DataSmallString(builder);
             }
-            return String.Format("{0}:{1}", fieldInfo.Name, dataString);
         }
     }
 
@@ -675,7 +680,7 @@ namespace More.Net
 
             return offset + lengthMod4;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             String dataString;
 
@@ -688,7 +693,7 @@ namespace More.Net
             {
                 dataString = (String)valueAsObject;
             }
-            return String.Format("{0}:\"{1}\"", fieldInfo.Name, dataString);
+            builder.Append(String.Format("{0}:\"{1}\"", fieldInfo.Name, dataString));
         }
     }
 
@@ -781,12 +786,6 @@ namespace More.Net
 
             return offset;
         }
-        public override string DataString(Object instance)
-        {
-            StringBuilder builder = new StringBuilder();
-            DataString(instance, builder);
-            return builder.ToString();
-        }
         public override void DataString(Object instance, StringBuilder builder)
         {
             builder.Append(fieldInfo.Name);
@@ -809,7 +808,6 @@ namespace More.Net
             }
             builder.Append(']');
         }
-
     }
 
     /*
@@ -871,7 +869,7 @@ namespace More.Net
 
             return offset;
         }
-        public override String DataString(Object instance)
+        public override void DataString(Object instance, StringBuilder builder)
         {
             StringBuilder builder = new StringBuilder();
             DataString(instance, builder);
@@ -941,7 +939,7 @@ namespace More.Net
         readonly IReflector[] falseReflectors;
 
         public XdrBooleanDescriminateReflector(XdrBooleanReflector descriminate,
-            IReflectors trueReflectors, IReflectors falseReflectors)
+            Reflectors trueReflectors, Reflectors falseReflectors)
         {
             this.descriminate = descriminate;
             this.trueReflectors = trueReflectors.reflectors;
@@ -1010,12 +1008,6 @@ namespace More.Net
 
             return offset;
         }
-        public String DataString(Object instance)
-        {
-            StringBuilder builder = new StringBuilder();
-            DataString(instance, builder);
-            return builder.ToString();
-        }
         public void DataString(Object instance, StringBuilder builder)
         {
             descriminate.DataString(instance, builder);
@@ -1026,17 +1018,6 @@ namespace More.Net
                 builder.Append(',');
                 fieldReflectors[i].DataString(instance, builder);
             }
-        }
-        public String DataSmallString(Object instance)
-        {
-            String smallString = descriminate.DataSmallString(instance);
-
-            IReflector[] fieldReflectors = GetReflectors(instance);
-            for (int i = 0; i < fieldReflectors.Length; i++)
-            {
-                smallString = smallString + "," + fieldReflectors[i].DataSmallString(instance);
-            }
-            return smallString;
         }
         public void DataSmallString(Object instance, StringBuilder builder)
         {
@@ -1153,12 +1134,6 @@ namespace More.Net
 
             return offset;
         }
-        public String DataString(Object instance)
-        {
-            StringBuilder builder = new StringBuilder();
-            DataString(instance, builder);
-            return builder.ToString();
-        }
         public void DataString(Object instance, StringBuilder builder)
         {
             descriminate.DataString(instance, builder);
@@ -1169,17 +1144,6 @@ namespace More.Net
                 builder.Append(',');
                 fieldReflectors[i].DataString(instance, builder);
             }
-        }
-        public String DataSmallString(Object instance)
-        {
-            String smallString = descriminate.DataSmallString(instance);
-
-            IReflector[] fieldReflectors = GetFieldReflectors(instance);
-            for (int i = 0; i < fieldReflectors.Length; i++)
-            {
-                smallString = smallString + "," + fieldReflectors[i].DataSmallString(instance);
-            }
-            return smallString;
         }
         public void DataSmallString(Object instance, StringBuilder builder)
         {

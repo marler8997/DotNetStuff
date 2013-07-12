@@ -2,6 +2,8 @@ using System;
 
 using More;
 
+namespace More.Net
+{
     [Flags]
     public enum AccessorConnectionInfo {
         TmpRequiresTls = 1,
@@ -25,24 +27,44 @@ using More;
                 if(reflector == null)
                 {
                     IReflector[] reflectors = new IReflector[3];
-                    reflectors[0] = new PdlByteLengthByteArrayReflector(typeof(ServerInfo), "Name");
-                    reflectors[1] = new PdlUInt16Reflector(typeof(ServerInfo), "SecondsPerHeartbeat");
-                    reflectors[2] = new PdlUInt16Reflector(typeof(ServerInfo), "SecondsPerReconnect");
-                    reflector = new IReflectors(reflectors);
+                    reflectors[0] = new ByteArrayReflector(typeof(ServerInfo), "Name", 1);
+                    reflectors[1] = new BigEndianUInt16Reflector(typeof(ServerInfo), "SecondsPerHeartbeat");
+                    reflectors[2] = new BigEndianUInt16Reflector(typeof(ServerInfo), "SecondsPerReconnect");
+                    reflector = new Reflectors(reflectors);
                 }
                 return reflector;
             }
         }
+
+        public static Int32 SerializationLength(ServerInfo obj)
+        {
+            return Reflector.SerializationLength(obj);
+        }
+        public static Int32 DynamicLengthSerialize(Byte[] array, Int32 offset, ServerInfo instance)
+        {
+            return Reflector.Serialize(instance, array, offset);
+        }
+        public static Int32 DynamicLengthDeserialize(Byte[] array, Int32 offset, Int32 offsetLimit, out ServerInfo outInstance)
+        {
+            Int32 newOffset;
+            outInstance = new ServerInfo(array, offset, offsetLimit, out newOffset);
+            return newOffset;
+        }
+
         public Byte[] Name;
         public UInt16 SecondsPerHeartbeat;
         public UInt16 SecondsPerReconnect;
 
         // Deserialization constructor
-        public ServerInfo(Byte[] array, Int32 offset, Int32 maxOffset)
+        public ServerInfo(Byte[] array, Int32 offset, Int32 offsetLimit)
         {
-            int finalOffset = Reflector.Deserialize(this, array, offset, maxOffset);
-            if(finalOffset != maxOffset) throw new FormatException(String.Format(
-                "Expected packet 'ServerInfo' to be {1} bytes but was {2} bytes", maxOffset - offset, finalOffset - offset));
+            Int32 newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);
+            if(newOffset != offsetLimit) throw new FormatException(String.Format(
+                "Expected packet 'ServerInfo' to be {1} bytes but was {2} bytes", offsetLimit - offset, newOffset - offset));
+        }
+        public ServerInfo(Byte[] array, Int32 offset, Int32 offsetLimit, out Int32 newOffset)
+        {
+            newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);
         }
         public ServerInfo(Byte[] Name, UInt16 SecondsPerHeartbeat, UInt16 SecondsPerReconnect)
         {
@@ -61,26 +83,46 @@ using More;
                 if(reflector == null)
                 {
                     IReflector[] reflectors = new IReflector[4];
-                    reflectors[0] = new PdlByteEnumReflector<TunnelOptions>(typeof(OpenAccessorTunnelRequest), "Options");
-                    reflectors[1] = new PdlByteLengthByteArrayReflector(typeof(OpenAccessorTunnelRequest), "TargetHost");
-                    reflectors[2] = new PdlUInt16Reflector(typeof(OpenAccessorTunnelRequest), "TargetPort");
-                    reflectors[3] = new PdlByteLengthByteArrayReflector(typeof(OpenAccessorTunnelRequest), "TunnelKey");
-                    reflector = new IReflectors(reflectors);
+                    reflectors[0] = new BigEndianUnsignedEnumReflector<TunnelOptions>(typeof(OpenAccessorTunnelRequest), "Options", 1);
+                    reflectors[1] = new ByteArrayReflector(typeof(OpenAccessorTunnelRequest), "TargetHost", 1);
+                    reflectors[2] = new BigEndianUInt16Reflector(typeof(OpenAccessorTunnelRequest), "TargetPort");
+                    reflectors[3] = new ByteArrayReflector(typeof(OpenAccessorTunnelRequest), "TunnelKey", 1);
+                    reflector = new Reflectors(reflectors);
                 }
                 return reflector;
             }
         }
+
+        public static Int32 SerializationLength(OpenAccessorTunnelRequest obj)
+        {
+            return Reflector.SerializationLength(obj);
+        }
+        public static Int32 DynamicLengthSerialize(Byte[] array, Int32 offset, OpenAccessorTunnelRequest instance)
+        {
+            return Reflector.Serialize(instance, array, offset);
+        }
+        public static Int32 DynamicLengthDeserialize(Byte[] array, Int32 offset, Int32 offsetLimit, out OpenAccessorTunnelRequest outInstance)
+        {
+            Int32 newOffset;
+            outInstance = new OpenAccessorTunnelRequest(array, offset, offsetLimit, out newOffset);
+            return newOffset;
+        }
+
         public TunnelOptions Options;
         public Byte[] TargetHost;
         public UInt16 TargetPort;
         public Byte[] TunnelKey;
 
         // Deserialization constructor
-        public OpenAccessorTunnelRequest(Byte[] array, Int32 offset, Int32 maxOffset)
+        public OpenAccessorTunnelRequest(Byte[] array, Int32 offset, Int32 offsetLimit)
         {
-            int finalOffset = Reflector.Deserialize(this, array, offset, maxOffset);
-            if(finalOffset != maxOffset) throw new FormatException(String.Format(
-                "Expected packet 'OpenAccessorTunnelRequest' to be {1} bytes but was {2} bytes", maxOffset - offset, finalOffset - offset));
+            Int32 newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);
+            if(newOffset != offsetLimit) throw new FormatException(String.Format(
+                "Expected packet 'OpenAccessorTunnelRequest' to be {1} bytes but was {2} bytes", offsetLimit - offset, newOffset - offset));
+        }
+        public OpenAccessorTunnelRequest(Byte[] array, Int32 offset, Int32 offsetLimit, out Int32 newOffset)
+        {
+            newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);
         }
         public OpenAccessorTunnelRequest(TunnelOptions Options, Byte[] TargetHost, UInt16 TargetPort, Byte[] TunnelKey)
         {
@@ -100,16 +142,32 @@ using More;
                 if(reflector == null)
                 {
                     IReflector[] reflectors = new IReflector[5];
-                    reflectors[0] = new PdlByteEnumReflector<TunnelOptions>(typeof(OpenTunnelRequest), "Options");
-                    reflectors[1] = new PdlByteLengthByteArrayReflector(typeof(OpenTunnelRequest), "TargetHost");
-                    reflectors[2] = new PdlUInt16Reflector(typeof(OpenTunnelRequest), "TargetPort");
-                    reflectors[3] = new PdlByteLengthByteArrayReflector(typeof(OpenTunnelRequest), "OtherTargetHost");
-                    reflectors[4] = new PdlUInt16Reflector(typeof(OpenTunnelRequest), "OtherTargetPort");
-                    reflector = new IReflectors(reflectors);
+                    reflectors[0] = new BigEndianUnsignedEnumReflector<TunnelOptions>(typeof(OpenTunnelRequest), "Options", 1);
+                    reflectors[1] = new ByteArrayReflector(typeof(OpenTunnelRequest), "TargetHost", 1);
+                    reflectors[2] = new BigEndianUInt16Reflector(typeof(OpenTunnelRequest), "TargetPort");
+                    reflectors[3] = new ByteArrayReflector(typeof(OpenTunnelRequest), "OtherTargetHost", 1);
+                    reflectors[4] = new BigEndianUInt16Reflector(typeof(OpenTunnelRequest), "OtherTargetPort");
+                    reflector = new Reflectors(reflectors);
                 }
                 return reflector;
             }
         }
+
+        public static Int32 SerializationLength(OpenTunnelRequest obj)
+        {
+            return Reflector.SerializationLength(obj);
+        }
+        public static Int32 DynamicLengthSerialize(Byte[] array, Int32 offset, OpenTunnelRequest instance)
+        {
+            return Reflector.Serialize(instance, array, offset);
+        }
+        public static Int32 DynamicLengthDeserialize(Byte[] array, Int32 offset, Int32 offsetLimit, out OpenTunnelRequest outInstance)
+        {
+            Int32 newOffset;
+            outInstance = new OpenTunnelRequest(array, offset, offsetLimit, out newOffset);
+            return newOffset;
+        }
+
         public TunnelOptions Options;
         public Byte[] TargetHost;
         public UInt16 TargetPort;
@@ -117,11 +175,15 @@ using More;
         public UInt16 OtherTargetPort;
 
         // Deserialization constructor
-        public OpenTunnelRequest(Byte[] array, Int32 offset, Int32 maxOffset)
+        public OpenTunnelRequest(Byte[] array, Int32 offset, Int32 offsetLimit)
         {
-            int finalOffset = Reflector.Deserialize(this, array, offset, maxOffset);
-            if(finalOffset != maxOffset) throw new FormatException(String.Format(
-                "Expected packet 'OpenTunnelRequest' to be {1} bytes but was {2} bytes", maxOffset - offset, finalOffset - offset));
+            Int32 newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);
+            if(newOffset != offsetLimit) throw new FormatException(String.Format(
+                "Expected packet 'OpenTunnelRequest' to be {1} bytes but was {2} bytes", offsetLimit - offset, newOffset - offset));
+        }
+        public OpenTunnelRequest(Byte[] array, Int32 offset, Int32 offsetLimit, out Int32 newOffset)
+        {
+            newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);
         }
         public OpenTunnelRequest(TunnelOptions Options, Byte[] TargetHost, UInt16 TargetPort, Byte[] OtherTargetHost, UInt16 OtherTargetPort)
         {
@@ -132,3 +194,4 @@ using More;
             this.OtherTargetPort = OtherTargetPort;
         }
     }
+}

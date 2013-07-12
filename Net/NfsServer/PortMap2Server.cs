@@ -60,7 +60,7 @@ namespace More.Net
             }
 
             if (NfsServerLog.rpcCallLogger != null)
-                NfsServerLog.rpcCallLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, callData.DataSmallString(), replyParameters.DataSmallString());
+                NfsServerLog.rpcCallLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, ISerializerString.DataSmallString(callData), ISerializerString.DataSmallString(replyParameters));
             return new RpcReply(RpcVerifier.None);
         }
 

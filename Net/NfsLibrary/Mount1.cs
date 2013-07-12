@@ -90,7 +90,7 @@ namespace More.Net.Mount1Procedure
     }
     public class UnmountCall : SubclassSerializer
     {
-        public static readonly IReflectors memberSerializers = new IReflectors(new IReflector[] {
+        public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrStringReflector(typeof(UnmountCall), "directory", Mount1.MaxPathLength),
         });
 

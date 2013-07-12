@@ -5,10 +5,10 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{9C7CFFA6-4456-434B-B898-B0251B7FF646}</ProjectGuid>
+    <ProjectGuid>{9D76BA5E-211D-4818-A9B6-21BF2247A4DF}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PdlCodeGenerator</RootNamespace>
+    <RootNamespace>More.Pdl</RootNamespace>
     <AssemblyName>PdlCodeGenerator</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -31,28 +31,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Antlr3.Runtime, Version=3.5.0.2, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\AntlrBinaries\Antlr3.Runtime.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Data.DataSetExtensions">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AntlrParserGeneration\GeneratedCode\PacketDescriptionLanguageLexer.cs" />
-    <Compile Include="AntlrParserGeneration\GeneratedCode\PacketDescriptionLanguageParser.cs" />
-    <Compile Include="PdlSyntaxTreeDefinition.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="CSharpPdlDataStructureFactory.cs" />
+    <Compile Include="PdlCodeGeneratorMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -64,11 +49,6 @@
       <Project>{C613AD8C-53C0-4A80-821F-8AF139DB34A5}</Project>
       <Name>More.Pdl</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="AntlrParserGeneration\GenerateParser.bat" />
-    <None Include="AntlrParserGeneration\PacketDescriptionLanguage.g" />
-    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
