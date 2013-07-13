@@ -60,9 +60,9 @@ namespace More.Net
         }
         */
 
-        public const Int32 MaxPathLength = 1024;
-        public const Int32 MaxNameLength = 255;
-        public const Int32 FileHandleSize = 32;
+        public const UInt32 MaxPathLength  = 1024;
+        public const UInt32 MaxNameLength  =  255;
+        public const UInt32 FileHandleSize =   32;
     }
 }
 namespace More.Net.Mount3Procedure
@@ -101,10 +101,10 @@ namespace More.Net.Mount3Procedure
             : base(memberSerializers)
         {
         }
-        public MountCall(Byte[] data, Int32 offset, Int32 maxOffset)
+        public MountCall(Byte[] data, UInt32 offset, UInt32 offsetLimit)
             : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            Deserialize(data, offset, offsetLimit);
         }
         public MountCall(String directory)
             : base(memberSerializers)
@@ -116,7 +116,7 @@ namespace More.Net.Mount3Procedure
     {
         public static readonly IReflector[] mountOkSerializers = new IReflector[] {
             new XdrOpaqueVarLengthReflector(typeof(MountReply), "fileHandle", Mount3.FileHandleSize),
-            new XdrVarLengthArray<XdrEnum<RpcAuthenticationFlavor>>(typeof(MountReply), "authenticationFlavors", -1),
+            new FixedLengthElementArrayReflector<RpcAuthenticationFlavor>(typeof(MountReply), "authenticationFlavors", 4, BigEndianUnsignedEnumSerializer<RpcAuthenticationFlavor>.FourByteInstance),
         };
 
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -129,19 +129,19 @@ namespace More.Net.Mount3Procedure
 
         public Nfs3Procedure.Status status;
         public Byte[] fileHandle;
-        public XdrEnum<RpcAuthenticationFlavor>[] authenticationFlavors;
+        public RpcAuthenticationFlavor[] authenticationFlavors;
 
         public MountReply()
             : base(memberSerializers)
         {
         }
-        public MountReply(Byte[] data, Int32 offset, Int32 maxOffset)
+        public MountReply(Byte[] data, UInt32 offset, UInt32 offsetLimit)
             : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            Deserialize(data, offset, offsetLimit);
         }
         
-        public MountReply(Byte[] fileHandle, XdrEnum<RpcAuthenticationFlavor>[] authenticationFlavors)
+        public MountReply(Byte[] fileHandle,RpcAuthenticationFlavor[] authenticationFlavors)
             : base(memberSerializers)
         {
             this.status = Nfs3Procedure.Status.Ok;

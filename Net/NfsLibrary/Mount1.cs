@@ -100,10 +100,10 @@ namespace More.Net.Mount1Procedure
             : base(memberSerializers)
         {
         }
-        public UnmountCall(Byte[] data, Int32 offset, Int32 maxOffset)
+        public UnmountCall(Byte[] data, UInt32 offset, UInt32 offsetLimit)
             : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            Deserialize(data, offset, offsetLimit);
         }
         public UnmountCall(String directory)
             : base(memberSerializers)

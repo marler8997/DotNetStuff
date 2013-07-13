@@ -211,9 +211,8 @@ namespace More.Net
         public const Byte ToServerOpenTunnelRequestID         = 0;
         public const Byte ToServerOpenAccessorTunnelRequestID = 1;
 
-
-
-        public static Byte[] CreateCommandPacket(Byte commandID, IReflector reflector, Object command, Int32 offset)
+        /*
+        public static Byte[] CreateCommandPacket<T>(Byte commandID, IReflector reflector, T command, UInt32 offset)
         {
             Int32 commandLength = 1 + reflector.SerializationLength(command);
             Byte[] commandPacket = FrameAndHeartbeatProtocol.AllocateFrame(offset, commandLength);
@@ -230,5 +229,6 @@ namespace More.Net
             reflector.Serialize(command, commandPacket, 4);
             socket.Send(commandPacket);
         }
+        */
     }
 }

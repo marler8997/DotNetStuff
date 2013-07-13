@@ -83,8 +83,8 @@ namespace More.Net
     public class RpcMismatchInfo : SubclassSerializer
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new XdrUInt32Reflector(typeof(RpcMismatchInfo), "low"),
-            new XdrUInt32Reflector(typeof(RpcMismatchInfo), "high"),
+            new BigEndianUInt32Reflector(typeof(RpcMismatchInfo), "low"),
+            new BigEndianUInt32Reflector(typeof(RpcMismatchInfo), "high"),
         });
 
         public UInt32 low,high;

@@ -14,6 +14,169 @@ namespace More
     [TestClass]
     public class PerformanceChecks
     {
+
+        [TestMethod]
+        public void PerformanceTestFixedDictionary()
+        {
+            //PerformanceTestFixedDictionary(new String[] { "abcdefg", "1234567", "what the heck" });
+            //PerformanceTestFixedDictionary(10000000, new Byte[] { 0 });
+            //PerformanceTestFixedDictionary(100000, new Byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 });
+            //PerformanceTestFixedDictionary(100000, new String[] { "apple", "banana", "orange" });
+        }
+
+        public static void PerformanceTestFixedDictionary<T>(Int32 iterations, T[] keys)
+        {
+            long before;
+            
+            Int32 value;
+
+            /*
+            FixedMap<T, Int32>.KeyValuePair[] pairs = new FixedMap<T,Int32>.KeyValuePair[keys.Length];
+            for(int i = 0; i < keys.Length; i++)
+            {
+                pairs[i] = new FixedMap<T,int>.KeyValuePair(keys[i], i);
+            }
+            */
+            Dictionary<T, Int32> variableDictionary = new Dictionary<T, Int32>();
+            Dictionary<T, Int32> fixedDictionary = new Dictionary<T, Int32>(keys.Length);
+            IDictionary<T, Int32> variableListDictionary = new SortedList<T, Int32>();
+            IDictionary<T, Int32> fixedListDictionary = new SortedList<T, Int32>(keys.Length);
+            //IFixedMap<T, Int32> fixedOneElementMap = new FixedMapOneElement<T, Int32>(pairs[0]);
+            //IFixedMap<T, Int32> fixedArrayMap = new FixedMapUsingArray<T, Int32>(pairs);
+
+            for (int i = 0; i < keys.Length; i++)
+            {
+                variableDictionary.Add(keys[i], i);
+                fixedDictionary.Add(keys[i], i);
+                variableListDictionary.Add(keys[i], i);
+                fixedListDictionary.Add(keys[i], i);
+            }
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < iterations; i++)
+            {
+                for(int j = 0; j < keys.Length; j++)
+                {
+                    value = variableDictionary[keys[j]];
+                }
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < iterations; i++)
+            {
+                for (int j = 0; j < keys.Length; j++)
+                {
+                    value = fixedDictionary[keys[j]];
+                }
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < iterations; i++)
+            {
+                for (int j = 0; j < keys.Length; j++)
+                {
+                    value = variableListDictionary[keys[j]];
+                }
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < iterations; i++)
+            {
+                for (int j = 0; j < keys.Length; j++)
+                {
+                    value = fixedListDictionary[keys[j]];
+                }
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            /*
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < iterations; i++)
+            {
+                for (int j = 0; j < keys.Length; j++)
+                {
+                    value = fixedOneElementMap[keys[j]];
+                }
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < iterations; i++)
+            {
+                for (int j = 0; j < keys.Length; j++)
+                {
+                    value = fixedArrayMap[keys[j]];
+                }
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            */
+        }
+
+
+
+        [TestMethod]
+        public void PerformanceTestClassVsInterface()
+        {
+            long before;
+
+            List<Byte> theList = new List<byte>();
+            IList<Byte> theInterfaceList = theList;
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                theList.Add(0);
+                theList.Clear();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                theInterfaceList.Add(0);
+                theInterfaceList.Clear();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                theList.Add(0);
+                theList.Clear();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                theInterfaceList.Add(0);
+                theInterfaceList.Clear();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+        }
+
+
         [TestMethod]
         public void PerformanceTestByteArraySerialization()
         {
@@ -26,10 +189,10 @@ namespace More
             for (int i = 0; i < 10000000; i++)
             {
                 value = (UInt32)(
-                    (0xFF000000 & (array[0] << 24)) |
-                    (0x00FF0000 & (array[1] << 16)) |
-                    (0x0000FF00 & (array[2] << 8)) |
-                    (0x000000FF & (array[3])));
+                    (0xFF000000U & (array[0] << 24)) |
+                    (0x00FF0000U & (array[1] << 16)) |
+                    (0x0000FF00U & (array[2] << 8)) |
+                    (0x000000FFU & (array[3])));
             }
             Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
 

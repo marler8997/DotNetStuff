@@ -30,7 +30,7 @@ namespace More.Net
                 (programHeader.programVersion == 1 || programHeader.programVersion == 3);
         }
 
-        public override RpcReply Call(String clientString, RpcCall call, byte[] callParameters, int callOffset, int callMaxOffset, out ISerializer replyParameters)
+        public override RpcReply Call(String clientString, RpcCall call, Byte[] callParameters, UInt32 callOffset, UInt32 callMaxOffset, out ISerializer replyParameters)
         {
             ISerializer callData;
             replyParameters = VoidSerializer.Instance;

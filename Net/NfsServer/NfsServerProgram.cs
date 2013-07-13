@@ -29,7 +29,6 @@ namespace More.Net
             listenIPAddress.SetDefault(IPAddress.Parse("0.0.0.0"));
             Add(listenIPAddress);
 
-
             //
             // Debug Server
             //
@@ -127,10 +126,6 @@ namespace More.Net
 
 
             TextWriter selectServerEventLog                 = options.dontLogServerEventsToConsole.set             ? null : Console.Out;
-
-
-
-
 
             //
             // Permissions

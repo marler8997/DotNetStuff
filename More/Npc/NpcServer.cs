@@ -159,22 +159,22 @@ namespace More
         {
             callback.ServerListening(listenSocket);
         }
-        public ServerInstruction ListenSocketClosed(int clientCount)
+        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
         {
             throw new InvalidOperationException("The listen socket has closed");
         }
-        public ServerInstruction ClientOpenCallback(int clientCount, System.Net.Sockets.Socket socket)
+        public ServerInstruction ClientOpenCallback(UInt32 clientCount, System.Net.Sockets.Socket socket)
         {
             clientMap[socket] = new NpcDataHandler(socket.SafeRemoteEndPointString(), callback,
                 new SocketSendDataHandler(socket), npcExecutor, htmlGenerator);
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientCloseCallback(int clientCount, System.Net.Sockets.Socket socket)
+        public ServerInstruction ClientCloseCallback(UInt32 clientCount, System.Net.Sockets.Socket socket)
         {
             clientMap[socket] = null;
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientDataCallback(System.Net.Sockets.Socket socket, byte[] bytes, int bytesRead)
+        public ServerInstruction ClientDataCallback(System.Net.Sockets.Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             NpcDataHandler dataHandler;
             if (!clientMap.TryGetValue(socket, out dataHandler))

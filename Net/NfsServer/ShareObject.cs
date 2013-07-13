@@ -9,6 +9,7 @@ namespace More.Net
     {
         public readonly Nfs3Procedure.FileType fileType;
         public readonly UInt64 fileID;
+        public readonly UInt64 cookie;
 
         public String localPathAndName;
         public String shareName;
@@ -24,6 +25,7 @@ namespace More.Net
         {
             this.fileType = fileType;
             this.fileID = fileID;
+            this.cookie = (fileID == 0) ? UInt64.MaxValue : fileID; // A cookie value of 0 is not valid
 
             this.fileHandleBytes = fileHandleBytes;
             this.optionalFileHandleClass = new Nfs3Procedure.OptionalFileHandle(fileHandleBytes);
@@ -56,7 +58,6 @@ namespace More.Net
 
             this.optionalFileAttributes = new Nfs3Procedure.OptionalFileAttributes(fileAttributes);
         }
-
         public void UpdatePathAndName(String localPathAndName, String shareName)
         {
             this.localPathAndName = localPathAndName;
@@ -65,8 +66,6 @@ namespace More.Net
             if (!NfsPath.IsValidUnixFileName(shareName))
                 throw new InvalidOperationException(String.Format("The file you supplied '{0}' is not a valid unix file name", shareName));
         }
-
-
         public Nfs3Procedure.Status CheckStatus()
         {
             switch (fileType)
@@ -80,13 +79,11 @@ namespace More.Net
             }
             return Nfs3Procedure.Status.Ok;
         }
-
         public FileInfo AccessFileInfo()
         {
             if (fileInfo == null) fileInfo = new FileInfo(localPathAndName);
             return fileInfo;
         }
-
         public Boolean RefreshFileAttributes(IPermissions permissions)
         {
             Boolean attributesChanged = false;
@@ -111,14 +108,11 @@ namespace More.Net
                 fileAttributes.protectionMode = newPermissions;
             }
 
-
             fileAttributes.hardLinks = (fileType == Nfs3Procedure.FileType.Directory) ?
                 2U : 1U;
 
-
             fileAttributes.ownerUid = 0;
             fileAttributes.gid = 0;
-
 
             if (fileType == Nfs3Procedure.FileType.Regular)
             {
@@ -130,7 +124,6 @@ namespace More.Net
                 }
                 fileAttributes.diskSize = fileAttributes.fileSize;
             }
-
 
             fileAttributes.specialData1 = 0;
             fileAttributes.specialData2 = 0;
@@ -163,7 +156,6 @@ namespace More.Net
 
             return attributesChanged;
         }
-
         public override String ToString()
         {
             return String.Format("Type '{0}' ID '{1}' LocalPathAndName '{2}' Handle '{3}'",

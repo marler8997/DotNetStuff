@@ -69,7 +69,7 @@ namespace More.Net
             Assert.AreEqual(-1, length);
         }
 
-
+        /*
         [TestMethod]
         public void TestTimeoutExceptionHappens()
         {
@@ -106,6 +106,7 @@ namespace More.Net
 
             receiver.ReceiveAndExpectTimeout();
         }
+
 
         [TestMethod]
         public void TestTimeoutDoesntHappen()
@@ -187,5 +188,6 @@ namespace More.Net
 
             Thread.Sleep(500);
         }
+        */
     }
 }

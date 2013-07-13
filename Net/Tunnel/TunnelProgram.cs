@@ -179,7 +179,7 @@ namespace More.Net
         public void ServerStopped()
         {
         }
-        public ServerInstruction ListenSocketClosed(int clientCount)
+        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
         {
             return ServerInstruction.StopServer;
         }
@@ -191,7 +191,7 @@ namespace More.Net
                     expectedSocketCount, socketPairs.Count));
             }
         }
-        public ServerInstruction ClientOpenCallback(Int32 clientCount, Socket socket)
+        public ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket)
         {
             Socket newRemoteServerSocket = new Socket(remoteServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
@@ -214,7 +214,7 @@ namespace More.Net
             Console.WriteLine("New Tunnel  {0,21} > {1,-21}", socket.RemoteEndPoint, newRemoteServerSocket.RemoteEndPoint);
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientCloseCallback(Int32 clientCount, Socket socket)
+        public ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket)
         {
             Console.WriteLine("Closed      {0,21}", socket.RemoteEndPoint);
 
@@ -238,7 +238,7 @@ namespace More.Net
             throw new InvalidOperationException(String.Format(
                 "Received close for a client '{0}' that wasn't in the socket dictionary", socket.RemoteEndPoint));
         }
-        public ServerInstruction ClientDataCallback(Socket socket, byte[] bytes, int bytesRead)
+        public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             Socket socketPair;
             if (!socketPairs.TryGetValue(socket, out socketPair))
@@ -251,7 +251,7 @@ namespace More.Net
             }
 
             Console.WriteLine("{0,5} Bytes {1,21} > {2,-21}", bytesRead, socket.RemoteEndPoint, socketPair.RemoteEndPoint);
-            socketPair.Send(bytes, bytesRead, SocketFlags.None);
+            socketPair.Send(bytes, (Int32)bytesRead, SocketFlags.None);
             return ServerInstruction.NoInstruction;
         }
     }
@@ -288,11 +288,11 @@ namespace More.Net
         public void ServerStopped()
         {
         }
-        public ServerInstruction ListenSocketClosed(int clientCount)
+        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
         {
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction DatagramPacket(EndPoint endPoint, Socket socket, byte[] bytes, int bytesRead)
+        public ServerInstruction DatagramPacket(EndPoint endPoint, Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             //
             // Check if this socket is from RemoteServer
@@ -301,7 +301,7 @@ namespace More.Net
             if (remoteServerSocketsToClientEndPoints.TryGetValue(socket, out clientEndPoint))
             {
                 Console.WriteLine("[UDP] {0} Byte Datagram '{0}' to '{1}'", bytesRead, endPoint, clientEndPoint);
-                clientListenSocket.SendTo(bytes, bytesRead, SocketFlags.None, clientEndPoint);
+                clientListenSocket.SendTo(bytes, (Int32)bytesRead, SocketFlags.None, clientEndPoint);
                 return ServerInstruction.NoInstruction;
             }
 
@@ -343,7 +343,7 @@ namespace More.Net
                 Console.WriteLine("[UDP] New Connection From '{0}' to '{1}' ({2} Connections To This Remote Server/Port)", endPoint, remoteServerEndPoint, clientEndPointToServerSockets.Count);
             }
             Console.WriteLine("[UDP] {0} Byte Datagram '{0}' to '{1}'", bytesRead, endPoint, remoteServerEndPoint);
-            socketToRemoteServer.Send(bytes, bytesRead, SocketFlags.None);
+            socketToRemoteServer.Send(bytes, (Int32)bytesRead, SocketFlags.None);
             return ServerInstruction.NoInstruction;
         }
     }
@@ -372,11 +372,11 @@ namespace More.Net
         public void ServerStopped()
         {
         }
-        public ServerInstruction ListenSocketClosed(int clientCount)
+        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
         {
             throw new NotImplementedException();
         }
-        public ServerInstruction DatagramPacket(EndPoint endPoint, Socket socket, byte[] bytes, int bytesRead)
+        public ServerInstruction DatagramPacket(EndPoint endPoint, Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             Console.WriteLine("Datagram {0} bytes from EndPoint '{1}'", bytesRead, endPoint);
             SocketAndLastAccessTime remoteSocketAndAccessTime;
@@ -407,7 +407,7 @@ namespace More.Net
             // Send Datagram
             //
             Console.WriteLine("Sending udp datagram...");
-            remoteSocketAndAccessTime.socket.Send(bytes, bytesRead, SocketFlags.None);
+            remoteSocketAndAccessTime.socket.Send(bytes, (Int32)bytesRead, SocketFlags.None);
 
             
             //

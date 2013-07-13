@@ -55,16 +55,20 @@ namespace More.Pdl
             get { return taskHost; }
             set { this.taskHost = value; }
         }
+
+        [Required]
         public String[] InputFiles
         {
             get { return inputFiles; }
             set { this.inputFiles = value; }
         }
+        [Required]
         public String OutputFile
         {
             get { return outputFile; }
             set { this.outputFile = value; }
         }
+        [Required]
         public String Namespace
         {
             get { return @namespace; }
@@ -132,8 +136,6 @@ namespace More.Pdl
             }
         }
 
-
-
         public Boolean Execute()
         {
             //
@@ -182,12 +184,12 @@ namespace More.Pdl
             //
             InputFileObject[] inputFileObjects = new InputFileObject[inputFiles.Length];
 
-            Byte[] readBuffer = new Byte[512];
+            Byte[] fileBuffer = new Byte[1024];
             Sha1 inputSha = new Sha1();
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < inputFileObjects.Length; i++)
             {
-                inputFileObjects[i] = new InputFileObject(inputFiles[i], readBuffer, builder, inputSha, Encoding.UTF8);
+                inputFileObjects[i] = new InputFileObject(inputFiles[i], fileBuffer, builder, inputSha, Encoding.UTF8);
             }
             Byte[] inputHash = inputSha.Finish();
             String inputHashString = inputHash.ToHexString(0, Sha1.HashByteLength);
@@ -227,13 +229,18 @@ namespace More.Pdl
             //
             // Generate the code
             //
-            using (StreamWriter outputWriter = new StreamWriter(new FileStream(outputFile, FileMode.Create, FileAccess.Write)))
+            StringBuilder outputStringBuilder = new StringBuilder();
+
+            using (StringWriter outputStringWriter = new StringWriter(outputStringBuilder))
             {
                 // Save the hash first
-                outputWriter.WriteLine("// {0}{1}", PdlFile.InputShaPrefix, inputHashString);
-
-                PdlCodeGenerator.GenerateCode(outputWriter, pdlFile, @namespace);
+                outputStringWriter.WriteLine("// {0}{1}", PdlFile.InputShaPrefix, inputHashString);
+                PdlCodeGenerator.GenerateCode(outputStringWriter, pdlFile, @namespace);
             }
+
+            String outputContents = outputStringBuilder.ToString();
+
+            FileExtensions.SaveStringToFile(outputFile, FileMode.Create, outputContents);
 
             return TaskSucceeded;
         }

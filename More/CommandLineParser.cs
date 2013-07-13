@@ -68,10 +68,16 @@ namespace More
             this.hasArg = hasArg;
             this.description = description;
 
-            this.usageLeftColumn = String.Format("  -{0}{1}{2}",
-                this.letter,
-                (name == null) ? "" : ",--" + name,
-                (hasArg) ? " <arg>" : String.Empty);
+            if (letter == '\0')
+            {
+                this.usageLeftColumn = String.Format("  --{0}{1}", name, (hasArg) ? " <arg>" : String.Empty);
+            }
+            else
+            {
+                this.usageLeftColumn = String.Format("  -{0}{1}{2}", letter,
+                    (name == null) ? "" : ",--" + name,
+                    (hasArg) ? " <arg>" : String.Empty);
+            }
 
             this.set = false;
         }
@@ -456,8 +462,6 @@ namespace More
         }
         public void PrintUsage()
         {
-            Console.WriteLine("Usage:");
-
             PrintUsageHeader();
 
             if (options.Count > 0)

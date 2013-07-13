@@ -29,13 +29,13 @@ namespace More.Net
             this.clientEndPointString = clientSocket.RemoteEndPoint.ToString();
             this.httpHeaderBuilders = new StringBuilder();
         }
-        public ServerInstruction Data(Byte[] bytes, Int32 bytesRead)
+        public ServerInstruction Data(Byte[] bytes, UInt32 bytesRead)
         {
             if (serverSocket != null)
             {
                 try
                 {
-                    serverSocket.Send(bytes, bytesRead, SocketFlags.None);
+                    serverSocket.Send(bytes, (Int32)bytesRead, SocketFlags.None);
                     return ServerInstruction.NoInstruction;
                 }
                 catch (SocketException)
@@ -45,7 +45,7 @@ namespace More.Net
             }
             if (bytesRead > 0)
             {
-                httpHeaderBuilders.Append(Encoding.UTF8.GetString(bytes, 0, bytesRead));
+                httpHeaderBuilders.Append(Encoding.UTF8.GetString(bytes, 0, (Int32)bytesRead));
                 //
                 // Check if you have received all the headers
                 //

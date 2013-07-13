@@ -6,6 +6,7 @@ namespace More
     //
     // Serializer Reflector Type
     //
+    /*
     public class PdlFieldSerializerReflector : ClassFieldReflector
     {
         readonly Byte lengthByteCount;
@@ -16,15 +17,15 @@ namespace More
             this.lengthByteCount = lengthByteCount;
         }
         // Since the serializer field can change, the length can always change
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return -1;
+            return UInt32.MaxValue;
         }
-        public override Int32 SerializationLength(object instance)
+        public override UInt32 SerializationLength(object instance)
         {
             return lengthByteCount + ((ISerializer)fieldInfo.GetValue(instance)).SerializationLength();
         }
-        public override int Serialize(object instance, byte[] array, int offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             ISerializer fieldSerializer = (ISerializer)fieldInfo.GetValue(instance);
             
@@ -43,7 +44,7 @@ namespace More
 
             return offset;
         }
-        public override int Deserialize(object instance, byte[] array, int offset, int offsetLimit)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             UInt32 length = array.BigEndianReadUInt32Subtype(offset, lengthByteCount);
 
@@ -68,4 +69,5 @@ namespace More
             ((ISerializer)fieldInfo.GetValue(instance)).DataString(builder);
         }
     }
+    */
 }

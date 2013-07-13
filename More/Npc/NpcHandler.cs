@@ -39,11 +39,11 @@ namespace More
             this.atFirstLine = true;
             this.done = false;
         }
-        public void Handle(Byte[] buffer, Int32 bytesRead)
+        public void Handle(Byte[] buffer, UInt32 bytesRead)
         {
             Handle(buffer, 0, bytesRead);
         }
-        public void Handle(Byte[] buffer, Int32 offset, Int32 bytesRead)
+        public void Handle(Byte[] buffer, UInt32 offset, UInt32 bytesRead)
         {
             if (done == true) return;
 

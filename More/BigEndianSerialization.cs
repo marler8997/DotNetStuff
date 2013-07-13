@@ -11,14 +11,14 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(Byte))
         {
         }
-        public override Int32 FixedSerializationLength()           { return 1; }
-        public override Int32 SerializationLength(Object instance) { return 1; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength()           { return 1; }
+        public override UInt32 SerializationLength(Object instance) { return 1; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             array[offset++] = (Byte)fieldInfo.GetValue(instance);
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             fieldInfo.SetValue(instance, array[offset]);
             return offset + 1;
@@ -34,7 +34,7 @@ namespace More
         public static ByteSerializer Instance { get { if (instance == null) instance = new ByteSerializer(); return instance; } }
         private ByteSerializer() { }
 
-        public override int FixedSerializationLength()                             { return 1; }
+        public override UInt32 FixedSerializationLength()                             { return 1; }
         public override void FixedLengthSerialize(byte[] bytes, int offset, Byte instance) { bytes[offset] = instance; }
         public override Byte FixedLengthDeserialize(byte[] array, int offset) { return array[offset]; }
         public override void DataString(Byte instance, StringBuilder builder)      { builder.Append(instance); }
@@ -47,9 +47,9 @@ namespace More
         public static ByteEnumSerializer<EnumType> Instance { get { if (instance == null) instance = new ByteEnumSerializer<EnumType>(); return instance; } }
         private ByteEnumSerializer() { }
 
-        public override int FixedSerializationLength()                                 { return 1; }
-        public override void FixedLengthSerialize(byte[] bytes, int offset, EnumType instance) { bytes[offset] = Convert.ToByte(instance); }
-        public override EnumType FixedLengthDeserialize(byte[] array, int offset) { return (EnumType)Enum.ToObject(typeof(EnumType), array[offset]); }
+        public override UInt32 FixedSerializationLength()                                 { return 1; }
+        public override void FixedLengthSerialize(byte[] bytes, UInt32 offset, EnumType instance) { bytes[offset] = Convert.ToByte(instance); }
+        public override EnumType FixedLengthDeserialize(byte[] array, UInt32 offset) { return (EnumType)Enum.ToObject(typeof(EnumType), array[offset]); }
         public override void DataString(EnumType instance, StringBuilder builder) { builder.Append(instance); }
         public override void DataSmallString(EnumType instance, StringBuilder builder) { builder.Append(instance); }
     }
@@ -60,14 +60,14 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(SByte))
         {
         }
-        public override Int32 FixedSerializationLength()           { return 1; }
-        public override Int32 SerializationLength(Object instance) { return 1; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength()           { return 1; }
+        public override UInt32 SerializationLength(Object instance) { return 1; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             array[offset++] = (Byte)fieldInfo.GetValue(instance);
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             fieldInfo.SetValue(instance, (SByte)array[offset]);
             return offset + 1;
@@ -97,16 +97,16 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(UInt16))
         {
         }
-        public override Int32 FixedSerializationLength()           { return 2; }
-        public override Int32 SerializationLength(Object instance) { return 2; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength()           { return 2; }
+        public override UInt32 SerializationLength(Object instance) { return 2; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             UInt16 value = (UInt16)fieldInfo.GetValue(instance);
             array[offset++] = (Byte)(value >> 8);
             array[offset++] = (Byte)(value     );
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             UInt16 value = (UInt16)(
                 (0xFF00 & (array[offset    ] << 8)) |
@@ -126,13 +126,13 @@ namespace More
         public static BigEndianUInt16Serializer Instance { get { if (instance == null) instance = new BigEndianUInt16Serializer(); return instance; } }
         private BigEndianUInt16Serializer() { }
 
-        public override int FixedSerializationLength()                               { return 2; }
-        public override void FixedLengthSerialize(byte[] bytes, int offset, UInt16 value)
+        public override UInt32 FixedSerializationLength()                               { return 2; }
+        public override void FixedLengthSerialize(byte[] bytes, UInt32 offset, UInt16 value)
         {
             bytes[offset++] = (Byte)(value >> 8);
             bytes[offset++] = (Byte)(value);
         }
-        public override UInt16 FixedLengthDeserialize(byte[] array, int offset)
+        public override UInt16 FixedLengthDeserialize(byte[] array, UInt32 offset)
         {
             return (UInt16)(
                 (0xFF00 & (array[offset] << 8)) |
@@ -148,16 +148,16 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(Int16))
         {
         }
-        public override Int32 FixedSerializationLength()           { return 2; }
-        public override Int32 SerializationLength(Object instance) { return 2; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength() { return 2; }
+        public override UInt32 SerializationLength(Object instance) { return 2; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Int16 value = (Int16)fieldInfo.GetValue(instance);
             array[offset++] = (Byte)(value >> 8);
             array[offset++] = (Byte)(value     );
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             Int16 value = (Int16)(
                 (0xFF00 & (array[offset    ] << 8)) |
@@ -177,13 +177,13 @@ namespace More
         public static BigEndianInt16Serializer Instance { get { if (instance == null) instance = new BigEndianInt16Serializer(); return instance; } }
         private BigEndianInt16Serializer() { }
 
-        public override int FixedSerializationLength() { return 2; }
-        public override void FixedLengthSerialize(byte[] bytes, int offset, Int16 value)
+        public override UInt32 FixedSerializationLength() { return 2; }
+        public override void FixedLengthSerialize(byte[] bytes, UInt32 offset, Int16 value)
         {
             bytes[offset++] = (Byte)(value >> 8);
             bytes[offset++] = (Byte)(value);
         }
-        public override Int16 FixedLengthDeserialize(byte[] array, int offset)
+        public override Int16 FixedLengthDeserialize(byte[] array, UInt32 offset)
         {
             return (Int16)(
                 (0xFF00 & (array[offset    ] << 8)) |
@@ -199,9 +199,9 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(UInt32))
         {
         }
-        public override Int32 FixedSerializationLength() { return 3; }
-        public override Int32 SerializationLength(Object instance) { return 3; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength() { return 3; }
+        public override UInt32 SerializationLength(Object instance) { return 3; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             UInt32 value = (UInt32)fieldInfo.GetValue(instance);
             array[offset++] = (Byte)(value >> 16);
@@ -209,7 +209,7 @@ namespace More
             array[offset++] = (Byte)(value      );
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             UInt32 value = (UInt32)(
                 (0xFF0000 & (array[offset    ] << 16)) |
@@ -230,9 +230,9 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(Int32))
         {
         }
-        public override Int32 FixedSerializationLength() { return 3; }
-        public override Int32 SerializationLength(Object instance) { return 3; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength() { return 3; }
+        public override UInt32 SerializationLength(Object instance) { return 3; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Int32 value = (Int32)fieldInfo.GetValue(instance);
             array[offset++] = (Byte)(value >> 16);
@@ -240,7 +240,7 @@ namespace More
             array[offset++] = (Byte)(value      );
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             Int32 value = (Int32)(
                 (0xFF0000 & (array[offset    ] << 16)) |
@@ -267,9 +267,9 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(UInt32))
         {
         }
-        public override Int32 FixedSerializationLength()           { return 4; }
-        public override Int32 SerializationLength(Object instance) { return 4; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength()           { return 4; }
+        public override UInt32 SerializationLength(Object instance) { return 4; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             UInt32 value = (UInt32)fieldInfo.GetValue(instance);
             array[offset++] = (Byte)(value >> 24);
@@ -278,7 +278,7 @@ namespace More
             array[offset++] = (Byte)(value      );
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             UInt32 value = (UInt32)(
                 (0xFF000000U & (array[offset    ] << 24)) |
@@ -300,15 +300,15 @@ namespace More
         public static BigEndianUInt32Serializer Instance { get { if (instance == null) instance = new BigEndianUInt32Serializer(); return instance; } }
         private BigEndianUInt32Serializer() { }
 
-        public override int FixedSerializationLength() { return 4; }
-        public override void FixedLengthSerialize(byte[] bytes, int offset, UInt32 instance)
+        public override UInt32 FixedSerializationLength() { return 4; }
+        public override void FixedLengthSerialize(Byte[] bytes, UInt32 offset, UInt32 instance)
         {
             bytes[offset++] = (Byte)(instance >> 24);
             bytes[offset++] = (Byte)(instance >> 16);
             bytes[offset++] = (Byte)(instance >> 8);
             bytes[offset++] = (Byte)(instance);
         }
-        public override UInt32 FixedLengthDeserialize(byte[] array, int offset)
+        public override UInt32 FixedLengthDeserialize(Byte[] array, UInt32 offset)
         {
             return (UInt32)(
                 (0xFF000000U & (array[offset    ] << 24)) |
@@ -325,9 +325,9 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(Int32))
         {
         }
-        public override Int32 FixedSerializationLength()           { return 4; }
-        public override Int32 SerializationLength(Object instance) { return 4; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength()           { return 4; }
+        public override UInt32 SerializationLength(Object instance) { return 4; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Int32 value = (Int32)fieldInfo.GetValue(instance);
             array[offset++] = (Byte)(value >> 24);
@@ -336,7 +336,7 @@ namespace More
             array[offset++] = (Byte)(value      );
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             Int32 value = (Int32)(
                 (0xFF000000U & (array[offset    ] << 24)) |
@@ -358,9 +358,9 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(UInt64))
         {
         }
-        public override Int32 FixedSerializationLength()           { return 8; }
-        public override Int32 SerializationLength(Object instance) { return 8; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength()           { return 8; }
+        public override UInt32 SerializationLength(Object instance) { return 8; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             UInt64 value = (UInt64)fieldInfo.GetValue(instance);
             array[offset++] = (Byte)(value >> 56);
@@ -373,7 +373,7 @@ namespace More
             array[offset++] = (Byte)(value      );
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             UInt64 value = (UInt64)(
                 (0xFF00000000000000UL & (UInt64)(array[offset    ] << 56)) |
@@ -399,9 +399,9 @@ namespace More
             : base(classThatHasThisField, fieldName, typeof(Int64))
         {
         }
-        public override Int32 FixedSerializationLength()           { return 8; }
-        public override Int32 SerializationLength(Object instance) { return 8; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength()           { return 8; }
+        public override UInt32 SerializationLength(Object instance) { return 8; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Int64 value = (Int64)fieldInfo.GetValue(instance);
             array[offset++] = (Byte)(value >> 56);
@@ -414,7 +414,7 @@ namespace More
             array[offset++] = (Byte)(value      );
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             Int64 value = (Int64)(
                 (0xFF00000000000000UL & (UInt64)(array[offset    ] << 56)) |
@@ -448,15 +448,15 @@ namespace More
             if (byteCount > 4) throw new NotImplementedException();
             if (byteCount == 0) throw new ArgumentOutOfRangeException("byteCount", "byteCount cannot be 0");
         }
-        public override Int32 FixedSerializationLength()           { return byteCount; }
-        public override Int32 SerializationLength(Object instance) { return byteCount; }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 FixedSerializationLength()           { return byteCount; }
+        public override UInt32 SerializationLength(Object instance) { return byteCount; }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             UInt32 value = (UInt32)Convert.ToUInt32((Enum)fieldInfo.GetValue(instance));
             array.BigEndianSetUInt32Subtype(offset, value, byteCount);
             return offset + byteCount;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             UInt32 valueAsUInt32 = array.BigEndianReadUInt32Subtype(offset, byteCount);
             Enum value = (Enum)Enum.ToObject(typeof(EnumType), valueAsUInt32);
@@ -466,6 +466,38 @@ namespace More
         public override void DataString(object instance, StringBuilder builder)
         {
             builder.Append(((EnumType)fieldInfo.GetValue(instance)).ToString());
+        }
+    }
+    public class BigEndianUnsignedEnumSerializer<EnumType> : FixedLengthInstanceSerializer<EnumType>
+    {
+        private static BigEndianUnsignedEnumSerializer<EnumType>
+            oneByteInstance, twoByteInstance, fourByteInstance;
+        public static BigEndianUnsignedEnumSerializer<EnumType> OneByteInstance { get { if (oneByteInstance == null) oneByteInstance = new BigEndianUnsignedEnumSerializer<EnumType>(1); return oneByteInstance; } }
+        public static BigEndianUnsignedEnumSerializer<EnumType> TwoByteInstance { get { if (twoByteInstance == null) twoByteInstance = new BigEndianUnsignedEnumSerializer<EnumType>(2); return twoByteInstance; } }
+        public static BigEndianUnsignedEnumSerializer<EnumType> FourByteInstance { get { if (fourByteInstance == null) fourByteInstance = new BigEndianUnsignedEnumSerializer<EnumType>(4); return fourByteInstance; } }
+        private BigEndianUnsignedEnumSerializer() { }
+
+        public readonly Byte byteCount;
+        public BigEndianUnsignedEnumSerializer(Byte byteCount)
+        {
+            this.byteCount = byteCount;
+        }
+        public override UInt32 FixedSerializationLength() { return byteCount; }
+        public override void FixedLengthSerialize(byte[] bytes, uint offset, EnumType instance)
+        {
+            bytes.BigEndianSetUInt32Subtype(offset, Convert.ToUInt32(instance), byteCount);
+        }
+        public override EnumType FixedLengthDeserialize(byte[] bytes, uint offset)
+        {
+            return (EnumType)Enum.ToObject(typeof(EnumType), bytes.BigEndianReadUInt32Subtype(offset, byteCount));
+        }
+        public override void DataString(EnumType instance, StringBuilder builder)
+        {
+            builder.Append(instance.ToString());
+        }
+        public override void DataSmallString(EnumType instance, StringBuilder builder)
+        {
+            builder.Append(instance.ToString());
         }
     }
 }

@@ -57,21 +57,20 @@ namespace More.Net
     public class RpcUnixCredentials : SubclassSerializer
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new XdrUInt32Reflector(typeof(RpcUnixCredentials), "stamp"),
+            new BigEndianUInt32Reflector(typeof(RpcUnixCredentials), "stamp"),
             new XdrStringReflector(typeof(RpcUnixCredentials), "machineName", 255),
-            new XdrUInt32Reflector(typeof(RpcUnixCredentials), "uid"),
-            new XdrUInt32Reflector(typeof(RpcUnixCredentials), "gid"),
-            new XdrVarLengthArray<XdrUInt32>(typeof(RpcUnixCredentials), "auxilaryGids", 16)
+            new BigEndianUInt32Reflector(typeof(RpcUnixCredentials), "uid"),
+            new BigEndianUInt32Reflector(typeof(RpcUnixCredentials), "gid"),
+            new FixedLengthElementArrayReflector<UInt32>(typeof(RpcUnixCredentials), "auxilaryGids", 4, BigEndianUInt32Serializer.Instance ) // Max length is 16
         });
 
         public UInt32 stamp;
         public String machineName;
         public UInt32 uid;
         public UInt32 gid;
-        public XdrUInt32[] auxilaryGids;
+        public UInt32[] auxilaryGids;
 
-
-        public RpcUnixCredentials(UInt32 stamp, String machineName, UInt32 uid, UInt32 gid, params XdrUInt32[] auxilaryGids)
+        public RpcUnixCredentials(UInt32 stamp, String machineName, UInt32 uid, UInt32 gid, params UInt32[] auxilaryGids)
             : base(memberSerializers)
         {
             this.stamp = stamp;
@@ -81,7 +80,7 @@ namespace More.Net
             this.auxilaryGids = auxilaryGids;
         }
 
-        public RpcUnixCredentials(Byte[] data, Int32 offset, Int32 maxOffset)
+        public RpcUnixCredentials(Byte[] data, UInt32 offset, UInt32 maxOffset)
             : base(memberSerializers)
         {
             Deserialize(data, offset, maxOffset);

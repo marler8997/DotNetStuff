@@ -40,7 +40,6 @@ namespace More.Net
 
             this.serverStartTimeStopwatchTicks = Stopwatch.GetTimestamp();
 
-
             List<TcpSelectListener> tcpListeners = new List<TcpSelectListener>();
             tcpListeners.Add(new TcpSelectListener(portMapEndPoint                         , backlog, portMapServer));
             tcpListeners.Add(new TcpSelectListener(new IPEndPoint(listenIPAddress, mountPort), backlog, mountServer));
@@ -68,17 +67,15 @@ namespace More.Net
             );
         }
 
+        /*
         public void PrintPerformance()
         {
             Int64 totalStopwatchTicks = Stopwatch.GetTimestamp() - serverStartTimeStopwatchTicks;
 
-            /*
             if (RpcPerformanceLog.rpcCallTimeLogger != null)
             {
                 RpcPerformanceLog.PrintPerformance(totalTimeMilliseconds);
             }
-            */
-            /*
             if (selectServer.totalSelectBlockTimeMicroseconds > 0)
             {
                 UInt64 totalSelectBlockMilliseconds = selectServer.totalSelectBlockTimeMicroseconds / 1000;
@@ -86,8 +83,8 @@ namespace More.Net
                 (Double)totalSelectBlockMilliseconds / (Double)totalTimeMilliseconds, totalSelectBlockMilliseconds, totalTimeMilliseconds);
                 
             }
-            */
         }
+        */
     }
     class NpcCallback : INpcServerCallback
     {

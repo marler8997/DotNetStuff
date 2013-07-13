@@ -38,7 +38,7 @@ namespace More.Net
                 procedure.procedureNumber, credentials, verifier));
             callMessage.SendTcp(socket, buffer, procedure.requestSerializer);
 
-            Int32 contentOffset, contentMaxOffset;
+            UInt32 contentOffset, contentMaxOffset;
             RpcMessage replyMessage = new RpcMessage(socket, buffer, out contentOffset, out contentMaxOffset);
 
             if (replyMessage.messageType != RpcMessageType.Reply)
@@ -50,7 +50,7 @@ namespace More.Net
             RpcReply reply = replyMessage.reply;
             RpcCallFailedException.VerifySuccessfulReply(callMessage.call, reply);
 
-            Int32 offset = procedure.responseSerializer.Deserialize(buffer.array, contentOffset, contentMaxOffset);
+            UInt32 offset = procedure.responseSerializer.Deserialize(buffer.array, contentOffset, contentMaxOffset);
 
             if (offset != contentMaxOffset)
                 throw new InvalidOperationException(String.Format("Deserialization of rpc message '{0}' as the following '{1}' resulted in an offset of {2}, but the record had {3} bytes",

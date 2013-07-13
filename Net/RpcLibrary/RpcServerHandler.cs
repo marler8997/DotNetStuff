@@ -9,26 +9,26 @@ namespace More.Net
 {
     public class RecordParser
     {
-        public delegate void RecordHandler(String clientString, Socket socket, Byte[] bytes, Int32 offset, Int32 maxOffset);
+        public delegate void RecordHandler(String clientString, Socket socket, Byte[] bytes, UInt32 offset, UInt32 maxOffset);
         readonly RecordHandler recordHandler;
 
         Byte[] copiedFragmentData;
-        Int32 copiedFramentDataLength;
+        UInt32 copiedFramentDataLength;
 
         public RecordParser(RecordHandler recordHandler)
         {
             this.recordHandler = recordHandler;
         }
-        public void ParseAndHandleRecords(String clientString, Socket socket,  Byte[] bytes, Int32 offset, Int32 maxOffset)
+        public void ParseAndHandleRecords(String clientString, Socket socket, Byte[] bytes, UInt32 offset, UInt32 offsetLimit)
         {
-            while(offset < maxOffset)
+            while (offset < offsetLimit)
             {
                 if (copiedFragmentData == null)
                 {
                     //
                     // TODO: fix this corner case
                     //
-                    if (maxOffset - offset < 4) throw new NotImplementedException("You have run into a corner case where the fragment length was not sent in a single packet...this corner case is not yet implemented");
+                    if (offsetLimit - offset < 4) throw new NotImplementedException("You have run into a corner case where the fragment length was not sent in a single packet...this corner case is not yet implemented");
 
                     Boolean isLastFragment = (bytes[offset] & 0x80) == 0x80;
                     if(!isLastFragment) throw new NotSupportedException("Multifragment records are not supported");
@@ -41,12 +41,12 @@ namespace More.Net
 
                     offset += 4;
 
-                    Int32 fragmentBytesAvailable = maxOffset - offset;
+                    UInt32 fragmentBytesAvailable = offsetLimit - offset;
 
                     if (fragmentBytesAvailable >= fragmentLength)
                     {
-                        recordHandler(clientString, socket, bytes, offset, fragmentLength);
-                        offset += fragmentLength;
+                        recordHandler(clientString, socket, bytes, offset, (UInt32)fragmentLength);
+                        offset += (UInt32)fragmentLength;
                         continue;
                     }
 
@@ -59,8 +59,8 @@ namespace More.Net
                 }
                 else
                 {
-                    Int32 fragmentBytesAvailable = maxOffset - offset;
-                    Int32 fragmentBytesNeeded = copiedFragmentData.Length - copiedFramentDataLength;
+                    UInt32 fragmentBytesAvailable = offsetLimit - offset;
+                    UInt32 fragmentBytesNeeded = (UInt32)copiedFragmentData.Length - copiedFramentDataLength;
 
                     if(fragmentBytesAvailable >= fragmentBytesNeeded)
                     {
@@ -100,7 +100,7 @@ namespace More.Net
         public abstract Boolean ProgramHeaderSupported(RpcProgramHeader programHeader);
 
         public abstract RpcReply Call(String clientString, RpcCall call,
-            Byte[] callParameters, Int32 callOffset, Int32 callMaxOffset,
+            Byte[] callParameters, UInt32 callOffset, UInt32 callMaxOffset,
             out ISerializer replyParameters);
 
         public void ServerListening(Socket listenSocket)
@@ -110,24 +110,24 @@ namespace More.Net
         {
             Console.WriteLine("[{0}] The server has stopped", serviceName);
         }
-        public ServerInstruction ListenSocketClosed(int clientCount)
+        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
         {
             Console.WriteLine("[{0}] The listen socket closed", serviceName);
             return ServerInstruction.StopServer;
         }
-        public ServerInstruction ClientOpenCallback(int clientCount, Socket socket)
+        public ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket)
         {
             //Console.WriteLine("[{0}] New Client '{1}'", serviceName, socket.RemoteEndPoint);
             socketToRecordBuilder.Add(socket, new RecordParser(HandleTcpRecord));
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientCloseCallback(int clientCount, Socket socket)
+        public ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket)
         {
             //Console.WriteLine("[{0}] Close Client", serviceName);
             socketToRecordBuilder.Remove(socket);
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientDataCallback(Socket socket, byte[] bytes, int bytesRead)
+        public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             String clientString = String.Format("TCP:{0}", socket.SafeRemoteEndPointString());
 
@@ -141,11 +141,11 @@ namespace More.Net
             recordParser.ParseAndHandleRecords(clientString, socket, bytes, 0, bytesRead);
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction DatagramPacket(System.Net.EndPoint endPoint, Socket socket, byte[] bytes, int bytesRead)
+        public ServerInstruction DatagramPacket(System.Net.EndPoint endPoint, Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             String clientString = String.Format("UDP:{0}", endPoint);
 
-            Int32 parametersOffset;
+            UInt32 parametersOffset;
             RpcMessage callMessage = new RpcMessage(bytes, 0, bytesRead, out parametersOffset);
 
             if (callMessage.messageType != RpcMessageType.Call)
@@ -167,10 +167,10 @@ namespace More.Net
             return ServerInstruction.NoInstruction;
         }
 
-        void HandleTcpRecord(String clientString, Socket socket, byte[] record, Int32 recordOffset, Int32 recordMaxOffset)
+        void HandleTcpRecord(String clientString, Socket socket, Byte[] record, UInt32 recordOffset, UInt32 recordOffsetLimit)
         {
-            Int32 parametersOffset;
-            RpcMessage callMessage = new RpcMessage(record, recordOffset, recordMaxOffset, out parametersOffset);
+            UInt32 parametersOffset;
+            RpcMessage callMessage = new RpcMessage(record, recordOffset, recordOffsetLimit, out parametersOffset);
 
             if (callMessage.messageType != RpcMessageType.Call)
                 throw new InvalidOperationException(String.Format("Received an Rpc reply from '{0}' but only expecting Rpc calls", clientString));
@@ -181,7 +181,7 @@ namespace More.Net
             }
 
             ISerializer replyParameters;
-            RpcReply reply = Call(clientString, callMessage.call, record, parametersOffset, recordMaxOffset, out replyParameters);
+            RpcReply reply = Call(clientString, callMessage.call, record, parametersOffset, recordOffsetLimit, out replyParameters);
 
             if (reply != null)
             {

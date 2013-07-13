@@ -174,7 +174,7 @@ namespace More.Pdl
             }
             public override UInt32 GetFixedArraySize()
             {
-                throw new InvalidOperationException(String.Format("This method cannot be called on an array type of '{0}'", type));
+                throw new InvalidOperationException("CodeBug: This method cannot be called on an array of variable length");
             }
             public override String LengthSerializerReference()
             {
@@ -219,12 +219,13 @@ namespace More.Pdl
             this.arrayType = arrayType;
         }
 
-        // return -1 if element serialization length is not fixed, otherwise, return fixed serialization length
-        public abstract int FixedElementSerializationLength { get; }
+        // return UInt32.Max if element serialization length is not fixed, otherwise, return fixed serialization length
+        public abstract UInt32 FixedElementSerializationLength { get; }
 
         public abstract String ElementDynamicSerializationLengthExpression(String instanceString);
         public abstract String ElementSerializeExpression(String arrayString, String offsetString, String instanceString);
         public abstract String ElementDeserializeExpression(String arrayString, String offsetString);
+        public abstract String ElementDeserializeArrayExpression(String arrayString, String offsetString, String countString);
         public abstract String ElementDataStringExpression(String builderString, String instanceString, Boolean small);
 
         //public abstract String SerializeString(String valueString);
@@ -261,7 +262,7 @@ namespace More.Pdl
         {
             this.byteCount = integerType.IntegerTypeByteCount();
         }
-        public override int FixedElementSerializationLength
+        public override UInt32 FixedElementSerializationLength
         {
             get { return byteCount; }
         }
@@ -291,6 +292,19 @@ namespace More.Pdl
             {
                 return String.Format("{0}.BigEndianRead{1}({2})",
                     arrayString, type, offsetString);
+            }
+        }
+        public override String ElementDeserializeArrayExpression(String arrayString, String offsetString, String countString)
+        {
+            if (byteCount == 1)
+            {
+                return String.Format("{0}.CreateSub{1}Array({2}, {3})",
+                    arrayString, (type == PdlType.Byte) ? "" : "SByte", offsetString, countString);
+            }
+            else
+            {
+                return String.Format("BigEndian{0}Serializer.Instance.FixedLengthDeserializeArray({1}, {2}, {3})",
+                    type, arrayString, offsetString, countString);
             }
         }
         public override string ElementDataStringExpression(string builderString, string instanceString, bool small)
@@ -335,7 +349,7 @@ namespace More.Pdl
             this.relativeEnumReferenceTypeString = relativeEnumReferenceTypeString;
             this.definition = definition;
         }
-        public override int FixedElementSerializationLength
+        public override UInt32 FixedElementSerializationLength
         {
             get { return definition.byteCount; }
         }
@@ -346,12 +360,20 @@ namespace More.Pdl
         public override String ElementSerializeExpression(String arrayString, String offsetString, String instanceString)
         {
             return String.Format("{0}{1}EnumSerializer<{2}>.Instance.FixedLengthSerialize({3}, {4}, {5})",
-                (definition.byteCount == 1) ? "" : "BigEndian", definition.underlyingIntegerType, definition.typeName, arrayString, offsetString, instanceString);
+                (definition.byteCount == 1) ? "" : "BigEndian", definition.underlyingIntegerType,
+                definition.typeName, arrayString, offsetString, instanceString);
         }
         public override String ElementDeserializeExpression(String arrayString, String offsetString)
         {
             return String.Format("{0}{1}EnumSerializer<{2}>.Instance.FixedLengthDeserialize({3}, {4})",
-                (definition.byteCount == 1) ? "" : "BigEndian", definition.underlyingIntegerType, definition.typeName, arrayString, offsetString);
+                (definition.byteCount == 1) ? "" : "BigEndian", definition.underlyingIntegerType,
+                definition.typeName, arrayString, offsetString);
+        }
+        public override String ElementDeserializeArrayExpression(String arrayString, String offsetString, String countString)
+        {
+            return String.Format("{0}{1}EnumSerializer<{2}>.Instance.FixedLengthDeserializeArray({3}, {4}, {5})",
+                (definition.byteCount == 1) ? "" : "BigEndian", definition.underlyingIntegerType,
+                definition.typeName, arrayString, offsetString, countString);
         }
         public override string ElementDataStringExpression(string builderString, string instanceString, bool small)
         {
@@ -389,13 +411,13 @@ namespace More.Pdl
             this.relativeObjectReferenceTypeString = relativeObjectReferenceTypeString;
             this.definition = definition;
         }
-        public override int FixedElementSerializationLength
+        public override UInt32 FixedElementSerializationLength
         {
             get { return definition.FixedSerializationLength; }
         }
         public override String ElementDynamicSerializationLengthExpression(String instanceString)
         {
-            if(FixedElementSerializationLength >= 0)
+            if(FixedElementSerializationLength != UInt32.MaxValue)
                 throw new InvalidOperationException(
                     "CodeBug: this method should not be called on an object type reference with a fixed element serialization length");
 
@@ -411,6 +433,15 @@ namespace More.Pdl
         {
             return String.Format("{0}.Serializer.Deserialize({1}, {2})",
                 definition.name, arrayString, offsetString);
+        }
+        public override String ElementDeserializeArrayExpression(String arrayString, String offsetString, String countString)
+        {
+            if(FixedElementSerializationLength != UInt32.MaxValue)
+            {
+                return String.Format("{0}.Serializer.FixedLengthDeserializeArray({1}, {2}, {3})",
+                    definition.name, arrayString, offsetString, countString);
+            }
+            throw new InvalidOperationException("This method only applies to fixed object types");
         }
         public override string ElementDataStringExpression(string builderString, string instanceString, bool small)
         {
@@ -457,9 +488,9 @@ namespace More.Pdl
                 throw new InvalidOperationException("A Serializer must have an array type");
             this.lengthType = lengthType;
         }
-        public override int FixedElementSerializationLength
+        public override UInt32 FixedElementSerializationLength
         {
-            get { return -1; }
+            get { return UInt32.MaxValue; }
         }
         public override String ElementDynamicSerializationLengthExpression(String instanceString)
         {
@@ -474,6 +505,10 @@ namespace More.Pdl
         {
             //return String.Format("{0}.Deserialize({1}, {2})", "theInstance", arrayString, offsetString);
             return "null /*This functionality is not yet implemented*/";
+        }
+        public override String ElementDeserializeArrayExpression(String arrayString, String offsetString, String countString)
+        {
+            throw new InvalidOperationException("This method only applies to fixed object types");
         }
         public override string ElementDataStringExpression(string builderString, string instanceString, bool small)
         {

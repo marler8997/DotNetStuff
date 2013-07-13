@@ -36,18 +36,18 @@ namespace More.Net
     public interface SelectServerCallback
     {
         void ServerStopped(); // Always called if the server is stopped
-        ServerInstruction ListenSocketClosed(int clientCount);
+        ServerInstruction ListenSocketClosed(UInt32 clientCount);
     }
     public interface StreamSelectServerCallback : SelectServerCallback
     {
         void ServerListening(Socket listenSocket);
-        ServerInstruction ClientOpenCallback(int clientCount, Socket socket);
-        ServerInstruction ClientCloseCallback(int clientCount, Socket socket);
-        ServerInstruction ClientDataCallback(Socket socket, byte[] bytes, int bytesRead);
+        ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket);
+        ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket);
+        ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead);
     }
     public interface DatagramSelectServerCallback : SelectServerCallback
     {
-        ServerInstruction DatagramPacket(EndPoint endPoint, Socket socket, byte[] bytes, int bytesRead);
+        ServerInstruction DatagramPacket(EndPoint endPoint, Socket socket, Byte[] bytes, UInt32 bytesRead);
     }
     public class TcpSelectServer : IDisposable
     {
@@ -121,7 +121,7 @@ namespace More.Net
                 catch (SystemException) { }
             }
 
-            ServerInstruction instruction = callback.ClientCloseCallback(connectedSockets.Count, socket);
+            ServerInstruction instruction = callback.ClientCloseCallback((UInt32)connectedSockets.Count, socket);
 
             socket.Close();
 
@@ -168,7 +168,7 @@ namespace More.Net
                                 connectedSockets.Add(newSocket);
                             }
 
-                            ServerInstruction instruction = callback.ClientOpenCallback(connectedSockets.Count, newSocket);
+                            ServerInstruction instruction = callback.ClientOpenCallback((UInt32)connectedSockets.Count, newSocket);
 
                             if ((instruction & ServerInstruction.CloseClient) != 0)
                             {
@@ -200,7 +200,7 @@ namespace More.Net
                             }
                             else
                             {
-                                ServerInstruction instruction = callback.ClientDataCallback(readSocket, readBytes, bytesRead);
+                                ServerInstruction instruction = callback.ClientDataCallback(readSocket, readBytes, (UInt32)bytesRead);
                                 if ((instruction & ServerInstruction.CloseClient) != 0)
                                 {
                                     instruction |= CloseAndRemoveClient(readSocket, callback);
@@ -318,7 +318,7 @@ namespace More.Net
                 catch (SystemException) { }
             }
 
-            ServerInstruction instruction = tcpCallback.ClientCloseCallback(connectedTcpSockets.Count, socket);
+            ServerInstruction instruction = tcpCallback.ClientCloseCallback((UInt32)connectedTcpSockets.Count, socket);
 
             socket.Close();
 
@@ -446,7 +446,7 @@ namespace More.Net
                                 }
                                 else
                                 {
-                                    ServerInstruction instruction = tcpCallback.ClientDataCallback(readSocket, readBytes, bytesRead);
+                                    ServerInstruction instruction = tcpCallback.ClientDataCallback(readSocket, readBytes, (UInt32)bytesRead);
                                     if ((instruction & ServerInstruction.CloseClient) != 0)
                                     {
                                         instruction |= CloseAndRemoveClient(readSocket, tcpCallback);
@@ -478,7 +478,7 @@ namespace More.Net
                                 }
                                 else
                                 {
-                                    ServerInstruction instruction = udpCallback.DatagramPacket(readSocket.RemoteEndPoint, readSocket, readBytes, bytesRead);
+                                    ServerInstruction instruction = udpCallback.DatagramPacket(readSocket.RemoteEndPoint, readSocket, readBytes, (UInt32)bytesRead);
                                     if ((instruction & ServerInstruction.CloseClient) != 0)
                                     {
                                         CloseAndRemoveUdpConnectedSocket(readSocket);
@@ -517,7 +517,7 @@ namespace More.Net
                                 }
                                 else
                                 {
-                                    ServerInstruction instruction = udpListener.callback.DatagramPacket(udpListenerEndPoint, readSocket, readBytes, bytesRead);
+                                    ServerInstruction instruction = udpListener.callback.DatagramPacket(udpListenerEndPoint, readSocket, readBytes, (UInt32)bytesRead);
                                     if ((instruction & ServerInstruction.StopServer) != 0) return;
                                 }
                                 continue;
@@ -537,7 +537,7 @@ namespace More.Net
                                 connectedTcpSockets.Add(newSocket);
                                 connectedTcpCallbackDictionary.Add(newSocket, tcpListener.callback);
 
-                                ServerInstruction instruction = tcpListener.callback.ClientOpenCallback(connectedTcpSockets.Count, newSocket);
+                                ServerInstruction instruction = tcpListener.callback.ClientOpenCallback((UInt32)connectedTcpSockets.Count, newSocket);
 
                                 if ((instruction & ServerInstruction.CloseClient) != 0)
                                 {
@@ -659,7 +659,7 @@ namespace More.Net
         Boolean keepRunning;
 
         public SelectServerStaticTcpListeners(IList<TcpListener> tcpListeners,
-            Int32 safeBufferInitialCapacity, Int32 safeBufferExpandLength)
+            UInt32 safeBufferInitialCapacity, UInt32 safeBufferExpandLength)
         {
             if(tcpListeners.Count <= 0) throw new InvalidOperationException("You have provided 0 tcp listeners");
 
@@ -824,7 +824,7 @@ namespace More.Net
 
         Boolean keepRunning;
 
-        public SelectServerDynamicTcpListeners(Int32 safeBufferInitialCapacity, Int32 safeBufferExpandLength)
+        public SelectServerDynamicTcpListeners(UInt32 safeBufferInitialCapacity, UInt32 safeBufferExpandLength)
         {
             this.popSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             this.popSocket.Bind(new IPEndPoint(IPAddress.Loopback, 0));

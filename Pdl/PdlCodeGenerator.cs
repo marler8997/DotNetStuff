@@ -68,15 +68,15 @@ namespace More.Pdl
             {
                 List<ObjectDefinitionField> objectDefinitionFields = objectDefinition.Fields;
 
-                Int32 fixedSerializationLength = objectDefinition.FixedSerializationLength;
+                UInt32 fixedSerializationLength = objectDefinition.FixedSerializationLength;
 
                 UInt32 tabs;
 
                 writer.WriteLine("    public class {0}", objectDefinition.name);
                 writer.WriteLine("    {");
-                if (fixedSerializationLength >= 0)
+                if (fixedSerializationLength != UInt32.MaxValue)
                 {
-                    writer.WriteLine("        public const Int32 FixedSerializationLength = {0};", fixedSerializationLength);
+                    writer.WriteLine("        public const UInt32 FixedSerializationLength = {0};", fixedSerializationLength);
                     writer.WriteLine();
                 }
 
@@ -129,7 +129,7 @@ namespace More.Pdl
                 // Print static instance serializer
                 //
                 writer.WriteLine("        static InstanceSerializer serializer = null;");
-                writer.WriteLine("        public static {0}InstanceSerializer<{1}> Serializer", (fixedSerializationLength >= 0) ? "FixedLength" : "I", objectDefinition.name);
+                writer.WriteLine("        public static {0}InstanceSerializer<{1}> Serializer", (fixedSerializationLength == UInt32.MaxValue) ? "I": "FixedLength", objectDefinition.name);
                 writer.WriteLine("        {");
                 writer.WriteLine("            get");
                 writer.WriteLine("            {");
@@ -139,17 +139,17 @@ namespace More.Pdl
                 writer.WriteLine("        }");
                 writer.WriteLine();
                 writer.WriteLine("        class InstanceSerializer : {0}InstanceSerializer<{1}>",
-                    (fixedSerializationLength >= 0) ? "FixedLength" : "I", objectDefinition.name);
+                    (fixedSerializationLength == UInt32.MaxValue) ? "I" : "FixedLength", objectDefinition.name);
                 writer.WriteLine("        {");
                 writer.WriteLine("            public InstanceSerializer() {}");
 
                 //
                 // FixedLength Object Serializer
                 //
-                if (fixedSerializationLength >= 0)
+                if (fixedSerializationLength != UInt32.MaxValue)
                 {
-                    writer.WriteLine("            public override Int32 FixedSerializationLength() {{ return {0}.FixedSerializationLength; }}", objectDefinition.name);
-                    writer.WriteLine("            public override void FixedLengthSerialize(Byte[] bytes, Int32 offset, {0} instance)", objectDefinition.name);
+                    writer.WriteLine("            public override UInt32 FixedSerializationLength() {{ return {0}.FixedSerializationLength; }}", objectDefinition.name);
+                    writer.WriteLine("            public override void FixedLengthSerialize(Byte[] bytes, UInt32 offset, {0} instance)", objectDefinition.name);
                     writer.WriteLine("            {");
                     for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
                     {
@@ -162,14 +162,27 @@ namespace More.Pdl
                         }
                         else
                         {
-                            throw new NotImplementedException("Arrays inside fixed length objects not implemented");
+                            UInt32 fixedArraySize = typeReference.arrayType.GetFixedArraySize();
+                            if (typeReference.type == PdlType.Byte || typeReference.type == PdlType.SByte)
+                            {
+                                writer.WriteLine("                Array.Copy(instance.{0}, 0, bytes, offset, {1});", field.name, fixedArraySize);
+                                writer.WriteLine("                offset += {0};", fixedArraySize);
+                            }
+                            else
+                            {
+                                writer.WriteLine("                for(int i = 0; i < {0}; i++)", fixedArraySize);
+                                writer.WriteLine("                {");
+                                writer.WriteLine("                    {0};", typeReference.ElementSerializeExpression("bytes", "offset", "instance." + field.name + "[i]"));
+                                writer.WriteLine("                    offset += {0};", typeReference.FixedElementSerializationLength);
+                                writer.WriteLine("                }");
+                            }
                         }
                     }
                     writer.WriteLine("            }");
-                    writer.WriteLine("            public override {0} FixedLengthDeserialize(Byte[] bytes, Int32 offset)", objectDefinition.name);
+                    writer.WriteLine("            public override {0} FixedLengthDeserialize(Byte[] bytes, UInt32 offset)", objectDefinition.name);
                     writer.WriteLine("            {");
                     writer.WriteLine("                return new {0} (", objectDefinition.name);
-                    Int32 offset = 0;
+                    UInt32 offset = 0;
                     for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
                     {
                         ObjectDefinitionField field = objectDefinitionFields[fieldIndex];
@@ -181,7 +194,9 @@ namespace More.Pdl
                         }
                         else
                         {
-                            throw new NotImplementedException("Arrays inside fixed length objects not implemented");
+                            UInt32 fixedArraySize = typeReference.arrayType.GetFixedArraySize();
+                            writer.Write("                {0}", typeReference.ElementDeserializeArrayExpression("bytes", "offset + " + offset, fixedArraySize.ToString()));
+                            offset += typeReference.FixedElementSerializationLength * fixedArraySize;
                         }
                         if (fieldIndex < objectDefinitionFields.Count - 1) writer.Write(',');
                         writer.WriteLine(" // {0}", field.name);
@@ -194,16 +209,16 @@ namespace More.Pdl
                 //
                 else
                 {
-                    writer.WriteLine("            public Int32 SerializationLength({0} instance)", objectDefinition.name);
+                    writer.WriteLine("            public UInt32 SerializationLength({0} instance)", objectDefinition.name);
                     writer.WriteLine("            {");
-                    writer.WriteLine("                int dynamicLengthPart = 0;");
-                    Int32 fixedSerializationLengthPart = 0;
+                    writer.WriteLine("                UInt32 dynamicLengthPart = 0;");
+                    UInt32 fixedSerializationLengthPart = 0;
                     for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
                     {
                         ObjectDefinitionField field = objectDefinitionFields[fieldIndex];
                         TypeReference typeReference = field.typeReference;
 
-                        Int32 fieldFixedElementSerializationLength = typeReference.FixedElementSerializationLength;
+                        UInt32 fieldFixedElementSerializationLength = typeReference.FixedElementSerializationLength;
                         if (fieldFixedElementSerializationLength >= 0)
                         {
                             if (typeReference.arrayType == null)
@@ -214,11 +229,11 @@ namespace More.Pdl
                             {
                                 if (typeReference.arrayType.type == PdlArraySizeTypeEnum.Fixed)
                                 {
-                                    fixedSerializationLengthPart += fieldFixedElementSerializationLength * (Int32)typeReference.arrayType.GetFixedArraySize();
+                                    fixedSerializationLengthPart += fieldFixedElementSerializationLength * typeReference.arrayType.GetFixedArraySize();
                                 }
                                 else
                                 {
-                                    writer.WriteLine("                if(instance.{0} != null) dynamicLengthPart += instance.{0}.Length * {1};", field.name, fieldFixedElementSerializationLength);
+                                    writer.WriteLine("                if(instance.{0} != null) dynamicLengthPart += (UInt32)instance.{0}.Length * {1};", field.name, fieldFixedElementSerializationLength);
                                 }
                             }
                         }
@@ -253,14 +268,14 @@ namespace More.Pdl
                     }
                     writer.WriteLine("                return {0} + dynamicLengthPart;", fixedSerializationLengthPart);
                     writer.WriteLine("            }");
-                    writer.WriteLine("            public Int32 Serialize(Byte[] bytes, Int32 offset, {0} instance)", objectDefinition.name);
+                    writer.WriteLine("            public UInt32 Serialize(Byte[] bytes, UInt32 offset, {0} instance)", objectDefinition.name);
                     writer.WriteLine("            {");
                     for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
                     {
                         ObjectDefinitionField field = objectDefinitionFields[fieldIndex];
                         TypeReference typeReference = field.typeReference;
 
-                        Int32 fieldFixedElementSerializationLength = typeReference.FixedElementSerializationLength;
+                        UInt32 fieldFixedElementSerializationLength = typeReference.FixedElementSerializationLength;
                         if (fieldFixedElementSerializationLength >= 0)
                         {
                             if (typeReference.arrayType == null)
@@ -287,7 +302,7 @@ namespace More.Pdl
                     }
                     writer.WriteLine("                return offset;");
                     writer.WriteLine("            }");
-                    writer.WriteLine("            public Int32 Deserialize(Byte[] bytes, Int32 offset, Int32 offsetLimit, out {0} outInstance)", objectDefinition.name);
+                    writer.WriteLine("            public UInt32 Deserialize(Byte[] bytes, UInt32 offset, UInt32 offsetLimit, out {0} outInstance)", objectDefinition.name);
                     writer.WriteLine("            {");
                     writer.WriteLine("                {0} instance = new {0}();", objectDefinition.name);
                     for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
@@ -309,7 +324,7 @@ namespace More.Pdl
                     writer.WriteLine("            }");
                 }
 
-                writer.WriteLine("            public{0} void DataString({1} instance, StringBuilder builder)", (fixedSerializationLength >= 0) ? " override" : "", objectDefinition.name);
+                writer.WriteLine("            public{0} void DataString({1} instance, StringBuilder builder)", (fixedSerializationLength == UInt32.MaxValue) ? "" : " override", objectDefinition.name);
                 writer.WriteLine("            {");
                 writer.WriteLine("                builder.Append(\"{0}:{{\");", objectDefinition.name);
                 for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
@@ -329,7 +344,7 @@ namespace More.Pdl
                 }
                 writer.WriteLine("                builder.Append(\"}\");");
                 writer.WriteLine("            }");
-                writer.WriteLine("            public{0} void DataSmallString({1} instance, StringBuilder builder)", (fixedSerializationLength >= 0) ? " override" : "", objectDefinition.name);
+                writer.WriteLine("            public{0} void DataSmallString({1} instance, StringBuilder builder)", (fixedSerializationLength == UInt32.MaxValue) ? "" : " override", objectDefinition.name);
                 writer.WriteLine("            {");
                 writer.WriteLine("                builder.Append(\"{0}:{{\");", objectDefinition.name);
                 for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
@@ -412,13 +427,13 @@ namespace More.Pdl
                 /*
                 writer.WriteLine();
                 writer.WriteLine("        // Deserialization constructor");
-                writer.WriteLine("        public {0}(Byte[] array, Int32 offset, Int32 offsetLimit)", objectDefinition.name);
+                writer.WriteLine("        public {0}(Byte[] array, UInt32 offset, UInt32 offsetLimit)", objectDefinition.name);
                 writer.WriteLine("        {");
-                writer.WriteLine("            Int32 newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);");
+                writer.WriteLine("            UInt32 newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);");
                 writer.WriteLine("            if(newOffset != offsetLimit) throw new FormatException(String.Format(");
                 writer.WriteLine("                \"Expected packet '{0}' to be {{1}} bytes but was {{2}} bytes\", offsetLimit - offset, newOffset - offset));", objectDefinition.name);
                 writer.WriteLine("        }");
-                writer.WriteLine("        public {0}(Byte[] array, Int32 offset, Int32 offsetLimit, out Int32 newOffset)", objectDefinition.name);
+                writer.WriteLine("        public {0}(Byte[] array, UInt32 offset, UInt32 offsetLimit, out UInt32 newOffset)", objectDefinition.name);
                 writer.WriteLine("        {");
                 writer.WriteLine("            newOffset = Reflector.Deserialize(this, array, offset, offsetLimit);");
                 writer.WriteLine("        }");
@@ -429,16 +444,16 @@ namespace More.Pdl
                 //
                 if (fixedSerializationLength >= 0)
                 {
-                    writer.WriteLine("        public override {0} Deserialize(Byte[] array, Int32 offset)", objectDefinition.name);
+                    writer.WriteLine("        public override {0} Deserialize(Byte[] array, UInt32 offset)", objectDefinition.name);
                     writer.WriteLine("        {");
                     writer.WriteLine("            return new {0}(array, offset, offset + FixedSerializationLength);", objectDefinition.name);
                     writer.WriteLine("        }");
                 }
                 else
                 {
-                    writer.WriteLine("        public override Int32 Deserialize(Byte[] array, Int32 offset, Int32 offsetLimit, out {0} outInstance)", objectDefinition.name);
+                    writer.WriteLine("        public override UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 offsetLimit, out {0} outInstance)", objectDefinition.name);
                     writer.WriteLine("        {");
-                    writer.WriteLine("            Int32 newOffset;");
+                    writer.WriteLine("            UInt32 newOffset;");
                     writer.WriteLine("            outInstance = new {0}(array, offset, offsetLimit, out newOffset);", objectDefinition.name);
                     writer.WriteLine("            return newOffset;");
                     writer.WriteLine("        }");
@@ -453,10 +468,10 @@ namespace More.Pdl
                 /*
                 if (fixedSerializationLength >= 0)
                 {
-                    writer.WriteLine("        public const Int32 FixedSerializationLength = {0};", fixedSerializationLength);
-                    writer.WriteLine("        public static void FixedLengthSerialize(Byte[] array, Int32 offset, {0} instance)", objectDefinition.name);
+                    writer.WriteLine("        public const UInt32 FixedSerializationLength = {0};", fixedSerializationLength);
+                    writer.WriteLine("        public static void FixedLengthSerialize(Byte[] array, UInt32 offset, {0} instance)", objectDefinition.name);
                     writer.WriteLine("        {");
-                    writer.WriteLine("            Int32 serializationLength = Reflector.Serialize(instance, array, offset) - FixedSerializationLength;");
+                    writer.WriteLine("            UInt32 serializationLength = Reflector.Serialize(instance, array, offset) - FixedSerializationLength;");
                     writer.WriteLine("            if(offset != serializationLength) throw new InvalidOperationException(String.Format(");
                     writer.WriteLine("                \"Expected serialization length to be {0} but was {1}\",");
                     writer.WriteLine("                FixedSerializationLength, serializationLength));");
@@ -464,11 +479,11 @@ namespace More.Pdl
                 }
                 else
                 {
-                    writer.WriteLine("        public static Int32 SerializationLength({0} obj)", objectDefinition.name);
+                    writer.WriteLine("        public static UInt32 SerializationLength({0} obj)", objectDefinition.name);
                     writer.WriteLine("        {");
                     writer.WriteLine("            return Reflector.SerializationLength(obj);");
                     writer.WriteLine("        }");
-                    writer.WriteLine("        public static Int32 DynamicLengthSerialize(Byte[] array, Int32 offset, {0} instance)", objectDefinition.name);
+                    writer.WriteLine("        public static UInt32 DynamicLengthSerialize(Byte[] array, UInt32 offset, {0} instance)", objectDefinition.name);
                     writer.WriteLine("        {");
                     writer.WriteLine("            return Reflector.Serialize(instance, array, offset);");
                     writer.WriteLine("        }");
@@ -482,18 +497,18 @@ namespace More.Pdl
                 //
                 // Print serializer adapater factory method
                 //
-                if (fixedSerializationLength >= 0)
-                {
-                    writer.WriteLine("        public FixedLengthInstanceSerializerAdapter<{0}> CreateSerializerAdapater()", objectDefinition.name);
-                    writer.WriteLine("        {");
-                    writer.WriteLine("            return new FixedLengthInstanceSerializerAdapter<{0}>(Serializer, this);", objectDefinition.name);
-                    writer.WriteLine("        }");
-                }
-                else
+                if (fixedSerializationLength == UInt32.MaxValue)
                 {
                     writer.WriteLine("        public InstanceSerializerAdapter<{0}> CreateSerializerAdapater()", objectDefinition.name);
                     writer.WriteLine("        {");
                     writer.WriteLine("            return new InstanceSerializerAdapter<{0}>(Serializer, this);", objectDefinition.name);
+                    writer.WriteLine("        }");
+                }
+                else
+                {
+                    writer.WriteLine("        public FixedLengthInstanceSerializerAdapter<{0}> CreateSerializerAdapater()", objectDefinition.name);
+                    writer.WriteLine("        {");
+                    writer.WriteLine("            return new FixedLengthInstanceSerializerAdapter<{0}>(Serializer, this);", objectDefinition.name);
                     writer.WriteLine("        }");
                 }
 

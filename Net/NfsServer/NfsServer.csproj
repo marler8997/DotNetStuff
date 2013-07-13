@@ -38,6 +38,7 @@
     <Compile Include="Mount1And3Server.cs" />
     <Compile Include="Nfs3Server.cs" />
     <Compile Include="NfsServerLog.cs" />
+    <Compile Include="NpcClasses.cs" />
     <Compile Include="RpcServicesManager.cs" />
     <Compile Include="PortMap2Server.cs" />
     <Compile Include="NfsServerProgram.cs" />

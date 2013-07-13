@@ -43,6 +43,7 @@
     <Compile Include="ArrayReflectors.cs" />
     <Compile Include="Enumerators.cs" />
     <Compile Include="IDataHandler.cs" />
+    <Compile Include="FixedInterfaces.cs" />
     <Compile Include="IRandomGenerator.cs" />
     <Compile Include="LfdFormatException.cs" />
     <Compile Include="LfdLine.cs" />

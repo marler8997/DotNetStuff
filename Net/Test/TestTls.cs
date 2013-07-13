@@ -59,11 +59,11 @@ namespace More.Net
                         null//new Extension[] {}
                         ).CreateSerializerAdapater()).CreateSerializerAdapater());
 
-            Int32 packetLength = TlsRecord.Serializer.SerializationLength(record);
+            UInt32 packetLength = TlsRecord.Serializer.SerializationLength(record);
             sendBuffer.EnsureCapacity(packetLength);
             TlsRecord.Serializer.Serialize(sendBuffer.array, 0, record);
 
-            socket.Send(sendBuffer.array, 0, packetLength, SocketFlags.None);
+            socket.Send(sendBuffer.array, 0, (Int32)packetLength, SocketFlags.None);
 
             bytesRead = socket.Receive(receiveBuffer);
             Assert.IsTrue(bytesRead > 0);

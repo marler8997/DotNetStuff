@@ -5,27 +5,27 @@ namespace More
 {
     public class FixedLengthByteArrayReflector : ClassFieldReflector
     {
-        readonly Int32 fixedLength;
-        public FixedLengthByteArrayReflector(Type classThatHasThisField, String fieldName, Int32 fixedLength)
+        readonly UInt32 fixedLength;
+        public FixedLengthByteArrayReflector(Type classThatHasThisField, String fieldName, UInt32 fixedLength)
             : base(classThatHasThisField, fieldName, typeof(Byte[]))
         {
             this.fixedLength = fixedLength;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return fixedLength;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return fixedLength;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Byte[] objBytes = (Byte[])fieldInfo.GetValue(instance);
             Array.Copy(objBytes, 0, array, offset, fixedLength);
             return offset + fixedLength;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 offsetLimit)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             Byte[] value = new Byte[fixedLength];
             Array.Copy(array, offset, value, 0, fixedLength);
@@ -48,7 +48,6 @@ namespace More
             builder.Append(String.Format("[{0} bytes]", fixedLength));
         }
     }
-
     public class ByteArrayReflector : ClassFieldReflector
     {
         readonly Byte arraySizeByteCount;
@@ -58,17 +57,17 @@ namespace More
         {
             this.arraySizeByteCount = arraySizeByteCount;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return -1;
+            return UInt32.MaxValue;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             Object obj = fieldInfo.GetValue(instance);
             if (obj == null) return 1;
-            return ((Byte[])obj).Length + 1;
+            return ((UInt32)((Byte[])obj).Length) + 1;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Object obj = fieldInfo.GetValue(instance);
             if (obj == null)
@@ -82,7 +81,7 @@ namespace More
 
             array[offset] = (Byte)(objBytes.Length);
             Array.Copy(objBytes, 0, array, offset + 1, objBytes.Length);
-            return offset + objBytes.Length + 1;
+            return offset + (UInt32)objBytes.Length + 1;
         }
         Byte GetLength(Object instance)
         {
@@ -90,7 +89,7 @@ namespace More
             if (obj == null) return 0;
             return (Byte)(((Byte[])obj).Length);
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 offsetLimit)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             Byte length = array[offset];
             if(length == 0)
@@ -128,7 +127,7 @@ namespace More
     {
         readonly Byte arraySizeByteCount;
         readonly FixedLengthInstanceSerializer<ElementType> elementSerializer;
-        readonly Int32 fixedElementSerializationLength;
+        readonly UInt32 fixedElementSerializationLength;
 
         public FixedLengthElementArrayReflector(Type classThatHasThisField, String fieldName, Byte arraySizeByteCount,
             FixedLengthInstanceSerializer<ElementType> elementSerializer)
@@ -138,30 +137,32 @@ namespace More
             this.elementSerializer = elementSerializer;
             this.fixedElementSerializationLength = elementSerializer.FixedSerializationLength();
         }
-        public override int FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return -1;
+            return UInt32.MaxValue;
         }
-        public override int SerializationLength(object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return arraySizeByteCount;
 
             Array valueAsArray = (Array)valueAsObject;
             return arraySizeByteCount +
-                valueAsArray.Length * fixedElementSerializationLength;
+                (UInt32)valueAsArray.Length * fixedElementSerializationLength;
         }
-        public override int Serialize(object instance, byte[] array, int offset)
+        public override UInt32 Serialize(object instance, byte[] array, UInt32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
             {
-                return array.BigEndianSetUInt32Subtype(offset, 0, arraySizeByteCount);
+                array.BigEndianSetUInt32Subtype(offset, 0, arraySizeByteCount);
+                return offset + arraySizeByteCount;
             }
             
             ElementType[] valueAsArray = (ElementType[])valueAsObject;
 
-            offset = array.BigEndianSetUInt32Subtype(offset, (UInt32)valueAsArray.Length, arraySizeByteCount);
+            array.BigEndianSetUInt32Subtype(offset, (UInt32)valueAsArray.Length, arraySizeByteCount);
+            offset += arraySizeByteCount;
 
             for (int i = 0; i < valueAsArray.Length; i++)
             {
@@ -171,7 +172,7 @@ namespace More
 
             return offset;
         }
-        public override int Deserialize(object instance, byte[] array, int offset, int offsetLimit)
+        public override UInt32 Deserialize(object instance, byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             UInt32 length = array.BigEndianReadUInt32Subtype(offset, arraySizeByteCount);
             offset += arraySizeByteCount;
@@ -235,34 +236,36 @@ namespace More
             this.arraySizeByteCount = arraySizeByteCount;
             this.elementSerializer = elementSerializer;
         }
-        public override int FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return -1;
+            return UInt32.MaxValue;
         }
-        public override int SerializationLength(object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return arraySizeByteCount;
 
             ElementType[] elements = (ElementType[])valueAsObject;
-            Int32 length = 0;
+            UInt32 length = 0;
             for (int i = 0; i < elements.Length; i++)
             {
                 length += elementSerializer.SerializationLength(elements[i]);
             }
             return arraySizeByteCount + length;
         }
-        public override int Serialize(object instance, byte[] array, int offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
             {
-                return array.BigEndianSetUInt32Subtype(offset, 0, arraySizeByteCount);
+                array.BigEndianSetUInt32Subtype(offset, 0, arraySizeByteCount);
+                return offset + arraySizeByteCount;
             }
 
             ElementType[] valueAsArray = (ElementType[])valueAsObject;
 
-            offset = array.BigEndianSetUInt32Subtype(offset, (UInt32)valueAsArray.Length, arraySizeByteCount);
+            array.BigEndianSetUInt32Subtype(offset, (UInt32)valueAsArray.Length, arraySizeByteCount);
+            offset += arraySizeByteCount;
 
             for (int i = 0; i < valueAsArray.Length; i++)
             {
@@ -271,7 +274,7 @@ namespace More
 
             return offset;
         }
-        public override int Deserialize(object instance, byte[] array, int offset, int offsetLimit)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             UInt32 length = array.BigEndianReadUInt32Subtype(offset, arraySizeByteCount);
             offset += arraySizeByteCount;

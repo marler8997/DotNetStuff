@@ -19,13 +19,13 @@ namespace More
         public const Int32 DefaultInitialCapacity = 128;
 
         public Byte[] array;
-        public readonly Int32 expandLength;
+        public readonly UInt32 expandLength;
 
         public ByteBuffer()
             : this(DefaultInitialCapacity, DefaultExpandLength)
         {
         }
-        public ByteBuffer(Int32 initialCapacity, Int32 expandLength)
+        public ByteBuffer(UInt32 initialCapacity, UInt32 expandLength)
         {
             this.expandLength = expandLength;
             this.array = new Byte[initialCapacity];
@@ -35,8 +35,20 @@ namespace More
         {
             if (array.Length < capacity)
             {
-                Int32 diff = capacity - array.Length;
-                Int32 newSizeDiff = (diff > expandLength) ? diff : expandLength;
+                UInt32 diff = (UInt32)(capacity - array.Length);
+                UInt32 newSizeDiff = (diff > expandLength) ? diff : expandLength;
+
+                Byte[] newArray = new Byte[array.Length + newSizeDiff];
+                System.Array.Copy(array, newArray, array.Length);
+                this.array = newArray;
+            }
+        }
+        public void EnsureCapacity(UInt32 capacity)
+        {
+            if ((UInt32)array.Length < capacity)
+            {
+                UInt32 diff = capacity - (UInt32)array.Length;
+                UInt32 newSizeDiff = (diff > expandLength) ? diff : expandLength;
 
                 Byte[] newArray = new Byte[array.Length + newSizeDiff];
                 System.Array.Copy(array, newArray, array.Length);

@@ -8,7 +8,7 @@ namespace More.Net
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new ClassFieldReflectors<RpcProgramHeader>(typeof(RpcCall), "programHeader", RpcProgramHeader.memberSerializers),
-            new XdrUInt32Reflector                    (typeof(RpcCall), "procedure"),
+            new BigEndianUInt32Reflector                    (typeof(RpcCall), "procedure"),
             new ClassFieldReflectors<RpcCredentials>  (typeof(RpcCall), "credentials", RpcCredentials.memberSerializers),
             new ClassFieldReflectors<RpcVerifier>     (typeof(RpcCall), "verifier"   , RpcVerifier.memberSerializers),
         });
@@ -31,8 +31,7 @@ namespace More.Net
             this.credentials = credentials;
             this.verifier = verifier;
         }
-
-        public RpcCall(Byte[] data, Int32 offset, Int32 maxOffset, out Int32 newOffset)
+        public RpcCall(Byte[] data, UInt32 offset, UInt32 maxOffset, out UInt32 newOffset)
             : base(memberSerializers)
         {
             newOffset = Deserialize(data, offset, maxOffset);

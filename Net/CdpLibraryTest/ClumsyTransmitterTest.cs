@@ -13,6 +13,7 @@ namespace More.Net
     [TestClass]
     public class ClumsyTransmitterTest
     {
+        /*
         [TestMethod]
         public void TestTimeoutHappendBecauseOfDroppedPacket()
         {
@@ -49,5 +50,6 @@ namespace More.Net
             receiver.ReceiveAndExpectTimeout();
 
         }
+        */
     }
 }

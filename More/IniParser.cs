@@ -28,7 +28,7 @@ namespace More
     public class IniSettings
     {
         static readonly Char[] StringSplitByEquals = new Char[] { '=' };
-        protected static Dictionary<IniSectionKeyPair, String> ParseIniStream(Stream stream, Encoding encoding, Int32 readBufferSize, out HashSet<String> sections)
+        protected static Dictionary<IniSectionKeyPair, String> ParseIniStream(Stream stream, Encoding encoding, UInt32 readBufferSize, out HashSet<String> sections)
         {
             sections = new HashSet<String>();
             Dictionary<IniSectionKeyPair, String> keyPairs = new Dictionary<IniSectionKeyPair, String>();
@@ -42,7 +42,7 @@ namespace More
                 Int32 bytesRead = stream.Read(readBuffer, 0, readBuffer.Length);
                 if (bytesRead <= 0) break;
 
-                lineParser.Add(readBuffer, 0, bytesRead);
+                lineParser.Add(readBuffer, 0, (UInt32)bytesRead);
 
                 String line;
                 while ((line = lineParser.GetLine()) != null)
@@ -94,7 +94,7 @@ namespace More
         protected readonly HashSet<String> sections;
         protected readonly Dictionary<IniSectionKeyPair, String> keyPairs;
 
-        public IniSettings(Stream stream, Encoding encoding, Int32 readBufferSize)
+        public IniSettings(Stream stream, Encoding encoding, UInt32 readBufferSize)
         {
             this.keyPairs = ParseIniStream(stream, encoding, readBufferSize, out sections);
         }
@@ -217,7 +217,7 @@ namespace More
     }
     public class IniFile : IniSettings
     {
-        public static IniFile Load(String filename, Encoding encoding, Int32 readBufferSize)
+        public static IniFile Load(String filename, Encoding encoding, UInt32 readBufferSize)
         {
             HashSet<String> sections;
             Dictionary<IniSectionKeyPair,String> keyPairs;

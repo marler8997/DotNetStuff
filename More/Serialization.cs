@@ -10,12 +10,12 @@ namespace More
     // otherwise, it represents the objects fixed serialization length
     public interface ISerializer
     {
-        Int32 FixedSerializationLength();
+        UInt32 FixedSerializationLength();
 
-        Int32 SerializationLength();
-        Int32 Serialize(Byte[] bytes, Int32 offset);
+        UInt32 SerializationLength();
+        UInt32 Serialize(Byte[] bytes, UInt32 offset);
 
-        Int32 Deserialize(Byte[] bytes, Int32 offset, Int32 offsetLimit);
+        UInt32 Deserialize(Byte[] bytes, UInt32 offset, UInt32 offsetLimit);
 
         void DataString(StringBuilder builder);
         void DataSmallString(StringBuilder builder);
@@ -25,12 +25,12 @@ namespace More
     // An IReflector is a serializer that serializes values directly to and from CSharp fields using reflection
     public interface IReflector
     {
-        Int32 FixedSerializationLength();
+        UInt32 FixedSerializationLength();
 
-        Int32 SerializationLength(Object instance);
-        Int32 Serialize(Object instance, Byte[] array, Int32 offset);
+        UInt32 SerializationLength(Object instance);
+        UInt32 Serialize(Object instance, Byte[] array, UInt32 offset);
 
-        Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 offsetLimit);
+        UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit);
 
         void DataString(Object instance, StringBuilder builder);
         void DataSmallString(Object instance, StringBuilder builder);
@@ -52,40 +52,59 @@ namespace More
 
     public interface IInstanceSerializer<T>
     {
-        Int32 SerializationLength(T instance);
-        Int32 Serialize(Byte[] bytes, Int32 offset, T instance);
-        Int32 Deserialize(Byte[] bytes, Int32 offset, Int32 offsetLimit, out T instance);
+        UInt32 SerializationLength(T instance);
+        UInt32 Serialize(Byte[] bytes, UInt32 offset, T instance);
+        UInt32 Deserialize(Byte[] bytes, UInt32 offset, UInt32 offsetLimit, out T instance);
         void DataString(T instance, StringBuilder builder);
         void DataSmallString(T instance, StringBuilder builder);
     }
     public abstract class FixedLengthInstanceSerializer<T> : IInstanceSerializer<T>
     {
-        public readonly Int32 fixedSerializationLength;
+        public readonly UInt32 fixedSerializationLength;
         protected FixedLengthInstanceSerializer()
         {
             this.fixedSerializationLength = FixedSerializationLength();
         }
 
-        public abstract Int32 FixedSerializationLength();
-        public abstract void FixedLengthSerialize(Byte[] bytes, Int32 offset, T instance);
-        public abstract T FixedLengthDeserialize(Byte[] bytes, Int32 offset);
+        public abstract UInt32 FixedSerializationLength();
+        public abstract void FixedLengthSerialize(Byte[] bytes, UInt32 offset, T instance);
+        public abstract T FixedLengthDeserialize(Byte[] bytes, UInt32 offset);
 
-        public Int32 SerializationLength(T instance)
+        public UInt32 SerializationLength(T instance)
         {
             return fixedSerializationLength;
         }
-        public Int32 Serialize(byte[] bytes, int offset, T instance)
+        public UInt32 Serialize(byte[] bytes, UInt32 offset, T instance)
         {
             FixedLengthSerialize(bytes, offset, instance);
             return offset + fixedSerializationLength;
         }
-        public Int32 Deserialize(byte[] bytes, int offset, int offsetLimit, out T instance)
+        public UInt32 Deserialize(byte[] bytes, UInt32 offset, UInt32 offsetLimit, out T instance)
         {
             instance = FixedLengthDeserialize(bytes, offset);
             return offset + fixedSerializationLength;
         }
         public abstract void DataString(T instance, StringBuilder builder);
         public abstract void DataSmallString(T instance, StringBuilder builder);
+
+        public T[] FixedLengthDeserializeArray(Byte[] bytes, UInt32 offset, UInt32 elementCount)
+        {
+            T[] array = new T[elementCount];
+            for (uint i = 0; i < array.Length; i++)
+            {
+                array[i] = FixedLengthDeserialize(bytes, offset);
+                offset += fixedSerializationLength;
+            }
+            return array;
+        }
+        public void FixedLengthDeserializeArray(Byte[] bytes, UInt32 offset, T[] array)
+        {
+            for (uint i = 0; i < array.Length; i++)
+            {
+                array[i] = FixedLengthDeserialize(bytes, offset);
+                offset += fixedSerializationLength;
+            }
+        }
     }
 
 
@@ -98,10 +117,10 @@ namespace More
             this.serializer = serializer;
             this.instance = instance;
         }
-        public int FixedSerializationLength()              { return -1; }
-        public int SerializationLength()                   { return serializer.SerializationLength(instance); }
-        public int Serialize(byte[] bytes, int offset)     { return serializer.Serialize(bytes, offset, instance); }
-        public int Deserialize(byte[] bytes, int offset, int offsetLimit)
+        public UInt32 FixedSerializationLength() { return UInt32.MaxValue; }
+        public UInt32 SerializationLength() { return serializer.SerializationLength(instance); }
+        public UInt32 Serialize(byte[] bytes, UInt32 offset) { return serializer.Serialize(bytes, offset, instance); }
+        public UInt32 Deserialize(byte[] bytes, UInt32 offset, UInt32 offsetLimit)
                                                            { return serializer.Deserialize(bytes, offset, offsetLimit, out instance); }
         public void DataString(StringBuilder builder)      { serializer.DataString(instance, builder); }
         public void DataSmallString(StringBuilder builder) { serializer.DataSmallString(instance, builder); }
@@ -116,14 +135,14 @@ namespace More
             this.serializer = serializer;
             this.instance = instance;
         }
-        public int FixedSerializationLength()          { return serializer.fixedSerializationLength; }
-        public int SerializationLength()               { return serializer.fixedSerializationLength; }
-        public int Serialize(byte[] bytes, int offset)
+        public UInt32 FixedSerializationLength() { return serializer.fixedSerializationLength; }
+        public UInt32 SerializationLength() { return serializer.fixedSerializationLength; }
+        public UInt32 Serialize(byte[] bytes, UInt32 offset)
         {
             serializer.FixedLengthSerialize(bytes, offset, instance);
             return offset + serializer.fixedSerializationLength;
         }
-        public int Deserialize(byte[] bytes, int offset, int offsetLimit)
+        public UInt32 Deserialize(byte[] bytes, UInt32 offset, UInt32 offsetLimit)
         {
             instance = serializer.FixedLengthDeserialize(bytes, offset);
             return offset + serializer.fixedSerializationLength;
@@ -148,7 +167,7 @@ namespace More
             this.reflector = reflector;
             this.deserializer = deserializer;
             fixedSerializationLength = reflector.FixedSerializationLength();
-            if (fixedSerializationLength < 0) throw new InvalidOperationException(
+            if (fixedSerializationLength == UInt32.MaxValue) throw new InvalidOperationException(
                  "This class is only for reflectors with FixedSerializationLength");
         }
         public int FixedSerializationLength()                          { return fixedSerializationLength; }
@@ -228,7 +247,7 @@ namespace More
     {
         protected readonly IReflector reflector;
         readonly Object instance;
-        readonly Int32 fixedSerializationLength;
+        readonly UInt32 fixedSerializationLength;
 
         public ReflectorToSerializerAdapater(IReflector reflector, Object instance)
         {
@@ -236,19 +255,19 @@ namespace More
             this.instance = instance;
             this.fixedSerializationLength = reflector.FixedSerializationLength();
         }
-        public Int32 FixedSerializationLength()
+        public UInt32 FixedSerializationLength()
         {
             return fixedSerializationLength;
         }
-        public Int32 SerializationLength()
+        public UInt32 SerializationLength()
         {
             return reflector.SerializationLength(instance);
         }
-        public Int32 Serialize(Byte[] array, Int32 offset)
+        public UInt32 Serialize(Byte[] array, UInt32 offset)
         {
             return reflector.Serialize(instance, array, offset);
         }
-        public Int32 Deserialize(Byte[] array, Int32 offset, Int32 offsetLimit)
+        public UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             return reflector.Deserialize(instance, array, offset, offsetLimit);
         }
@@ -259,7 +278,7 @@ namespace More
     public class Reflectors : IReflector
     {
         public readonly IReflector[] reflectors;
-        public readonly Int32 fixedSerializationLength;
+        public readonly UInt32 fixedSerializationLength;
 
         public Reflectors(params IReflector[] reflectors)
         {
@@ -268,10 +287,10 @@ namespace More
             this.fixedSerializationLength = 0;
             for (int i = 0; i < reflectors.Length; i++)
             {
-                Int32 fieldFixedSerializationLength = reflectors[i].FixedSerializationLength();
-                if (fieldFixedSerializationLength < 0)
+                UInt32 fieldFixedSerializationLength = reflectors[i].FixedSerializationLength();
+                if (fieldFixedSerializationLength == UInt32.MaxValue)
                 {
-                    this.fixedSerializationLength = -1; // length is not fixed
+                    this.fixedSerializationLength = UInt32.MaxValue; // length is not fixed
                     return;
                 }
                 this.fixedSerializationLength += fieldFixedSerializationLength;
@@ -284,7 +303,7 @@ namespace More
         public Reflectors(IReflector[] reflectors, ReflectorCreator nullReflectorCreator)
         {
             this.reflectors = reflectors;
-            this.fixedSerializationLength = -1;
+            this.fixedSerializationLength = UInt32.MaxValue;
 
             Boolean foundNull = false;
 
@@ -304,22 +323,22 @@ namespace More
             if (!foundNull) throw new InvalidOperationException("This constructor requires that one of the reflectors is null but none were null");
         }
 
-        public int FixedSerializationLength()
+        public UInt32 FixedSerializationLength()
         {
             return fixedSerializationLength;
         }
-        public int SerializationLength(Object instance)
+        public UInt32 SerializationLength(Object instance)
         {
-            if(fixedSerializationLength >= 0) return fixedSerializationLength;
+            if(fixedSerializationLength != UInt32.MaxValue) return fixedSerializationLength;
 
-            Int32 length = 0;
+            UInt32 length = 0;
             for(int i = 0; i < reflectors.Length; i++)
             {
                 length += reflectors[i].SerializationLength(instance);
             }
             return length;
         }
-        public int Serialize(Object instance, byte[] array, int offset)
+        public UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             for(int i = 0; i < reflectors.Length; i++)
             {
@@ -327,7 +346,7 @@ namespace More
             }
             return offset;
         }
-        public int Deserialize(Object instance, byte[] array, int offset, int offsetLimit)
+        public UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             for(int i = 0; i < reflectors.Length; i++)
             {
@@ -365,12 +384,12 @@ namespace More
             }
         }
         private VoidSerializer() { }
-        public Int32 FixedSerializationLength() { return 0; }
+        public UInt32 FixedSerializationLength() { return 0; }
 
-        public Int32 SerializationLength() { return 0; }
-        public Int32 Serialize(Byte[] array, Int32 offset) { return offset; }
+        public UInt32 SerializationLength() { return 0; }
+        public UInt32 Serialize(Byte[] array, UInt32 offset) { return offset; }
 
-        public Int32 Deserialize(Byte[] array, Int32 offset, Int32 offsetLimit) { return offset; }
+        public UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 offsetLimit) { return offset; }
 
         public void DataString(StringBuilder builder)      { builder.Append("<void>"); }
         public void DataSmallString(StringBuilder builder) { builder.Append("<void>"); }
@@ -405,39 +424,39 @@ namespace More
             }
         }
         private VoidReflector() { }
-        public Int32 FixedSerializationLength() { return 0; }
-        public Int32 SerializationLength(Object instance) { return 0; }
-        public Int32 Serialize(Object instance, Byte[] array, Int32 offset) { return offset; }
-        public Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 offsetLimit) { return offset; }
+        public UInt32 FixedSerializationLength() { return 0; }
+        public UInt32 SerializationLength(Object instance) { return 0; }
+        public UInt32 Serialize(Object instance, Byte[] array, UInt32 offset) { return offset; }
+        public UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit) { return offset; }
         public void DataString(Object instance, StringBuilder builder)      { builder.Append("<void>"); }
         public void DataSmallString(Object instance, StringBuilder builder) { builder.Append("<void>"); }
     }
     public class SubclassSerializer : ISerializer
     {
         protected readonly IReflector[] reflectors;
-        protected readonly Int32 fixedSerializationLength;
+        protected readonly UInt32 fixedSerializationLength;
 
         public SubclassSerializer(Reflectors reflectors)
         {
             this.reflectors = reflectors.reflectors;
             this.fixedSerializationLength = reflectors.fixedSerializationLength;
         }
-        public Int32 FixedSerializationLength()
+        public UInt32 FixedSerializationLength()
         {
             return fixedSerializationLength;
         }
-        public Int32 SerializationLength()
+        public UInt32 SerializationLength()
         {
-            if (fixedSerializationLength >= 0) return fixedSerializationLength;
+            if (fixedSerializationLength != UInt32.MaxValue) return fixedSerializationLength;
 
-            Int32 length = 0;
+            UInt32 length = 0;
             for (int i = 0; i < reflectors.Length; i++)
             {
                 length += reflectors[i].SerializationLength(this);
             }
             return length;
         }
-        public Int32 Serialize(Byte[] array, Int32 offset)
+        public UInt32 Serialize(Byte[] array, UInt32 offset)
         {
             for (int i = 0; i < reflectors.Length; i++)
             {
@@ -446,7 +465,7 @@ namespace More
             }
             return offset;
         }
-        public Int32 Deserialize(Byte[] array, Int32 offset, Int32 offsetLimit)
+        public UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             for (int i = 0; i < reflectors.Length; i++)
             {
@@ -488,7 +507,7 @@ namespace More
     {
         readonly Object instance;
         protected readonly IReflector[] reflectors;
-        protected readonly Int32 fixedSerializationLength;
+        protected readonly UInt32 fixedSerializationLength;
 
         public SerializerFromObjectAndReflectors(Object instance, Reflectors reflectors)
         {
@@ -496,22 +515,22 @@ namespace More
             this.reflectors = reflectors.reflectors;
             this.fixedSerializationLength = reflectors.fixedSerializationLength;
         }
-        public Int32 FixedSerializationLength()
+        public UInt32 FixedSerializationLength()
         {
             return fixedSerializationLength;
         }
-        public Int32 SerializationLength()
+        public UInt32 SerializationLength()
         {
-            if (fixedSerializationLength >= 0) return fixedSerializationLength;
+            if (fixedSerializationLength != UInt32.MaxValue) return fixedSerializationLength;
 
-            Int32 length = 0;
+            UInt32 length = 0;
             for (int i = 0; i < reflectors.Length; i++)
             {
                 length += reflectors[i].SerializationLength(instance);
             }
             return length;
         }
-        public Int32 Serialize(Byte[] array, Int32 offset)
+        public UInt32 Serialize(Byte[] array, UInt32 offset)
         {
             for (int i = 0; i < reflectors.Length; i++)
             {
@@ -520,7 +539,7 @@ namespace More
             }
             return offset;
         }
-        public Int32 Deserialize(Byte[] array, Int32 offset, Int32 offsetLimit)
+        public UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             for (int i = 0; i < reflectors.Length; i++)
             {
@@ -570,10 +589,10 @@ namespace More
                     "In the class '{0}' field '{1}', you specified the expected type to be '{2}' but it is actually '{3}",
                     classThatHasThisField.Name, fieldName, expectedFieldType.FullName, fieldInfo.FieldType.FullName));
         }
-        public abstract Int32 FixedSerializationLength();
-        public abstract Int32 SerializationLength(Object instance);
-        public abstract Int32 Serialize(Object instance, Byte[] array, Int32 offset);
-        public abstract Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 offsetLimit);
+        public abstract UInt32 FixedSerializationLength();
+        public abstract UInt32 SerializationLength(Object instance);
+        public abstract UInt32 Serialize(Object instance, Byte[] array, UInt32 offset);
+        public abstract UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit);
         public abstract void DataString(Object instance, StringBuilder builder);
         public virtual void DataSmallString(Object instance, StringBuilder builder)
         {
@@ -583,7 +602,7 @@ namespace More
     public class ClassFieldReflectors<FieldType> : ClassFieldReflector /* where FieldType : new() */
     {
         private IReflector[] fieldReflectors;
-        private Int32 fixedSerializationLength;
+        private UInt32 fixedSerializationLength;
 
         public ClassFieldReflectors(Type classThatHasThisField, String fieldName, Reflectors fieldReflectors)
             : base(classThatHasThisField, fieldName)
@@ -591,28 +610,25 @@ namespace More
             this.fieldReflectors = fieldReflectors.reflectors;
             this.fixedSerializationLength = fieldReflectors.fixedSerializationLength;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return fixedSerializationLength;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
-            if (fieldReflectors == null) return 0;
-            if (fixedSerializationLength >= 0) return fixedSerializationLength;
+            if (fixedSerializationLength != UInt32.MaxValue) return fixedSerializationLength;
 
             Object structInstance = fieldInfo.GetValue(instance);
 
-            Int32 length = 0;
+            UInt32 length = 0;
             for (int i = 0; i < fieldReflectors.Length; i++)
             {
                 length += fieldReflectors[i].SerializationLength(structInstance);
             }
             return length;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
-            if (fieldReflectors == null) return offset;
-
             Object structInstance = (instance == null) ? null : fieldInfo.GetValue(instance);
 
             for (int i = 0; i < fieldReflectors.Length; i++)
@@ -622,10 +638,8 @@ namespace More
             }
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 offsetLimit)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
-            if (fieldReflectors == null) return offset;
-
             Object structObject = FormatterServices.GetUninitializedObject(typeof(FieldType));
             //FieldType structObject = new FieldType();
 
@@ -652,15 +666,11 @@ namespace More
                 return;
             }
             builder.Append("{");
-
-            if (fieldReflectors != null)
+            for (int i = 0; i < fieldReflectors.Length; i++)
             {
-                for (int i = 0; i < fieldReflectors.Length; i++)
-                {
-                    if (i > 0) builder.Append(", ");
+                if (i > 0) builder.Append(", ");
 
-                    fieldReflectors[i].DataString(structInstance, builder);
-                }
+                fieldReflectors[i].DataString(structInstance, builder);
             }
             builder.Append("}");
         }
@@ -677,15 +687,11 @@ namespace More
                 return;
             }
             builder.Append("{");
-
-            if (fieldReflectors != null)
+            for (int i = 0; i < fieldReflectors.Length; i++)
             {
-                for (int i = 0; i < fieldReflectors.Length; i++)
-                {
-                    if (i > 0) builder.Append(", ");
+                if (i > 0) builder.Append(", ");
 
-                    fieldReflectors[i].DataSmallString(structInstance, builder);
-                }
+                fieldReflectors[i].DataSmallString(structInstance, builder);
             }
             builder.Append("}");
         }
@@ -703,35 +709,35 @@ namespace More
         }
 
         public Byte[] bytes;
-        public Int32 offset, length;
+        public UInt32 offset, length;
         public PartialByteArraySerializer()
         {
         }
-        public PartialByteArraySerializer(Byte[] bytes, Int32 offset, Int32 length)
+        public PartialByteArraySerializer(Byte[] bytes, UInt32 offset, UInt32 length)
         {
             this.bytes = bytes;
             this.offset = offset;
             this.length = length;
             if (offset + length > bytes.Length) throw new ArgumentOutOfRangeException();
         }
-        public Int32 FixedSerializationLength()
+        public UInt32 FixedSerializationLength()
         {
-            return -1; // length is 
+            return UInt32.MaxValue; // length is 
         }
-        public Int32 SerializationLength()
+        public UInt32 SerializationLength()
         {
             if (bytes == null) return 0;
             return length;
         }
-        public Int32 Serialize(Byte[] array, Int32 offset)
+        public UInt32 Serialize(Byte[] array, UInt32 offset)
         {
             if (this.bytes == null) return offset;
             Array.Copy(this.bytes, this.offset, array, offset, this.length);
             return offset + this.length;
         }
-        public Int32 Deserialize(Byte[] array, Int32 offset, Int32 offsetLimit)
+        public UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
-            Int32 length = offsetLimit - offset;
+            UInt32 length = offsetLimit - offset;
 
             if (length <= 0)
             {
@@ -751,7 +757,7 @@ namespace More
         }
         public void DataString(StringBuilder builder)
         {
-            builder.Append((bytes == null) ? "<null>" : BitConverter.ToString(bytes, offset, length));
+            builder.Append((bytes == null) ? "<null>" : bytes.ToHexString((Int32)offset, (Int32)length));
         }
         public void DataSmallString(StringBuilder builder)
         {
@@ -773,7 +779,7 @@ namespace More
                     fieldInfo.FieldType.Name, fieldInfo.Name));
             }
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return -1; // There's not really a way to tell if this type has a fixed length
         }
@@ -788,15 +794,15 @@ namespace More
 
             return value;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return GetValue(instance).SerializationLength();
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             return GetValue(instance).Serialize(array, offset);
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             return GetValue(instance).Deserialize(array, offset, maxOffset);
         }

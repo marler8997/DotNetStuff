@@ -101,7 +101,6 @@ namespace More.Net
             return Nfs3Procedure.Status.ErrorBadHandle;
         }
 
-
         private void DisposeShareObject(ShareObject shareObject)
         {
             if (NfsServerLog.sharedFileSystemLogger != null)
@@ -145,7 +144,6 @@ namespace More.Net
             if (NfsServerLog.sharedFileSystemLogger != null)
                 NfsServerLog.sharedFileSystemLogger.WriteLine("[SharedFileSystem] Updated Share Object: '{0}' to '{1}'", oldLocalPathAndName, newLocalPathAndName);
         }
-
 
         public Nfs3Procedure.Status RemoveFileOrDirectory(String parentDirectory, String name)
         {
@@ -254,7 +252,6 @@ namespace More.Net
                 }
             }
 
-
             //
             // Update the share object and return
             //
@@ -267,7 +264,6 @@ namespace More.Net
             }
             return status;
         }
-
 
         public Nfs3Procedure.Status TryGetSharedObject(Byte[] handle, out ShareObject shareObject)
         {

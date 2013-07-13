@@ -80,7 +80,7 @@ namespace More
                 Console.WriteLine("-----------------------------------------");
                 UInt32[] testValues = new UInt32[] { 0, 0x80, 0x800000, 0x80000000, 0xFF, 0xFFFF, 0xFFFFFF, 0xFFFFFFF, 0xFFFFFFFF,
                     0x7F, 0x7FFFFF, 0x7FFFFFFF,  0x100, 0x80, 0xFF, 1, 2, 0x128EF92E, 0xFF00FF00, 0x12345678 };
-                for (int i = 0; i < testValues.Length; i++)
+                for (UInt32 i = 0; i < testValues.Length; i++)
                 {
                     UInt32 testValue = testValues[i];
                     Console.WriteLine(testValue);
@@ -101,7 +101,7 @@ namespace More
                 Console.WriteLine("-----------------------------------------");
                 Int32[] testValues = new Int32[] { 0, 0x80, 0x800000, -1, 0xFF, 0xFFFF, 0xFFFFFF, 0xFFFFFFF,
                     0x7F, 0x7FFFFF, 0x7FFFFFFF, 0x100, 0x80, 0xFF, 1, 2, 0x128EF92E, 0x7F00FF00, 0x12345678 };
-                for (int i = 0; i < testValues.Length; i++)
+                for (UInt32 i = 0; i < testValues.Length; i++)
                 {
                     Int32 testValue = testValues[i];
                     Console.WriteLine(testValue);
@@ -112,7 +112,7 @@ namespace More
                     Assert.AreEqual((Byte)testValue, buffer[i + 3]);
                     Assert.AreEqual(testValue, buffer.BigEndianReadInt32(i));
                 }
-                for (int i = 0; i < testValues.Length; i++)
+                for (UInt32 i = 0; i < testValues.Length; i++)
                 {
                     Int32 testValue = -testValues[i];
                     Console.WriteLine(testValue);

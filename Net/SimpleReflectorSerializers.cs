@@ -12,15 +12,15 @@ namespace More.Net
             : base(typeThatContainsThisField, fieldName, typeof(Int32))
         {
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return 4;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Int32 value = (Int32)fieldInfo.GetValue(instance);
             array[offset    ] = (Byte)(value >> 24);
@@ -29,7 +29,7 @@ namespace More.Net
             array[offset + 3] = (Byte)(value      );
             return offset + 4;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Int32 value = (Int32)(
                 (Int32)(0xFF000000 & (array[offset    ] << 24)) |
@@ -50,15 +50,15 @@ namespace More.Net
             : base(typeThatContainsThisField, fieldName, typeof(UInt16))
         {
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return 2;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return 2;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             UInt16 value = (UInt16)fieldInfo.GetValue(instance);
             array[offset    ] = (Byte)(value >>  8);
@@ -66,7 +66,7 @@ namespace More.Net
             return offset + 2;
 
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             UInt16 value = (UInt16)(
                        (0xFF00 & (array[offset    ] << 8)) |
@@ -85,15 +85,15 @@ namespace More.Net
             : base(typeThatContainsThisField, fieldName, typeof(UInt32))
         {
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return 4;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             UInt32 value = (UInt32)fieldInfo.GetValue(instance);
             array[offset    ] = (Byte)(value >> 24);
@@ -103,7 +103,7 @@ namespace More.Net
             return offset + 4;
 
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             UInt32 value = (UInt32)(
                 (Int32)(0xFF000000 & (array[offset    ] << 24)) |
@@ -126,15 +126,15 @@ namespace More.Net
         {
             //this.enumType = enumType;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return 4;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Enum valueAsEnum = (Enum)fieldInfo.GetValue(instance);
             Int32 value = Convert.ToInt32(valueAsEnum);
@@ -144,7 +144,7 @@ namespace More.Net
             array[offset + 3] = (Byte)(value      );
             return offset + 4;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
         {
             Int32 value = (Int32)(
                 (Int32)(0xFF000000 & (array[offset    ] << 24)) |

@@ -71,19 +71,20 @@ namespace More.Pdl
         {
             get
             {
-                if (fixedSerializationLength == -2) throw new InvalidOperationException(
+                if (!calculatedFixedSerializationLength) throw new InvalidOperationException(
                     "Cannot access fields until serialization length has been calculated");
                 return fields;
             }
         }
         //public int firstOptionalFieldIndex;
 
-        int fixedSerializationLength;
-        public int FixedSerializationLength
+        Boolean calculatedFixedSerializationLength;
+        UInt32 fixedSerializationLength;
+        public UInt32 FixedSerializationLength
         {
             get
             {
-                if (fixedSerializationLength == -2) throw new InvalidOperationException(
+                if (!calculatedFixedSerializationLength) throw new InvalidOperationException(
                     "Cannot access FixedSerializationLength until serialization length has been calculated");
                 return fixedSerializationLength;
             }
@@ -102,7 +103,7 @@ namespace More.Pdl
             this.fields = new List<ObjectDefinitionField>();
             //this.firstOptionalFieldIndex = -1;
 
-            this.fixedSerializationLength = -2;
+            this.calculatedFixedSerializationLength = false;
 
             //
             // Add definition to pdl file and parent object
@@ -122,24 +123,25 @@ namespace More.Pdl
         }
         public void Add(ObjectDefinitionField field)
         {
-            if (fixedSerializationLength != -2) throw new InvalidOperationException(
+            if (calculatedFixedSerializationLength) throw new InvalidOperationException(
                 "Cannot add fields after FixedSerializationLength has been calculated");
             fields.Add(field);
         }
         public void CalculateFixedSerializationLength()
         {
-            if (fixedSerializationLength != -2) throw new InvalidOperationException(
+            if (calculatedFixedSerializationLength) throw new InvalidOperationException(
                 "Cannot calculate FixedSerializationLength after it has already been calculated");
 
-            Int32 length = 0;
+            UInt32 length = 0;
             for (int i = 0; i < fields.Count; i++)
             {
                 ObjectDefinitionField field = fields[i];
                 TypeReference fieldTypeReference = field.typeReference;
-                Int32 fieldFixedSerializationLength = fieldTypeReference.FixedElementSerializationLength;
-                if (fieldFixedSerializationLength < 0)
+                UInt32 fieldFixedSerializationLength = fieldTypeReference.FixedElementSerializationLength;
+                if (fieldFixedSerializationLength == UInt32.MaxValue)
                 {
-                    this.fixedSerializationLength = -1;
+                    this.fixedSerializationLength = UInt32.MaxValue;
+                    calculatedFixedSerializationLength = true;
                     return;
                 }
 
@@ -152,14 +154,17 @@ namespace More.Pdl
                 {
                     if (arrayType.type != PdlArraySizeTypeEnum.Fixed)
                     {
-                        this.fixedSerializationLength = -1;
+                        this.fixedSerializationLength = UInt32.MaxValue;
+                        calculatedFixedSerializationLength = true;
                         return;
                     }
-                    length += (Int32)arrayType.GetFixedArraySize() * fieldFixedSerializationLength;
+                    length += arrayType.GetFixedArraySize() * fieldFixedSerializationLength;
                 }
 
             }
+
             this.fixedSerializationLength = length;
+            calculatedFixedSerializationLength = true;
         }
         public void WritePdl(TextWriter writer)
         {

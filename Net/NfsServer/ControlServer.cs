@@ -14,19 +14,19 @@ namespace More.Net
         public void ServerStopped()
         {
         }
-        public ServerInstruction ListenSocketClosed(int clientCount)
+        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
         {
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientOpenCallback(int clientCount, Socket socket)
+        public ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket)
         {
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientCloseCallback(int clientCount, Socket socket)
+        public ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket)
         {
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientDataCallback(Socket socket, byte[] bytes, int bytesRead)
+        public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             if (bytesRead > 0)
             {

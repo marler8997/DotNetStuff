@@ -1,21 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Text;
 
 using More;
 using More.Net.Nfs3Procedure;
 
 namespace More.Net
 {
-    [NpcInterface]
-    public interface INfs3ServerNiceInterface
-    {
-        String[] ShareNames();
-        ShareObject[] ShareObjects();
-        FSInfoReply FSInfoByName(String shareName);
-    }
     [NpcInterface]
     public interface INfs3Server
     {
@@ -34,7 +28,6 @@ namespace More.Net
         FileSystemStatusReply FSSTAT(FileSystemStatusCall fileSystemStatusCall);
         FSInfoReply FSINFO(FSInfoCall fsInfoCall);
     }
-
 
     public class Nfs3Server : RpcServerHandler, INfs3Server
     {
@@ -55,13 +48,10 @@ namespace More.Net
                 }
                 return shareNames;
             }
-
-
             public ShareObject[] ShareObjects()
             {
                 return server.sharedFileSystem.CreateArrayOfShareObjects();
             }
-
             public FSInfoReply FSInfoByName(String shareName)
             {
                 ShareObject shareObject;
@@ -69,6 +59,14 @@ namespace More.Net
                 if (status != Status.Ok) return new FSInfoReply(status, OptionalFileAttributes.None);
 
                 return server.FSINFO(new FSInfoCall(shareObject.fileHandleBytes));
+            }
+            public NonRecursiveReadDirPlusReply ReadDirPlus(String directoryName, ulong cookie, uint maxDirectoryInfoBytes)
+            {
+                ShareObject shareObject;
+                Status status = server.sharedFileSystem.TryGetSharedDirectory(directoryName, out shareObject);
+                if (status != Status.Ok) return new NonRecursiveReadDirPlusReply(new ReadDirPlusReply(status, OptionalFileAttributes.None));
+
+                return new NonRecursiveReadDirPlusReply(server.READDIRPLUS(new ReadDirPlusCall(shareObject.fileHandleBytes, cookie, null, maxDirectoryInfoBytes, UInt32.MaxValue)));
             }
         }
 
@@ -83,11 +81,11 @@ namespace More.Net
                 99999999,
                 0);
         }
-        public static Int32 ReadFile(FileInfo fileInfo, Int32 fileOffset, Byte[] buffer, Int32 maxBytesToRead, FileShare shareOptions, out Boolean reachedEndOfFile)
+        public static UInt32 ReadFile(FileInfo fileInfo, UInt64 fileOffset, Byte[] buffer, UInt32 maxBytesToRead, FileShare shareOptions, out Boolean reachedEndOfFile)
         {
             fileInfo.Refresh();
 
-            Int64 fileSize = fileInfo.Length;
+            UInt64 fileSize = (UInt64)fileInfo.Length;
 
             if (fileOffset >= fileSize)
             {
@@ -95,10 +93,10 @@ namespace More.Net
                 return 0;
             }
 
-            Int64 fileSizeFromOffset = fileSize - fileOffset;
+            UInt64 fileSizeFromOffset = fileSize - fileOffset;
 
-            Int32 readLength;
-            if (fileSizeFromOffset > (Int64)maxBytesToRead)
+            UInt64 readLength;
+            if (fileSizeFromOffset > (UInt64)maxBytesToRead)
             {
                 reachedEndOfFile = false;
                 readLength = maxBytesToRead;
@@ -106,17 +104,25 @@ namespace More.Net
             else
             {
                 reachedEndOfFile = true;
-                readLength = (Int32)fileSizeFromOffset;
+                readLength = fileSizeFromOffset;
             }
+            
             if (readLength <= 0) return 0;
+
+            // Check that readLength can be converted to Int32
+            if ((0x7FFFFFFFUL & readLength) != readLength)
+                throw new InvalidOperationException(String.Format("The desired read length is {0}, but casting it to an Int32 yeilds another value {1}",
+                    readLength, 0x7FFFFFFF & readLength));
+            Int32 readLengthAsInt32 = (Int32)readLength;
+
 
             using (FileStream fileStream = fileInfo.Open(FileMode.Open, FileAccess.Read, shareOptions))
             {
-                fileStream.Position = fileOffset;
-                fileStream.ReadFullSize(buffer, 0, readLength);
+                fileStream.Position = (Int64)fileOffset;
+                fileStream.ReadFullSize(buffer, 0, readLengthAsInt32);
             }
 
-            return readLength;
+            return (UInt32)readLengthAsInt32;
         }
 
 
@@ -126,6 +132,22 @@ namespace More.Net
         private readonly PartialByteArraySerializer fileContents;
         private readonly UInt32 suggestedReadSizeMultiple;
 
+
+        /*
+        class ClientState
+        {
+            public readonly String clientString;
+
+            UInt16 lastReadDirPlusReplyCookie;
+
+            public ClientState(String clientString)
+            {
+                this.clientString = clientString;
+            }
+        }
+        readonly Dictionary<String, ClientState> clientStates;
+        */
+
         public Nfs3Server(RpcServicesManager servicesManager, SharedFileSystem sharedFileSystem, ByteBuffer sendBuffer,
             UInt32 readSizeMax, UInt32 suggestedReadSizeMultiple)
             : base("Nfs3", sendBuffer)
@@ -134,12 +156,24 @@ namespace More.Net
             this.sharedFileSystem = sharedFileSystem;
             this.fileContents = new PartialByteArraySerializer(new Byte[readSizeMax], 0, 0);
             this.suggestedReadSizeMultiple = suggestedReadSizeMultiple;
+            //this.clientStates = new Dictionary<String, ClientState>();
         }
+
+        /*
+        // returns true if ClientState already existed, false if it was created
+        Boolean GetOrCreateClientState(String clientString, out ClientState clientState)
+        {
+            if (clientStates.TryGetValue(clientString, out clientState)) return true;
+            clientState = new ClientState(clientString);
+            return false;
+        }
+        */
+
         public override Boolean ProgramHeaderSupported(RpcProgramHeader programHeader)
         {
             return programHeader.program == Nfs3.ProgramNumber && programHeader.programVersion == 3;
         }
-        public override RpcReply Call(String clientString, RpcCall call, byte[] callParameters, int callOffset, int callMaxOffset, out ISerializer replyParameters)
+        public override RpcReply Call(String clientString, RpcCall call, byte[] callParameters, UInt32 callOffset, UInt32 callMaxOffset, out ISerializer replyParameters)
         {
             String nfsMethodName;
             ISerializer callData;
@@ -402,10 +436,10 @@ namespace More.Net
             if (readCall.count > (UInt32)fileContents.bytes.Length) return new ReadReply(Status.ErrorInvalidArgument, OptionalFileAttributes.None);
 
             Boolean reachedEndOfFile;
-            Int32 bytesRead;
+            UInt32 bytesRead;
             try
             {
-                bytesRead = ReadFile(shareObject.AccessFileInfo(), (Int32)readCall.offset, fileContents.bytes, (Int32)readCall.count, FileShare.ReadWrite, out reachedEndOfFile);
+                bytesRead = ReadFile(shareObject.AccessFileInfo(), readCall.offset, fileContents.bytes, readCall.count, FileShare.ReadWrite, out reachedEndOfFile);
             }
             catch (IOException)
             {
@@ -589,76 +623,123 @@ namespace More.Net
                 new BeforeAndAfterAttributes(oldDirectorySizeAndTimesBeforeCreate, oldParentDirectoryShareObject.fileAttributes),
                 new BeforeAndAfterAttributes(newDirectorySizeAndTimesBeforeCreate, newParentDirectoryShareObject.fileAttributes));
         }
+
+        enum ReadDirPlusLoopState
+        {
+            Directories,
+            Files,
+        }
         public ReadDirPlusReply READDIRPLUS(ReadDirPlusCall readDirPlusCall)
         {
             ShareObject directoryShareObject;
             Status status = sharedFileSystem.TryGetSharedObject(readDirPlusCall.directoryHandle, out directoryShareObject);
             if (status != Status.Ok) return new ReadDirPlusReply(status, OptionalFileAttributes.None);
 
+            UInt64 cookie = readDirPlusCall.cookie;      
+
+            EntryPlus firstEntry = null;
             EntryPlus lastEntry = null;
 
-            String [] localFiles = Directory.GetFiles(directoryShareObject.localPathAndName);
-            if(localFiles != null)
-            {
-                for(int i = 0; i < localFiles.Length; i++)
-                {
-                    String localFile = localFiles[i];
-                    ShareObject shareObject = sharedFileSystem.TryGetSharedObject(FileType.Regular, directoryShareObject.localPathAndName, localFile);
-                    if(shareObject == null)
-                    {
-                        if(NfsServerLog.warningLogger != null)
-                            NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Could not create or access share object for local file '{1}'", serviceName, localFile);
-                        continue;
-                    }
-                    shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
+            UInt32 directoryInfoByteCount = 0;
 
-                    lastEntry = new EntryPlus(
-                        shareObject.fileID,
-                        shareObject.shareName,
-                        0,
-                        OptionalFileAttributes.None,//shareObject.optionalFileAttributes,
-                        shareObject.optionalFileHandleClass,
-                        lastEntry);
+            Boolean foundCookieObject;
+            if (cookie > 0)
+            {
+                if (cookie == directoryShareObject.cookie)
+                {
+                    foundCookieObject = true;
+                }
+                else
+                {
+                    foundCookieObject = false;
                 }
             }
-            String[] localDirectories = Directory.GetDirectories(directoryShareObject.localPathAndName);
-            if(localDirectories != null)
+            else
             {
-                for(int i = 0; i < localDirectories.Length; i++)
+                foundCookieObject = true; // This is the first call so there is no cookie to look for
+
+                // Handle the '.' directory (will always be included if cookie is 0)
+                firstEntry = new EntryPlus(
+                    directoryShareObject.fileID,
+                    ".",
+                    directoryShareObject.cookie,
+                    directoryShareObject.optionalFileAttributes,
+                    directoryShareObject.optionalFileHandleClass);
+                lastEntry = firstEntry;
+                directoryInfoByteCount += 16 + (UInt32)directoryShareObject.shareName.Length;
+            }
+
+            FileType currentFileType = FileType.Directory;
+            String[] objectNames = Directory.GetDirectories(directoryShareObject.localPathAndName);
+
+            while (true)
+            {
+                for (int i = 0; i < objectNames.Length; i++)
                 {
-                    String localDirectory = localDirectories[i];
-                    ShareObject shareObject = sharedFileSystem.TryGetSharedObject(FileType.Directory, directoryShareObject.localPathAndName, localDirectory);
-                    if(shareObject == null)
+                    String objectName = objectNames[i];
+                    ShareObject shareObject = sharedFileSystem.TryGetSharedObject(currentFileType, directoryShareObject.localPathAndName, objectName);
+                    if (shareObject == null)
                     {
                         if (NfsServerLog.warningLogger != null)
-                            NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Could not create or access share object for local directory '{1}'", serviceName, localDirectory);
+                            NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Could not create or access share object for local directory '{1}'", serviceName, objectName);
                         continue;
                     }
-                    shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
 
-                    lastEntry = new EntryPlus(
-                        shareObject.fileID,
-                        shareObject.shareName,
-                        0,
-                        OptionalFileAttributes.None,//shareObject.optionalFileAttributes,
-                        shareObject.optionalFileHandleClass,
-                        lastEntry);
+                    if (!foundCookieObject)
+                    {
+                        if (shareObject.cookie == cookie)
+                        {
+                            foundCookieObject = true;
+                        }
+                    }
+                    else
+                    {
+                        UInt32 entryInfoByteCount = 16 + (UInt32)shareObject.shareName.Length;
+                        if (directoryInfoByteCount + entryInfoByteCount > readDirPlusCall.maxDirectoryBytes)
+                        {
+                            return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, firstEntry, false);
+                        }
+
+                        directoryInfoByteCount += entryInfoByteCount;
+
+                        shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
+                        EntryPlus newEntry = new EntryPlus(
+                            shareObject.fileID,
+                            shareObject.shareName,
+                            shareObject.cookie,
+                            shareObject.optionalFileAttributes,//OptionalFileAttributes.None,
+                            shareObject.optionalFileHandleClass);
+
+                        if (firstEntry == null)
+                        {
+                            firstEntry = newEntry;
+                            lastEntry = newEntry;
+                        }
+
+                        lastEntry.SetNextEntry(newEntry);
+                        lastEntry = newEntry;
+                    }
+                }
+
+                if (currentFileType == FileType.Directory)
+                {
+                    objectNames = Directory.GetFiles(directoryShareObject.localPathAndName);
+                    currentFileType = FileType.Regular;
+                }
+                else
+                {
+                    break;
                 }
             }
-            // Get "." and ".."
-            /*
-            lastEntry = new EntryPlus(
-                directoryShareObject.fileID,
-                ".",
-                0,
-                directoryShareObject.optionalFileAttributes,
-                directoryShareObject.optionalFileHandleClass,
-                lastEntry);
-            */
+
             directoryShareObject.RefreshFileAttributes(sharedFileSystem.permissions);
 
-            return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, lastEntry, true);
+            if (!foundCookieObject) return new ReadDirPlusReply(Status.ErrorBadCookie, directoryShareObject.optionalFileAttributes);
+
+            return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, firstEntry, true);
         }
+
+
 
         public FileSystemStatusReply FSSTAT(FileSystemStatusCall fileSystemInfoCall)
         {

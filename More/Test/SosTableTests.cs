@@ -11,6 +11,7 @@ namespace More.Net
     [TestClass]
     public class TableTests
     {
+        /*
         [TestMethod]
         public void TestTables()
         {
@@ -39,5 +40,6 @@ namespace More.Net
         public void TestBadTable(StringBuilder builder, String badSos)
         {
         }
+        */
     }
 }

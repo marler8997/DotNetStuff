@@ -31,7 +31,7 @@ namespace More.Net
         {
             return programHeader.program == PortMap2.ProgramNumber && programHeader.programVersion == 2;
         }
-        public override RpcReply Call(String clientString, RpcCall call, Byte[] callParameters, Int32 callOffset, Int32 callMaxOffset, out ISerializer replyParameters)
+        public override RpcReply Call(String clientString, RpcCall call, Byte[] callParameters, UInt32 callOffset, UInt32 callMaxOffset, out ISerializer replyParameters)
         {
             ISerializer callData;
             replyParameters = VoidSerializer.Instance;

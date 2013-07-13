@@ -24,12 +24,12 @@ namespace More.Net
         }
         public void ServerStopped()
         {
-        } 
-        public ServerInstruction ListenSocketClosed(Int32 clientCount)
+        }
+        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
         {
             return ServerInstruction.NoInstruction;
         }
-        public ServerInstruction ClientOpenCallback(Int32 clientCount, Socket socket)
+        public ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket)
         {
             HttpToCdpClient newClient = new HttpToCdpClient(socket, this);
 
@@ -50,7 +50,7 @@ namespace More.Net
             }
         }
 
-        public ServerInstruction ClientCloseCallback(Int32 clientCount, Socket socket)
+        public ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket)
         {
             Socket clientSocket;
             if (serverSocketsToClientSockets.TryGetValue(socket, out clientSocket))
@@ -96,7 +96,7 @@ namespace More.Net
             Console.WriteLine("[Warning] Received close for a client '{0}' that wasn't in the client dictionary or the server dictionary", socket.RemoteEndPoint);
             return ServerInstruction.NoInstruction;   
         }
-        public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, Int32 bytesRead)
+        public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             HttpToCdpClient client;
             if (clients.TryGetValue(socket, out client))
@@ -109,7 +109,7 @@ namespace More.Net
             {
                 try
                 {
-                    clientSocket.Send(bytes, bytesRead, SocketFlags.None);
+                    clientSocket.Send(bytes, (Int32)bytesRead, SocketFlags.None);
                     return ServerInstruction.NoInstruction;
                 }
                 catch (SocketException)

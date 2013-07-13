@@ -75,10 +75,10 @@ namespace More.Net.PortMap2Procedure
     public class GetPortCall : SubclassSerializer
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new XdrUInt32Reflector(typeof(GetPortCall), "program"),
-            new XdrUInt32Reflector(typeof(GetPortCall), "programVersion"),
-            new XdrUInt32Reflector(typeof(GetPortCall), "transportProtocol"),
-            new XdrUInt32Reflector(typeof(GetPortCall), "port"),
+            new BigEndianUInt32Reflector(typeof(GetPortCall), "program"),
+            new BigEndianUInt32Reflector(typeof(GetPortCall), "programVersion"),
+            new BigEndianUInt32Reflector(typeof(GetPortCall), "transportProtocol"),
+            new BigEndianUInt32Reflector(typeof(GetPortCall), "port"),
         });
 
         public UInt32 program;
@@ -93,16 +93,16 @@ namespace More.Net.PortMap2Procedure
             this.transportProtocol = transportProtocol;
             this.port = port;
         }
-        public GetPortCall(Byte[] data, Int32 offset, Int32 maxOffset)
+        public GetPortCall(Byte[] data, UInt32 offset, UInt32 offsetLimit)
             : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            Deserialize(data, offset, offsetLimit);
         }
     }
     public class GetPortReply : SubclassSerializer
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new XdrUInt32Reflector(typeof(GetPortReply), "port"),
+            new BigEndianUInt32Reflector(typeof(GetPortReply), "port"),
         });
 
         public UInt32 port;
@@ -115,10 +115,10 @@ namespace More.Net.PortMap2Procedure
         {
             this.port = port;
         }
-        public GetPortReply(Byte[] data, Int32 offset, Int32 maxOffset)
+        public GetPortReply(Byte[] data, UInt32 offset, UInt32 offsetLimit)
             : base(memberSerializers)
         {
-            Deserialize(data, offset, maxOffset);
+            Deserialize(data, offset, offsetLimit);
         }
     }
 }

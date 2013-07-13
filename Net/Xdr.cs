@@ -8,20 +8,21 @@ namespace More.Net
 {
     public static class Xdr
     {
-        public static Int32 UpToNearestMod4(Int32 value)
+        public static UInt32 UpToNearestMod4(UInt32 value)
         {
-            Int32 mod4 = value & 0x3;
+            UInt32 mod4 = value & 0x3;
             if (mod4 == 0) return value;
             return value + 4 - mod4;
         }
     }
+    /*
     public struct XdrBoolean : ISerializer
     {
         Boolean value;
         public XdrBoolean(Boolean value)                  { this.value = value; }
-        public Int32 FixedSerializationLength()           { return 4;           }
-        public Int32 SerializationLength()                { return 4;           }
-        public Int32 Serialize(Byte[] array, Int32 offset)
+        public UInt32 FixedSerializationLength()           { return 4;           }
+        public UInt32 SerializationLength()                { return 4;           }
+        public UInt32 Serialize(Byte[] array, UInt32 offset)
         {
             array[offset    ] = 0;
             array[offset + 1] = 0;
@@ -29,65 +30,9 @@ namespace More.Net
             array[offset + 3] = (value) ? (Byte)1 : (Byte)0;
             return offset + 4;
         }
-        public Int32 Deserialize(Byte[] array, Int32 offset, Int32 maxOffset)
+        public UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             this.value = (array[offset + 3] == 0) ? false : true;
-            return offset + 4;
-        }
-        public String DataString()                         { return value.ToString();          }
-        public void DataString(StringBuilder builder)      { builder.Append(value.ToString()); }
-        public String DataSmallString()                    { return value.ToString();          }
-        public void DataSmallString(StringBuilder builder) { builder.Append(value.ToString()); }
-    }
-    public struct XdrInt32 : ISerializer
-    {
-        Int32 value;
-        public XdrInt32(Int32 value)                      { this.value = value; }
-        public Int32 FixedSerializationLength()           { return 4;           }
-        public Int32 SerializationLength()                { return 4;           }
-        public int Serialize(byte[] array, int offset)
-        {
-            array[offset    ] = (Byte)(value >> 24);
-            array[offset + 1] = (Byte)(value >> 16);
-            array[offset + 2] = (Byte)(value >>  8);
-            array[offset + 3] = (Byte)(value      );
-            return offset + 4;
-        }
-        public int Deserialize(byte[] array, int offset, int maxOffset)
-        {
-            this.value = (Int32)(
-                (Int32)(0xFF000000 & (array[offset    ] << 24)) |
-                       (0x00FF0000 & (array[offset + 1] << 16)) |
-                       (0x0000FF00 & (array[offset + 2] <<  8)) |
-                       (0x000000FF & (array[offset + 3]      )) );
-            return offset + 4;
-        }
-        public String DataString()                         { return value.ToString();          }
-        public void DataString(StringBuilder builder)      { builder.Append(value.ToString()); }
-        public String DataSmallString()                    { return value.ToString();          }
-        public void DataSmallString(StringBuilder builder) { builder.Append(value.ToString()); }
-    }
-    public struct XdrUInt32 : ISerializer
-    {
-        UInt32 value;
-        public XdrUInt32(UInt32 value)                    { this.value = value; }
-        public Int32 FixedSerializationLength()           { return 4;           }
-        public Int32 SerializationLength()                { return 4;           }
-        public int Serialize(byte[] array, int offset)
-        {
-            array[offset]     = (Byte)(value >> 24);
-            array[offset + 1] = (Byte)(value >> 16);
-            array[offset + 2] = (Byte)(value >>  8);
-            array[offset + 3] = (Byte)(value      );
-            return offset + 4;
-        }
-        public int Deserialize(byte[] array, int offset, int maxOffset)
-        {
-            this.value = (UInt32)(
-                (Int32)(0xFF000000 & (array[offset    ] << 24)) |
-                       (0x00FF0000 & (array[offset + 1] << 16)) |
-                       (0x0000FF00 & (array[offset + 2] <<  8)) |
-                       (0x000000FF & (array[offset + 3]      )) );
             return offset + 4;
         }
         public String DataString()                         { return value.ToString();          }
@@ -99,9 +44,9 @@ namespace More.Net
     {
         Enum value;
         public XdrEnum(Enum value)                        { this.value = value; }
-        public Int32 FixedSerializationLength()           { return 4;           }
-        public Int32 SerializationLength()                { return 4;           }
-        public int Serialize(byte[] array, int offset)
+        public UInt32 FixedSerializationLength()           { return 4;           }
+        public UInt32 SerializationLength()                { return 4;           }
+        public UInt32 Serialize(Byte[] array, UInt32 offset)
         {
             Int32 valueAsInt32 = Convert.ToInt32(value);
             array[offset    ] = (Byte)(valueAsInt32 >> 24);
@@ -110,7 +55,7 @@ namespace More.Net
             array[offset + 3] = (Byte)(valueAsInt32);
             return offset + 4;
         }
-        public int Deserialize(byte[] array, int offset, int maxOffset)
+        public UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             Int32 valueAsInt32 = (
                 (Int32)(0xFF000000 & (array[offset] << 24)) |
@@ -126,21 +71,22 @@ namespace More.Net
         public String DataSmallString()                    { return value.ToString();          }
         public void DataSmallString(StringBuilder builder) { builder.Append(value.ToString()); }
     }
+    */
     public class XdrBooleanReflector : ClassFieldReflector
     {
         public XdrBooleanReflector(Type typeThatContainsThisField, String fieldName)
             : base(typeThatContainsThisField, fieldName, typeof(Boolean))
         {
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return 4;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Boolean value = (Boolean)fieldInfo.GetValue(instance);
             array[offset]     = 0;
@@ -150,7 +96,7 @@ namespace More.Net
             return offset + 4;
 
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             fieldInfo.SetValue(instance, (array[offset + 3] == 0) ? false : true);
             return offset + 4;
@@ -158,84 +104,6 @@ namespace More.Net
         public override void DataString(Object instance, StringBuilder builder)
         {
             builder.Append(String.Format("{0}:{1}", fieldInfo.Name, (Boolean)fieldInfo.GetValue(instance)));
-        }
-    }
-    public class XdrInt32Reflector : ClassFieldReflector
-    {
-        public XdrInt32Reflector(Type typeThatContainsThisField, String fieldName)
-            : base(typeThatContainsThisField, fieldName, typeof(Int32))
-        {
-        }
-        public override Int32 FixedSerializationLength()
-        {
-            return 4;
-        }
-        public override Int32 SerializationLength(Object instance)
-        {
-            return 4;
-        }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
-        {
-            Int32 value       = (Int32)fieldInfo.GetValue(instance);
-            array[offset    ] = (Byte)(value >> 24);
-            array[offset + 1] = (Byte)(value >> 16);
-            array[offset + 2] = (Byte)(value >>  8);
-            array[offset + 3] = (Byte)(value      );
-            return offset + 4;
-
-        }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
-        {
-            Int32 value = (Int32)(
-                (Int32)(0xFF000000 & (array[offset    ] << 24)) |
-                       (0x00FF0000 & (array[offset + 1] << 16)) |
-                       (0x0000FF00 & (array[offset + 2] <<  8)) |
-                       (0x000000FF & (array[offset + 3]      )) );
-            fieldInfo.SetValue(instance, value);
-            return offset + 4;
-        }
-        public override void DataString(Object instance, StringBuilder builder)
-        {
-            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, (Int32)fieldInfo.GetValue(instance)));
-        }
-    }
-    public class XdrUInt32Reflector : ClassFieldReflector
-    {
-        public XdrUInt32Reflector(Type typeThatContainsThisField, String fieldName)
-            : base(typeThatContainsThisField, fieldName, typeof(UInt32))
-        {
-        }
-        public override Int32 FixedSerializationLength()
-        {
-            return 4;
-        }
-        public override Int32 SerializationLength(Object instance)
-        {
-            return 4;
-        }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
-        {
-            UInt32 value = (UInt32)fieldInfo.GetValue(instance);
-            array[offset] = (Byte)(value >> 24);
-            array[offset + 1] = (Byte)(value >> 16);
-            array[offset + 2] = (Byte)(value >> 8);
-            array[offset + 3] = (Byte)(value);
-            return offset + 4;
-
-        }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
-        {
-            UInt32 value = (UInt32)(
-                (Int32)(0xFF000000 & (array[offset] << 24)) |
-                       (0x00FF0000 & (array[offset + 1] << 16)) |
-                       (0x0000FF00 & (array[offset + 2] << 8)) |
-                       (0x000000FF & (array[offset + 3])));
-            fieldInfo.SetValue(instance, value);
-            return offset + 4;
-        }
-        public override void DataString(Object instance, StringBuilder builder)
-        {
-            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, (UInt32)fieldInfo.GetValue(instance)));
         }
     }
     public class XdrEnumReflector : ClassFieldReflector
@@ -246,15 +114,15 @@ namespace More.Net
         {
             //this.enumType = enumType;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return 4;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return 4;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Enum valueAsEnum  = (Enum)fieldInfo.GetValue(instance);
             Int32 value = Convert.ToInt32(valueAsEnum);
@@ -264,7 +132,7 @@ namespace More.Net
             array[offset + 3] = (Byte)(value      );
             return offset + 4;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             Int32 value = (Int32)(
                 (Int32)(0xFF000000 & (array[offset    ] << 24)) |
@@ -279,81 +147,33 @@ namespace More.Net
             builder.Append(String.Format("{0}:{1}", fieldInfo.Name, fieldInfo.GetValue(instance)));
         }
     }
-    public class XdrUInt64Reflector : ClassFieldReflector
-    {
-        public XdrUInt64Reflector(Type typeThatContainsThisField, String fieldName)
-            : base(typeThatContainsThisField, fieldName, typeof(UInt64))
-        {
-        }
-        public override Int32 FixedSerializationLength()
-        {
-            return 8;
-        }
-        public override Int32 SerializationLength(Object instance)
-        {
-            return 8;
-        }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
-        {
-            UInt64 value = (UInt64)fieldInfo.GetValue(instance);
-            array[offset    ] = (Byte)(value >> 56);
-            array[offset + 1] = (Byte)(value >> 48);
-            array[offset + 2] = (Byte)(value >> 40);
-            array[offset + 3] = (Byte)(value >> 32);
-            array[offset + 4] = (Byte)(value >> 24);
-            array[offset + 5] = (Byte)(value >> 16);
-            array[offset + 6] = (Byte)(value >> 8);
-            array[offset + 7] = (Byte)(value);
-            return offset + 8;
-
-        }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
-        {
-            UInt64 value =
-                (0xFF00000000000000UL & ((UInt64)array[offset]     << 56)) |
-                (0x00FF000000000000UL & ((UInt64)array[offset + 1] << 48)) |
-                (0x0000FF0000000000UL & ((UInt64)array[offset + 2] << 40)) |
-                (0x000000FF00000000UL & ((UInt64)array[offset + 3] << 32)) |
-                (0x00000000FF000000UL & ((UInt64)array[offset + 4] << 24)) |
-                (0x0000000000FF0000UL & ((UInt64)array[offset + 5] << 16)) |
-                (0x000000000000FF00UL & ((UInt64)array[offset + 6] <<  8)) |
-                (0x00000000000000FFUL & ((UInt64)array[offset + 7]      )) ;
-            fieldInfo.SetValue(instance, value);
-            return offset + 8;
-        }
-        public override void DataString(Object instance, StringBuilder builder)
-        {
-            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, (UInt64)fieldInfo.GetValue(instance)));
-        }
-    }
-
     public class XdrOpaqueFixedLengthReflector : ClassFieldReflector
     {
-        public readonly Int32 dataLength;
-        public readonly Int32 dataLengthNearestContainingMod4;
+        public readonly UInt32 dataLength;
+        public readonly UInt32 dataLengthNearestContainingMod4;
 
-        public XdrOpaqueFixedLengthReflector(Type typeThatContainsThisField, String fieldName, Int32 dataLength)
+        public XdrOpaqueFixedLengthReflector(Type typeThatContainsThisField, String fieldName, UInt32 dataLength)
             : base(typeThatContainsThisField, fieldName, typeof(Byte[]))
         {
             this.dataLength = dataLength;
             this.dataLengthNearestContainingMod4 = Xdr.UpToNearestMod4(dataLength);
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
             return dataLengthNearestContainingMod4;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             return dataLengthNearestContainingMod4;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             if (dataLength <= 0) return offset;
 
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
             {
-                Array.Clear(array, offset, dataLength);
+                Array.Clear(array, (Int32)offset, (Int32)dataLength);
             }
             else
             {
@@ -367,14 +187,14 @@ namespace More.Net
             }
 
             // Add Padding
-            for (int i = dataLength; i < dataLengthNearestContainingMod4; i++)
+            for (UInt32 i = dataLength; i < dataLengthNearestContainingMod4; i++)
             {
                 array[i] = 0;
             }
 
             return offset + dataLengthNearestContainingMod4;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             Byte[] data = new Byte[dataLength];
             Array.Copy(array, offset, data, 0, dataLength);
@@ -404,24 +224,24 @@ namespace More.Net
     //
     public class XdrOpaqueVarLengthReflector : ClassFieldReflector
     {
-        public readonly Int32 maxLength;
+        public readonly UInt32 maxLength;
 
-        public XdrOpaqueVarLengthReflector(Type typeThatContainsThisField, String fieldName, Int32 maxLength)
+        public XdrOpaqueVarLengthReflector(Type typeThatContainsThisField, String fieldName, UInt32 maxLength)
             : base(typeThatContainsThisField, fieldName, typeof(Byte[]))
         {
             this.maxLength = maxLength;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return -1;
+            return UInt32.MaxValue;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return 4;
-            return 4 + Xdr.UpToNearestMod4(((Byte[])valueAsObject).Length);
+            return 4 + Xdr.UpToNearestMod4((UInt32)((Byte[])valueAsObject).Length);
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
@@ -443,21 +263,17 @@ namespace More.Net
 
             Array.Copy(valueAsArray, 0, array, offset, valueAsArray.Length);
 
-            Int32 valueAsArrayMod4Length = Xdr.UpToNearestMod4(valueAsArray.Length);
-            for (int i = valueAsArray.Length; i < valueAsArrayMod4Length; i++)
+            UInt32 valueAsArrayMod4Length = Xdr.UpToNearestMod4((UInt32)valueAsArray.Length);
+            for (UInt32 i = (UInt32)valueAsArray.Length; i < valueAsArrayMod4Length; i++)
             {
                 array[i] = 0;
             }
 
             return offset + valueAsArrayMod4Length;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
-            Int32 length = (Int32)(
-                (Int32)(0xFF000000 & (array[offset] << 24)) |
-                       (0x00FF0000 & (array[offset + 1] << 16)) |
-                       (0x0000FF00 & (array[offset + 2] << 8)) |
-                       (0x000000FF & (array[offset + 3])));
+            UInt32 length = array.BigEndianReadUInt32(offset);
             offset += 4;
 
             if (length == 0)
@@ -471,7 +287,7 @@ namespace More.Net
 
             fieldInfo.SetValue(instance, data);
 
-            Int32 lengthMod4 = Xdr.UpToNearestMod4(length);
+            UInt32 lengthMod4 = Xdr.UpToNearestMod4(length);
 
             return offset + lengthMod4;
         }
@@ -502,11 +318,11 @@ namespace More.Net
         {
             this.maxLength = maxLength;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return -1;
+            return UInt32.MaxValue;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return 4;
@@ -514,7 +330,7 @@ namespace More.Net
             SerializationType value = (SerializationType)valueAsObject;
             return 4 + Xdr.UpToNearestMod4(value.SerializationLength());
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
@@ -528,30 +344,26 @@ namespace More.Net
 
             SerializationType value = (SerializationType)valueAsObject;
 
-            Int32 offsetForSize = offset;
+            UInt32 offsetForSize = offset;
             offset = value.Serialize(array, offset + 4);
 
-            Int32 valueSize = offset - offsetForSize - 4;
+            UInt32 valueSize = offset - offsetForSize - 4;
             array[offsetForSize    ] = (Byte)(valueSize >> 24);
             array[offsetForSize + 1] = (Byte)(valueSize >> 16);
             array[offsetForSize + 2] = (Byte)(valueSize >>  8);
             array[offsetForSize + 3] = (Byte)(valueSize      );
 
-            Int32 valueAsArrayMod4Length = Xdr.UpToNearestMod4(valueSize);
-            for (int i = valueSize; i < valueAsArrayMod4Length; i++)
+            UInt32 valueAsArrayMod4Length = Xdr.UpToNearestMod4(valueSize);
+            for (UInt32 i = valueSize; i < valueAsArrayMod4Length; i++)
             {
                 array[offset++] = 0;
             }
 
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
-            Int32 length = (Int32)(
-                (Int32)(0xFF000000 & (array[offset] << 24)) |
-                       (0x00FF0000 & (array[offset + 1] << 16)) |
-                       (0x0000FF00 & (array[offset + 2] << 8)) |
-                       (0x000000FF & (array[offset + 3])));
+            UInt32 length = array.BigEndianReadUInt32(offset);
             offset += 4;
 
             if (length == 0)
@@ -565,7 +377,7 @@ namespace More.Net
 
             fieldInfo.SetValue(instance, value);
 
-            Int32 lengthMod4 = Xdr.UpToNearestMod4(length);
+            UInt32 lengthMod4 = Xdr.UpToNearestMod4(length);
 
             return offset + lengthMod4 - length;
         }
@@ -608,24 +420,24 @@ namespace More.Net
     //
     public class XdrStringReflector : ClassFieldReflector
     {
-        public readonly Int32 maxLength;
+        public readonly UInt32 maxLength;
 
-        public XdrStringReflector(Type typeThatContainsThisField, String fieldName, Int32 maxLength)
+        public XdrStringReflector(Type typeThatContainsThisField, String fieldName, UInt32 maxLength)
             : base(typeThatContainsThisField, fieldName, typeof(String))
         {
             this.maxLength = maxLength;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return -1;
+            return UInt32.MaxValue;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return 0;
-            return 4 + Xdr.UpToNearestMod4(((String)valueAsObject).Length);
+            return 4 + Xdr.UpToNearestMod4((UInt32)((String)valueAsObject).Length);
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
@@ -650,21 +462,17 @@ namespace More.Net
                 array[offset++] = (Byte)valueAsString[i];
             }
 
-            Int32 valueAsArrayMod4Length = Xdr.UpToNearestMod4(valueAsString.Length);
-            for (int i = valueAsString.Length; i < valueAsArrayMod4Length; i++)
+            UInt32 valueAsArrayMod4Length = Xdr.UpToNearestMod4((UInt32)valueAsString.Length);
+            for (UInt32 i = (UInt32)valueAsString.Length; i < valueAsArrayMod4Length; i++)
             {
                 array[offset++] = 0;
             }
 
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
-            Int32 length = (Int32)(
-                (Int32)(0xFF000000 & (array[offset] << 24)) |
-                       (0x00FF0000 & (array[offset + 1] << 16)) |
-                       (0x0000FF00 & (array[offset + 2] << 8)) |
-                       (0x000000FF & (array[offset + 3])));
+            UInt32 length = array.BigEndianReadUInt32(offset);
             offset += 4;
 
             if (length == 0)
@@ -673,10 +481,10 @@ namespace More.Net
                 return offset;
             }
 
-            String data = Encoding.UTF8.GetString(array, offset, length);
+            String data = Encoding.UTF8.GetString(array, (Int32)offset, (Int32)length);
             fieldInfo.SetValue(instance, data);
 
-            Int32 lengthMod4 = Xdr.UpToNearestMod4(length);
+            UInt32 lengthMod4 = Xdr.UpToNearestMod4(length);
 
             return offset + lengthMod4;
         }
@@ -697,6 +505,8 @@ namespace More.Net
         }
     }
 
+
+    /*
     public class XdrVarLengthArray<ElementType> : ClassFieldReflector where ElementType : ISerializer, new()
     {
         public readonly Int32 maxLength;
@@ -706,11 +516,11 @@ namespace More.Net
         {
             this.maxLength = maxLength;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return -1;
+            return UInt32.MaxValue;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null) return 4;
@@ -718,13 +528,13 @@ namespace More.Net
             ElementType[] valueAsArray = (ElementType[])valueAsObject;
 
             if (valueAsArray.Length <= 0) return 4;
-            Int32 elementFixedSerializationLength = valueAsArray[0].FixedSerializationLength();
-            if (elementFixedSerializationLength >= 0)
+            UInt32 elementFixedSerializationLength = valueAsArray[0].FixedSerializationLength();
+            if (elementFixedSerializationLength != UInt32.MaxValue)
             {
-                return 4 + (elementFixedSerializationLength * valueAsArray.Length);
+                return 4 + (elementFixedSerializationLength * (UInt32)valueAsArray.Length);
             }
 
-            int dataLength = 0;
+            UInt32 dataLength = 0;
             for (int i = 0; i < valueAsArray.Length; i++)
             {
                 dataLength += valueAsArray[i].SerializationLength();
@@ -732,7 +542,7 @@ namespace More.Net
 
             return 4 + dataLength;
         }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
@@ -759,7 +569,7 @@ namespace More.Net
 
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             Int32 length = (Int32)(
                 (Int32)(0xFF000000 & (array[offset] << 24)) |
@@ -809,130 +619,130 @@ namespace More.Net
             builder.Append(']');
         }
     }
+    */
 
     /*
-    public class XdrStructFieldReflector<CSharpType> : ClassFieldReflector where CSharpType : ISerializer, new()
+    public class XdrVarLengthArray<ElementType> : ClassFieldReflector
     {
-        private Int32 fixedSerializationLength;
-        private IReflector[] fieldReflectors;
+        readonly IInstanceSerializer<T> elementSerializer;
+        readonly UInt32 elementFixedSerializationLength;
+        public readonly UInt32 maxLength;
 
-        public XdrStructFieldReflector(Type typeThatContainsThisField, String fieldName, IReflectors fieldReflectors)
-            : base(typeThatContainsThisField, fieldName)
+        public XdrVarLengthArray(Type typeThatContainsThisField, String fieldName,
+            IInstanceSerializer<T> elementSerializer,UInt32 maxLength)
+            : base(typeThatContainsThisField, fieldName, typeof(ElementType[]))
         {
-            this.fieldReflectors = fieldReflectors.reflectors;
-            this.fixedSerializationLength = fieldReflectors.fixedSerializationLength;
+            this.elementSerializer = elementSerializer;
+            this.maxLength = maxLength;
         }
-        public override Int32 FixedSerializationLength()
+        public override UInt32 FixedSerializationLength()
         {
-            return fixedSerializationLength;
+            return UInt32.MaxValue;
         }
-        public override Int32 SerializationLength(Object instance)
+        public override UInt32 SerializationLength(Object instance)
         {
-            if (fieldReflectors == null) return 0;
-            if (fixedSerializationLength >= 0) return fixedSerializationLength;
+            Object valueAsObject = fieldInfo.GetValue(instance);
+            if (valueAsObject == null) return 4;
 
-            ISerializer structInstance = (ISerializer)fieldInfo.GetValue(instance);
+            ElementType[] valueAsArray = (ElementType[])valueAsObject;
 
-            Int32 length = 0;
-            for (int i = 0; i < fieldSerializers.Length; i++)
+            if (valueAsArray.Length <= 0) return 4;
+            UInt32 elementFixedSerializationLength = valueAsArray[0].FixedSerializationLength();
+            if (elementFixedSerializationLength != UInt32.MaxValue)
             {
-                length += fieldSerializers[i].SerializationLength(structInstance);
+                return 4 + (elementFixedSerializationLength * (UInt32)valueAsArray.Length);
             }
-            return length;
-        }
-        public override Int32 Serialize(Object instance, Byte[] array, Int32 offset)
-        {
-            if (fieldSerializers == null) return offset;
 
-            ISerializer structInstance = (instance == null) ? null : (ISerializer)fieldInfo.GetValue(instance);
-
-            for (int i = 0; i < fieldSerializers.Length; i++)
+            UInt32 dataLength = 0;
+            for (int i = 0; i < valueAsArray.Length; i++)
             {
-                IReflector serializer = fieldSerializers[i];
-                offset = serializer.Serialize(structInstance, array, offset);
+                dataLength += valueAsArray[i].SerializationLength();
             }
+
+            return 4 + dataLength;
+        }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
+        {
+            Object valueAsObject = fieldInfo.GetValue(instance);
+            if (valueAsObject == null)
+            {
+                array[offset] = 0;
+                array[offset + 1] = 0;
+                array[offset + 2] = 0;
+                array[offset + 3] = 0;
+                return offset + 4;
+            }
+
+            ElementType[] valueAsArray = (ElementType[])valueAsObject;
+
+            array[offset] = (Byte)(valueAsArray.Length >> 24);
+            array[offset + 1] = (Byte)(valueAsArray.Length >> 16);
+            array[offset + 2] = (Byte)(valueAsArray.Length >> 8);
+            array[offset + 3] = (Byte)(valueAsArray.Length);
+            offset += 4;
+
+            for (int i = 0; i < valueAsArray.Length; i++)
+            {
+                offset = valueAsArray[i].Serialize(array, offset);
+            }
+
             return offset;
         }
-        public override Int32 Deserialize(Object instance, Byte[] array, Int32 offset, Int32 maxOffset)
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
-            if (fieldSerializers == null) return offset;
+            Int32 length = (Int32)(
+                (Int32)(0xFF000000 & (array[offset] << 24)) |
+                       (0x00FF0000 & (array[offset + 1] << 16)) |
+                       (0x0000FF00 & (array[offset + 2] << 8)) |
+                       (0x000000FF & (array[offset + 3])));
+            offset += 4;
 
-            CSharpType structObject = new CSharpType();
-
-            for (int i = 0; i < fieldSerializers.Length; i++)
+            if (length == 0)
             {
-                IReflector serializer = fieldSerializers[i];
-                offset = serializer.Deserialize(structObject, array, offset, maxOffset);
+                fieldInfo.SetValue(instance, null);
+                return offset;
             }
 
-            fieldInfo.SetValue(instance, structObject);
+            ElementType[] data = new ElementType[length];
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = new ElementType();
+                offset = data[i].Deserialize(array, offset, maxOffset);
+            }
+
+            fieldInfo.SetValue(instance, data);
 
             return offset;
-        }
-        public override void DataString(Object instance, StringBuilder builder)
-        {
-            StringBuilder builder = new StringBuilder();
-            DataString(instance, builder);
-            return builder.ToString();
         }
         public override void DataString(Object instance, StringBuilder builder)
         {
             builder.Append(fieldInfo.Name);
             builder.Append(':');
 
-            ISerializer structInstance = (ISerializer)fieldInfo.GetValue(instance);
-
-            if (structInstance == null)
+            Object valueAsObject = fieldInfo.GetValue(instance);
+            if (valueAsObject == null)
             {
-                builder.Append("<null>");
+                builder.Append("null");
                 return;
             }
-            builder.Append("{");
-        
-            if (fieldSerializers != null)
+
+            ElementType[] valueAsArray = (ElementType[])valueAsObject;
+
+            builder.Append('[');
+            for (int i = 0; i < valueAsArray.Length; i++)
             {
-                for (int i = 0; i < fieldSerializers.Length; i++)
-                {
-                    if (i > 0) builder.Append(", ");
-
-                    IReflector serializer = fieldSerializers[i];
-                    builder.Append(serializer.DataString(structInstance));
-                }
+                if (i > 0) builder.Append(", ");
+                valueAsArray[i].DataString(builder);
             }
-            builder.Append("}");
-        }
-        public override string DataSmallString(Object instance)
-        {
-            ISerializer structInstance = (ISerializer)fieldInfo.GetValue(instance);
-
-            if (structInstance == null) return String.Format("{0}:<null>", fieldInfo.Name);
-
-            StringBuilder builder = new StringBuilder();
-            builder.Append(fieldInfo.Name);
-            builder.Append(':');
-
-            builder.Append("{");
-
-            if (fieldSerializers != null)
-            {
-                for (int i = 0; i < fieldSerializers.Length; i++)
-                {
-                    if (i > 0) builder.Append(", ");
-
-                    IReflector serializer = fieldSerializers[i];
-                    builder.Append(serializer.DataSmallString(structInstance));
-                }
-            }
-            builder.Append("}");
-            return builder.ToString();
+            builder.Append(']');
         }
     }
     */
 
-
     public class XdrBooleanDescriminateReflector : IReflector
     {
-        public readonly Int32 fixedSerializationLength;
+        public readonly UInt32 fixedSerializationLength;
 
         readonly XdrBooleanReflector descriminate;
         readonly IReflector[] trueReflectors;
@@ -948,15 +758,15 @@ namespace More.Net
             //
             // Determine if serialization length is fixed
             //
-            if (trueReflectors.fixedSerializationLength >= 0 &&
-                falseReflectors.fixedSerializationLength >= 0 &&
+            if (trueReflectors.fixedSerializationLength != UInt32.MaxValue &&
+                falseReflectors.fixedSerializationLength != UInt32.MaxValue &&
                 trueReflectors.fixedSerializationLength == falseReflectors.fixedSerializationLength)
             {
                 this.fixedSerializationLength = trueReflectors.fixedSerializationLength + 4;
             }
             else
             {
-                this.fixedSerializationLength = -1;
+                this.fixedSerializationLength = UInt32.MaxValue;
             }           
         }
         private IReflector[] GetReflectors(Object instance)
@@ -966,15 +776,15 @@ namespace More.Net
             Boolean descriminateValue = (Boolean)descriminate.fieldInfo.GetValue(instance);
             return descriminateValue ? trueReflectors : falseReflectors ;
         }
-        public Int32 FixedSerializationLength()
+        public UInt32 FixedSerializationLength()
         {
             return fixedSerializationLength;
         }
-        public int SerializationLength(Object instance)
+        public UInt32 SerializationLength(Object instance)
         {
-            if (fixedSerializationLength >= 0) return fixedSerializationLength;
+            if (fixedSerializationLength != UInt32.MaxValue) return fixedSerializationLength;
 
-            Int32 length = 4; // 4 bytes for the boolean descriminate
+            UInt32 length = 4; // 4 bytes for the boolean descriminate
 
             IReflector[] fieldReflectors = GetReflectors(instance);
             for (int i = 0; i < fieldReflectors.Length; i++)
@@ -984,7 +794,7 @@ namespace More.Net
 
             return length;
         }
-        public int Serialize(Object instance, byte[] array, int offset)
+        public UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             offset = descriminate.Serialize(instance, array, offset);
 
@@ -996,14 +806,14 @@ namespace More.Net
 
             return offset;
         }
-        public int Deserialize(Object instance, byte[] array, int offset, Int32 maxOffset)
+        public UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
-            offset = descriminate.Deserialize(instance, array, offset, maxOffset);
+            offset = descriminate.Deserialize(instance, array, offset, offsetLimit);
 
             IReflector[] fieldReflectors = GetReflectors(instance);
             for (int i = 0; i < fieldReflectors.Length; i++)
             {
-                offset = fieldReflectors[i].Deserialize(instance, array, offset, maxOffset);
+                offset = fieldReflectors[i].Deserialize(instance, array, offset, offsetLimit);
             }
 
             return offset;
@@ -1046,7 +856,6 @@ namespace More.Net
             }
         }
 
-        //Int32 fixedSerializationLength;
         ClassFieldReflector descriminate;
         Dictionary<DescriminateCSharpType, IReflector[]> unionDictionary;
         IReflector[] defaultFieldReflectors;
@@ -1094,13 +903,13 @@ namespace More.Net
 
             return fieldReflectors;
         }
-        public Int32 FixedSerializationLength()
+        public UInt32 FixedSerializationLength()
         {
-            return -1; // TODO: Maybe I should check for fixed length later?
+            return UInt32.MaxValue; // TODO: Maybe I should check for fixed length later?
         }
-        public int SerializationLength(Object instance)
+        public UInt32 SerializationLength(Object instance)
         {
-            int length = descriminate.SerializationLength(instance);
+            UInt32 length = descriminate.SerializationLength(instance);
 
             IReflector[] fieldReflectors = GetFieldReflectors(instance);
 
@@ -1111,7 +920,7 @@ namespace More.Net
 
             return length;
         }
-        public int Serialize(Object instance, byte[] array, int offset)
+        public UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             offset = descriminate.Serialize(instance, array, offset);
             
@@ -1122,14 +931,14 @@ namespace More.Net
             }
             return offset;
         }
-        public int Deserialize(Object instance, byte[] array, int offset, Int32 maxOffset)
+        public UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
-            offset = descriminate.Deserialize(instance, array, offset, maxOffset);
+            offset = descriminate.Deserialize(instance, array, offset, offsetLimit);
 
             IReflector[] fieldReflectors = GetFieldReflectors(instance);
             for (int i = 0; i < fieldReflectors.Length; i++)
             {
-                offset = fieldReflectors[i].Deserialize(instance, array, offset, maxOffset);
+                offset = fieldReflectors[i].Deserialize(instance, array, offset, offsetLimit);
             }
 
             return offset;

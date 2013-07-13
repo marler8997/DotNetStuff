@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 // Also in the future it should implement syntax to represent tables
 //
 // Note: Sos does not have a primitive Char type, to serialize a char you must use a string
-//
+//Cre
 // Sos Primitives:
 //
 //     Boolean     true|false

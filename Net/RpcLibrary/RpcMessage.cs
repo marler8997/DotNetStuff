@@ -17,9 +17,9 @@ namespace More.Net
     public class RpcProgramHeader : SubclassSerializer
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new XdrUInt32Reflector(typeof(RpcProgramHeader), "rpcVersion"),
-            new XdrUInt32Reflector(typeof(RpcProgramHeader), "program"),
-            new XdrUInt32Reflector(typeof(RpcProgramHeader), "programVersion"),
+            new BigEndianUInt32Reflector(typeof(RpcProgramHeader), "rpcVersion"),
+            new BigEndianUInt32Reflector(typeof(RpcProgramHeader), "program"),
+            new BigEndianUInt32Reflector(typeof(RpcProgramHeader), "programVersion"),
         });
 
         public readonly UInt32 rpcVersion;
@@ -46,7 +46,7 @@ namespace More.Net
     public class RpcMessage : SubclassSerializer
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new XdrUInt32Reflector(typeof(RpcMessage), "transmissionID"),
+            new BigEndianUInt32Reflector(typeof(RpcMessage), "transmissionID"),
 
             new XdrDescriminatedUnionReflector<RpcMessageType>(
                 new XdrEnumReflector(typeof(RpcMessage), "messageType", typeof(RpcMessageType)),
@@ -83,7 +83,7 @@ namespace More.Net
             this.messageType = RpcMessageType.Reply;
             this.reply = reply;
         }
-        public RpcMessage(Socket socket, ByteBuffer buffer, out Int32 contentOffset, out Int32 contentMaxOffset)
+        public RpcMessage(Socket socket, ByteBuffer buffer, out UInt32 contentOffset, out UInt32 contentMaxOffset)
             : base(memberSerializers)
         {
             //
@@ -92,12 +92,11 @@ namespace More.Net
 
             buffer.EnsureCapacity(12);
             socket.ReadFullSize(buffer.array, 0, 4); // read the size
-            Int32 rpcMessageSize =
-                (Int32)(
-                (Int32)(0x7F000000 & (buffer.array[0] << 24)) |
-                       (0x00FF0000 & (buffer.array[1] << 16)) |
-                       (0x0000FF00 & (buffer.array[2] <<  8)) |
-                       (0x000000FF & (buffer.array[3]      )) );
+            Int32 rpcMessageSize = (
+                (0x7F000000 & (buffer.array[0] << 24)) |
+                (0x00FF0000 & (buffer.array[1] << 16)) |
+                (0x0000FF00 & (buffer.array[2] <<  8)) |
+                (0x000000FF & (buffer.array[3]      )) );
 
             if ((buffer.array[0] & 0x80) != 0x80)
                 throw new NotImplementedException(String.Format("Records with multiple fragments it not currently implemented"));
@@ -108,28 +107,28 @@ namespace More.Net
             //
             // Deserialize
             //
-            contentMaxOffset = rpcMessageSize;
+            contentMaxOffset = (UInt32)rpcMessageSize;
 
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StartSerialize();
-            contentOffset = Deserialize(buffer.array, 0, rpcMessageSize);
+            contentOffset = Deserialize(buffer.array, 0, (UInt32)rpcMessageSize);
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StopSerializationAndLog("RpcDeserializationTime");
         }
-        public RpcMessage(Byte[] data, Int32 offset, Int32 maxOffset, out Int32 contentOffset)
+        public RpcMessage(Byte[] data, UInt32 offset, UInt32 offsetLimit, out UInt32 contentOffset)
             : base(memberSerializers)
         {
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StartSerialize();
-            contentOffset = Deserialize(data, offset, maxOffset);
+            contentOffset = Deserialize(data, offset, offsetLimit);
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StopSerializationAndLog("RpcDeserializationTime");
         }
         public void SendTcp(Socket socket, ByteBuffer buffer, ISerializer messageContents)
         {
-            Int32 messageContentLength = (messageContents == null) ? 0 : messageContents.SerializationLength();
-            Int32 totalMessageLength = SerializationLength() + messageContentLength;
+            UInt32 messageContentLength = (messageContents == null) ? 0 : messageContents.SerializationLength();
+            UInt32 totalMessageLength = SerializationLength() + messageContentLength;
 
             buffer.EnsureCapacity(4 + totalMessageLength); // Extra 4 bytes for the record header
 
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StartSerialize();
-            Int32 offset = Serialize(buffer.array, 4);
+            UInt32 offset = Serialize(buffer.array, 4);
             if (messageContents != null)
             {
                 offset = messageContents.Serialize(buffer.array, offset);
@@ -148,18 +147,17 @@ namespace More.Net
             buffer.array[2] = (Byte)(        totalMessageLength >>  8 );
             buffer.array[3] = (Byte)(        totalMessageLength       );
 
-            socket.Send(buffer.array, 0, totalMessageLength + 4, SocketFlags.None);
+            socket.Send(buffer.array, 0, (Int32)(totalMessageLength + 4), SocketFlags.None);
         }
         public void SendUdp(EndPoint endPoint, Socket socket, ByteBuffer buffer, ISerializer messageContents)
         {
-
-            Int32 messageContentLength = (messageContents == null) ? 0 : messageContents.SerializationLength();
-            Int32 totalMessageLength = SerializationLength() + messageContentLength;
+            UInt32 messageContentLength = (messageContents == null) ? 0 : messageContents.SerializationLength();
+            UInt32 totalMessageLength = SerializationLength() + messageContentLength;
 
             buffer.EnsureCapacity(totalMessageLength); // Extra 4 bytes for the record header
 
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StartSerialize();
-            Int32 offset = Serialize(buffer.array, 0);
+            UInt32 offset = Serialize(buffer.array, 0);
             if (messageContents != null)
             {
                 offset = messageContents.Serialize(buffer.array, offset);
@@ -170,7 +168,7 @@ namespace More.Net
                 throw new InvalidOperationException(String.Format("[CodeBug] The caclulated serialization length of RpcMessage '{0}' was {1} but actual size was {2}",
                     ISerializerString.DataString(this), totalMessageLength, offset));
 
-            socket.SendTo(buffer.array, 0, totalMessageLength, SocketFlags.None, endPoint);
+            socket.SendTo(buffer.array, 0, (Int32)totalMessageLength, SocketFlags.None, endPoint);
         }
     }
 }

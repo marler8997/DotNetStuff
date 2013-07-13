@@ -9,11 +9,11 @@ namespace More
         public readonly Encoding encoding;
 
         readonly ByteBuffer buffer;
-        Int32 nextStartOfLineOffset;
-        Int32 nextIndexToCheck;
-        Int32 dataOffsetLimit;
+        UInt32 nextStartOfLineOffset;
+        UInt32 nextIndexToCheck;
+        UInt32 dataOffsetLimit;
 
-        public LineParser(Encoding encoding, Int32 lineBufferInitialCapacity, Int32 lineBufferExpandLength)
+        public LineParser(Encoding encoding, UInt32 lineBufferInitialCapacity, UInt32 lineBufferExpandLength)
         {
             this.encoding = encoding;
 
@@ -24,11 +24,11 @@ namespace More
         }
         public void Add(Byte[] data)
         {
-            buffer.EnsureCapacity(this.dataOffsetLimit + data.Length);
+            buffer.EnsureCapacity(this.dataOffsetLimit + (UInt32)data.Length);
             Array.Copy(data, 0, buffer.array, this.dataOffsetLimit, data.Length);
-            this.dataOffsetLimit += data.Length;
+            this.dataOffsetLimit += (UInt32)data.Length;
         }
-        public void Add(Byte[] data, Int32 offset, Int32 length)
+        public void Add(Byte[] data, UInt32 offset, UInt32 length)
         {
             buffer.EnsureCapacity(this.dataOffsetLimit + length);
             Array.Copy(data, offset, buffer.array, this.dataOffsetLimit, length);
@@ -40,8 +40,8 @@ namespace More
             {
                 if (buffer.array[this.nextIndexToCheck] == '\n')
                 {
-                    String line = encoding.GetString(buffer.array, this.nextStartOfLineOffset, this.nextIndexToCheck + 
-                        ((this.nextIndexToCheck > this.nextStartOfLineOffset && buffer.array[nextIndexToCheck - 1] == '\r') ? -1 : 0) - this.nextStartOfLineOffset);
+                    String line = encoding.GetString(buffer.array, (Int32)this.nextStartOfLineOffset, (Int32)
+                        (this.nextIndexToCheck + ((this.nextIndexToCheck > this.nextStartOfLineOffset && buffer.array[nextIndexToCheck - 1] == '\r') ? -1 : 0) - this.nextStartOfLineOffset));
 
                     this.nextIndexToCheck++;
                     this.nextStartOfLineOffset = this.nextIndexToCheck;
@@ -55,7 +55,7 @@ namespace More
             //
             if (this.nextStartOfLineOffset <= 0 || this.nextStartOfLineOffset >= this.dataOffsetLimit) return null;
             
-            Int32 copyLength = this.dataOffsetLimit - this.nextStartOfLineOffset;
+            UInt32 copyLength = this.dataOffsetLimit - this.nextStartOfLineOffset;
             Array.Copy(buffer.array, this.nextStartOfLineOffset, buffer.array, 0, copyLength);
             this.nextStartOfLineOffset = 0;
             this.nextIndexToCheck = 0;
@@ -71,7 +71,7 @@ namespace More
         readonly LineParser lineParser;
         readonly Byte[] receiveBuffer;
 
-        public SocketLineReader(Socket socket, Encoding encoding, Int32 lineBufferInitialCapacity, Int32 lineBufferExpandLength)
+        public SocketLineReader(Socket socket, Encoding encoding, UInt32 lineBufferInitialCapacity, UInt32 lineBufferExpandLength)
         {
             this.socket = socket;
             this.lineParser = new LineParser(encoding, lineBufferInitialCapacity, lineBufferExpandLength);
@@ -104,7 +104,7 @@ namespace More
                 Int32 bytesRead = socket.Receive(receiveBuffer);
                 if (bytesRead <= 0) return null;
 
-                lineParser.Add(receiveBuffer, 0, bytesRead);
+                lineParser.Add(receiveBuffer, 0, (UInt32)bytesRead);
             }
         }
     }
