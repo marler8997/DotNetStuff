@@ -485,19 +485,6 @@ namespace More.Net.Nfs3Procedure
     //
     // GetFileAttributes Procedure
     //
-    /*
-    public class GetFileAttributes : RpcProcedure
-    {
-        public readonly GetFileAttributesReply reply;
-
-        public GetFileAttributes(GetFileAttributesCall call)
-            : base("GetFileAttributes", (UInt32)Nfs3Command.GETATTR, call)
-        {
-            this.reply = new GetFileAttributesReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class GetFileAttributesCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -546,19 +533,6 @@ namespace More.Net.Nfs3Procedure
     //
     // SetFileAttributes Procedure
     //
-    /*
-    public class SetFileAttributes : RpcProcedure
-    {
-        public readonly SetFileAttributesReply reply;
-
-        public SetFileAttributes(SetFileAttributesCall call)
-            : base("SetFileAttributes", (UInt32)Nfs3Command.SETATTR, call)
-        {
-            this.reply = new SetFileAttributesReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class SetFileAttributesCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -617,19 +591,6 @@ namespace More.Net.Nfs3Procedure
     //
     // Lookup Procedure
     //
-    /*
-    public class Lookup : RpcProcedure
-    {
-        public readonly LookupReply reply;
-
-        public Lookup(LookupCall call)
-            : base("Lookup", (UInt32)Nfs3Command.LOOKUP, call)
-        {
-            this.reply = new LookupReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class LookupCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -701,19 +662,6 @@ namespace More.Net.Nfs3Procedure
         Delete  = 0x0010,
         Execute = 0x0020,
     }
-    /*
-    public class Access : RpcProcedure
-    {
-        public readonly AccessReply reply;
-
-        public Access(AccessCall call)
-            : base("Access", (UInt32)Nfs3Command.ACCESS, call)
-        {
-            this.reply = new AccessReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class AccessCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -771,19 +719,6 @@ namespace More.Net.Nfs3Procedure
     //
     // Read Procedure
     //
-    /*
-    public class Read : RpcProcedure
-    {
-        public readonly ReadReply reply;
-
-        public Read(ReadCall call)
-            : base("Read", (UInt32)Nfs3Command.READ, call)
-        {
-            this.reply = new ReadReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class ReadCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -856,19 +791,6 @@ namespace More.Net.Nfs3Procedure
         DataSync = 1,
         FileSync = 2,
     }
-    /*
-    public class Write : RpcProcedure
-    {
-        public readonly WriteReply reply;
-
-        public Write(WriteCall call)
-            : base("Write", (UInt32)Nfs3Command.WRITE, call)
-        {
-            this.reply = new WriteReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class WriteCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -950,19 +872,6 @@ namespace More.Net.Nfs3Procedure
         Guarded   = 1,
         Exclusive = 2,
     }
-    /*
-    public class Create : RpcProcedure
-    {
-        public readonly CreateReply reply;
-
-        public Create(CreateCall call)
-            : base("Create", (UInt32)Nfs3Command.CREATE, call)
-        {
-            this.reply = new CreateReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class CreateCall : ISerializerCreator
     {
         public static ClassFieldReflectors<SetAttributesStruct> setAttributesSerializer =
@@ -1047,19 +956,6 @@ namespace More.Net.Nfs3Procedure
     //
     // Mkdir Procedure
     //
-    /*
-    public class Mkdir : RpcProcedure
-    {
-        public readonly MkdirReply reply;
-
-        public Mkdir(MkdirCall call)
-            : base("Mkdir", (UInt32)Nfs3Command.MKDIR, call)
-        {
-            this.reply = new MkdirReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class MkdirCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -1126,19 +1022,6 @@ namespace More.Net.Nfs3Procedure
     //
     // SymLink Procedure
     //
-    /*
-    public class SymLink : RpcProcedure
-    {
-        public readonly SymLinkReply reply;
-
-        public SymLink(SymLinkCall call)
-            : base("SymLink", (UInt32)Nfs3Command.SYMLINK, call)
-        {
-            this.reply = new SymLinkReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class SymLinkCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -1206,19 +1089,6 @@ namespace More.Net.Nfs3Procedure
     //
     // Remove Procedure
     //
-    /*
-    public class Remove : RpcProcedure
-    {
-        public readonly RemoveReply reply;
-
-        public Remove(RemoveCall call)
-            : base("Remove", (UInt32)Nfs3Command.REMOVE, call)
-        {
-            this.reply = new RemoveReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class RemoveCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -1262,38 +1132,11 @@ namespace More.Net.Nfs3Procedure
     //
     // Rmdir Procedure
     //
-    /*
-    public class Rmdir : RpcProcedure
-    {
-        public readonly RemoveReply reply;
-
-        public Rmdir(RemoveCall call)
-            : base("Rmdir", (UInt32)Nfs3Command.RMDIR, call)
-        {
-            this.reply = new RemoveReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     //RmdirCall and RmdirReply are same as Remove
-
 
     //
     // Rename Procedure
     //
-    /*
-    public class Rename : RpcProcedure
-    {
-        public readonly RenameReply reply;
-
-        public Rename(RenameCall call)
-            : base("Rename", (UInt32)Nfs3Command.RENAME, call)
-        {
-            this.reply = new RenameReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class RenameCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -1422,7 +1265,6 @@ namespace More.Net.Nfs3Procedure
         Boolean nextEntryIncluded;
         EntryPlus nextEntry;
 
-        //public EntryPlus() { }
         public EntryPlus(Byte[] data, UInt32 offset, UInt32 offsetLimit)
         {
             memberSerializers.Deserialize(this, data, offset, offsetLimit);
@@ -1507,19 +1349,6 @@ namespace More.Net.Nfs3Procedure
     //
     // FileSystemStatus
     //
-    /*
-    public class FileSystemStatus : RpcProcedure
-    {
-        public readonly FileSystemStatusReply reply;
-
-        public FileSystemStatus(FileSystemStatusCall call)
-            : base("FileSystemStatus", (UInt32)Nfs3Command.FSSTAT, call)
-        {
-            this.reply = new FileSystemStatusReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class FileSystemStatusCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -1599,19 +1428,6 @@ namespace More.Net.Nfs3Procedure
     //
     // FileSystemInfo Procedure
     //
-    /*
-    public class FSInfo : RpcProcedure
-    {
-        //public readonly FsInfoReply reply;
-
-        public FileSystemInfo(FsInfoCall call)
-            : base("FileSystemInfo", (UInt32)Nfs3Command.FSINFO, call)
-        {
-            //this.reply = new FsInfoReply();
-            this.responseSerializer = null; //FsInfoReply.classSerializer;
-        }
-    }
-    */
     public class FSInfoCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -1713,19 +1529,6 @@ namespace More.Net.Nfs3Procedure
     //
     // Commit Procedure
     //
-    /*
-    public class Commit : RpcProcedure
-    {
-        public readonly CommitReply reply;
-
-        public Commit(CommitCall call)
-            : base("Commit", (UInt32)Nfs3Command.COMMIT, call)
-        {
-            this.reply = new CommitReply();
-            this.responseSerializer = this.reply;
-        }
-    }
-    */
     public class CommitCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {

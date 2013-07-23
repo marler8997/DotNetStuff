@@ -5,6 +5,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
+using More.Net.TmpCommand;
+
 namespace More.Net
 {
     public class TmpServerHandler : IDataHandler
@@ -22,7 +24,7 @@ namespace More.Net
         {
             Console.WriteLine("{0} Got heartbeat", DateTime.Now);
         }
-        public void HandleData(byte[] data, int offset, int length)
+        public void HandleData(Byte[] data, UInt32 offset, UInt32 length)
         {
             byte id = data[offset];
 
@@ -37,7 +39,8 @@ namespace More.Net
 
                     try
                     {
-                        OpenAccessorTunnelRequest request = new OpenAccessorTunnelRequest(data, offset + 1, offset + length);
+                        OpenAccessorTunnelRequest request;
+                        OpenAccessorTunnelRequest.Serializer.Deserialize(data, offset + 1, offset + length, out request);
 
                         //
                         // Connect to accessor

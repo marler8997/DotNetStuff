@@ -41,7 +41,6 @@ namespace More.Net
             npcListenPort = new CLGenericArgument<UInt16>(UInt16.Parse, 'n', "NpcListenPort", "The TCP port that the NPC server will be listening to (If no port is specified, the NPC server will not be running)");
             Add(npcListenPort);
 
-
             dontLogCallsInternally = new CLSwitch("DontLogCallsInternally", "Log all RPC calls internally to be dumped upon request");
             Add(dontLogCallsInternally);
 
@@ -76,7 +75,6 @@ namespace More.Net
         {
             NfsServerProgramOptions options = new NfsServerProgramOptions();
             List<String> nonOptionArguments = options.Parse(args);
-
 
             if (nonOptionArguments.Count != 2)
             {
@@ -124,7 +122,6 @@ namespace More.Net
 
             RpcPerformanceLog.rpcMessageSerializationLogger = options.dontLogSerializationPerformanceToConsole.set ? null : Console.Out;
 
-
             TextWriter selectServerEventLog                 = options.dontLogServerEventsToConsole.set             ? null : Console.Out;
 
             //
@@ -140,7 +137,7 @@ namespace More.Net
                 Nfs3Procedure.ModeFlags.GroupExecute | Nfs3Procedure.ModeFlags.GroupWrite | Nfs3Procedure.ModeFlags.GroupRead |
                 Nfs3Procedure.ModeFlags.OwnerExecute | Nfs3Procedure.ModeFlags.OwnerWrite | Nfs3Procedure.ModeFlags.OwnerRead;
             /*Nfs3Procedure.ModeFlags.SaveSwappedText | Nfs3Procedure.ModeFlags.SetUidOnExec | Nfs3Procedure.ModeFlags.SetGidOnExec;*/
-            IPermissions permissions = new DumbPermissions(defaultDirectoryPermissions, defaultFilePermissions);
+            IPermissions permissions = new ConstantPermissions(defaultDirectoryPermissions, defaultFilePermissions);
 
             ShareDirectory[] shareDirectories = new ShareDirectory[] {
                 new ShareDirectory(shareDirectory, shareName),

@@ -8,10 +8,6 @@ Flags Byte ServerConnectionInfo {
   1 RequireTls
 }
 
-
-
-
-
 ServerInfo {
   Byte[Byte] Name
   UInt16 SecondsPerHeartbeat

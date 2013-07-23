@@ -163,7 +163,7 @@ namespace More
             if (resourceString.Equals("/favicon.ico"))
             {
                 Byte[] response404 = Encoding.UTF8.GetBytes(String.Format("{0} 404 Not Found\r\n\r\n", httpVersionString));
-                responseHandler.HandleData(response404, 0, response404.Length);
+                responseHandler.HandleData(response404, 0, (UInt32)response404.Length);
                 responseHandler.Dispose();
                 return;
             }
@@ -309,8 +309,8 @@ namespace More
             //
             // Send Response
             //
-            responseHandler.HandleData(headerBytes, 0, headerBytes.Length);
-            responseHandler.HandleData(contents, 0, contents.Length);
+            responseHandler.HandleData(headerBytes, 0, (UInt32)headerBytes.Length);
+            responseHandler.HandleData(contents, 0, (UInt32)contents.Length);
 
             return;
         }
@@ -348,7 +348,7 @@ namespace More
                 callback.GotInvalidData(clientString, String.Format("Unknown Command from line '{0}'", line));
                 response = GenerateHelpMessage(String.Format("Unknown Command '{0}', expected 'help', 'exit', 'methods', 'type' or 'call'", command));
             }
-            if (response != null) responseHandler.HandleData(response, 0, response.Length);
+            if (response != null) responseHandler.HandleData(response, 0, (UInt32)response.Length);
         }
 
         private String NpcError(NpcErrorCode errorCode, String errorMessage)

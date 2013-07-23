@@ -22,13 +22,13 @@ namespace More
                 this.aToBDataHandler = aToBDataHandler;
                 this.bToADataHandler = bToADataHandler;
             }
-            public void SendFrom(Socket from, Byte[] data, Int32 length)
+            public void SendFrom(Socket from, Byte[] data, UInt32 length)
             {
                 if (from == a)
                 {
                     if (aToBDataHandler == null)
                     {
-                        b.Send(data, 0, length, SocketFlags.None);
+                        b.Send(data, 0, (Int32)length, SocketFlags.None);
                     }
                     else
                     {
@@ -39,7 +39,7 @@ namespace More
                 {
                     if (bToADataHandler == null)
                     {
-                        a.Send(data, 0, length, SocketFlags.None);
+                        a.Send(data, 0, (Int32)length, SocketFlags.None);
                     }
                     else
                     {
@@ -185,7 +185,7 @@ namespace More
                             lock (this)
                             {
                                 SocketPair pair = pairMap[socket];
-                                pair.SendFrom(socket, receiveBuffer, bytesRead);
+                                pair.SendFrom(socket, receiveBuffer, (UInt32)bytesRead);
                             }
                         }
                     }

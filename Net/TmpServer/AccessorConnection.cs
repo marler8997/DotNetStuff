@@ -3,6 +3,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
+using More.Net.TmpCommand;
+
 namespace More.Net
 {
     public class AccessorConnection
@@ -74,7 +76,7 @@ namespace More.Net
             }
             return socket;
         }
-        public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, ServerInfo serverInfo, SelectTunnelsThread tunnelsThread)
+        public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, ByteBuffer sendBuffer, ServerInfo serverInfo, SelectTunnelsThread tunnelsThread)
         {
             if (Connected) throw new InvalidOperationException(String.Format(
                 "You called Connect() on accessor '{0}' but its already connected", accessorEndPoint));
@@ -129,9 +131,8 @@ namespace More.Net
                 //
                 // Send server info
                 //
-                Byte[] serverInfoPacket = Tmp.CreateCommandPacket(Tmp.ToAccessorServerInfoID,
-                    ServerInfo.Reflector, serverInfo, 0);
-                accessorSendHandler(serverInfoPacket, 0, serverInfoPacket.Length);                
+                UInt32 commandLength = Tmp.SerializeCommand(ServerInfo.Serializer, Tmp.ToAccessorServerInfoID, serverInfo, sendBuffer, 0);
+                accessorSendHandler(sendBuffer.array, 0, commandLength);
 
                 return true;
             }
@@ -178,7 +179,7 @@ namespace More.Net
                 }
                 else
                 {
-                    accessorReceiveHandler.HandleData(receiveBuffer, 0, bytesRead);
+                    accessorReceiveHandler.HandleData(receiveBuffer, 0, (UInt32)bytesRead);
                 }
             }
         }

@@ -471,10 +471,10 @@ namespace More
     public class BigEndianUnsignedEnumSerializer<EnumType> : FixedLengthInstanceSerializer<EnumType>
     {
         private static BigEndianUnsignedEnumSerializer<EnumType>
-            oneByteInstance, twoByteInstance, fourByteInstance;
-        public static BigEndianUnsignedEnumSerializer<EnumType> OneByteInstance { get { if (oneByteInstance == null) oneByteInstance = new BigEndianUnsignedEnumSerializer<EnumType>(1); return oneByteInstance; } }
-        public static BigEndianUnsignedEnumSerializer<EnumType> TwoByteInstance { get { if (twoByteInstance == null) twoByteInstance = new BigEndianUnsignedEnumSerializer<EnumType>(2); return twoByteInstance; } }
-        public static BigEndianUnsignedEnumSerializer<EnumType> FourByteInstance { get { if (fourByteInstance == null) fourByteInstance = new BigEndianUnsignedEnumSerializer<EnumType>(4); return fourByteInstance; } }
+            twoByteInstance, threeByteInstance, fourByteInstance;
+        public static BigEndianUnsignedEnumSerializer<EnumType> TwoByteInstance   { get { if (twoByteInstance   == null) twoByteInstance   = new BigEndianUnsignedEnumSerializer<EnumType>(2); return twoByteInstance;   } }
+        public static BigEndianUnsignedEnumSerializer<EnumType> ThreeByteInstance { get { if (threeByteInstance == null) threeByteInstance = new BigEndianUnsignedEnumSerializer<EnumType>(3); return threeByteInstance; } }
+        public static BigEndianUnsignedEnumSerializer<EnumType> FourByteInstance  { get { if (fourByteInstance  == null) fourByteInstance  = new BigEndianUnsignedEnumSerializer<EnumType>(4); return fourByteInstance;  } }
         private BigEndianUnsignedEnumSerializer() { }
 
         public readonly Byte byteCount;

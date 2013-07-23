@@ -28,22 +28,30 @@ namespace More.Net
     //
     public static class FrameAndHeartbeatProtocol
     {
+        public const UInt32 MaxLength = 0xEFFFFFFF;
+
         public const Byte Heartbeat = 0xFF;
         public static readonly Byte[] HeartBeatPacket = new Byte[] { Heartbeat };
 
-        public static void InsertLength(Byte[] buffer, Int32 offset, Int32 length)
+        public static void InsertLength(Byte[] buffer, UInt32 offset, UInt32 length)
         {
-            if (length > 0xEFFFFF) throw new InvalidOperationException(String.Format(
-                "Max length is {0} but you provided {1}", 0xEFFFFF, length));
+            if (length > MaxLength) throw new InvalidOperationException(String.Format(
+                "Max length is {0} but you provided {1}", MaxLength, length));
             buffer[offset    ] = (Byte)(length >> 16);
             buffer[offset + 1] = (Byte)(length >>  8);
             buffer[offset + 2] = (Byte)(length      );
         }
-        public static Byte[] AllocateFrame(Int32 offset, Int32 length)
+        public static Byte[] AllocateFrame(UInt32 offset, UInt32 length)
         {
             Byte[] frame = new Byte[offset + length + 3];
             InsertLength(frame, offset, length);
             return frame;
+        }
+        public static UInt32 SetupFrame(ByteBuffer buffer, UInt32 frameOffset, UInt32 contentLength)
+        {
+            buffer.EnsureCapacity(frameOffset + 3 + contentLength);
+            InsertLength(buffer.array, frameOffset, contentLength);
+            return frameOffset + 3;
         }
     }
 
@@ -54,12 +62,12 @@ namespace More.Net
         {
             this.passDataTo = passDataTo;
         }
-        public void HandleData(byte[] data, int offset, int length)
+        public void HandleData(Byte[] data, UInt32 offset, UInt32 length)
         {
             Byte[] newData = new Byte[length + 3];
             FrameAndHeartbeatProtocol.InsertLength(newData, 0, length);
             Array.Copy(data, offset, newData, 3, length);
-            passDataTo.HandleData(newData, 0, newData.Length);
+            passDataTo.HandleData(newData, 0, (UInt32)newData.Length);
         }
         public void  Dispose()
         {
@@ -82,7 +90,7 @@ namespace More.Net
             this.disposeHandler = disposeHandler;
             this.filter = new FrameAndHeartbeatReceiverFilter();
         }
-        public void HandleData(byte[] data, int offset, int length)
+        public void HandleData(Byte[] data, UInt32 offset, UInt32 length)
         {
             filter.FilterTo(dataHandler, heartbeatHandler, data, offset, length);
         }
@@ -95,27 +103,27 @@ namespace More.Net
     public class FrameAndHeartbeatReceiverFilter : IDataFilter
     {
         readonly ByteBuffer buffer;
-        Int32 currentBufferLength;
+        UInt32 currentBufferLength;
 
         public FrameAndHeartbeatReceiverFilter()
         {
             this.buffer = new ByteBuffer();
             this.currentBufferLength = 0;
         }
-        public void FilterTo(DataHandler handler, byte[] data, int offset, int length)
+        public void FilterTo(DataHandler handler, Byte[] data, UInt32 offset, UInt32 length)
         {
             FilterTo(handler, null, data, offset, length);
         }
         public void FilterTo(DataHandler handler, Action heartbeatCallback,
-            byte[] data, int offset, int length)
+            Byte[] data, UInt32 offset, UInt32 length)
         {
             if (length <= 0) return;
 
             //
             // Choose which array to work with
             //
-            Int32 processLength;
-            Int32 processOffset;
+            UInt32 processLength;
+            UInt32 processOffset;
             Byte[] processArray;
 
             if (currentBufferLength <= 0)
@@ -137,7 +145,7 @@ namespace More.Net
             CommonHandleData(handler, heartbeatCallback, processArray, processOffset, processLength);
         }
         void CommonHandleData(DataHandler handler, Action heartbeatCallback,
-            Byte[] processArray, Int32 processOffset, Int32 processLength)
+            Byte[] processArray, UInt32 processOffset, UInt32 processLength)
         {
             //
             // Process the array
@@ -154,7 +162,7 @@ namespace More.Net
                     processOffset++;
                     processLength--;
 
-                    if (processLength <= 0)
+                    if (processLength == 0)
                     {
                         currentBufferLength = 0;
                         return;
@@ -178,10 +186,10 @@ namespace More.Net
                     return;
                 }
 
-                Int32 frameLength =
-                    ((0xFF0000 & (processArray[processOffset] << 16)) |
-                     (0x00FF00 & (processArray[processOffset + 1] << 8)) |
-                     (0x0000FF & (processArray[processOffset + 2]))) + 3;
+                UInt32 frameLength = 3 +
+                    ((0xFF0000 & (UInt32)(processArray[processOffset    ] << 16)) |
+                     (0x00FF00 & (UInt32)(processArray[processOffset + 1] <<  8)) |
+                     (0x0000FF & (UInt32)(processArray[processOffset + 2]      )) );
 
                 if (frameLength > processLength)
                 {

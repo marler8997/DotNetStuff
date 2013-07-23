@@ -7,7 +7,7 @@ using System.Text;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using More.Net.TlsCommand;
+//using More.Net.TlsCommand;
 
 namespace More.Net
 {
@@ -17,6 +17,7 @@ namespace More.Net
     [TestClass]
     public class TestTls
     {
+        /*
         [TestMethod]
         public void TestTlsHandshake()
         {
@@ -71,5 +72,6 @@ namespace More.Net
             Console.WriteLine("Received '{0}'", Encoding.ASCII.GetString(receiveBuffer, 0, bytesRead));
             Console.WriteLine("Bytes: {0}", BitConverter.ToString(receiveBuffer, 0, bytesRead));
         }
+        */
     }
 }

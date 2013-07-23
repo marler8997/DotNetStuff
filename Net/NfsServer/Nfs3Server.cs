@@ -125,28 +125,10 @@ namespace More.Net
             return (UInt32)readLengthAsInt32;
         }
 
-
-
         private readonly RpcServicesManager servicesManager;
         private readonly SharedFileSystem sharedFileSystem;
         private readonly PartialByteArraySerializer fileContents;
         private readonly UInt32 suggestedReadSizeMultiple;
-
-
-        /*
-        class ClientState
-        {
-            public readonly String clientString;
-
-            UInt16 lastReadDirPlusReplyCookie;
-
-            public ClientState(String clientString)
-            {
-                this.clientString = clientString;
-            }
-        }
-        readonly Dictionary<String, ClientState> clientStates;
-        */
 
         public Nfs3Server(RpcServicesManager servicesManager, SharedFileSystem sharedFileSystem, ByteBuffer sendBuffer,
             UInt32 readSizeMax, UInt32 suggestedReadSizeMultiple)
@@ -156,18 +138,7 @@ namespace More.Net
             this.sharedFileSystem = sharedFileSystem;
             this.fileContents = new PartialByteArraySerializer(new Byte[readSizeMax], 0, 0);
             this.suggestedReadSizeMultiple = suggestedReadSizeMultiple;
-            //this.clientStates = new Dictionary<String, ClientState>();
         }
-
-        /*
-        // returns true if ClientState already existed, false if it was created
-        Boolean GetOrCreateClientState(String clientString, out ClientState clientState)
-        {
-            if (clientStates.TryGetValue(clientString, out clientState)) return true;
-            clientState = new ClientState(clientString);
-            return false;
-        }
-        */
 
         public override Boolean ProgramHeaderSupported(RpcProgramHeader programHeader)
         {
@@ -381,7 +352,6 @@ namespace More.Net
             SizeAndTimes before = new SizeAndTimes(shareObject.fileAttributes);
 
             // TODO: change the permissions
-
 
             return new SetFileAttributesReply(Status.Ok, new BeforeAndAfterAttributes(before, shareObject.fileAttributes));
         }

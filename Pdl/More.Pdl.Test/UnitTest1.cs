@@ -1,18 +1,11 @@
 ﻿using System;
-using System.Text;
-using System.Collections.Generic;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-using More.Net.PdlTestObjects;
-
-namespace More.Net
+namespace More.Pdl.Test
 {
-    /// <summary>
-    /// Summary description for TestPdl
-    /// </summary>
     [TestClass]
-    public class TestPdl
+    public class UnitTest1
     {
         [TestMethod]
         public void TestIntegerObjects()

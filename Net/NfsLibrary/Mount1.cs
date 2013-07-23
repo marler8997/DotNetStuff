@@ -81,6 +81,7 @@ namespace More.Net.Mount1Procedure
     //
     // Unmount Procedure
     //
+    /*
     public class Unmount : RpcProcedure
     {
         public Unmount(UnmountCall call)
@@ -88,25 +89,21 @@ namespace More.Net.Mount1Procedure
         {
         }
     }
-    public class UnmountCall : SubclassSerializer
+    */
+    public class UnmountCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrStringReflector(typeof(UnmountCall), "directory", Mount1.MaxPathLength),
         });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
         public String directory;
 
-        public UnmountCall()
-            : base(memberSerializers)
-        {
-        }
         public UnmountCall(Byte[] data, UInt32 offset, UInt32 offsetLimit)
-            : base(memberSerializers)
         {
-            Deserialize(data, offset, offsetLimit);
+            memberSerializers.Deserialize(this, data, offset, offsetLimit);
         }
         public UnmountCall(String directory)
-            : base(memberSerializers)
         {
             this.directory = directory;
         }

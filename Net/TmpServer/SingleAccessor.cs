@@ -6,6 +6,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
+using More.Net.TmpCommand;
+
 namespace More.Net
 {
 
@@ -34,6 +36,7 @@ namespace More.Net
             // TmpHiddenServer Loop
             //
             Byte[] receiveBuffer = new Byte[receiveBufferLength];
+            ByteBuffer sendBuffer = new ByteBuffer(256, 256);
             Int64 lastHearbeatTime = 0;
             SingleObjectList singleAccessorSocket = new SingleObjectList();
 
@@ -45,7 +48,7 @@ namespace More.Net
                 while (!accessorConnection.Connected)
                 {
                     Console.WriteLine("{0} [{1}] Attempting reconnect...", DateTime.Now, accessorConnection.accessorEndPoint);
-                    if (accessorConnection.TryConnectAndInitialize(tlsSettings, serverInfo, tunnelsThread))
+                    if (accessorConnection.TryConnectAndInitialize(tlsSettings, sendBuffer, serverInfo, tunnelsThread))
                     {
                         Console.WriteLine("{0} [{1}] Connected", DateTime.Now, accessorConnection.accessorEndPoint);
                         lastHearbeatTime = Stopwatch.GetTimestamp();

@@ -143,12 +143,16 @@ namespace More.Pdl
                 writer.WriteLine("        {");
                 writer.WriteLine("            public InstanceSerializer() {}");
 
-                //
-                // FixedLength Object Serializer
-                //
                 if (fixedSerializationLength != UInt32.MaxValue)
                 {
+                    //
+                    // FixedSerializationLength Method
+                    //
                     writer.WriteLine("            public override UInt32 FixedSerializationLength() {{ return {0}.FixedSerializationLength; }}", objectDefinition.name);
+                    
+                    //
+                    // FixedLengthSerialize Method
+                    //
                     writer.WriteLine("            public override void FixedLengthSerialize(Byte[] bytes, UInt32 offset, {0} instance)", objectDefinition.name);
                     writer.WriteLine("            {");
                     for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
@@ -179,6 +183,10 @@ namespace More.Pdl
                         }
                     }
                     writer.WriteLine("            }");
+
+                    //
+                    // FixedLengthDeserialize Method
+                    //
                     writer.WriteLine("            public override {0} FixedLengthDeserialize(Byte[] bytes, UInt32 offset)", objectDefinition.name);
                     writer.WriteLine("            {");
                     writer.WriteLine("                return new {0} (", objectDefinition.name);
@@ -189,7 +197,7 @@ namespace More.Pdl
                         TypeReference typeReference = field.typeReference;
                         if (typeReference.arrayType == null)
                         {
-                            writer.Write("                    {0}", typeReference.ElementDeserializeExpression("bytes", "offset + " + offset.ToString()));
+                            writer.Write("                    {0}", typeReference.ElementFixedLengthDeserializeExpression("bytes", "offset + " + offset.ToString()));
                             offset += typeReference.FixedElementSerializationLength;
                         }
                         else
@@ -204,11 +212,11 @@ namespace More.Pdl
                     writer.WriteLine("                );");
                     writer.WriteLine("            }");
                 }
-                //
-                // DynamicLength Object Serializer
-                //
                 else
                 {
+                    //
+                    // SerializationLength Method
+                    //
                     writer.WriteLine("            public UInt32 SerializationLength({0} instance)", objectDefinition.name);
                     writer.WriteLine("            {");
                     writer.WriteLine("                UInt32 dynamicLengthPart = 0;");
@@ -219,7 +227,7 @@ namespace More.Pdl
                         TypeReference typeReference = field.typeReference;
 
                         UInt32 fieldFixedElementSerializationLength = typeReference.FixedElementSerializationLength;
-                        if (fieldFixedElementSerializationLength >= 0)
+                        if (fieldFixedElementSerializationLength != UInt32.MaxValue)
                         {
                             if (typeReference.arrayType == null)
                             {
@@ -233,6 +241,7 @@ namespace More.Pdl
                                 }
                                 else
                                 {
+                                    fixedSerializationLengthPart += typeReference.arrayType.GetArraySizeByteCount();
                                     writer.WriteLine("                if(instance.{0} != null) dynamicLengthPart += (UInt32)instance.{0}.Length * {1};", field.name, fieldFixedElementSerializationLength);
                                 }
                             }
@@ -255,6 +264,7 @@ namespace More.Pdl
                                 }
                                 else
                                 {
+                                    fixedSerializationLengthPart += typeReference.arrayType.GetArraySizeByteCount();
                                     writer.WriteLine("                if(instance.{0} != null)", field.name);
                                     writer.WriteLine("                {");
                                     writer.WriteLine("                    for(int i = 0; i < instance.{0}.Length; i++)", field.name);
@@ -268,55 +278,117 @@ namespace More.Pdl
                     }
                     writer.WriteLine("                return {0} + dynamicLengthPart;", fixedSerializationLengthPart);
                     writer.WriteLine("            }");
+
+                    //
+                    // Serialize Method
+                    //
                     writer.WriteLine("            public UInt32 Serialize(Byte[] bytes, UInt32 offset, {0} instance)", objectDefinition.name);
                     writer.WriteLine("            {");
+                    writer.WriteLine("                UInt32 arrayLength;");
                     for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
                     {
                         ObjectDefinitionField field = objectDefinitionFields[fieldIndex];
                         TypeReference typeReference = field.typeReference;
 
                         UInt32 fieldFixedElementSerializationLength = typeReference.FixedElementSerializationLength;
-                        if (fieldFixedElementSerializationLength >= 0)
+
+                        if (typeReference.arrayType == null)
                         {
-                            if (typeReference.arrayType == null)
+                            String serializeExpression = typeReference.ElementSerializeExpression("bytes", "offset", "instance." + field.name);
+                            if (fieldFixedElementSerializationLength == UInt32.MaxValue)
                             {
-                                writer.WriteLine("                {0};", typeReference.ElementSerializeExpression("bytes", "offset", "instance." + field.name));
-                                writer.WriteLine("                offset += {0};", fieldFixedElementSerializationLength);
+                                writer.WriteLine("                offset = {0};", serializeExpression);
                             }
                             else
                             {
-                                writer.WriteLine("                // Arrays inside dynamic length objects not implemented");
+                                writer.WriteLine("                {0};", serializeExpression);
+                                writer.WriteLine("                offset += {0};", fieldFixedElementSerializationLength);
                             }
                         }
                         else
                         {
-                            if (typeReference.arrayType == null)
+                            String arrayLengthString;
+                            if (typeReference.arrayType.type == PdlArraySizeTypeEnum.Fixed)
                             {
-                                writer.WriteLine("                offset = {0};", typeReference.ElementSerializeExpression("bytes", "offset", "instance." + field.name));
+                                arrayLengthString = typeReference.arrayType.GetFixedArraySize().ToString();
                             }
                             else
                             {
-                                writer.WriteLine("                // Arrays inside dynamic length objects not implemented");
+                                arrayLengthString = "arrayLength";
+                                writer.WriteLine("                arrayLength = (instance.{0} == null) ? 0 : (UInt32)instance.{0}.Length;", field.name);
+                                writer.WriteLine("                {0};", typeReference.arrayType.LengthSerializeExpression("bytes", "offset",
+                                    String.Format("({0})arrayLength", typeReference.arrayType.type)));
+                                writer.WriteLine("                offset += {0};", typeReference.arrayType.GetArraySizeByteCount());
                             }
+                            writer.WriteLine("                for(UInt32 i = 0; i < {0}; i++)", arrayLengthString);
+                            writer.WriteLine("                {");
+                            String serializeExpression = typeReference.ElementSerializeExpression("bytes", "offset", "instance." + field.name + "[i]");
+                            if (fieldFixedElementSerializationLength == UInt32.MaxValue)
+                            {
+                                writer.WriteLine("                    offset = {0};", serializeExpression);
+                            }
+                            else
+                            {
+                                writer.WriteLine("                    {0};", serializeExpression);
+                                writer.WriteLine("                    offset += {0};", fieldFixedElementSerializationLength);
+                            }
+                            writer.WriteLine("                }");
                         }
                     }
                     writer.WriteLine("                return offset;");
                     writer.WriteLine("            }");
+
+                    //
+                    // Deserialize Method
+                    //
                     writer.WriteLine("            public UInt32 Deserialize(Byte[] bytes, UInt32 offset, UInt32 offsetLimit, out {0} outInstance)", objectDefinition.name);
                     writer.WriteLine("            {");
+                    writer.WriteLine("                UInt32 arrayLength;");
                     writer.WriteLine("                {0} instance = new {0}();", objectDefinition.name);
                     for (int fieldIndex = 0; fieldIndex < objectDefinitionFields.Count; fieldIndex++)
                     {
                         ObjectDefinitionField field = objectDefinitionFields[fieldIndex];
                         TypeReference typeReference = field.typeReference;
+
+                        UInt32 fieldFixedElementSerializationLength = typeReference.FixedElementSerializationLength;
+
                         if (typeReference.arrayType == null)
                         {
-                            writer.WriteLine("                instance.{0} = {1};", field.name, typeReference.ElementDeserializeExpression("bytes", "offset"));
-                            writer.WriteLine("                offset += {0};", typeReference.FixedElementSerializationLength);
+                            if (fieldFixedElementSerializationLength == UInt32.MaxValue)
+                            {
+                                //String deserializeExpression = typeReference.ElementDeserializeExpression("bytes", "offset");
+                                writer.WriteLine("                // not implemented; //instance.{0};", field.name);
+                            }
+                            else
+                            {
+                                writer.WriteLine("                instance.{0} = {1};", field.name, typeReference.ElementFixedLengthDeserializeExpression("bytes", "offset"));
+                                writer.WriteLine("                offset += {0};", fieldFixedElementSerializationLength);
+                            }
                         }
                         else
                         {
-                            writer.WriteLine("                // Arrays inside dynamic length objects not implemented");
+                            String arrayLengthString;
+                            if(typeReference.arrayType.type == PdlArraySizeTypeEnum.Fixed)
+                            {
+                                arrayLengthString = typeReference.arrayType.GetFixedArraySize().ToString();
+                            }
+                            else
+                            {
+                                arrayLengthString = "arrayLength";
+                                writer.WriteLine("                {0};", typeReference.arrayType.LengthDeserializeExpression("bytes", "offset", "arrayLength"));
+                                writer.WriteLine("                offset += {0};", typeReference.arrayType.GetArraySizeByteCount());
+                            }
+
+
+                            if (fieldFixedElementSerializationLength == UInt32.MaxValue)
+                            {
+                                writer.WriteLine("// Dynamic Length Element Arrays are not yet implemented");
+                            }
+                            else
+                            {
+                                writer.WriteLine("                instance.{0} = {1};", field.name, typeReference.ElementDeserializeArrayExpression("bytes", "offset", arrayLengthString));
+                                writer.WriteLine("                offset += {0} * {1};", fieldFixedElementSerializationLength, arrayLengthString);
+                            }
                         }
                     }
                     writer.WriteLine("                outInstance = instance;");
@@ -324,6 +396,9 @@ namespace More.Pdl
                     writer.WriteLine("            }");
                 }
 
+                //
+                // DataString Method
+                //
                 writer.WriteLine("            public{0} void DataString({1} instance, StringBuilder builder)", (fixedSerializationLength == UInt32.MaxValue) ? "" : " override", objectDefinition.name);
                 writer.WriteLine("            {");
                 writer.WriteLine("                builder.Append(\"{0}:{{\");", objectDefinition.name);
@@ -344,6 +419,10 @@ namespace More.Pdl
                 }
                 writer.WriteLine("                builder.Append(\"}\");");
                 writer.WriteLine("            }");
+
+                //
+                // DataString Method
+                //
                 writer.WriteLine("            public{0} void DataSmallString({1} instance, StringBuilder builder)", (fixedSerializationLength == UInt32.MaxValue) ? "" : " override", objectDefinition.name);
                 writer.WriteLine("            {");
                 writer.WriteLine("                builder.Append(\"{0}:{{\");", objectDefinition.name);
@@ -367,12 +446,6 @@ namespace More.Pdl
 
 
                 writer.WriteLine("        }"); // End Of Serializer Class
-
-
-
-
-
-
 
 
                 //

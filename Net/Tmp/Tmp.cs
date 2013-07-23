@@ -211,16 +211,14 @@ namespace More.Net
         public const Byte ToServerOpenTunnelRequestID         = 0;
         public const Byte ToServerOpenAccessorTunnelRequestID = 1;
 
-        /*
-        public static Byte[] CreateCommandPacket<T>(Byte commandID, IReflector reflector, T command, UInt32 offset)
+        public static UInt32 SerializeCommand<T>(IInstanceSerializer<T> serializer, Byte commandID, T command, ByteBuffer buffer, UInt32 offset)
         {
-            Int32 commandLength = 1 + reflector.SerializationLength(command);
-            Byte[] commandPacket = FrameAndHeartbeatProtocol.AllocateFrame(offset, commandLength);
-            commandPacket[offset + 3] = commandID;
-            reflector.Serialize(command, commandPacket, offset + 4);
-            return commandPacket;
+            UInt32 commandLength = 1 + serializer.SerializationLength(command);
+            offset = FrameAndHeartbeatProtocol.SetupFrame(buffer, offset, commandLength);
+            buffer.array[offset++] = commandID;
+            return serializer.Serialize(buffer.array, offset, command);
         }
-
+        /*
         public static void SendTmpCommand(this Socket socket, IReflector reflector, Byte commandID, Object command)
         {
             Int32 commandLength = 1 + reflector.SerializationLength(command);

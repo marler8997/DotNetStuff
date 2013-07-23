@@ -601,13 +601,13 @@ namespace More.Net
             Int32 bytesRead = socket.Receive(safeBuffer.array);
             if (bytesRead <= 0) return true;
 
-            dataHandler(safeBuffer.array, 0, bytesRead);
+            dataHandler(safeBuffer.array, 0, (UInt32)bytesRead);
             return false;
         }
     }
 
     // return null to close the client
-    public delegate SocketHandlerMethods AcceptHandler(Socket listenSocket, Socket socket);
+    public delegate SocketHandlerMethods AcceptHandler(Socket listenSocket, Socket socket, ByteBuffer safeBuffer);
 
     // return true to close client
     public delegate void SocketReceiveHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods receiveHandler);
@@ -771,7 +771,7 @@ namespace More.Net
                             {
                                 Socket newReceiveSocket = socket.Accept();
 
-                                handlerMethods = acceptHandler(socket, newReceiveSocket);
+                                handlerMethods = acceptHandler(socket, newReceiveSocket, safeBuffer);
 
                                 if (handlerMethods == null || handlerMethods.receiveHandler == null)
                                 {
@@ -966,7 +966,7 @@ namespace More.Net
                             {
                                 Socket newReceiveSocket = socket.Accept();
 
-                                handlerMethods = acceptHandler(socket, newReceiveSocket);
+                                handlerMethods = acceptHandler(socket, newReceiveSocket, safeBuffer);
 
                                 if (handlerMethods == null || handlerMethods.receiveHandler == null)
                                 {

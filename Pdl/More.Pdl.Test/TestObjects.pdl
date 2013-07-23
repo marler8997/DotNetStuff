@@ -40,3 +40,19 @@ FixedLengthArrayObject {
   AnSByte[7] FixedObjectArray
   DayOfWeek[17] FixedEnumArray
 }
+
+
+# Dynamic Length Types
+DynamicLengthObject {
+  Byte[Byte] AByteArray
+}
+
+AnotherDynamicLengthObject {
+  Byte[Byte] FixedObjectByteLength
+  Byte[24] FixedObject24ByteLength
+  
+  DynamicLengthObject[Byte] DynamicObjectByteLength
+  DynamicLengthObject[32] DynamicObject32ByteLength
+  
+  DynamicLengthObject SingleDynamicLengthObject
+}

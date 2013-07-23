@@ -44,7 +44,7 @@ namespace More.Net
                         break;
                     case Mount1.UMNT:
 
-                        callData = new Mount1Procedure.UnmountCall(callParameters, callOffset, callMaxOffset);
+                        callData = new Mount1Procedure.UnmountCall(callParameters, callOffset, callMaxOffset).CreateSerializer();
 
                         break;
                     default:

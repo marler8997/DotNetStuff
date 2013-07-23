@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("TmpHiddenServer.Test")]
+[assembly: AssemblyTitle("More.Pdl.Test")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("TmpHiddenServer.Test")]
+[assembly: AssemblyProduct("More.Pdl.Test")]
 [assembly: AssemblyCopyright("Copyright © Microsoft 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("b7dff41a-f016-4d1a-bd2c-0c76cec0f1d9")]
+[assembly: Guid("64917abc-841e-4065-af59-fb4d036f008b")]
 
 // Version information for an assembly consists of the following four values:
 //

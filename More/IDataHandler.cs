@@ -3,15 +3,15 @@ using System.Net.Sockets;
 
 namespace More
 {
-    public delegate void DataHandler(Byte[] data, Int32 offset, Int32 length);
+    public delegate void DataHandler(Byte[] data, UInt32 offset, UInt32 length);
     public interface IDataHandler : IDisposable
     {
-        void HandleData(Byte[] data, Int32 offset, Int32 length);
+        void HandleData(Byte[] data, UInt32 offset, UInt32 length);
     }
     
     public interface IDataFilter
     {
-        void FilterTo(DataHandler handler, Byte[] data, Int32 offset, Int32 length);
+        void FilterTo(DataHandler handler, Byte[] data, UInt32 offset, UInt32 length);
     }
 
     public class DataFilterHandler : IDataHandler
@@ -31,7 +31,7 @@ namespace More
             this.handler = iDataHandler.HandleData;
             this.disposable = iDataHandler;
         }
-        public void HandleData(byte[] data, int offset, int length)
+        public void HandleData(Byte[] data, UInt32 offset, UInt32 length)
         {
             filter.FilterTo(handler, data, offset, length);
         }
@@ -40,8 +40,6 @@ namespace More
             if (disposable != null) disposable.Dispose();
         }
     }
-
-
 
     public interface IDataHandlerChainFactory
     {
@@ -54,9 +52,9 @@ namespace More
         {
             this.socket = socket;
         }
-        public void HandleData(byte[] data, int offset, int length)
+        public void HandleData(Byte[] data, UInt32 offset, UInt32 length)
         {
-            socket.Send(data, offset, length, SocketFlags.None);
+            socket.Send(data, (Int32)offset, (Int32)length, SocketFlags.None);
         }
         public void Dispose()
         {

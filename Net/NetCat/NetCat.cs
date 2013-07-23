@@ -49,7 +49,7 @@ namespace More.Net
 
         public override void PrintUsageHeader()
         {
-            Console.WriteLine("Outbound Connection: NetCat.exe [-options] connector");
+            Console.WriteLine("Outbound Connection: NetCat.exe [-options] <host-connector> <port>");
             Console.WriteLine("InBound Connection : NetCat.exe [-options]");
         }
     }
@@ -73,20 +73,22 @@ namespace More.Net
                 listenSocket.Listen(1);
                 connectedSocket = listenSocket.Accept();
             }
-            else if (nonOptionArgs.Count != 1)
+            else if (nonOptionArgs.Count != 2)
             {
-                Console.WriteLine("In client/connect mode there should be 1 non-option command line argument but got {0}", nonOptionArgs.Count);
-                optionsParser.PrintUsage();
-                return -1;
+                return optionsParser.ErrorAndUsage("In client/connect mode there should be 2 non-option command line arguments but got {0}", nonOptionArgs.Count);
             }
             else
             {
-                String serverConnectorString = nonOptionArgs[0];
-                ISocketConnector connector;
-                String serverIPAndPort = ConnectorParser.ParseConnector(serverConnectorString, out connector);
-                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHostAndPort(serverIPAndPort);
+                String hostConnectorString = nonOptionArgs[0];
+                
+                String portString = nonOptionArgs[1];
+                UInt16 port = UInt16.Parse(portString);
 
-                connectedSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                ISocketConnector connector;
+                String hostString = ConnectorParser.ParseConnector(hostConnectorString, out connector);
+                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHost(hostString, port);
+
+                connectedSocket = new Socket(serverEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
                 if(optionsParser.localPort.set)
                 {

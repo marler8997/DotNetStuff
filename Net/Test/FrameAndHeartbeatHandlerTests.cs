@@ -13,7 +13,7 @@ namespace More.Net
         public static void HandleBytes(this FrameAndHeartbeatReceiverFilter filter,
             FrameAndHeartbeatTestCommandHandler testHandler, Byte[] bytes)
         {
-            filter.FilterTo(testHandler.HandleData, testHandler.HandleHeartbeat, bytes, 0, bytes.Length);
+            filter.FilterTo(testHandler.HandleData, testHandler.HandleHeartbeat, bytes, 0, (UInt32)bytes.Length);
         }
     }
 
@@ -50,9 +50,9 @@ namespace More.Net
         }
         public void HandleData(Byte[] data)
         {
-            HandleData(data, 0, data.Length);
+            HandleData(data, 0, (UInt32)data.Length);
         }
-        public void HandleData(byte[] data, int offset, int length)
+        public void HandleData(Byte[] data, UInt32 offset, UInt32 length)
         {
             if (nextExpectedFrames.Count <= 0)
                 Assert.Fail("You got a command but weren't expecting one");

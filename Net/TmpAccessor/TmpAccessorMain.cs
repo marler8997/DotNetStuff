@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 
 using More;
+using More.Net.TmpCommand;
 
 namespace More.Net
 {
@@ -27,10 +28,10 @@ namespace More.Net
         }
         public override void PrintUsageHeader()
         {
-            Console.WriteLine("TmpAccessor.exe [options]");
+            Console.WriteLine("TmpAccessor.exe [options] <tunnel-listener>");
+            Console.WriteLine("    <tunnel-listener>     <server-name>,<target-host>,<targetPort>[,<listen-port>]");
         }
     }
-
     public static class TmpAccessorMain
     {
         static void Main(string[] args)
@@ -38,15 +39,46 @@ namespace More.Net
             TmpAccessorOptions options = new TmpAccessorOptions();
             List<String> nonOptionArgs = options.Parse(args);
 
-            if(nonOptionArgs.Count != 0)
-            {
-                options.ErrorAndUsage("Expected no non-option arguments but got {0}", nonOptionArgs.Count);
-                return;
-            }
-
             TlsSettings settings = new TlsSettings(false);
 
             TmpConnectionManager tmpConnectionManager = new TmpConnectionManager(settings);
+
+            //
+            // Add Tunnel Listeners from command line arguments
+            //
+            if(nonOptionArgs.Count > 0)
+            {
+                for(int i = 0; i < nonOptionArgs.Count; i++)
+                {
+                    String tunnelListenerString = nonOptionArgs[i];
+
+                    String[] tunnelListenerStrings = tunnelListenerString.Split(new Char[] {','}, StringSplitOptions.RemoveEmptyEntries);
+                    if(tunnelListenerStrings.Length < 3)
+                    {
+                        options.ErrorAndUsage("A tunnel-listener must have at least 3 comma seperated values but '{0}' only had {1}", tunnelListenerString, tunnelListenerStrings.Length);
+                        Environment.Exit(1);
+                    }
+
+                    String serverName = tunnelListenerStrings[0];                    
+                    String targetHost = tunnelListenerStrings[1];
+                    UInt16 targetPort = UInt16.Parse(tunnelListenerStrings[2]);
+
+                    if(tunnelListenerStrings.Length == 3)
+                    {
+                        tmpConnectionManager.AddTunnelListener(serverName, false, targetHost, targetPort);
+                    }
+                    else if(tunnelListenerStrings.Length == 4)
+                    {
+                        UInt16 listenPort = UInt16.Parse(tunnelListenerStrings[3]);
+                        tmpConnectionManager.AddTunnelListener(serverName, false, targetHost, targetPort, listenPort);
+                    }
+                    else
+                    {
+                        options.ErrorAndUsage("A tunnel-listener may not have more than 4 comma seperated values but '{0}' had {1}", tunnelListenerString, tunnelListenerStrings.Length);
+                        Environment.Exit(1);
+                    }
+                }
+            }
 
             //
             // Setup and start Npc Accessor Control Server
@@ -56,7 +88,7 @@ namespace More.Net
             NpcServerSingleThreaded npcServer = new NpcServerSingleThreaded(
                 NpcServerConsoleLoggerCallback.Instance, npcReflector, new DefaultNpcHtmlGenerator("Accessor", npcReflector), 2030);
             Thread npcServerThread = new Thread(npcServer.Run);
-            npcServerThread.Start();           
+            npcServerThread.Start();
 
             //
             // Setup and run Tmp listen/handler thread
@@ -69,13 +101,10 @@ namespace More.Net
             tmpSelectServer.Run();
         }
     }
-
-
     [NpcInterface]
     public interface AccessorControlInterface
     {
         String[] GetServerNames();
-
 
         //
         // A tunnel listener is a port that the accessor listens on.
@@ -85,10 +114,6 @@ namespace More.Net
         void AddTunnelListener(String serverName, Boolean requireTls, String targetHost, UInt16 targetPort, UInt16 listenPort);
         // returns listen port
         UInt16 AddTunnelListener(String serverName, Boolean requireTls, String targetHost, UInt16 targetPort);
-
-
-
-
     }
     public class TmpConnectionManager : AccessorControlInterface
     {
@@ -127,26 +152,39 @@ namespace More.Net
             }
             return null;
         }
-
         void SocketFromTmpServerClosed(Socket closedSocket)
         {
             Console.WriteLine("{0} WARNING: Socket closed using the default initial SocketCloseHandler", DateTime.Now);
         }
         public void GotServerName(String oldServerName, String newServerName, TmpControlConnection controlConnection)
         {
-            if (oldServerName != null)
+            if(oldServerName != null)
             {
+                if(oldServerName.Equals(newServerName)) return;                
                 serverNameToControlConnection.Remove(oldServerName);
             }
-            serverNameToControlConnection.Add(newServerName, controlConnection);
+
+            //
+            // Check if this server name already exists, if so, dispose that connection
+            //
+            TmpControlConnection existingConnection;
+            if (serverNameToControlConnection.TryGetValue(newServerName, out existingConnection))
+            {
+                if (existingConnection == controlConnection) return;
+
+                Console.WriteLine("{0} Got ServerInfo from new TmpControlConnection with Name='{1}', however, a connection with that name already exists...disposing the old one and using the new one",
+                    DateTime.Now, newServerName);
+                existingConnection.Dispose();
+            }
+
+            serverNameToControlConnection[newServerName] = controlConnection;
         }
         public void LostTmpControlConnection(TmpControlConnection tmpControlConnection)
         {
             tmpControlConnections.Remove(tmpControlConnection);
             serverNameToControlConnection.Remove(tmpControlConnection.ServerInfoName);
         }
-
-        public SocketHandlerMethods HandleConnectionFromTmpServer(Socket listenSocket, Socket socket)
+        public SocketHandlerMethods HandleConnectionFromTmpServer(Socket listenSocket, Socket socket, ByteBuffer safeBuffer)
         {
             Console.WriteLine("{0} [{1}] Accepted TmpServer Socket", DateTime.Now, socket.SafeRemoteEndPointString());
 
@@ -204,19 +242,18 @@ namespace More.Net
 
             IPEndPoint remoteEndPoint = (IPEndPoint)(socket.RemoteEndPoint);
 
-
             if (isTunnel)
             {
+                Console.WriteLine("{0} [{1}] Is a Tunnel Connection", DateTime.Now, remoteEndPoint.ToString());
                 TmpServerSideTunnelKeyReceiver keyReceiver = new TmpServerSideTunnelKeyReceiver(this);
                 handlerMethods.receiveHandler = keyReceiver.SocketReceiverHandler;
                 handlerMethods.socketClosedHandler = keyReceiver.SocketCloseHandler;
-                return;
             }
             else
             {
-                Console.WriteLine("{0} [{1}] Is a Control Connection");
+                Console.WriteLine("{0} [{1}] Is a Control Connection", DateTime.Now, remoteEndPoint.ToString());
                 TmpControlConnection tmpControlConnection = new TmpControlConnection(this, tlsSettings,
-                    remoteEndPoint, sendDataHandler, receiveDataFilter);
+                    remoteEndPoint, socket, sendDataHandler, receiveDataFilter);
                 lock (tmpControlConnections)
                 {
                     tmpControlConnections.Add(tmpControlConnection);
@@ -253,7 +290,7 @@ namespace More.Net
 
             disconnectedTunnel.CompleteTunnel(socket, ref handlerMethods);
         }
-        public SocketHandlerMethods AcceptAndInitiateTunnel(TunnelListenerHandler listener, Socket clientSocket)
+        public SocketHandlerMethods AcceptAndInitiateTunnel(TunnelListenerHandler listener, Socket clientSocket, ByteBuffer safeBuffer)
         {
             //
             // Check if server is connected
@@ -297,7 +334,9 @@ namespace More.Net
             //
             OpenAccessorTunnelRequest request = new OpenAccessorTunnelRequest(0,
                 listener.targetHostBytes, listener.targetPort, tunnelKey);
-            tmpControlConnection.SendCommand(Tmp.ToServerOpenAccessorTunnelRequestID, OpenAccessorTunnelRequest.Reflector, request);
+            UInt32 commandLength = Tmp.SerializeCommand<OpenAccessorTunnelRequest>(OpenAccessorTunnelRequest.Serializer,
+                Tmp.ToServerOpenAccessorTunnelRequestID, request, safeBuffer, 0);
+            tmpControlConnection.dataSender.HandleData(safeBuffer.array, 0, commandLength);
 
             //
             // Create a diconnected tunnel handler
@@ -356,7 +395,8 @@ namespace More.Net
         readonly TlsSettings tlsSettings;
 
         public readonly IPEndPoint remoteEndPoint;
-        readonly IDataHandler dataSender;
+        readonly Socket socket;
+        public readonly IDataHandler dataSender;
         readonly IDataFilter receiveDataFilter;
         readonly FrameAndHeartbeatReceiverHandler frameAndHeartbeatReceiveHandler;
 
@@ -366,7 +406,7 @@ namespace More.Net
         public String ServerInfoName { get { return serverInfoName; } }
 
         public TmpControlConnection(TmpConnectionManager tmpConnectionManager, TlsSettings tlsSettings,
-            IPEndPoint remoteEndPoint, IDataHandler dataSender, IDataFilter receiveDataFilter)
+            IPEndPoint remoteEndPoint, Socket socket, IDataHandler dataSender, IDataFilter receiveDataFilter)
         {
             this.tmpConnectionManager = tmpConnectionManager;
             this.tlsSettings = tlsSettings;
@@ -382,18 +422,22 @@ namespace More.Net
         }
         public void Dispose()
         {
+            socket.ShutdownAndDispose();
             Console.WriteLine("{0} TmpControlConnection 'Name={1}' Closed", DateTime.Now,
                 (serverInfoName == null) ? "<null>" : serverInfoName);
             tmpConnectionManager.LostTmpControlConnection(this);
         }
-        public void SendCommand(Byte commandID, IReflector reflector, Object command)
+        /*
+        public void SendCommand(Byte commandID, IReflector reflector, Object command, ByteBuffer sendBuffer)
         {
+            Tmp.SerializeCommand(
             Byte[] packet = Tmp.CreateCommandPacket(commandID, reflector, command, 0);
             dataSender.HandleData(packet, 0, packet.Length);
         }
+        */
         void HandleHeartbeat()
         {
-            Console.WriteLine("{0} [{1}] Got heartbeat", DateTime.Now, remoteEndPoint);
+            Console.WriteLine("{0} [{1}] [TmpControl] Got heartbeat", DateTime.Now, remoteEndPoint);
         }
         public void SocketReceiverHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
@@ -404,28 +448,39 @@ namespace More.Net
                 return;
             }
 
+            //Console.WriteLine("{0} [{1}] [Debug] Got {2} Bytes: {3}", DateTime.Now, remoteEndPoint, bytesRead, safeBuffer.array.ToHexString(0, bytesRead));
+
             if (receiveDataFilter == null)
             {
-                frameAndHeartbeatReceiveHandler.HandleData(safeBuffer.array, 0, bytesRead);
+                frameAndHeartbeatReceiveHandler.HandleData(safeBuffer.array, 0, (UInt32)bytesRead);
             }
             else
             {
                 receiveDataFilter.FilterTo(frameAndHeartbeatReceiveHandler.HandleData,
-                    safeBuffer.array, 0, bytesRead);
+                    safeBuffer.array, 0, (UInt32)bytesRead);
             }
         }
-        void HandleCommand(Byte[] data, Int32 offset, Int32 length)
+        void HandleCommand(Byte[] data, UInt32 offset, UInt32 length)
         {
             Byte commandID = data[offset];
+
             switch (commandID)
             {
                 case Tmp.ToAccessorServerInfoID:
                     String oldServerName = this.serverInfoName;
 
-                    this.serverInfo = new ServerInfo(data, offset + 1, offset + length);
+                    ServerInfo.Serializer.Deserialize(data, offset + 1, offset + length, out this.serverInfo);
+                    if (serverInfo.Name == null || serverInfo.Name.Length <= 0)
+                    {
+                        Console.WriteLine("{0} [{1}] [TmpControl] TmpServer did not provide a ServerName. Closing the connection.", DateTime.Now, remoteEndPoint);
+                        socket.ShutdownAndDispose();
+                        return;
+                    }
                     this.serverInfoName = Encoding.ASCII.GetString(serverInfo.Name);
 
                     tmpConnectionManager.GotServerName(oldServerName, serverInfoName, this);
+                    Console.WriteLine("{0} [{1}] [TmpControl] Got ServerInfo(Name='{2}')", DateTime.Now, remoteEndPoint, serverInfoName);
+
                     break;
                 default:
                     Console.WriteLine("{0} Unknown command id {1}", DateTime.Now, commandID);
@@ -486,9 +541,7 @@ namespace More.Net
                 tmpConnectionManager.ReceivedTunnelKey(socket, receivedKey, ref handlerMethods);
             }
         }
-
     }
-
 
     public class TunnelListenerHandler
     {
@@ -514,9 +567,9 @@ namespace More.Net
             this.targetHostBytes = Encoding.ASCII.GetBytes(targetHost);
         }
 
-        public SocketHandlerMethods AcceptClientHandler(Socket listenSocket, Socket socket)
+        public SocketHandlerMethods AcceptClientHandler(Socket listenSocket, Socket socket, ByteBuffer safeBuffer)
         {
-            return tmpConnectionManager.AcceptAndInitiateTunnel(this, socket);
+            return tmpConnectionManager.AcceptAndInitiateTunnel(this, socket, safeBuffer);
         }
     }
 
