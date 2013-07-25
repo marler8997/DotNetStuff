@@ -1,0 +1,42 @@
+
+
+
+=============================================================================================
+Build file for HP.Libraries.Common
+=============================================================================================
+
+using csc;
+//
+// These enums are defined in csc
+//
+// enum Platform {AnyCpu,x86}
+// enum Configuration {Debug,Release}
+//
+
+// need <type> <name>
+need Configuration configuration
+
+// option <type> <name> <default>
+option Platform platform AnyCpu
+
+
+
+csc.
+	OutputType Library
+
+csc HP.Libraries.Common <
+    AsciiLineParser.cs
+    ByteBuffer.cs
+    CommandLineParser.cs
+    Properties\AssemblyInfo.cs
+    SingleObjectList.cs
+    SortedList.cs
+    StopwatchExtensions.cs
+    StringExtensions.cs
+    WaitEvent.cs
+	ref System {System.Core,RequiredTargetFramework 3.5}
+
+
+
+
+

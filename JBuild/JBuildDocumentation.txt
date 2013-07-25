@@ -1,0 +1,539 @@
+
+JBuild is a build system.
+
+
+Virtual Directories
+---------------------------------------------------------------
+A virtual directory is a set of real directories that are interpreted as one directory to the build system.
+
+In order to to this the following must hold
+	1) If the directories share any of the same files with the same name or directory, the build system will not be able to access these files or directories (unless the specific directory is specified)
+		Examples:
+			VirtualDirectory MyNet = {System/Net, Company/Net, Common/Lib/}
+			/* Directory structures
+			System/Net
+				net.c
+				sockets.c
+			Company/Net
+				net.c
+			Common/Lib
+				net.c
+			*/
+			sockets.c is obviously System/Net/sockets.c, however, net.c will be ambiguous...
+			To fix this you can still reference the one in Common/Lib by specifying :Lib/net.c
+			However, :Net/net.c is still ambigous between :System/Net/net.c and :Company/Net/net.c so the full name will be needed for that file.
+	2) When writiing files to the virtual directory, the specific directory must be known
+
+JBuild File Set
+-----------------------------------------------------------------------------------
+
+A file set is a set (every one is unique) of files.
+
+Grammar:
+<file-set> : 
+
+<wildcard-files>
+<file> : [a-zA-Z0-9\._-]+
+
+
+
+	"File" (A single file relative to the current directory)
+	
+Forward slashes for directorys:
+	"/File" (A single file relative to the current root directory)
+	"Directory/File" (A file inside the specified "Directory" that is inside the current directory)
+
+Set
+	"(File1,File2)" (2 files in the current directory)
+	
+Multiple Files/Directories in the same path.
+	"Directory/(File1,File2)" (2 different files inside the specified "Directory" that is inside the current directory)
+	"Directory/(SubDir1,SubDir2)/File" (2 different files, one inside $cwd/Directory/SubDir1 and one inside $cwd/Directory/SubDir2)
+
+WildCards
+	"File*" (All files in the current directory that begin with File)
+	"File**" (All files in the current directory and any subdirectories that begin with File)
+	
+	
+Excluding Files
+	"File*\File13" (All files in the current directory that begin with File except File13)
+
+Tree Set Notation
+-----------------------------------------------------------------------------------
+A file system is a tree structure.  In a build system it may be desirable to select a set of files or leaves in the tree.
+
+A tree set is processed from left to right.
+
+To select a set of leaf nodes from a tree, a set of instructions is given.
+At any point, the variables used in processing the tree are the current tree pointer.
+
+
+Processing a <leaf-node-set>
+------------------------------
+Processing starts by setting up the variables $currentNode and $currentRootNode
+
+<tree-set>         ::= <tree-set-element> | <tree-set-element> ',' <tree-set>
+<tree-set-element> ::= '{' <tree-set> '}'
+
+If first token is '/', then $currentNode is set to $currentRootNode
+
+case(nextToken.type)
+{
+	case TokenType.Name:
+		$currentNode = $currentNode.GetChild(<name>);
+	case TokenType.OpenBrace:
+		
+2. {<file-set>}
+    Continue processing 
+    For each file in file-set, prefix their name by the directory tha the current pointer is pointing to.
+3. 
+file{child
+
+
+
+Examples
+file1,file2
+
+parentdir/subdir{file1,file2}
+	parentdir/subdirfile1
+	parentdir/subdirfile2
+
+parentdir/file1,file2
+	parentdir/file1
+	file2
+
+parentdir/{file1,file2}
+	parentdir/file1
+	parentdir/file2
+
+parentdir/*\excludeme
+	parentdir/a
+	parentdir/b
+	...
+	(will exclude parentdir/excludeme
+
+
+
+
+Context: CurrentWorkingDirectory, CurrentRootDirectory
+NextToken
+   case: 
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+JBuild Function
+-----------------------------------------------------------------------------------
+A JBuild Function is some sort of logic that takes files as inputs and creates output files.
+
+In a typical build system the user can run scripts that create output files and can use any number of input files.
+However, in these types of scripted build systems the build system does not know which files are inputs and which are outputs unless the user explicitly states it.
+What JBuild does it take away these scripts and replaces them with JBuild functions.
+This has a couple advantages...the first is that since there are no scripts, the build system can be ported to any system by providing the correct function implementation on each system.
+The second is that the build system know nows every single input and output and can calculate dependencies without explicitly stating them.
+
+
+
+
+
+Example:
+
+
+
+<Simple-Function-Name> <OutputFile> , <OutputFile> , ... : <InputFile> , <InputFile> ; 
+
+<Function-With-Options> <OutputFile> , <OutputFile> , ... (option, options, ...) : <InputFile> , <InputFile> ;
+
+csc Main.exe < Main.cs;
+
+Functions will be categorized based on certain things about it such as how many outputs/inputs/types of options it has, or the types of dependencies it has.
+
+A simple function simplies means that every input is a dependency of every output.
+
+However more complex functions can have dependencies that aren't even specified in the build file.
+For example, if you are using the c compiler function, and you specify come source code files, the c compiler function may read the source code files and find that they include other files that are additional dependencies:)
+
+
+
+
+
+
+=================================================================================================
+Example Makefile
+=================================================================================================
+
+CC=gcc -std=c99
+SQL_FLAGS=-I/usr/include/mysql -DBIG_JOINS=1 -fno-strict-aliasing -DUNIV_LINUX -DUNIV_LINUX -rdynamic -L/usr/lib/mysql -lmysqlclient
+
+BUILD_DIR=build
+
+STATIC_LIBS=${BUILD_DIR}/obj/url.o ${BUILD_DIR}/obj/sha1.o ${BUILD_DIR}/obj/sid.o \
+		${BUILD_DIR}/obj/base64.o ${BUILD_DIR}/obj/string_util.o ${BUILD_DIR}/obj/request.o
+DEBUG_TOOLS=${BUILD_DIR}/debug/getenv ${BUILD_DIR}/debug/setcookie
+TOOLS=${BUILD_DIR}/tools/urldec ${BUILD_DIR}/tools/sha1 ${BUILD_DIR}/tools/base64
+TESTS=${BUILD_DIR}/test/url_test ${BUILD_DIR}/test/string_util_test ${BUILD_DIR}/test/sha_test
+
+all: static_libs debug_tools tools tests
+static_libs: ${STATIC_LIBS}
+debug_tools: ${DEBUG_TOOLS}
+tools: ${TOOLS}
+tests: ${TESTS}
+
+check: ${BUILD_DIR}/check_compile
+	${BUILD_DIR}/check_compile
+
+${BUILD_DIR}/check_compile: check_compile.c
+	${CC} -o ${BUILD_DIR}/check_compile check_compile.c
+
+#
+# Static Libraries
+#
+${BUILD_DIR}/obj/url.o: url.c url.h
+	${CC} -c -o ${BUILD_DIR}/obj/url.o url.c
+
+${BUILD_DIR}/obj/sha1.o: sha1.c sha1.h
+	${CC} -c -o ${BUILD_DIR}/obj/sha1.o sha1.c
+
+${BUILD_DIR}/obj/sid.o: sid.c sid.h
+	${CC} -c -o ${BUILD_DIR}/obj/sid.o sid.c
+
+${BUILD_DIR}/obj/base64.o: base64.c base64.h
+	${CC} -c -o ${BUILD_DIR}/obj/base64.o base64.c
+
+${BUILD_DIR}/obj/request.o: request.c request.h
+	${CC} -c -o ${BUILD_DIR}/obj/request.o request.c
+
+${BUILD_DIR}/obj/string_util.o: string_util.c string_util.h
+	${CC} -c -o ${BUILD_DIR}/obj/string_util.o string_util.c
+
+#
+# Debug Tools
+#
+${BUILD_DIR}/debug/getenv: getenv.c
+	${CC} -o ${BUILD_DIR}/debug/getenv getenv.c
+
+${BUILD_DIR}/debug/setcookie: setcookie.c
+	${CC} -o ${BUILD_DIR}/debug/setcookie setcookie.c
+
+#
+# Tools
+#
+${BUILD_DIR}/tools/urldec: urldec.c ${BUILD_DIR}/obj/url.o
+	${CC} -o ${BUILD_DIR}/tools/urldec urldec.c ${BUILD_DIR}/obj/url.o
+
+${BUILD_DIR}/tools/sha1: sha1main.c ${BUILD_DIR}/obj/sha1.o
+	${CC} -o ${BUILD_DIR}/tools/sha1 sha1main.c ${BUILD_DIR}/obj/sha1.o
+
+${BUILD_DIR}/tools/base64: base64main.c ${BUILD_DIR}/obj/base64.o
+	${CC} -o ${BUILD_DIR}/tools/base64 base64main.c ${BUILD_DIR}/obj/base64.o
+
+#
+# Tests
+#
+
+${BUILD_DIR}/test/url_test: url_test.c ${BUILD_DIR}/obj/url.o
+	${CC} -o ${BUILD_DIR}/test/url_test url_test.c ${BUILD_DIR}/obj/url.o
+
+${BUILD_DIR}/test/sha_test: sha_test.c ${BUILD_DIR}/obj/sha1.o
+	${CC} -o ${BUILD_DIR}/test/sha_test sha_test.c ${BUILD_DIR}/obj/sha1.o
+
+${BUILD_DIR}/test/string_util_test: string_util_test.c ${BUILD_DIR}/obj/string_util.o
+	${CC} -o ${BUILD_DIR}/test/string_util_test string_util_test.c ${BUILD_DIR}/obj/string_util.o
+
+#
+# Clean
+#
+clean:
+	rm -f *.o *~
+	rm -rf ${BUILD_DIR}
+	mkdir ${BUILD_DIR} ${BUILD_DIR}/obj ${BUILD_DIR}/tools ${BUILD_DIR}/debug ${BUILD_DIR}/test
+	
+	
+=================================================================================================
+Same build system in JBuild
+=================================================================================================
+
+## cc = c library compiler (outputs .o files)
+## ce = c executable compiler (outputs executables)
+
+$BuildDirectory=build
+
+cc.Output.Directory = $BuildDirectory/obj
+ce.Output.Directory = $BuildDirectory/
+
+(cc,ce).Standard = c99
+(cc,ce).Include = /usr/include/mysql
+(cc,ce).Flags = -DBIG_JOINS=1 -fno-strict-aliasing -DUNIV_LINUX -DUNIV_LINUX -rdynamic -L/usr/lib/mysql -lmysqlclient
+
+#
+# Check Compile
+#
+ce check_compile < check_compile.c
+exec check_compile
+
+props LibraryProperties
+{
+	cc.Output.Directory = $BuildDirectory/obj
+}
+set LibraryProperties
+	cc url.o < url.c
+	cc sha1.o < sha1.c
+	cc sid.o < sid.c
+	cc base64.o < base64.c
+	cc request.o < request.c
+	cc string_util.o < string_util.c
+unset LibraryProperties
+
+set
+{
+	ce.Output.Directory = $BuildDirectory/debug
+}
+	ce getenv < getenv.c
+	ce setcookie < setcookie.c
+unset
+
+ce urldec < urldec.c url.o
+ce sha1 < sha1main.c sha1.o
+ce base64 < base64main.c sha1.o base64.o
+
+set
+{
+	ce.Output.Directory = $BuildDirectory/test
+}
+	ce url_test < url_test.c url.o
+	ce sha_test < sha_test.c sha1.o
+	ce string_util_test < string_util_test.c string_util.o
+unset
+
+
+
+
+
+
+
+
+=================================================================================================
+Example CSProj file
+=================================================================================================
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{DA99C4F0-3EF4-4D75-8A28-A8789B19B96F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Marler.Net</RootNamespace>
+    <AssemblyName>Marler.Net</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkSubset>
+    </TargetFrameworkSubset>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BufferPool.cs" />
+    <Compile Include="ClientAcceptor.cs" />
+    <Compile Include="Ports.cs" />
+    <Compile Include="ConnectionDataLogger.cs" />
+    <Compile Include="ConnectionMessageLogger.cs" />
+    <Compile Include="DataLogger.cs" />
+    <Compile Include="Dns2.cs" />
+    <Compile Include="DomainName.cs" />
+    <Compile Include="Ftp.cs" />
+    <Compile Include="IncomingConnection.cs" />
+    <Compile Include="NetworkRecord.cs" />
+    <Compile Include="Odp.cs" />
+    <Compile Include="ParseUtilities.cs" />
+    <Compile Include="PathExtensions.cs" />
+    <Compile Include="Pcap.cs" />
+    <Compile Include="PortSet.cs" />
+    <Compile Include="PortSetListener.cs" />
+    <Compile Include="ProcessExecutor.cs" />
+    <Compile Include="ProxySelector.cs" />
+    <Compile Include="RecordHandler.cs" />
+    <Compile Include="SelectServer.cs" />
+    <Compile Include="Serialization.cs" />
+    <Compile Include="SerializationByReflection.cs" />
+    <Compile Include="ServerHandler.cs" />
+    <Compile Include="GenericUtilities.cs" />
+    <Compile Include="MessageLogger.cs" />
+    <Compile Include="SimpleReflectorSerializers.cs" />
+    <Compile Include="SingleObjectList.cs" />
+    <Compile Include="SocksProxies.cs" />
+    <Compile Include="ResourceFactory.cs" />
+    <Compile Include="ServerListener.cs" />
+    <Compile Include="SocketConstructorArgs.cs" />
+    <Compile Include="SocketExceptionNewMessage.cs" />
+    <Compile Include="SocketReaderWriterTunnel.cs" />
+    <Compile Include="SocketThread.cs" />
+    <Compile Include="SocketTunnel.cs" />
+    <Compile Include="SocketWrappers.cs" />
+    <Compile Include="SortedList.cs" />
+    <Compile Include="StringBuilderWriter.cs" />
+    <Compile Include="TcpListener.cs" />
+    <Compile Include="Telnet.cs" />
+    <Compile Include="Threads.cs" />
+    <Compile Include="Tunnel.cs" />
+    <Compile Include="Xdr.cs" />
+    <Compile Include="Xdr2.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Common\Marler.Common.csproj">
+      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
+      <Name>Marler.Common</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DnsEndPoint.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SocketStreamExtensions.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
+=================================================================================================
+Same build system in JBuild
+=================================================================================================
+
+
+FileInterfaceInputs:
+	Configuration Values=Debug,Release Default=Debug
+	Platform Values=AnyCpu,x86 Default=AnyCpu
+
+csproj.
+	ToolsVersion           3.5
+	DefaultTargets         Build
+	ProjectGuid            {DA99C4F0-3EF4-4D75-8A28-A8789B19B96F}
+	OutputType             Library
+	RootNamespace          Marler.Net
+	TargetFrameworkVersion 3.5
+	FileAlignment          512
+	ProductVersion         9.0.30729
+	SchemaVersion          2.0
+	AppDesignFolder        Properties
+
+if($Platform == AnyCpu)
+{
+	if($Configuration == Debug)
+	{
+		csproj.
+			OutputPath=bin\Debug
+			Optimize=false
+			DefineConstants=DEBUG;TRACE
+			ErrorReport=prompt
+			WarningLevel=4
+			DebugSymbols=true
+			DebugType=full
+	}
+	else if($Configuration == Release)
+	{
+		csproj.
+			OutputPath=bin\Release
+			Optimize=true
+			DefineConstants=TRACE
+			ErrorReport=prompt
+			WarningLevel=4
+			DebugType=pdbonly
+	}
+}
+
+csproj.AssemblyReferences
+	System
+	System.Core v3.4
+
+csproj.ProjectReferences
+	Marler.Common ..\Common\Marler.Common.csproj {9AF5441B-8208-44E6-9686-A29D8019FBD5}
+
+csproj Marler.Net <
+	BufferPool.cs
+    ClientAcceptor.cs
+    Ports.cs
+    ConnectionDataLogger.cs
+    ConnectionMessageLogger.cs
+    DataLogger.cs
+    Dns2.cs
+    DomainName.cs
+    Ftp.cs
+    IncomingConnection.cs
+    NetworkRecord.cs
+    Odp.cs
+    ParseUtilities.cs
+    PathExtensions.cs
+    Pcap.cs
+    PortSet.cs
+    PortSetListener.cs
+    ProcessExecutor.cs
+    ProxySelector.cs
+    RecordHandler.cs
+    SelectServer.cs
+    Serialization.cs
+    SerializationByReflection.cs
+    ServerHandler.cs
+    GenericUtilities.cs
+    MessageLogger.cs
+    SimpleReflectorSerializers.cs
+    SingleObjectList.cs
+    SocksProxies.cs
+    ResourceFactory.cs
+    ServerListener.cs
+    SocketConstructorArgs.cs
+    SocketExceptionNewMessage.cs
+    SocketReaderWriterTunnel.cs
+    SocketThread.cs
+    SocketTunnel.cs
+    SocketWrappers.cs
+    SortedList.cs
+    StringBuilderWriter.cs
+    TcpListener.cs
+    Telnet.cs
+    Threads.cs
+    Tunnel.cs
+    Xdr.cs
+    Xdr2.cs
+    DnsEndPoint.cs
+    Properties\AssemblyInfo.cs
+    SocketStreamExtensions.cs
+

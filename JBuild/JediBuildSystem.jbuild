@@ -1,0 +1,10 @@
+
+
+
+#Global settings for csc
+csc.
+	Platform Win32
+
+enum Cpu {x86,Arm}
+
+
