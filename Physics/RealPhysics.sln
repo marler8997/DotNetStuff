@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Physics", "More.Physics.csproj", "{13CB2EF7-1AD1-4AB6-8B04-922C181E8E96}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More", "..\More\More.csproj", "{9AF5441B-8208-44E6-9686-A29D8019FBD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Physics.Test", "More.Physics.Test\More.Physics.Test.csproj", "{908F32AD-B8A5-4E17-81A8-ECA4468EAAEB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DD01BA83-6882-4D1F-9876-BE5591118356}"
+	ProjectSection(SolutionItems) = preProject
+		LocalTestRun.testrunconfig = LocalTestRun.testrunconfig
+		RealPhysics.vsmdi = RealPhysics.vsmdi
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrimeCodeGenerator", "PrimeCodeGenerator\PrimeCodeGenerator.csproj", "{2E98D397-1812-46E2-8F5A-36359D389605}"
+EndProject
+Global
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = RealPhysics.vsmdi
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{13CB2EF7-1AD1-4AB6-8B04-922C181E8E96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13CB2EF7-1AD1-4AB6-8B04-922C181E8E96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13CB2EF7-1AD1-4AB6-8B04-922C181E8E96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13CB2EF7-1AD1-4AB6-8B04-922C181E8E96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{908F32AD-B8A5-4E17-81A8-ECA4468EAAEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{908F32AD-B8A5-4E17-81A8-ECA4468EAAEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{908F32AD-B8A5-4E17-81A8-ECA4468EAAEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{908F32AD-B8A5-4E17-81A8-ECA4468EAAEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E98D397-1812-46E2-8F5A-36359D389605}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E98D397-1812-46E2-8F5A-36359D389605}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E98D397-1812-46E2-8F5A-36359D389605}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E98D397-1812-46E2-8F5A-36359D389605}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
