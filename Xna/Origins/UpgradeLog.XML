@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="Origins">
+</Property><Property Name="Solution File" Value="D:\git\Marler\Xna\Origins\Origins.sln">
+</Property><Property Name="Date" Value="Saturday, January 26, 2013">
+</Property><Property Name="Time" Value="1:37:02 AM">
+</Property></Properties><Event ErrorLevel="0" Project="Marler.Common2010" Source="..\..\Common\Marler.Common2010.csproj" Description="Project converted successfully">
+</Event><Event ErrorLevel="3" Project="Marler.Common2010" Source="..\..\Common\Marler.Common2010.csproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="Marler.Common2010" Source="..\..\Common\Marler.Common2010.csproj" Description="Scan complete: Upgrade not required for project files.">
+</Event></UpgradeLog>
