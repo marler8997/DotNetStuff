@@ -98,7 +98,7 @@ namespace More.Pdl
             LogError(String.Format(fmt, obj));
         }
 
-        public Byte[] TryGetSavedInputHash(String outputFile, out String savedInputHashString)
+        public UInt32[] TryGetSavedInputHash(String outputFile, out String savedInputHashString)
         {
             if (!File.Exists(outputFile)) { savedInputHashString = null; return null; }
 
@@ -122,10 +122,10 @@ namespace More.Pdl
                 return null;
             }
 
-            Byte[] savedInputHash = new Byte[20];
             try
             {
-                savedInputHash.ParseHex(0, savedInputHashString, 0, savedInputHashString.Length);
+                UInt32[] savedInputHash;
+                Sha1.Parse(savedInputHashString, 0, out savedInputHash);
                 return savedInputHash;
             }
             catch (Exception e)
@@ -191,8 +191,8 @@ namespace More.Pdl
             {
                 inputFileObjects[i] = new InputFileObject(inputFiles[i], fileBuffer, builder, inputSha, Encoding.UTF8);
             }
-            Byte[] inputHash = inputSha.Finish();
-            String inputHashString = inputHash.ToHexString(0, Sha1.HashByteLength);
+            UInt32[] inputHash = inputSha.Finish();
+            String inputHashString = Sha1.HashString(inputHash);
 
 
             if (forceCodeGeneration)
@@ -205,10 +205,10 @@ namespace More.Pdl
                 // Try to get the saved hash from output file
                 //
                 String savedInputHashString;
-                Byte[] savedInputHash = TryGetSavedInputHash(outputFile, out savedInputHashString);
+                UInt32[] savedInputHash = TryGetSavedInputHash(outputFile, out savedInputHashString);
                 if (savedInputHash != null)
                 {
-                    if (Sha1.Equal(inputHash, savedInputHash))
+                    if (Sha1.Equals(inputHash, savedInputHash))
                     {
                         Log(MessageImportance.Normal, "Input hash matches saved input hash, no code generation done");
                         return TaskSucceeded;

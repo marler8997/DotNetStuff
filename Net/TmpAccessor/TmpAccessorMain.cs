@@ -14,7 +14,7 @@ namespace More.Net
     class TmpAccessorOptions : CLParser
     {
         public readonly CLGenericArgument<UInt16> tmpListenPort;
-        public readonly CLGenericArgument<UInt16> accessorControlPort;
+        public readonly CLSwitch noNfs;
 
         public TmpAccessorOptions()
         {
@@ -22,9 +22,8 @@ namespace More.Net
             tmpListenPort.SetDefault(Tmp.DefaultPort);
             Add(tmpListenPort);
 
-            accessorControlPort = new CLGenericArgument<UInt16>(UInt16.Parse, 'p', "port", "The Accessor control listen port");
-            accessorControlPort.SetDefault(Tmp.DefaultAccessorControlPort);
-            Add(accessorControlPort);
+            noNfs = new CLSwitch('n', "no-nfs", "Do not start the nfs control server");
+            Add(noNfs);
         }
         public override void PrintUsageHeader()
         {
@@ -80,15 +79,18 @@ namespace More.Net
                 }
             }
 
-            //
-            // Setup and start Npc Accessor Control Server
-            //
-            NpcReflector npcReflector = new NpcReflector(
-                new NpcExecutionObject(tmpConnectionManager, "Accessor", null, null));
-            NpcServerSingleThreaded npcServer = new NpcServerSingleThreaded(
-                NpcServerConsoleLoggerCallback.Instance, npcReflector, new DefaultNpcHtmlGenerator("Accessor", npcReflector), 2030);
-            Thread npcServerThread = new Thread(npcServer.Run);
-            npcServerThread.Start();
+            if (!options.noNfs.set)
+            {
+                //
+                // Setup and start Npc Accessor Control Server
+                //
+                NpcReflector npcReflector = new NpcReflector(
+                    new NpcExecutionObject(tmpConnectionManager, "Accessor", null, null));
+                NpcServerSingleThreaded npcServer = new NpcServerSingleThreaded(
+                    NpcServerConsoleLoggerCallback.Instance, npcReflector, new DefaultNpcHtmlGenerator("Accessor", npcReflector), 2030);
+                Thread npcServerThread = new Thread(npcServer.Run);
+                npcServerThread.Start();
+            }
 
             //
             // Setup and run Tmp listen/handler thread

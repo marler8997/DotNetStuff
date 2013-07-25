@@ -15,7 +15,17 @@ namespace More
         [TestMethod]
         public void TestSha1HashApi()
         {
+            UInt32[] expectedHash = new UInt32[] {
+                0x12DADA1F, 0xFF4D4787, 0xADE33331, 0x47202C3B, 0x443E376F
+            };
+
+
+            Console.WriteLine("EXPCTD:" + Sha1.HashString(expectedHash));
+            Console.WriteLine("----------------------------------------------------------");
+
+
             Byte[] data = new Byte[] { 1, 2, 3, 4 };
+            String diff;
 
             //
             Sha1 fourCallSha = new Sha1();
@@ -25,8 +35,11 @@ namespace More
             fourCallSha.Add(data, 2, 1);
             fourCallSha.Add(data, 3, 1);
 
-            Byte[] finalHash1 = fourCallSha.Finish();
-            Console.WriteLine("FINAL1 :" + finalHash1.ToHexString(0, finalHash1.Length));
+            UInt32[] fourCallFinalHash = fourCallSha.Finish();
+            Console.WriteLine("FINAL1 :" + Sha1.HashString(fourCallFinalHash));
+
+            diff = expectedHash.Diff(fourCallFinalHash);
+            Assert.IsNull(diff);
 
             Console.WriteLine("----------------------------------------------------------");
             //
@@ -36,9 +49,11 @@ namespace More
 
             twoCallSha.Add(data, 2, 2);
 
-            Byte[] twoCallFinahHash = twoCallSha.Finish();
-            Console.WriteLine("FINAL2 :" + twoCallFinahHash.ToHexString(0, twoCallFinahHash.Length));
+            UInt32[] twoCallFinahHash = twoCallSha.Finish();
+            Console.WriteLine("FINAL2 :" + Sha1.HashString(twoCallFinahHash));
 
+            diff = expectedHash.Diff(twoCallFinahHash);
+            Assert.IsNull(diff);
 
             Console.WriteLine("----------------------------------------------------------");
             //
@@ -46,11 +61,11 @@ namespace More
 
             oneCallSha.Add(data, 0, 4);
 
-            Byte[] oneCallFinalHash = oneCallSha.Finish();
-            Console.WriteLine("FINAL3 :" + oneCallFinalHash.ToHexString(0, oneCallFinalHash.Length));
+            UInt32[] oneCallFinalHash = oneCallSha.Finish();
+            Console.WriteLine("FINAL3 :" + Sha1.HashString(oneCallFinalHash));
 
-            String diff = Sos.Diff(finalHash1, oneCallFinalHash);
-            Assert.IsNull(diff, diff);
+            diff = expectedHash.Diff(oneCallFinalHash);
+            Assert.IsNull(diff);
         }
 
         class TestClass
@@ -58,17 +73,12 @@ namespace More
             public readonly String contentString;
             public readonly Byte[] contentBytes;
             
-            public readonly Byte[] expectedHash;
+            public readonly UInt32[] expectedHash;
             public TestClass(String contentString, params UInt32[] expectedHash)
             {
                 this.contentString = contentString;
                 this.contentBytes = Encoding.ASCII.GetBytes(contentString);
-                this.expectedHash = new Byte[Sha1.HashByteLength];
-                this.expectedHash.BigEndianSetUInt32( 0, expectedHash[0]);
-                this.expectedHash.BigEndianSetUInt32( 4, expectedHash[1]);
-                this.expectedHash.BigEndianSetUInt32( 8, expectedHash[2]);
-                this.expectedHash.BigEndianSetUInt32(12, expectedHash[3]);
-                this.expectedHash.BigEndianSetUInt32(16, expectedHash[4]);
+                this.expectedHash = expectedHash;
             }
         }
 
@@ -95,11 +105,11 @@ namespace More
                 Sha1 sha = new Sha1();
                 sha.Add(test.contentBytes, 0, test.contentBytes.Length);
 
-                Byte[] finished = sha.Finish();
+                UInt32[] finished = sha.Finish();
 
                 Console.WriteLine("Content '{0}'", test.contentString);
-                Console.WriteLine("    Expected {0}", test.expectedHash.ToHexString(0, Sha1.HashByteLength));
-                Console.WriteLine("    Actual   {0}", finished.ToHexString(0, Sha1.HashByteLength));
+                Console.WriteLine("    Expected {0}", Sha1.HashString(test.expectedHash));
+                Console.WriteLine("    Actual   {0}", Sha1.HashString(finished));
 
                 String sosDiff = Sos.Diff(test.expectedHash, finished);
                 Assert.IsNull(sosDiff, sosDiff);
@@ -130,8 +140,8 @@ namespace More
                     if (sosDiff != null)
                     {
                         Console.WriteLine("Content '{0}'", test.contentString);
-                        Console.WriteLine("    Expected {0}", test.expectedHash.ToHexString(0, Sha1.HashByteLength));
-                        Console.WriteLine("    Actual   {0}", finished.ToHexString(0, Sha1.HashByteLength));
+                        Console.WriteLine("    Expected {0}", Sha1.HashString(test.expectedHash));
+                        Console.WriteLine("    Actual   {0}", Sha1.HashString(finished));
                         Assert.Fail();
                     }
                 }

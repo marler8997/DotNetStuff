@@ -10,30 +10,31 @@ namespace More
 
         public const Int32 HashUInt32Length = 5;
 
-
-        public static Boolean Equal(Byte[] a, Byte[] b)
+        public static Boolean Equals(UInt32[] hashA, UInt32[] hashB)
         {
             return
-                a[ 0] == b[ 0] &&
-                a[ 1] == b[ 1] &&
-                a[ 2] == b[ 2] &&
-                a[ 3] == b[ 3] &&
-                a[ 4] == b[ 4] &&
-                a[ 5] == b[ 5] &&
-                a[ 6] == b[ 6] &&
-                a[ 7] == b[ 7] &&
-                a[ 8] == b[ 8] &&
-                a[ 9] == b[ 9] &&
-                a[10] == b[10] &&
-                a[11] == b[11] &&
-                a[12] == b[12] &&
-                a[13] == b[13] &&
-                a[14] == b[14] &&
-                a[15] == b[15] &&
-                a[16] == b[16] &&
-                a[17] == b[17] &&
-                a[18] == b[18] &&
-                a[19] == b[19] ;
+                hashA[0] == hashB[0] &&
+                hashA[1] == hashB[1] &&
+                hashA[2] == hashB[2] &&
+                hashA[3] == hashB[3] &&
+                hashA[4] == hashB[4];
+        }
+        public static String HashString(UInt32[] hash)
+        {
+            return String.Format("{0:X8}{1:X8}{2:X8}{3:X8}{4:X8}",
+                hash[0], hash[1], hash[2], hash[3], hash[4]);
+        }
+        public static void Parse(String hashString, Int32 hashStringOffset, out UInt32[] hash)
+        {
+            Byte[] hashBytes = new Byte[HashByteLength];
+            hashBytes.ParseHex(0, hashString, hashStringOffset, HashByteLength * 2);
+            
+            hash = new UInt32[HashUInt32Length];
+            hash[0] = hashBytes.BigEndianReadUInt32( 0);
+            hash[1] = hashBytes.BigEndianReadUInt32( 4);
+            hash[2] = hashBytes.BigEndianReadUInt32( 8);
+            hash[3] = hashBytes.BigEndianReadUInt32(12);
+            hash[4] = hashBytes.BigEndianReadUInt32(16);
         }
 
         static readonly UInt32[] InitialHash = new UInt32[] {
@@ -43,7 +44,6 @@ namespace More
             0x10325476,
             0xC3D2E1F0,
         };
-
         static readonly UInt32[] K = new UInt32[] {
             0x5A827999,
             0x6ED9EBA1,
@@ -58,9 +58,8 @@ namespace More
 
         UInt64 messageBitLength;
 
-        Byte[] finishedHash;
-
-        public Byte[] FinishedHash
+        UInt32[] finishedHash;
+        public UInt32[] FinishedHash
         {
             get
             {
@@ -113,7 +112,7 @@ namespace More
             }
         }
 
-        public Byte[] Finish()
+        public UInt32[] Finish()
         {
             if (finishedHash != null) throw new InvalidOperationException("This hash has already been finished");
 
@@ -121,12 +120,22 @@ namespace More
             block.BigEndianSetUInt64(56, messageBitLength);
             HashBlock();
 
+            /*
             finishedHash = new Byte[HashByteLength];
             finishedHash.BigEndianSetUInt32( 0, hash[0]);
             finishedHash.BigEndianSetUInt32( 4, hash[1]);
             finishedHash.BigEndianSetUInt32( 8, hash[2]);
             finishedHash.BigEndianSetUInt32(12, hash[3]);
             finishedHash.BigEndianSetUInt32(16, hash[4]);
+            */
+            finishedHash = new UInt32[HashUInt32Length];
+            finishedHash[0] = hash[0];
+            finishedHash[1] = hash[1];
+            finishedHash[2] = hash[2];
+            finishedHash[3] = hash[3];
+            finishedHash[4] = hash[4];
+
+
             return finishedHash;
         }
 
