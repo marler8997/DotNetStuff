@@ -3,41 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace PrimeCodeGenerator
+namespace More.Physics
 {
-    public class BruteForceMemoryIntensivePrimeEnumerator
-    {
-        readonly List<UInt32> knownPrimes = new List<UInt32>();
-        UInt32 currentPrime;
-        public BruteForceMemoryIntensivePrimeEnumerator()
-        {
-            currentPrime = 3;
-            knownPrimes.Add(3);
-        }
-        public UInt32 NextNoOverflowCheck()
-        {
-            while (true)
-            {
-                currentPrime += 2;
-
-                Boolean prime = true;
-                for (int i = 0; i < knownPrimes.Count; i++)
-                {
-                    UInt32 knownPrime = knownPrimes[i];
-                    if ((currentPrime % knownPrime) == 0)
-                    {
-                        prime = false;
-                        break;
-                    }
-                }
-                if (!prime) continue;
-
-                knownPrimes.Add(currentPrime);
-                return currentPrime;
-            }
-        }
-    }
-
     class Program
     {
         static Int32 Main(string[] args)
@@ -69,7 +36,8 @@ namespace PrimeCodeGenerator
                     Console.WriteLine();
                     Console.Write("            ");
                 }
-                Console.Write("{0},", primeEnumerator.NextNoOverflowCheck());
+                UInt32 prime = primeEnumerator.NextNoOverflowCheck();
+                Console.Write("{0},", prime);
             }
             Console.WriteLine();
             Console.WriteLine("        };");

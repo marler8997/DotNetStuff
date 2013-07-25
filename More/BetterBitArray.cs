@@ -1,0 +1,155 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace More
+{
+    public class BetterBitArray : IEnumerable<Boolean>
+    {
+        public class Enumerator : IEnumerator<Boolean>
+        {
+            readonly BetterBitArray bitarray;
+            UInt32 bitIndex;
+            Boolean currentElement;
+
+            public Enumerator(BetterBitArray bitarray)
+            {
+                this.bitarray = bitarray;
+                this.bitIndex = UInt32.MaxValue;
+            }
+            public void Dispose()
+            {
+            }
+            public void Reset()
+            {
+                this.bitIndex = UInt32.MaxValue;
+            }
+            public Boolean Current
+            {
+                get
+                {
+                    if (bitIndex == UInt32.MaxValue) throw new InvalidOperationException("You have not called MoveNext yet");
+                    if (bitIndex >= bitarray.bitLength) throw new InvalidOperationException("This enumerator is finished");
+                    return this.currentElement;
+                }
+            }
+            Object System.Collections.IEnumerator.Current
+            {
+                get { throw new NotSupportedException("Generic Current method is not supported"); }
+            }
+            public Boolean MoveNext()
+            {
+                if (bitIndex >= bitarray.bitLength && bitIndex != UInt32.MaxValue)
+                    throw new InvalidOperationException("This enumerator has already been finished");
+
+                bitIndex++;
+                if (bitIndex >= bitarray.bitLength) return false;
+
+                this.currentElement = bitarray.Get(bitIndex);
+                return true;
+            }
+        }
+
+        public readonly UInt32 bitLength;
+        readonly UInt32[] array;
+
+        //
+        // TODO: Maybe accept UInt64?
+        //
+        public BetterBitArray(UInt32 bitLength)
+            : this(bitLength, false)
+        {
+        }
+        public BetterBitArray(UInt32 bitLength, Boolean defaultValue)
+        {
+            this.bitLength = bitLength;
+
+            // TODO: Fix this so it can accept UInt32.MaxValue
+            this.array = new UInt32[(bitLength + 0x1f) / 0x20];
+
+            if (defaultValue)
+            {
+                for (UInt32 i = 0; i < array.Length; i++)
+                {
+                    array[i] = 0xFFFFFFFF;
+                }
+            }
+        }
+        IEnumerator<Boolean> IEnumerable<Boolean>.GetEnumerator()
+        {
+            return new Enumerator(this);
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            throw new NotSupportedException("Generic GetEnumerator is not supported");
+        }
+        public Boolean Get(UInt32 bitIndex)
+        {
+            if (bitIndex >= this.bitLength) throw new ArgumentOutOfRangeException("index",
+                String.Format("The given bit index {0} cannot be >= to {1}", bitIndex, this.bitLength));
+
+            return ((this.array[bitIndex / 0x20] & (1U << (Byte)(bitIndex % 0x20))) != 0);
+        }
+        public void Assert(UInt32 bitIndex)
+        {
+            if (bitIndex >= this.bitLength) throw new ArgumentOutOfRangeException("index",
+                String.Format("The given bit index {0} cannot be >= to {1}", bitIndex, this.bitLength));
+
+            this.array[bitIndex / 0x20] |= 1U << (Byte)(bitIndex % 0x20);
+        }
+        public void Deassert(UInt32 bitIndex)
+        {
+            if (bitIndex >= this.bitLength) throw new ArgumentOutOfRangeException("index",
+                String.Format("The given bit index {0} cannot be >= to {1}", bitIndex, this.bitLength));
+
+            this.array[bitIndex / 0x20] &= ~(1U << (Byte)(bitIndex % 0x20));
+        }
+        public void SetAll(Boolean asserted)
+        {
+            UInt32 arrayValue = asserted ? 0xFFFFFFFF : 0;
+
+            UInt32 thisArrayLength = (UInt32)array.Length;
+            for (UInt32 i = 0; i < thisArrayLength; i++)
+            {
+                array[i] = arrayValue;
+            }
+        }
+        public void NotEquals()
+        {
+            UInt32 thisArrayLength = (UInt32)this.array.Length;
+            for (int i = 0; i < thisArrayLength; i++)
+            {
+                this.array[i] = ~this.array[i];
+            }
+        }
+        public void AndEquals(BetterBitArray other)
+        {
+            if (this.bitLength != other.bitLength) throw new ArgumentException(String.Format("Given bit array is {0} bits but this bit array is {1}", other.bitLength, this.bitLength));
+
+            UInt32 thisArrayLength = (UInt32)this.array.Length;
+            for (UInt32 i = 0; i < thisArrayLength; i++)
+            {
+                this.array[i] &= other.array[i];
+            }
+        }
+        public void OrEquals(BetterBitArray other)
+        {
+            if (this.bitLength != other.bitLength) throw new ArgumentException(String.Format("Given bit array is {0} bits but this bit array is {1}", other.bitLength, this.bitLength));
+
+            UInt32 thisArrayLength = (UInt32)this.array.Length;
+            for (UInt32 i = 0; i < thisArrayLength; i++)
+            {
+                this.array[i] |= other.array[i];
+            }
+        }
+        public void XorEquals(BetterBitArray other)
+        {
+            if (this.bitLength != other.bitLength) throw new ArgumentException(String.Format("Given bit array is {0} bits but this bit array is {1}", other.bitLength, this.bitLength));
+
+            UInt32 thisArrayLength = (UInt32)this.array.Length;
+            for (UInt32 i = 0; i < thisArrayLength; i++)
+            {
+                this.array[i] ^= other.array[i];
+            }
+        }
+    }
+}

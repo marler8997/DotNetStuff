@@ -50,7 +50,6 @@ namespace More.Physics
         }
     }
 
-
     public static class Factored
     {
         public static readonly Dictionary<UInt32, FactoredInteger> PositiveIntegerFactorizations = new Dictionary<UInt32, FactoredInteger>();
@@ -141,7 +140,6 @@ namespace More.Physics
             if (negative) factoredRational.value.numerator *= -1;
             return factoredRational;
         }
-
 
         public Rational value;
         public PoweredPrime[] primeFactors;

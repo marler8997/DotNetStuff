@@ -14,6 +14,42 @@ namespace More
     [TestClass]
     public class PerformanceChecks
     {
+        [TestMethod]
+        public void PerformanceTestBitArrays()
+        {
+            PerformanceTestBitArrays(100000);
+        }
+        public static void PerformanceTestBitArrays(Int32 length)
+        {
+            long before;
+
+            System.Collections.BitArray bitArray = new System.Collections.BitArray(length);
+            BetterBitArray betterBitArray = new BetterBitArray((UInt32)length);
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000; i++)
+            {
+                bitArray.SetAll(false);
+                //bitArray.Set(0, true);
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000; i++)
+            {
+                betterBitArray.SetAll(false);
+                //betterBitArray.Assert(0);
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+        }
+
+
+
+
 
         [TestMethod]
         public void PerformanceTestFixedDictionary()

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{908F32AD-B8A5-4E17-81A8-ECA4468EAAEB}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -38,7 +38,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PerformanceChecks.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestEulersToitentFunction.cs" />
     <Compile Include="TestFactoredAndPrimes.cs" />
   </ItemGroup>
   <ItemGroup>

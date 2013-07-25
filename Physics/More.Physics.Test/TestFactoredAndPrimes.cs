@@ -1,12 +1,100 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace More.Physics.Test
 {
+    public struct CompositAndPercentageChecked
+    {
+        public readonly UInt32 composite;
+        public readonly UInt32 lowestDivisor;
+        public readonly Single percentageChecked;
+        public CompositAndPercentageChecked(UInt32 composite, UInt32 lowestDivisor, Single percentageChecked)
+        {
+            this.composite = composite;
+            this.lowestDivisor = lowestDivisor;
+            this.percentageChecked = percentageChecked;
+        }
+    }
+    public class BruteForceMemoryIntensivePrimeEnumeratorForTest
+    {
+
+        readonly List<UInt32> knownPrimes = new List<UInt32>();
+        UInt32 currentPrime;
+
+        public readonly List<CompositAndPercentageChecked> compositePercentageChecked = new List<CompositAndPercentageChecked>();
+        public readonly UInt32[] percentageCheckedHistogram = new UInt32[101];
+
+        public BruteForceMemoryIntensivePrimeEnumeratorForTest()
+        {
+            currentPrime = 3;
+            knownPrimes.Add(3);
+        }
+        public UInt32 NextNoOverflowCheck()
+        {
+            while (true)
+            {
+                UInt32 nextPotentialPrime = this.currentPrime += 2;
+
+                Int32 squareRoot = (Int32)Math.Sqrt(currentPrime);
+                Int32 i;
+                for (i = 0; true; i++)
+                {
+                    UInt32 knownPrime = knownPrimes[i];
+                    if (knownPrime > squareRoot)
+                    {
+                        knownPrimes.Add(nextPotentialPrime);
+                        this.currentPrime = nextPotentialPrime;
+                        return nextPotentialPrime;
+                    }
+                    if ((nextPotentialPrime % knownPrime) == 0) break;
+                }
+
+                // Number is composite, save statistics
+                Single percentageChecked = (float)(100 * i) / (float)knownPrimes.Count;
+                compositePercentageChecked.Add(new CompositAndPercentageChecked(currentPrime, knownPrimes[i], percentageChecked));
+                percentageCheckedHistogram[(UInt32)Math.Ceiling(percentageChecked)]++;
+            }
+        }
+    }
+
     [TestClass]
     public class TestFactoredAndPrimes
     {
+        [TestMethod]
+        public void TestPercentageChecked()
+        {
+            BruteForceMemoryIntensivePrimeEnumeratorForTest primeEnumerator =
+                new BruteForceMemoryIntensivePrimeEnumeratorForTest();
+            for (int i = 0; i < 10000; i++)
+            {
+                primeEnumerator.NextNoOverflowCheck();
+            }
+
+            for (int i = 0; i < primeEnumerator.percentageCheckedHistogram.Length; i++)
+            {
+                Console.WriteLine("{0,3}%: {1}", i, primeEnumerator.percentageCheckedHistogram[i]);
+            }
+
+            /*
+            //
+            // Write to file
+            //
+            using(StreamWriter writer = new StreamWriter(new FileStream(@"C:\temp\composites.csv", FileMode.Create, FileAccess.Write)))
+            {
+                writer.WriteLine("Composite,LowestDivisor,LowestDivisorOverPrimeCount");
+                for(int i = 0; i < primeEnumerator.compositePercentageChecked.Count; i++)
+                {
+                    CompositAndPercentageChecked c = primeEnumerator.compositePercentageChecked[i];
+                    writer.WriteLine("{0},{1},{2:00.0}", c.composite, c.lowestDivisor, c.percentageChecked);
+                }
+            }
+            */
+        }
+
         readonly StringBuilder builder = new StringBuilder();
 
         [TestMethod]
@@ -82,8 +170,6 @@ namespace More.Physics.Test
                 i++;
             }
         }
-
-
 
         [TestMethod]
         public void TestFactoredRationals1()
