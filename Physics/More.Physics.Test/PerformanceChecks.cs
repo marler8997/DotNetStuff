@@ -22,12 +22,14 @@ namespace More.Physics.Test
 
             Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
 
-            UInt32 maxPrime = 2;
+            UInt32 maxPrime;
 
             before = Stopwatch.GetTimestamp();
 
             UInt32[] bruteForcePrimes = BruteForceMemoryIntensivePrimeEnumerator.GeneratePrimes(primeCount);
+
             maxPrime = bruteForcePrimes[primeCount - 1];
+            Console.WriteLine("PrimeCount {0} MaxPrime {1}", primeCount, maxPrime);
             //Console.WriteLine(bruteForcePrimes.SerializeObject());
 
             Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
@@ -38,35 +40,50 @@ namespace More.Physics.Test
 
             UInt32 calculatedPrimeCount;
 
-            UInt32[] eratosthenesPrimes = EratosthenesSeive.GeneratePrimes(maxPrime, out calculatedPrimeCount);
+            //
+            // Eratosthenes Using Prime Value
+            //
+            UInt32[] eratosthenesPrimesUsingPrimeValue = EratosthenesSeive.GeneratePrimes(maxPrime, out calculatedPrimeCount);
+            Assert.AreEqual(primeCount, calculatedPrimeCount);
 
             //Console.WriteLine(primes.SerializeObject());
-            Assert.AreEqual(primeCount, calculatedPrimeCount);
 
             Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
 
             Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
 
             //
-            // Test that the primes are the same
+            // Atkins
             //
             /*
+            UInt32[] atkinsPrimes = AtkinSeive.GeneratePrimes(maxPrime, out calculatedPrimeCount);
+
+            Console.WriteLine(atkinsPrimes.SerializeObject());
+            Assert.AreEqual(primeCount, calculatedPrimeCount);
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            */
+
+            //
+            // Test that the primes are the same
+            //
             for (int i = 0; i < primeCount; i++)
             {
-                Assert.AreEqual(eratosthenesPrimes[i], bruteForcePrimes[i]);
+                Assert.AreEqual(eratosthenesPrimesUsingPrimeValue[i], bruteForcePrimes[i]);
+                //Assert.AreEqual(atkinsPrimes[i], bruteForcePrimes[i]);
             }
-            */
         }
 
 
         [TestMethod]
         public void PerformanceTestEratosthenesSeivePrimeGenerators()
         {
-          //PerformanceTestEratosthenesSeivePrimeGenerators(2147483647); //(Int32.MaxValue)
-          //PerformanceTestEratosthenesSeivePrimeGenerators(2147483615); (Problem with BitArray)
-            // 39115
-            // 39107
-            PerformanceTestEratosthenesSeivePrimeGenerators(2147391110);
+          //PerformanceTestEratosthenesSeivePrimeGenerators(0xA500000); // Some funky error?
+          //PerformanceTestEratosthenesSeivePrimeGenerators(0xA4400000);
+
+            //PerformanceTestEratosthenesSeivePrimeGenerators(100000000);
+            //PerformanceTestEratosthenesSeivePrimeGenerators(100000);
         }
         void PerformanceTestEratosthenesSeivePrimeGenerators(UInt32 maxPrime)
         {
@@ -85,7 +102,8 @@ namespace More.Physics.Test
 
             Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
 
-            Console.WriteLine("PrimeCount {0}", calculatedPrimeCount);
+            Console.WriteLine("PrimeCount {0} ArrayLength {1} ({2:00.0}% of Array Used)", calculatedPrimeCount,
+                eratosthenesPrimes.Length, 100f*(float)calculatedPrimeCount / (float)eratosthenesPrimes.Length);
         }
 
 
@@ -96,7 +114,7 @@ namespace More.Physics.Test
         [TestMethod]
         public void PerformanceTestPrimeEnumerators()
         {
-            PerformanceTestPrimeEnumerators(LimitedTablePrimeEnumerator.PrimeCount);
+            PerformanceTestPrimeEnumerators(PrimeTable.Length);
         }
         void PerformanceTestPrimeEnumerators(UInt32 primeCount)
         {

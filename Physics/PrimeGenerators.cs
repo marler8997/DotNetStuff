@@ -6,9 +6,36 @@ namespace More.Physics
 {
     public static class PrimeCount
     {
+        static readonly UInt32[] LowerBoundValuesUpTo17 = new UInt32[] {
+            0, 0,
+            1,
+            2, 2,
+            3, 3,
+            4, 4, 4, 4,
+            5, 5,
+            6, 6, 6, 6,
+            7,
+        };
         public static UInt32 UpperBound(UInt32 n)
         {
             return (UInt32)(1.25506 * (double)n / Math.Log(n));
+        }
+        public static UInt32 LowerBound(UInt32 n)
+        {
+            if (n <= 17) return LowerBoundValuesUpTo17[n];
+            return (UInt32)((double)n / Math.Log(n));
+        }
+    }
+    public static class PrimeApproximations
+    {
+        // prime at primeIndex of 0 = 2
+        // prime at primeIndex of 1 = 3
+        // ...
+        public static UInt32 UpperBoundOfPrimeAtIndex(UInt32 primeIndex)
+        {
+            if (primeIndex < PrimeTable.Length) return PrimeTable.Values[primeIndex];
+            UInt32 n = primeIndex + 1;
+            return (UInt32)Math.Ceiling((Double)n * Math.Log(n));
         }
     }
 
@@ -45,6 +72,8 @@ namespace More.Physics
         }
         public static UInt32[] GeneratePrimes(UInt32 primeCount)
         {
+            if (primeCount < 2) throw new ArgumentOutOfRangeException("primeCount");
+
             UInt32[] primes = new UInt32[primeCount];
 
             primes[0] = 2;
@@ -93,36 +122,205 @@ namespace More.Physics
     }
     public class EratosthenesSeive
     {
+        //
+        // TODO: Make generate primes using prime count instead
+        //
         public static UInt32[] GeneratePrimes(UInt32 max, out UInt32 outPrimeCount)
         {
+            if (max == UInt32.MaxValue) throw new ArgumentOutOfRangeException("max", "max cannot be UInt32.MaxValue");
+
             UInt32[] primes = new UInt32[PrimeCount.UpperBound(max)];
             UInt32 primeCount;
 
             UInt32 maxSquareRoot = (UInt32)Math.Sqrt(max);
-            BitArray isComposite = new BitArray((Int32)max + 1);
+            BetterBitArray isComposite = new BetterBitArray((max + 1) >> 1);
 
             primes[0] = 2;
-            primeCount = 1;
+            primes[1] = 3;
+            primeCount = 2;
 
-            for (Int32 i = 3; i <= max; i += 2)
+            UInt32 candidatePrime;
+            UInt32 incrementAmount = 0;
+            for (candidatePrime = 5; candidatePrime <= maxSquareRoot; candidatePrime += incrementAmount)
             {
-                if (!isComposite[i])
+                if (!isComposite.Get(candidatePrime >> 1))
                 {
                     //
                     // Mark all multiples of this prime as composites
                     //
-                    if (i <= maxSquareRoot)
+                    UInt32 candidatePrimeDoubled = 2 * candidatePrime;
+                    for (UInt32 j = candidatePrime * candidatePrime; j <= max; j += candidatePrimeDoubled)
                     {
-                        for (int j = i * i; j <= max; j += 2 * i)
-                        {
-                            isComposite[j] = true;
-                        }
+                        isComposite.Assert(j >> 1);
                     }
 
                     //
                     // Add to the primes
                     //
-                    primes[primeCount++] = (UInt32)i;
+                    primes[primeCount++] = candidatePrime;
+                }
+
+                incrementAmount = (incrementAmount == 2) ? 4U : 2U;
+            }
+
+            // Add the rest of the primes
+            for (; candidatePrime <= max; candidatePrime += incrementAmount)
+            {
+                if (!isComposite.Get(candidatePrime >> 1)) primes[primeCount++] = candidatePrime;
+                incrementAmount = (incrementAmount == 2) ? 4U : 2U;
+            }
+
+            outPrimeCount = primeCount;
+            return primes;
+        }
+        /*
+        public static UInt32[] GeneratePrimes(UInt32 primeCount)
+        {
+            UInt32[] primes = new UInt32[primeCount];
+
+            UInt32 primeUpperBound = PrimeApproximations.UpperBoundOfPrimeAtIndex(primeCount - 1);
+
+            UInt32 primeUpperBoundSquareRoot = (UInt32)Math.Sqrt(primeUpperBound);
+            BetterBitArray isComposite = new BetterBitArray((primeUpperBound + 1) >> 1);
+
+            primes[0] = 2;
+            primes[1] = 3;
+            UInt32 currentPrimeCount = 2;
+
+            UInt32 candidatePrime;
+            UInt32 incrementAmount = 0;
+            for (candidatePrime = 5; candidatePrime <= primeUpperBoundSquareRoot; candidatePrime += incrementAmount)
+            {
+                if (!isComposite.Get(candidatePrime >> 1))
+                {
+                    //
+                    // Mark all multiples of this prime as composites
+                    //
+                    UInt32 candidatePrimeDoubled = 2 * candidatePrime;
+                    for (UInt32 j = candidatePrime * candidatePrime; j <= primeUpperBound; j += candidatePrimeDoubled)
+                    {
+                        isComposite.Assert(j >> 1);
+                    }
+
+                    //
+                    // Add to the primes
+                    //
+                    primes[currentPrimeCount++] = candidatePrime;
+                }
+
+                incrementAmount = (incrementAmount == 2) ? 4U : 2U;
+            }
+
+            if (currentPrimeCount >= primeCount) return primes;
+
+            // Add the rest of the primes
+            while(true)
+            {
+                if (!isComposite.Get(candidatePrime >> 1))
+                {
+                    primes[currentPrimeCount++] = candidatePrime;
+                    if (currentPrimeCount >= primeCount) return primes;
+                }
+
+                incrementAmount = (incrementAmount == 2) ? 4U : 2U;
+                candidatePrime += incrementAmount;
+
+                if (candidatePrime > primeUpperBound) throw new InvalidOperationException("CodeBug");
+            }
+        }
+        */
+    }
+    public class AtkinSeive
+    {
+        public static UInt32[] GeneratePrimes(UInt32 max, out UInt32 outPrimeCount)
+        {
+            if (max < 5) throw new ArgumentOutOfRangeException("max", "max can't be too small");
+            if (max == UInt32.MaxValue) throw new ArgumentOutOfRangeException("max", "max cannot be UInt32.MaxValue");
+
+            UInt32[] primes = new UInt32[PrimeCount.UpperBound(max)];
+            UInt32 primeCount;
+
+            UInt32 maxSquareRoot = (UInt32)Math.Sqrt(max);
+            BetterBitArray isPrime = new BetterBitArray(max + 1);
+
+            // put in candidate primes
+            for (UInt32 i = 1; i <= maxSquareRoot; i++)
+            {
+                for (UInt32 j = 1; j <= maxSquareRoot; j++)
+                {
+                    UInt32 n;
+
+                    n = 4 * i + j;
+                    //if (n > max) throw new InvalidOperationException();
+                    if (n <= max) // Should always be true for large enough max (maybe take this out0
+                    {
+                        UInt32 nMod12 = n % 12;
+                        if (nMod12 == 1 || nMod12 == 5)
+                        {
+                            isPrime.Flip(n);
+                        }
+                    }
+
+                    n = 3 * i + j;
+                    //if (n > max) throw new InvalidOperationException();
+                    if (n <= max) // Should always be true for large enough max (maybe take this out0
+                    {
+                        UInt32 nMod12 = n % 12;
+                        if (nMod12 == 7)
+                        {
+                            isPrime.Flip(n);
+                        }
+                    }
+
+                    if (i > j)
+                    {
+                        n = 3 * i - j;
+                        //if (n > max) throw new InvalidOperationException();
+                        if (n <= max) // Should always be true for large enough max (maybe take this out0
+                        {
+                            UInt32 nMod12 = n % 12;
+                            if (nMod12 == 11)
+                            {
+                                isPrime.Flip(n);
+                            }
+                        }
+                    }
+                }
+            }
+
+            primes[0] = 2;
+            primes[1] = 3;
+            primeCount = 2;
+
+            UInt32 candidatePrime;
+            for (candidatePrime = 5; candidatePrime <= maxSquareRoot; candidatePrime += 2)
+            {
+                if (isPrime.Get(candidatePrime))
+                {
+                    //
+                    // Mark all multiples of its square as composite
+                    //
+                    //
+                    UInt32 candidatePrimeSquared = candidatePrime * candidatePrime;
+                    //UInt32 candidatePrimeSquaredThenDoubled = iSquared * 2;
+                    for (UInt32 j = candidatePrimeSquared; j <= max; j += candidatePrimeSquared)
+                    {
+                        isPrime.Deassert(j);
+                    }
+
+                    //
+                    // Add to the primes
+                    //
+                    primes[primeCount++] = candidatePrime;
+                }
+            }
+
+            // Add the rest of the primes
+            for (; candidatePrime <= max; candidatePrime += 2)
+            {
+                if (isPrime.Get(candidatePrime))
+                {
+                    primes[primeCount++] = candidatePrime;
                 }
             }
 

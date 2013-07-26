@@ -26,25 +26,39 @@ namespace More.Physics
             Console.WriteLine("{");
             Console.WriteLine("    public static class {0}", className);
             Console.WriteLine("    {");
-            Console.WriteLine("        public static readonly UInt32[] FirstPrimes = new UInt32[] {");
-            Console.Write("            2,3,");
-            BruteForceMemoryIntensivePrimeEnumerator primeEnumerator = new BruteForceMemoryIntensivePrimeEnumerator();
-            for (UInt32 i = 2; i < primeCount; i++)
-            {
-                if (i % 8 == 7)
-                {
-                    Console.WriteLine();
-                    Console.Write("            ");
-                }
-                UInt32 prime = primeEnumerator.NextNoOverflowCheck();
-                Console.Write("{0},", prime);
-            }
-            Console.WriteLine();
-            Console.WriteLine("        };");
+
+            UInt32[] primes = BruteForceMemoryIntensivePrimeEnumerator.GeneratePrimes(primeCount);
+            Console.WriteLine("        public const UInt32 Length = {0};", primes.Length);
+
+            PrintPrimes(primes);
+
             Console.WriteLine("    }");
             Console.WriteLine("}");
 
             return 0;
+        }
+
+        static void PrintPrimes(UInt32[] primes)
+        {
+            Console.Write("        public static readonly UInt32[] Values = new UInt32[] {");
+            UInt32 primeIndex = 0;
+
+            while (true)
+            {
+                if (primeIndex >= primes.Length) break;
+                UInt32 prime = primes[primeIndex];
+
+                if (primeIndex % 8 == 0)
+                {
+                    Console.WriteLine();
+                    Console.Write("            ");
+                }
+                Console.Write("{0},", prime);
+
+                primeIndex++;
+            }
+            Console.WriteLine();
+            Console.WriteLine("        };");
         }
     }
 }

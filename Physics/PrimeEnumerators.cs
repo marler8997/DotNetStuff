@@ -6,23 +6,24 @@ namespace More.Physics
 {
     public class LimitedTablePrimeEnumerator
     {
-        public static UInt32 PrimeCount { get { return (UInt32)Primes.FirstPrimes.Length; } }
-
-        UInt32 nextFirstPrimeIndex;
+        UInt32 nextPrimeIndex;
         public LimitedTablePrimeEnumerator(UInt32 startPrimeIndex)
         {
-            this.nextFirstPrimeIndex = startPrimeIndex;
+            this.nextPrimeIndex = startPrimeIndex;
         }
         public void SetNextPrimeIndex(UInt32 primeIndex)
         {
-            this.nextFirstPrimeIndex = primeIndex;
+            this.nextPrimeIndex = primeIndex;
         }
         public UInt32 Next()
         {
-            if (nextFirstPrimeIndex >= Primes.FirstPrimes.Length)
-                throw new NotImplementedException(String.Format("Prime index {0} is to high for the current implementation", nextFirstPrimeIndex));
+            if (nextPrimeIndex >= PrimeTable.Length)
+                throw new NotImplementedException(String.Format("Prime index {0} is to high for the current implementation", nextPrimeIndex));
 
-            return Primes.FirstPrimes[nextFirstPrimeIndex++];
+            UInt32 prime = PrimeTable.Values[nextPrimeIndex];
+
+            nextPrimeIndex++;
+            return prime;
         }
     }
     /*

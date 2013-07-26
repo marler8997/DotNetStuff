@@ -94,7 +94,7 @@ namespace More
             if (bitIndex >= this.bitLength) throw new ArgumentOutOfRangeException("index",
                 String.Format("The given bit index {0} cannot be >= to {1}", bitIndex, this.bitLength));
 
-            this.array[bitIndex / 0x20] |= 1U << (Byte)(bitIndex % 0x20);
+            this.array[bitIndex / 0x20] |= (1U << (Byte)(bitIndex % 0x20));
         }
         public void Deassert(UInt32 bitIndex)
         {
@@ -102,6 +102,16 @@ namespace More
                 String.Format("The given bit index {0} cannot be >= to {1}", bitIndex, this.bitLength));
 
             this.array[bitIndex / 0x20] &= ~(1U << (Byte)(bitIndex % 0x20));
+        }
+        public void Flip(UInt32 bitIndex)
+        {
+            if (bitIndex >= this.bitLength) throw new ArgumentOutOfRangeException("index",
+                String.Format("The given bit index {0} cannot be >= to {1}", bitIndex, this.bitLength));
+
+            UInt32 arrayOffset = bitIndex / 0x20;
+            UInt32 arrayValue = this.array[arrayOffset];
+            UInt32 bit = 1U << (Byte)(bitIndex % 0x20);
+            this.array[arrayOffset] = ((arrayValue & bit) != 0) ? arrayValue & ~bit : arrayValue | bit;
         }
         public void SetAll(Boolean asserted)
         {

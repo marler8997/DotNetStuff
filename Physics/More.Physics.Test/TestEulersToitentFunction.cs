@@ -9,6 +9,31 @@ namespace More.Physics.Test
     public class TestEulersToitentFunction
     {
         [TestMethod]
+        public void GenerateResarchNumbers()
+        {
+            Int32 last = 1;
+            Int32 printCount = 0;
+            for (int i = 2; i <= 680000; i++)
+            {
+                if (
+                    (i % 2 != 0) &&
+                    (i % 3 != 0) &&
+                    (i % 5 != 0) &&
+                    (i % 7 != 0) &&
+                    (i % 11 != 0) &&
+                    (i % 13 != 0) &&
+                    (i % 17 != 0) 
+                    )
+                {
+                    Console.Write("{0,4},", i - last);
+                    printCount++;
+                    last = i;
+                    if (printCount % 16 == 0) Console.WriteLine();
+                }
+            }
+        }
+
+        [TestMethod]
         public void TestEratosthenesSeivePrimeGenerators()
         {
             TestEratosthenesSeivePrimeGenerators(55000);
