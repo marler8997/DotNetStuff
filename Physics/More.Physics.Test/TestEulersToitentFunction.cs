@@ -43,7 +43,7 @@ namespace More.Physics.Test
         }
         void TestEratosthenesSeivePrimeGenerators(UInt32 maxPrime)
         {
-            BruteForceMemoryIntensivePrimeEnumerator bruteForce = new BruteForceMemoryIntensivePrimeEnumerator();
+            BruteForcePrimeEnumerator bruteForce = new BruteForcePrimeEnumerator();
 
             long before;
 

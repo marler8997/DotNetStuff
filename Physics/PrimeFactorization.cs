@@ -36,7 +36,7 @@ namespace More.Physics
         {
             if (value < 2) return;
 
-            LimitedTablePrimeEnumerator primeEnumerator = new LimitedTablePrimeEnumerator(1);
+            PrimeTableEnumerator primeEnumerator = new PrimeTableEnumerator(1);
             UInt32 currentPrime = 2;
             SByte currentPrimePower = 0;
             while (true)

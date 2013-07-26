@@ -33,19 +33,38 @@ Let P_n be the nth prime, Then,
 EntryCount(1) = 1
 EntryCount(n) = (P_n - 1) * EntryCount(primeCount-1)
 
-2      : 2               :        (Note: 2 = NextPrime - 1) (Look at Mod 3)
-2,3    : 4               :        (Note: 4 = NextPrime - 1) (Look at Mod 5)
-       : 2               : Sequence: + 4 Mod 5, + 2 (4,2...)
-2,3,5  : 6,4             :        (Note: 6 = NextPrime - 1) (Look at Mod 7)  (-2, + 2)
-       : 2,4             : Seqeunce: + 5 Mod 7, + 5 Mod 7, + 2, + 5 Mod 7, + 2, + 2, + 3 Mod 7, + 4
-	   : 2,4             :           Divide By 2 and subtract 1: 2,1,0,1,0,1,2,0
-	   : 6,2             :           Mod 3: Down, Down, Up, Down, Up, Up, Up
-2,3,5,7: 10, 2, 4, 2, 4, 6, 2, 6  (Note: 10 = NextPrime - 1) (Look at Mod 11)
-       :  4, 2, 4, 6, 6, 2, 6, 4,  Divide By 2 and subtract 1: 
-	   :  2, 6, 4, 6, 8, 4, 2, 4,  
-	   :  2, 4, 8, 6, 4, 6, 2, 4,
-	   :  6, 2, 6, 6, 4, 2, 4, 6,
-	   :  2, 6, 4, 2, 4, 2,10, 2,
+
+Note: Since the patterns are mirror images, you only need to store half the pattern. So the HalfPatterLength
+      gives the number of intervals you will need to store to save this pattern.
+
+                                        NumberOfCorrectPrimesAfter
+                    HalfPatternLength   |   NumberOfTimesThePatternWorks
+					                |   |   |
+Primes | Pattern                  | V | V | V |  Notes
+=================================================================================================
+2      | 2                        |   |   |   | Note: HighestPatternValueNumber = 2 = NextPrime - 1 (Look at Mod 3)
+       |                          |1/2| 3 | 2 | Calculates 3 primes after 2: (1), 3, 5, 7
+	   |                          |   |   |   |                                  +2 +2 +2
+--------------------------------------------------------------------------------------------------
+2,3    | 4                        |   |   |   | Note: HighestPatternValueNumber = 4 = NextPrime - 1 (Look at Mod 5)
+       | 2                        | 1 | 7 | 3 | Calculates 7 primes after 3: (1), 5, 7, 11, 13, 17, 19, 23
+	   |                          |   |   |   |                                 +4 +2 +4  +2  +4  +2  +4
+--------------------------------------------------------------------------------------------------
+2,3,5  | 6,4                      |   |   |   | Note: HighestPatternValueNumber = 6 = NextPrime - 1 (Look at Mod 7)
+       | 2,4                      |   |   |   | Seqeunce: + 5 Mod 7, + 5 Mod 7, + 2, + 5 Mod 7, + 2, + 2, + 3 Mod 7, + 4
+	   | 2,4                      | 4 | 12|1.5|            Divide By 2 and subtract 1: 2,1,0,1,0,1,2,0
+	   | 6,2                      |   |   |   |            Mod 3: Down, Down, Up, Down, Up, Up, Up
+	   |                          |   |   |   | Calculates 12 primes after 5: (1), 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47
+	   |                          |   |   |   |                                  +6 +4  +2  +4  +2  +4  +6  +2  +6  +4  +2  +4
+--------------------------------------------------------------------------------------------------						 
+2,3,5,7| 10, 2, 4, 2, 4, 6, 2, 6  |   |   |   | Note: HighestPatternValueNumber = 10 = NextPrime - 1 (Look at Mod 11)
+       |  4, 2, 4, 6, 6, 2, 6, 4, |   |   |   | 
+	   |  2, 6, 4, 6, 8, 4, 2, 4, |   |   |   |
+	   |  2, 4, 8, 6, 4, 6, 2, 4, | 24| 26|.52| Calculates x primes after 7:
+	   |  6, 2, 6, 6, 4, 2, 4, 6, |   |   |   |   (1), 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71
+	   |  2, 6, 4, 2, 4, 2,10, 2, |   |   |   |      +10 +2  +4  +2  +4  +6  +2  +6  +4  +2  +4  +6  +6  +2  +6  +4
+	   |                          |   |   |   |    73, 79, 83, 89, 97,101,103,107,109,113
+	   |                          |   |   |   |  +2  +6  +4  +6  +8  +4  +2  +4  +2  +4
 	   
 	     Divide By 2 and subtract 1:  (Mod5)
        :  4, 0, 1, 0, 1, 2, 0, 2,     Up, Up, Down, Up, Up, Down2, Up2, Down

@@ -27,7 +27,7 @@ namespace More.Physics
             Console.WriteLine("    public static class {0}", className);
             Console.WriteLine("    {");
 
-            UInt32[] primes = BruteForceMemoryIntensivePrimeEnumerator.GeneratePrimes(primeCount);
+            UInt32[] primes = BruteForcePrimeEnumerator.GeneratePrimes(primeCount);
             Console.WriteLine("        public const UInt32 Length = {0};", primes.Length);
 
             PrintPrimes(primes);

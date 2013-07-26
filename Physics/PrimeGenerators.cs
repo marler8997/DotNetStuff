@@ -39,13 +39,42 @@ namespace More.Physics
         }
     }
 
-
-    public class BruteForceMemoryIntensivePrimeEnumerator
+    public class BruteForcePrimeEnumerator
     {
+        public static UInt32[] GeneratePrimes(UInt32 primeCount)
+        {
+            if (primeCount < 2) throw new ArgumentOutOfRangeException("primeCount");
+
+            UInt32[] primes = new UInt32[primeCount];
+
+            primes[0] = 2;
+            primes[1] = 3;
+
+            UInt32 primeIndex = 2;
+            UInt32 nextPotentialPrime = 5;
+            while (true)
+            {
+                Int32 squareRoot = (Int32)Math.Sqrt(nextPotentialPrime);
+                for (UInt32 i = 0; true; i++)
+                {
+                    UInt32 knownPrime = primes[i];
+                    if (knownPrime > squareRoot)
+                    {
+                        primes[primeIndex++] = nextPotentialPrime;
+                        if (primeIndex >= primes.Length) return primes;
+                        break;
+                    }
+                    if ((nextPotentialPrime % knownPrime) == 0) break;
+                }
+                nextPotentialPrime += 2;
+            }
+        }
+
+
         readonly List<UInt32> knownPrimes = new List<UInt32>();
         UInt32 currentPrime;
 
-        public BruteForceMemoryIntensivePrimeEnumerator()
+        public BruteForcePrimeEnumerator()
         {
             currentPrime = 3;
             knownPrimes.Add(3);
@@ -70,60 +99,12 @@ namespace More.Physics
                 }
             }
         }
-        public static UInt32[] GeneratePrimes(UInt32 primeCount)
-        {
-            if (primeCount < 2) throw new ArgumentOutOfRangeException("primeCount");
-
-            UInt32[] primes = new UInt32[primeCount];
-
-            primes[0] = 2;
-            primes[1] = 3;
-
-            UInt32 primeIndex = 2;
-            UInt32 nextPotentialPrime = 5;
-            while(true)
-            {
-                Int32 squareRoot = (Int32)Math.Sqrt(nextPotentialPrime);
-                for (UInt32 i = 0; true; i++)
-                {
-                    UInt32 knownPrime = primes[i];
-                    if (knownPrime > squareRoot)
-                    {
-                        primes[primeIndex++] = nextPotentialPrime;
-                        if (primeIndex >= primes.Length) return primes;
-                        break;
-                    }
-                    if ((nextPotentialPrime % knownPrime) == 0) break;
-                }
-                nextPotentialPrime += 2;
-            }
-            return primes;
-        }
-
-
-        // Starts at 
-        /*
-        public static UInt32[] GeneratePrimeCountingTable(UInt32 count)
-        {
-            UInt32[] primeCounts = new UInt32[count];
-
-            primeCounts[0] = 0;
-            primeCounts[1] = 0;
-            primeCounts[2] = 1;
-
-            UInt32 primeCountIndex = 0;
-
-            for (UInt32 i = 0; i < count; i++)
-            {
-
-            }
-        }
-        */
     }
     public class EratosthenesSeive
     {
         //
-        // TODO: Make generate primes using prime count instead
+        // On an HP Z600, It takes about 38 seconds to generate
+        // the first 150 million primes (about 4 million primes per second)
         //
         public static UInt32[] GeneratePrimes(UInt32 max, out UInt32 outPrimeCount)
         {

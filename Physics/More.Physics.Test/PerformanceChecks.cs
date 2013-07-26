@@ -16,7 +16,7 @@ namespace More.Physics.Test
         }
         void PerformanceTestPrimeGenerators(UInt32 primeCount)
         {
-            BruteForceMemoryIntensivePrimeEnumerator bruteForce = new BruteForceMemoryIntensivePrimeEnumerator();
+            BruteForcePrimeEnumerator bruteForce = new BruteForcePrimeEnumerator();
 
             long before;
 
@@ -26,7 +26,7 @@ namespace More.Physics.Test
 
             before = Stopwatch.GetTimestamp();
 
-            UInt32[] bruteForcePrimes = BruteForceMemoryIntensivePrimeEnumerator.GeneratePrimes(primeCount);
+            UInt32[] bruteForcePrimes = BruteForcePrimeEnumerator.GeneratePrimes(primeCount);
 
             maxPrime = bruteForcePrimes[primeCount - 1];
             Console.WriteLine("PrimeCount {0} MaxPrime {1}", primeCount, maxPrime);
@@ -75,19 +75,22 @@ namespace More.Physics.Test
             }
         }
 
-
         [TestMethod]
         public void PerformanceTestEratosthenesSeivePrimeGenerators()
         {
-          //PerformanceTestEratosthenesSeivePrimeGenerators(0xA500000); // Some funky error?
-          //PerformanceTestEratosthenesSeivePrimeGenerators(0xA4400000);
+            //PerformanceTestEratosthenesSeivePrimeGenerators(0xC0000000); // OutOfMemoryException
+            //PerformanceTestEratosthenesSeivePrimeGenerators(0xB7000000);
 
-            //PerformanceTestEratosthenesSeivePrimeGenerators(100000000);
-            //PerformanceTestEratosthenesSeivePrimeGenerators(100000);
+            //PerformanceTestEratosthenesSeivePrimeGenerators(20000);
+            //PerformanceTestEratosthenesSeivePrimeGenerators(200000);
+            //PerformanceTestEratosthenesSeivePrimeGenerators(2000000);
+            //PerformanceTestEratosthenesSeivePrimeGenerators(20000000);
+            PerformanceTestEratosthenesSeivePrimeGenerators(200000000);
+            //PerformanceTestEratosthenesSeivePrimeGenerators(2000000000);
         }
         void PerformanceTestEratosthenesSeivePrimeGenerators(UInt32 maxPrime)
         {
-            BruteForceMemoryIntensivePrimeEnumerator bruteForce = new BruteForceMemoryIntensivePrimeEnumerator();
+            BruteForcePrimeEnumerator bruteForce = new BruteForcePrimeEnumerator();
 
             long before;
 
@@ -106,11 +109,6 @@ namespace More.Physics.Test
                 eratosthenesPrimes.Length, 100f*(float)calculatedPrimeCount / (float)eratosthenesPrimes.Length);
         }
 
-
-
-
-
-
         [TestMethod]
         public void PerformanceTestPrimeEnumerators()
         {
@@ -118,7 +116,7 @@ namespace More.Physics.Test
         }
         void PerformanceTestPrimeEnumerators(UInt32 primeCount)
         {
-            LimitedTablePrimeEnumerator tablePrimeEnumerator = new LimitedTablePrimeEnumerator(0);
+            PrimeTableEnumerator tablePrimeEnumerator = new PrimeTableEnumerator(0);
 
             long before;
 
