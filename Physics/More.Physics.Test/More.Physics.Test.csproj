@@ -38,6 +38,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PatternResearch.cs" />
     <Compile Include="PerformanceChecks.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestEulersToitentFunction.cs" />

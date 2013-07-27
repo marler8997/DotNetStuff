@@ -1,4 +1,18 @@
 
+New Seive Idea:
+   Just like a normal seive, except instead of marking all the multiples of every prime
+   as composite, you take the existing primes and come up with a way of eliminating different
+   multiples.
+   
+   i.e.
+   
+   2: there are no primes so mark of every even number as composite
+   3: 2 is an existing prime, so you need to make the odd numbers as composite
+   5: 2 and 3 are existing primes, so you only need to mark off every 2nd and 4th odd number
+   7: 2, 3, and 5 are existing primes so you only need to mark off ?
+   
+   Come up with some way of doing this:)
+
 
 The goal of this physics simulator is to maintain accuracy but still maintain performance.
 

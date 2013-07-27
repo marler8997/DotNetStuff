@@ -250,4 +250,216 @@ namespace More
             state = -1;
         }
     }
+    public class RollingArray<T> : IEnumerable<T>
+    {
+        public readonly T[] array;
+        public readonly UInt32 startIndex;
+        public RollingArray(T[] array, UInt32 startIndex)
+        {
+            this.array = array;
+            this.startIndex = startIndex;
+        }
+        public T[] CreateNewArray(UInt32 length)
+        {
+            if (length == 0) return null;
+            if (length > (UInt32)array.Length) throw new ArgumentOutOfRangeException("length",
+                String.Format("The length you provided {0} cannot exceed the array length of {1}", length, array.Length));
+
+            T[] newArray = new T[length];
+            IEnumerator<T> enumerator = GetEnumerator();
+
+            for(int i = 0; i < length; i++)
+            {
+                enumerator.MoveNext();
+                newArray[i] = enumerator.Current;
+            }
+
+            return newArray;
+        }
+        public IEnumerator<T> GetEnumerator()
+        {
+            return new RollingArrayEnumerator<T>(array, startIndex);
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            throw new NotSupportedException("The non-generic GetEnumerator method is not supported");
+        }
+    }
+    public class RollingArrayReversed<T> : IEnumerable<T>
+    {
+        public readonly T[] array;
+        public readonly UInt32 startIndex;
+        public RollingArrayReversed(T[] array, UInt32 startIndex)
+        {
+            this.array = array;
+            this.startIndex = startIndex;
+        }
+        public T[] CreateNewArray(UInt32 length)
+        {
+            if (length == 0) return null;
+            if (length > (UInt32)array.Length) throw new ArgumentOutOfRangeException("length",
+                String.Format("The length you provided {0} cannot exceed the array length of {1}", length, array.Length));
+
+            T[] newArray = new T[length];
+            IEnumerator<T> enumerator = GetEnumerator();
+
+            for (int i = 0; i < length; i++)
+            {
+                enumerator.MoveNext();
+                newArray[i] = enumerator.Current;
+            }
+
+            return newArray;
+        }
+        public IEnumerator<T> GetEnumerator()
+        {
+            return new RollingArrayReverseEnumerator<T>(array, startIndex);
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            throw new NotSupportedException("The non-generic GetEnumerator method is not supported");
+        }
+    }
+
+    // Used to loop through all the elements in an array starting at any index
+    public class RollingArrayEnumerator<T> : IEnumerator<T>
+    {
+        readonly T[] array;
+        public readonly UInt32 startIndex;
+        UInt32 currentIndex;
+        Boolean done;
+
+        public RollingArrayEnumerator(T[] array, UInt32 startIndex)
+        {
+            this.array = array;
+            this.startIndex = startIndex;
+            if (startIndex >= array.Length) throw new InvalidOperationException(String.Format(
+                 "The start index {0} is not less thant he array length {1}", startIndex, array.Length));
+
+            this.currentIndex = UInt32.MaxValue;
+            this.done = false;
+        }
+        public void Reset()
+        {
+            this.currentIndex = UInt32.MaxValue;
+            this.done = false;
+        }
+        public T Current
+        {
+            get
+            {
+                if (this.currentIndex == UInt32.MaxValue)
+                    throw new InvalidOperationException("Have not called MoveNext()");
+                return array[currentIndex];
+            }
+        }
+        public Boolean MoveNext()
+        {
+            if (currentIndex == UInt32.MaxValue)
+            {
+                currentIndex = startIndex;
+                return true;
+            }
+            if (done)
+            {
+                throw new InvalidOperationException(
+                "You have called MoveNext twice after the enumerator has already finished");
+            }
+
+            currentIndex++;
+
+            //
+            // Roll the index
+            //
+            if (currentIndex >= (UInt32)array.Length) currentIndex = 0;
+
+            //
+            // Check if the enumerator is finished
+            //
+            if (currentIndex == startIndex)
+            {
+                done = true;
+            }
+            return !done;
+        }
+        public void Dispose()
+        {
+        }
+        object System.Collections.IEnumerator.Current
+        {
+            get { throw new NotSupportedException("The non-generic Current property is not supported"); }
+        }
+    }
+    // Used to loop through all the elements in an array starting at any index
+    public class RollingArrayReverseEnumerator<T> : IEnumerator<T>
+    {
+        readonly T[] array;
+        public readonly UInt32 startIndex;
+        UInt32 currentIndex;
+        Boolean done;
+
+        public RollingArrayReverseEnumerator(T[] array, UInt32 startIndex)
+        {
+            this.array = array;
+            this.startIndex = startIndex;
+            if (startIndex >= array.Length) throw new InvalidOperationException(String.Format(
+                 "The start index {0} is not less thant he array length {1}", startIndex, array.Length));
+
+            this.currentIndex = UInt32.MaxValue;
+            this.done = false;
+        }
+        public void Reset()
+        {
+            this.currentIndex = UInt32.MaxValue;
+            this.done = false;
+        }
+        public T Current
+        {
+            get
+            {
+                if (this.currentIndex == UInt32.MaxValue)
+                    throw new InvalidOperationException("Have not called MoveNext()");
+                return array[currentIndex];
+            }
+        }
+        public Boolean MoveNext()
+        {
+            if (currentIndex == UInt32.MaxValue)
+            {
+                currentIndex = startIndex;
+                return true;
+            }
+            if (done)
+            {
+                throw new InvalidOperationException(
+                "You have called MoveNext twice after the enumerator has already finished");
+            }
+
+            // Decrement the index and roll it
+            if (currentIndex == 0)
+            {
+                currentIndex = (UInt32)array.Length - 1;
+            }
+            else
+            {
+                currentIndex--;
+            }
+
+            //
+            // Check if the enumerator is finished
+            //
+            if (currentIndex == startIndex)
+            {
+                done = true;
+            }
+            return !done;
+        }
+        public void Dispose()
+        {
+        }
+        object System.Collections.IEnumerator.Current
+        {
+            get { throw new NotSupportedException("The non-generic Current property is not supported"); }
+        }
+    }
 }
