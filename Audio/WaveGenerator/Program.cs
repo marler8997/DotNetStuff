@@ -38,10 +38,11 @@ namespace Marler.Audio
                 new SillyOscillator(new SoundTime(44100, 44100), 2),
                 new SillyOscillator(new SoundTime(44100, 44100), 50));
              */
-            SillyOscillator sillyOscillator = new SillyOscillator(new SoundTime(44100, 88200), 1);
+            //SillyOscillator sillyOscillator = new SillyOscillator(new SoundTime(44100, 88200), 1);
+            SinOscillator oscillator = new SinOscillator(new SoundTime(44100, 88200), 420, 10);
 
-            byte[] waveData = new Byte[2 * sillyOscillator.Time().sampleCount];
-            sillyOscillator.Write(waveData, 0, 44100);
+            byte[] waveData = new Byte[2 * oscillator.Time().sampleCount];
+            oscillator.Write(waveData, 0, 44100);
 
 
             using (FileStream fileStream = new FileStream(wavFile, FileMode.Create))

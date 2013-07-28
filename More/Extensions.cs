@@ -578,13 +578,25 @@ namespace More
             throw new InvalidOperationException(String.Format("Expected byteCount to be 1,2,3 or 4 but was {0}", byteCount));
         }
 
-        public static UInt16 LittleEndianReadUInt16(this Byte[] bytes, Int32 offset)
+        public static void LittleEndianSetUInt16(this Byte[] array, UInt32 offset, UInt16 value)
+        {
+            array[offset + 1] = (Byte)(value >> 8);
+            array[offset    ] = (Byte)(value     );
+        }
+        public static UInt16 LittleEndianReadUInt16(this Byte[] bytes, UInt32 offset)
         {
             return (UInt16)(
                 (0xFF00 & (bytes[offset + 1] << 8)) |
                 (0x00FF & (bytes[offset])));
         }
-        public static UInt32 LittleEndianReadUInt32(this Byte[] bytes, Int32 offset)
+        public static void LittleEndianSetUInt32(this Byte[] array, UInt32 offset, UInt32 value)
+        {
+            array[offset + 3] = (Byte)(value >> 24);
+            array[offset + 2] = (Byte)(value >> 16);
+            array[offset + 1] = (Byte)(value >>  8);
+            array[offset    ] = (Byte)(value      );
+        }
+        public static UInt32 LittleEndianReadUInt32(this Byte[] bytes, UInt32 offset)
         {
             return (UInt32)(
                 (0xFF000000U & (bytes[offset + 3] << 24)) |

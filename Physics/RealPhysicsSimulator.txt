@@ -1,4 +1,29 @@
 
+New New Seive Idea:
+   When choosing which numbers to mark for a seive, there may be a better pattern.
+   I need to generate a chart...On the x axis will be the input numbers.
+   Then, for every factor (or prime factor) of x, there will be a mark on the y axis.
+   This will help identify patterns that can be used for marking in a seive.
+   
+   All Factors
+   
+  7 |              x                           x                       
+  6 |          x                       x                       x  
+  5 |      x                   x                   x                   x
+  4 |  x               x               x               x               x
+  3 |          x           x           x           x           x
+  2 |  x       x       x       x       x       x       x       x       x
+     -------------------------------------------------
+       4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
+   Only Prime Factors
+   
+  7 |              x                           x                       
+  5 |      x                   x                   x                   x
+  3 |          x           x           x           x           x
+  2 |  x       x       x       x       x       x       x       x       x
+     -------------------------------------------------
+       4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
+
 New Seive Idea:
    Just like a normal seive, except instead of marking all the multiples of every prime
    as composite, you take the existing primes and come up with a way of eliminating different

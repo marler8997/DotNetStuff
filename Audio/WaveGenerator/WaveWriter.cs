@@ -1,18 +1,14 @@
 ﻿using System;
 using System.IO;
 
+using More;
+
 namespace Marler.Audio
 {
     public static class WaveWriter
     {
-
-
-
-
-        public static void WriteWaveFile(Stream waveFile, byte[] waveData)
+        public static void WriteWaveFile(Stream waveFile, Byte[] waveData)
         {
-            Int32 offset;
-
             //
             // Make the format chunk
             //
@@ -22,15 +18,15 @@ namespace Marler.Audio
             waveFormatChunk[1] = Wave.FmtHeaderID[1];
             waveFormatChunk[2] = Wave.FmtHeaderID[2];
             waveFormatChunk[3] = Wave.FmtHeaderID[3];
-            offset = ((UInt32)waveFormatChunk.Length - 8).ToLittleEndian(waveFormatChunk, 4);
 
-            offset = ((UInt16)1).ToLittleEndian(waveFormatChunk, offset);     // audio format
-            offset = ((UInt16)1).ToLittleEndian(waveFormatChunk, offset);     // number of channels
-            offset = ((UInt32)44100).ToLittleEndian(waveFormatChunk, offset); // sample rate
-            offset = ((UInt32)0).ToLittleEndian(waveFormatChunk, offset);     // Bytes per second
-            offset = ((UInt16)2).ToLittleEndian(waveFormatChunk, offset);     // Block align
-            offset = ((UInt16)16).ToLittleEndian(waveFormatChunk, offset);     // Bits per sample
+            waveFormatChunk.LittleEndianSetUInt32(4, (UInt32)waveFormatChunk.Length - 8);
 
+            waveFormatChunk.LittleEndianSetUInt16( 8,     1); // audio format
+            waveFormatChunk.LittleEndianSetUInt16(10,     1); // number of channels
+            waveFormatChunk.LittleEndianSetUInt32(12, 44100); // sample rate
+            waveFormatChunk.LittleEndianSetUInt32(16,     0); // Bytes per second
+            waveFormatChunk.LittleEndianSetUInt16(20,     2); // Block align
+            waveFormatChunk.LittleEndianSetUInt16(22,    16); // Bits per sample
 
             //
             // Write riff header
@@ -41,16 +37,13 @@ namespace Marler.Audio
             //
             // Write the wave "fmt " chunk
             //
-            waveFile.Write(waveFormatChunk, 0, offset);
-
-
+            waveFile.Write(waveFormatChunk, 0, 24);
 
             //
             // Write the data
             //
             RiffHelper.WriteChunkHeader(waveFile, Wave.DataHeaderID, (UInt32)(waveData.Length));
             waveFile.Write(waveData, 0, waveData.Length);
-
         }
     }
 }
