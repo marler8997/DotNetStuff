@@ -76,6 +76,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SortedList.cs" />
     <Compile Include="Threads.cs" />
+    <Compile Include="ThreadWatcher.cs" />
     <Compile Include="UniqueIndexObjectDictionary.cs" />
     <Compile Include="WaitEvent.cs" />
   </ItemGroup>

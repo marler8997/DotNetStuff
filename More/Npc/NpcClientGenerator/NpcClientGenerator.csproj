@@ -1,17 +1,34 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- Path to build directory -->
   <PropertyGroup>
-    <BuildToolsPath>$(MSBuildProjectDirectory)\..\..\..\..\..\Build\Tools</BuildToolsPath>
-    <DefaultPlatform>Any CPU</DefaultPlatform>
-  </PropertyGroup>
-  <Import Project="$(BuildToolsPath)\Common.include" />
-  <Import Project="$(BuildToolsPath)\CommonCompilerOptions.include" />
-  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{DAF8FBE2-82DB-434A-8DF5-B090737F2A3B}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>HP.Libraries.Npc</RootNamespace>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>More</RootNamespace>
     <AssemblyName>NpcClientGenerator</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -24,10 +41,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\HP.Libraries.Npc.csproj">
-      <Project>{5371BF58-7B13-473C-B75C-C043733EE1FA}</Project>
-      <Name>HP.Libraries.Npc</Name>
+    <ProjectReference Include="..\..\More.csproj">
+      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
+      <Name>More</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\More.Npc.csproj">
+      <Project>{FC7E6554-A125-4F59-93D9-0BA3AAF0FA3A}</Project>
+      <Name>More.Npc</Name>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(FrameworkImportFile)" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

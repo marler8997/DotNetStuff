@@ -5,9 +5,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-using HP.Libraries.Npc;
+using More;
 
-namespace HP.Libraries.Npc
+namespace More
 {
     public class Method
     {
@@ -177,8 +177,7 @@ namespace HP.Libraries.Npc
             Console.WriteLine("using System.Net;");
             Console.WriteLine("using System.Net.Sockets;");
             Console.WriteLine();
-            Console.WriteLine("using HP.Libraries;");
-            Console.WriteLine("using HP.Libraries.Npc;");
+            Console.WriteLine("using More;");
             Console.WriteLine();
             if (extraUsings != null)
             {
