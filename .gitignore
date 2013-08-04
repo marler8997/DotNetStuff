@@ -3,3 +3,4 @@ obj/
 TestResults/
 *.suo
 *.csproj.user
+*.userprefs
