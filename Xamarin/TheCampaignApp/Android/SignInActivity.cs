@@ -15,12 +15,21 @@ namespace CampaignApp
 	{
 		readonly CampaignAppServerConnection connection = new CampaignAppServerConnection();
 
+        //
+        // Dialog
+        //
 		Dialog dialog;
+        LinearLayout dialogLayout;
 		TextView dialogMessage;
+        Button dialogCloseButton;
+        Boolean dialogHasCloseButton;
 
+        //
+        // Sign In
+        //
 		EditText emailOrUsernameEditText, passwordEditText;
 
-		protected override void OnCreate (Bundle bundle)
+		protected override void OnCreate(Bundle bundle)
 		{
 			base.OnCreate(bundle);
 
@@ -29,17 +38,17 @@ namespace CampaignApp
 			//
 			dialog = new Dialog(this);
 
-			LinearLayout dialogLayout = new LinearLayout(this);
+			dialogLayout = new LinearLayout(this);
 			dialogLayout.Orientation = Orientation.Vertical;
 			dialog.SetContentView(dialogLayout);
+            dialogHasCloseButton = false;
 
 			dialogMessage = new TextView(this);
 			dialogLayout.AddView(dialogMessage);
 
-			Button dialogCloseButton = new Button(this);
+			dialogCloseButton = new Button(this);
 			dialogCloseButton.Text = "Close";
 			dialogCloseButton.Click += CloseDialog;
-			dialogLayout.AddView(dialogCloseButton);
 
 
 			//
@@ -96,25 +105,52 @@ namespace CampaignApp
 			SetContentView(layout);
 		}
 		
-		void ShowDialog(String message)
+		void ShowDialog(String message, Boolean closeButton)
 		{
-			//dialog.SetTitle("");
+            if (closeButton)
+            {
+                if (!dialogHasCloseButton)
+                {
+                    dialogLayout.AddView(dialogCloseButton);
+                    dialogHasCloseButton = true;
+                }
+            }
+            else
+            {
+                if (dialogHasCloseButton)
+                {
+                    dialogLayout.RemoveView(dialogCloseButton);
+                    dialogHasCloseButton = false;
+                }
+            }
+
 			dialogMessage.Text = message;
 			dialog.Show();
 		}
-		/*
-		void ShowDialog(String title, String message)
-		{
-			dialog.SetTitle(title);
-			dialogMessage.Text = message;
-			dialog.Show();
-		}
-		*/
+
+        void HandleException(Exception e)
+        {
+            ShowDialog(e.GetType() + " occured", true);
+        }
+
 		void CloseDialog(Object sender, EventArgs e)
 		{
 			dialog.Dismiss();
 		}
 
+
+        void SignInSuccess()
+        {
+            RunOnUiThread(() => {
+                ShowDialog("You are signed in", true);
+            });
+        }
+        void SignInFailed(String message)
+        {
+            RunOnUiThread(() => {
+                ShowDialog(message, true);
+            });
+        }
 		void SignIn(Object sender, EventArgs e)
 		{
 			String emailOrUsername = emailOrUsernameEditText.Text;
@@ -122,28 +158,22 @@ namespace CampaignApp
 
 			if (String.IsNullOrEmpty(emailOrUsername))
 			{
-				ShowDialog("Missing Email/Username");
+				ShowDialog("Missing Email/Username", true);
 				return;
 			}
 			if (String.IsNullOrEmpty(password))
 			{
-				ShowDialog("Missing Password");
+				ShowDialog("Missing Password", true);
 				return;
 			}
+
+            ShowDialog("Signing in...", false);
 
 			// Trim whitespace
 			emailOrUsername = emailOrUsername.Trim();
 			password = password.Trim();
 
-			String message = connection.SignIn(emailOrUsername, password);
-			if (message == null)
-			{
-				ShowDialog("Login Success");
-			}
-			else
-			{
-				ShowDialog(message);
-			}
+            connection.SignIn(emailOrUsername, password, SignInSuccess, SignInFailed);
 		}
 	}
 }

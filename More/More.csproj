@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -78,6 +78,7 @@
     <Compile Include="ThreadWatcher.cs" />
     <Compile Include="UniqueIndexObjectDictionary.cs" />
     <Compile Include="WaitEvent.cs" />
+    <Compile Include="WorkerThread.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

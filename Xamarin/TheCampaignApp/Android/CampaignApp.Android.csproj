@@ -26,12 +26,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
-    <AndroidLinkMode>None</AndroidLinkMode>
     <CustomCommands>
       <CustomCommands>
         <Command type="BeforeBuild" />
       </CustomCommands>
     </CustomCommands>
+    <AndroidLinkMode>None</AndroidLinkMode>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
@@ -39,7 +39,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
+    <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <AndroidSupportedAbis>armeabi,armeabi-v7a,x86</AndroidSupportedAbis>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -68,6 +70,9 @@
     </Compile>
     <Compile Include="..\..\..\More\SosTypes.cs">
       <Link>More\SosTypes.cs</Link>
+    </Compile>
+    <Compile Include="..\..\..\More\WorkerThread.cs">
+      <Link>More\WorkerThread.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
