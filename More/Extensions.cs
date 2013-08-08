@@ -778,6 +778,10 @@ namespace More
         {
             return Stopwatch.Frequency * (Int64)millis / 1000L;
         }
+        public static Int64 MillisToStopwatchTicks(this UInt32 millis)
+        {
+            return Stopwatch.Frequency * (Int64)millis / 1000L;
+        }
         public static Int64 StopwatchTicksAsMicroseconds(this Int64 stopwatchTicks)
         {
             return stopwatchTicks * 1000000L / Stopwatch.Frequency;
@@ -785,6 +789,10 @@ namespace More
         public static Int32 StopwatchTicksAsInt32Milliseconds(this Int64 stopwatchTicks)
         {
             return (Int32)(stopwatchTicks * 1000 / Stopwatch.Frequency);
+        }
+        public static UInt32 StopwatchTicksAsUInt32Milliseconds(this Int64 stopwatchTicks)
+        {
+            return (UInt32)(stopwatchTicks * 1000 / Stopwatch.Frequency);
         }
         public static Int64 StopwatchTicksAsInt64Milliseconds(this Int64 stopwatchTicks)
         {
