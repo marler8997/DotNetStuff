@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Text;
+using System.IO;
 using System.Net.Sockets;
+using System.Text;
 
 namespace More
 {
@@ -64,8 +65,21 @@ namespace More
             return null;
         }
     }
-
-    public class SocketLineReader : IDisposable
+    public interface ILineReader : IDisposable
+    {
+        String ReadLine();
+    }
+    public class TextLineReader : ILineReader
+    {
+        readonly TextReader reader;
+        public TextLineReader(TextReader reader)
+        {
+            this.reader = reader;
+        }
+        public String ReadLine() { return reader.ReadLine(); }
+        public void Dispose() { reader.Dispose();  }
+    }
+    public class SocketLineReader : ILineReader
     {
         public readonly Socket socket;
         readonly LineParser lineParser;

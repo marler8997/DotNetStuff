@@ -4,7 +4,7 @@ using System.Text;
 
 namespace More
 {
-    public static class LineFields
+    public class LfdLine
     {
         public static void ParseLine(List<String> fields, Byte[] line, Int32 offset, Int32 offsetPlusLength)
         {
@@ -70,12 +70,82 @@ namespace More
                         }
                         offset++;
                     }
-                }                
+                }
             }
         }
-    }
-    public class LfdLine
-    {
+        public static void ParseLine(List<String> fields, String line, Int32 offset, Int32 length)
+        {
+            Int32 offsetPlusLength = offset + length;
+
+            while (true)
+            {
+                Int32 nextFieldStart = offset;
+
+                Char c;
+
+                //
+                // Skip whitespace
+                //
+                while (true)
+                {
+                    if (nextFieldStart >= offsetPlusLength) return;
+                    c = line[nextFieldStart];
+                    if (c != ' ' && c != '\t') break;
+                    nextFieldStart++;
+                }
+
+                if (c != '"')
+                {
+                    offset = nextFieldStart + 1;
+                    while (true)
+                    {
+                        if (offset >= offsetPlusLength)
+                        {
+                            fields.Add(line.Substring(nextFieldStart, offset - nextFieldStart));
+                            return;
+                        }
+                        c = line[offset];
+                        if (c == ' ' || c == '\t')
+                        {
+                            fields.Add(line.Substring(nextFieldStart, offset - nextFieldStart));
+                            nextFieldStart = offset + 1;
+                            break;
+                        }
+                        offset++;
+                    }
+                }
+                else
+                {
+                    nextFieldStart++;
+                    if (nextFieldStart >= offsetPlusLength)
+                    {
+                        fields.Add(String.Empty);
+                    }
+
+                    offset = nextFieldStart + 1;
+                    while (true)
+                    {
+                        if (offset >= offsetPlusLength)
+                        {
+                            fields.Add(line.Substring(nextFieldStart, offset - nextFieldStart));
+                            return;
+                        }
+                        c = line[offset];
+                        if (c == '"')
+                        {
+                            fields.Add(line.Substring(nextFieldStart, offset - nextFieldStart));
+                            nextFieldStart = offset + 1;
+                            break;
+                        }
+                        offset++;
+                    }
+                }
+            }
+        }
+
+
+
+
         public readonly LfdLine parent;
         public readonly String idOriginalCase, idLowerInvariantCase;
         public readonly String [] fields;

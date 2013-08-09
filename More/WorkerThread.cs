@@ -35,7 +35,9 @@ namespace More
             this.defaultExceptionCallback = defaultExceptionCallback;
             this.synchronizedQueueOfActions = new Queue<ActionAndCallback>();
             this.keepRunning = true;
-            new Thread(Run).Start();
+            Thread thread = new Thread(Run);
+            thread.IsBackground = true;
+            thread.Start();
         }
         public void Stop()
         {

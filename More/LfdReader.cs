@@ -7,11 +7,15 @@ namespace More
 {
     public class LfdReader : IDisposable
     {
-        private readonly TextReader reader;
+        private readonly ILineReader reader;
         private Stack<LfdLine> context;
         private UInt32 lineNumber;
 
         public LfdReader(TextReader reader)
+            : this(new TextLineReader(reader))
+        {
+        }
+        public LfdReader(ILineReader reader)
         {
             if (reader == null) throw new ArgumentNullException("reader");
 
@@ -20,7 +24,6 @@ namespace More
             this.lineNumber = 0;
         }
 
-        public TextReader UnderlyingTextReader { get { return reader; } }
         public UInt32 LineNumber { get { return lineNumber; } }
 
         public void Dispose()

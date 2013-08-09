@@ -20,7 +20,6 @@ namespace More
             this.bootTime = bootTime;
             this.statusCode = statusCode;
         }
-
         public override Boolean Equals(Object obj)
         {
             DeviceStatus deviceStatus = obj as DeviceStatus;
@@ -34,7 +33,6 @@ namespace More
                 this.bootTime.Equals(deviceStatus.bootTime) &&
                 this.statusCode == deviceStatus.statusCode;
         }
-
         public override String ToString()
         {
             return String.Format("{0};{1};{2}", good, bootTime, statusCode);

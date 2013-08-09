@@ -826,6 +826,7 @@ namespace More
         //
         // offset points to the first location after '<'
         // returns null if the table is 
+        /*
         public static Int32 ParseTableFieldOrder(out FieldInfo[] fieldOrder, Type type, String str, Int32 offset, Int32 offsetLimit)
         {
             Char c;
@@ -879,21 +880,21 @@ namespace More
                 if (c == ',') throw new FormatException("Table field name cannot be empty");
                 
                 throw new NotImplementedException();
-                /*
-                while (true)
-                {
-                    offset++;
-                    c = str[offset];
-                    if(
-                }
-                */
+                
+                //while (true)
+                //{
+                //    offset++;
+                //    c = str[offset];
+                //    if(
+                //}
+                
 
 
 
 
             }
         }
-
+        */
 
 
         //
@@ -1391,7 +1392,7 @@ namespace More
 
                     throw new NotImplementedException();
                     //ParseFieldOrder(...)
-
+                    /*
                     Int32 headerOffsetStart = offset;
                     Int32 commaCount = 0;
                     while(true)
@@ -1418,7 +1419,7 @@ namespace More
                     // Get header field order
                     //
                     throw new NotImplementedException("Tables not fully implemented yet");
-                    /*
+                    
                     Int32 fieldIndex = 0;
                     Int32 headerOffset = 0;
                     String headers = value.Substring(headerOffsetStart, offset - headerOffsetStart);

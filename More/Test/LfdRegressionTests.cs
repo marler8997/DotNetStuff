@@ -62,36 +62,36 @@ namespace More
             Int32 lineOffset = 0, lineLength = 0;
 
             lineBuffer = lineParser.GetLine(ref lineOffset, ref lineLength);
-            LineFields.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
+            LfdLine.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
             Assert.AreEqual(0, fields.Count);
             fields.Clear();
 
             lineBuffer = lineParser.GetLine(ref lineOffset, ref lineLength);
-            LineFields.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
+            LfdLine.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
             Assert.AreEqual("LineWithNoValues", fields[0]);
             fields.Clear();
 
             lineBuffer = lineParser.GetLine(ref lineOffset, ref lineLength);
-            LineFields.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
+            LfdLine.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
             Assert.AreEqual("Line1Fields", fields[0]);
             Assert.AreEqual("field1", fields[1]);
             fields.Clear();
 
             lineBuffer = lineParser.GetLine(ref lineOffset, ref lineLength);
-            LineFields.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
+            LfdLine.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
             Assert.AreEqual("Line2Fields", fields[0]);
             Assert.AreEqual("field1", fields[1]);
             Assert.AreEqual("field2", fields[2]);
             fields.Clear();
 
             lineBuffer = lineParser.GetLine(ref lineOffset, ref lineLength);
-            LineFields.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
+            LfdLine.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
             Assert.AreEqual("LineFieldWithWhitespace", fields[0]);
             Assert.AreEqual("this ; is a long field", fields[1]);
             fields.Clear();
 
             lineBuffer = lineParser.GetLine(ref lineOffset, ref lineLength);
-            LineFields.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
+            LfdLine.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
             Assert.AreEqual("LineWithEmptyFields", fields[0]);
             fields.Clear();
         }
