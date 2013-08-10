@@ -25,20 +25,20 @@ namespace More.Physics.Test
         //      Product[ P_i - 1 ]
         //       i = 1
 
-        public UInt32 CalculatePrimeIntervalLengthAndPreCheckForOverflow(UInt32 maxPrimeIndex)
+        public static UInt64 CalculatePrimeIntervalLengthAndPreCheckForOverflow(UInt32 maxPrimeIndex)
         {
             if (maxPrimeIndex >= PrimeTable.Length) throw new NotSupportedException(String.Format(
                 "The given prime index {0} is too large for the current prime table {1}", maxPrimeIndex, PrimeTable.Length));
             
-            UInt32 length = 1;
+            UInt64 length = 1;
 
             // Start at i=1 because when i=0, primeMinusOne = 1
             for (UInt32 i = 1; i <= maxPrimeIndex; i++)
             {
-                UInt32 primeMinusOne = PrimeTable.Values[i] - 1;
+                UInt64 primeMinusOne = PrimeTable.Values[i] - 1;
 
                 // Check for overflow
-                if (length > UInt32.MaxValue / primeMinusOne) throw new OverflowException(String.Format(
+                if (length > UInt64.MaxValue / primeMinusOne) throw new OverflowException(String.Format(
                     "The Length calculated by the given prime index {0} is too large for a UInt32", maxPrimeIndex));
 
                 length *= primeMinusOne;
@@ -47,10 +47,16 @@ namespace More.Physics.Test
             return length;
         }
 
-
-        public UInt32[] CreatePrimeIntervalPattern(UInt32 maxPrimeIndex)
+        static UInt32 CheckAndDownCast(UInt64 value)
         {
-            UInt32 patternLength = CalculatePrimeIntervalLengthAndPreCheckForOverflow(maxPrimeIndex);
+            if(value > UInt32.MaxValue) throw new InvalidOperationException(String.Format("UInt64 value '{0}' is too large to cast to a UInt32", value));
+            return (UInt32)value;
+        }
+
+
+        public static UInt32[] CreatePrimeIntervalPattern(UInt32 maxPrimeIndex)
+        {
+            UInt32 patternLength = CheckAndDownCast(CalculatePrimeIntervalLengthAndPreCheckForOverflow(maxPrimeIndex));
             UInt32[] pattern = new UInt32[patternLength];
 
             UInt32 patternOffset = 0;
@@ -82,47 +88,11 @@ namespace More.Physics.Test
             return pattern;
         }
 
-        // An Antimod 'X' number is a number that is not X mod n for all primes less than or
-        // equal to the square root of itself.  Why are these interesting? Because I think
-        // (though have not yet proven) that the Antimod0 numbers are equal to the prime numbers
-        // 
-        [TestMethod]
-        public void CreateAntimodOneNumbers()
-        {
-            CreateAntimodXNumbers(100, 1);
-        }
-
-        public void CreateAntimodXNumbers(UInt32 max, UInt32 x)
-        {
-            for (UInt32 i = 1; i <= max; i++)
-            {
-                UInt32 squareRootOfMax = (UInt32)Math.Sqrt(i);
-
-                Boolean isUnModOne = true;
-                
-                // Check all primes
-                for (UInt32 primeIndex = 0; PrimeTable.Values[primeIndex] <= squareRootOfMax; primeIndex++)
-                {
-                    if (i % PrimeTable.Values[primeIndex] == x)
-                    {
-                        Console.WriteLine("{0} is not unmodone because it is 1 mod {1}", i, PrimeTable.Values[primeIndex]);
-                        isUnModOne = false;
-                        break;
-                    }
-                }
-
-                if (isUnModOne)
-                {
-                    Console.WriteLine(i);
-                }                
-            }
-        }
-
         public UInt32[] CreatePrimeIntervalPatternCompressed(UInt32 maxPrimeIndex)
         {
             if (maxPrimeIndex <= 0) throw new ArgumentOutOfRangeException();
 
-            UInt32 halfPatternLength = CalculatePrimeIntervalLengthAndPreCheckForOverflow(maxPrimeIndex) / 2 + 1;
+            UInt32 halfPatternLength = CheckAndDownCast(CalculatePrimeIntervalLengthAndPreCheckForOverflow(maxPrimeIndex) / 2 + 1);
 
             UInt32[] pattern = new UInt32[halfPatternLength];
             pattern[0] = 0;
@@ -159,11 +129,13 @@ namespace More.Physics.Test
         [TestMethod]
         public void PrintPrimeIntervalPatternLengths()
         {
-            for (UInt32 i = 0; i < 10; i++)
+            //
+            // The max PrimeIntervalLength that a UInt64 can hold is 15
+            //
+            for (UInt32 i = 0; i <= 15; i++)
             {
-                UInt32 primeIntervalPatternLength = CalculatePrimeIntervalLengthAndPreCheckForOverflow(i);
-                //Console.WriteLine("PrimeIntervalLength({0,3}) = {1}", i, primeIntervalPatternLength);
-                Console.WriteLine("{0},{1}", i, primeIntervalPatternLength);
+                UInt64 primeIntervalPatternLength = CalculatePrimeIntervalLengthAndPreCheckForOverflow(i);
+                Console.WriteLine("PrimeIntervalPattern({0}).Length = {1}", i, primeIntervalPatternLength);
             }
         }
         [TestMethod]

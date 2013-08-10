@@ -38,11 +38,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AntimodNumbers.cs" />
     <Compile Include="PatternResearch.cs" />
     <Compile Include="PerformanceChecks.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestEulersToitentFunction.cs" />
     <Compile Include="TestFactoredAndPrimes.cs" />
+    <Compile Include="TwimPrimeResearch.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\More\More.csproj">
