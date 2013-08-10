@@ -74,6 +74,7 @@
     <Compile Include="..\..\..\More\WorkerThread.cs">
       <Link>More\WorkerThread.cs</Link>
     </Compile>
+    <Compile Include="CampaignDashboardActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

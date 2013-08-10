@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 
 using More;
 
@@ -8,10 +9,23 @@ namespace CampaignApp
 	{
 		public const String HostName = "capp.marler.info";
 
-		public static readonly DnsEndPoint httpCampaignAppServerEndPoint
-			= new DnsEndPoint(HostName, 80);
-		public static readonly DnsEndPoint httpsCampaignAppServerEndPoint
-			= new DnsEndPoint(HostName, 443);
+        static IPAddress ipAddress;
+        public static IPAddress IPAddress
+        {
+            get
+            {
+                if (ipAddress == null)
+                {
+                    ipAddress = EndPoints.DnsResolve(HostName);
+                }
+                return ipAddress;
+            }
+        }
+
+		public static readonly More.DnsEndPoint HttpDnsEndPoint
+            = new More.DnsEndPoint(HostName, 80);
+        public static readonly More.DnsEndPoint HttpsDnsEndPoint
+            = new More.DnsEndPoint(HostName, 443);
 	}
 }
 

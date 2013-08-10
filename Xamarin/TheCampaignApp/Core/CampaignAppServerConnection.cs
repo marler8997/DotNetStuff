@@ -112,7 +112,7 @@ namespace CampaignApp
                     //
                     // Create Http Request
                     //
-                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(String.Format("https://{0}/login.php", CampaignAppServer.HostName));
+                    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(String.Format("https://{0}/login.php", CampaignAppServer.IPAddress));
                     request.Method = "POST";
                     request.AllowAutoRedirect = false;
                     request.UserAgent = "TheCampaignApp";
