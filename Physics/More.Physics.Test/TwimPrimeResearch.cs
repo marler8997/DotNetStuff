@@ -344,5 +344,45 @@ namespace More.Physics.Test
 
             return pattern;
         }
+
+
+
+
+        //
+        // Determine length of coprime sequence
+        //
+        public List<UInt32> CreateCoprimeIntervalSequenceWithoutPrecomputingLength(UInt32 maxPrimeIndex)
+        {
+            List<UInt32> pattern = new List<UInt32>();
+
+            UInt32 lastValue = 1;
+            UInt32 currentValue = 3;
+
+            UInt32 nextPrime = PrimeTable.Values[maxPrimeIndex + 1];
+            UInt32 nextPrimeSquared = nextPrime * nextPrime;
+
+            while (currentValue < nextPrimeSquared)
+            {
+                Boolean canBeDivided = false;
+                for (int i = 1; i <= maxPrimeIndex; i++)
+                {
+                    if (currentValue % PrimeTable.Values[i] == 0)
+                    {
+                        canBeDivided = true;
+                        break;
+                    }
+                }
+
+                if (!canBeDivided)
+                {
+                    pattern.Add(currentValue - lastValue);
+                    lastValue = currentValue;
+                }
+
+                currentValue += 2;
+            }
+
+            return pattern;
+        }
     }
 }
