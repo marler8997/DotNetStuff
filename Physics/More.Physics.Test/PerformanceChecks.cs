@@ -85,7 +85,7 @@ namespace More.Physics.Test
             //PerformanceTestEratosthenesSeivePrimeGenerators(200000);
             //PerformanceTestEratosthenesSeivePrimeGenerators(2000000);
             //PerformanceTestEratosthenesSeivePrimeGenerators(20000000);
-            PerformanceTestEratosthenesSeivePrimeGenerators(200000000);
+            PerformanceTestEratosthenesSeivePrimeGenerators(1000000000);
             //PerformanceTestEratosthenesSeivePrimeGenerators(2000000000);
         }
         void PerformanceTestEratosthenesSeivePrimeGenerators(UInt32 maxPrime)
