@@ -7,6 +7,16 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 
+#if WindowsCE
+using ByteParser = System.MissingInCEByteParser;
+using ArrayCopier = System.MissingInCEArrayCopier;
+#else
+using ByteParser = System.Byte;
+using ArrayCopier = System.Array;
+#endif
+
+
+
 namespace More
 {
     public static class GenericExtensions
@@ -16,6 +26,7 @@ namespace More
             builder.Append(value.ToString());
         }
     }
+#if !WindowsCE
     public static class GCExtensions
     {
         static Int32[] lastGenCount;
@@ -52,6 +63,7 @@ namespace More
             }
         }
     }
+#endif
     public class ArrayBuilder
     {
         const Int32 InitialArraySize = 16;
@@ -305,7 +317,7 @@ namespace More
 
                     Byte output;
                     String sequence = literal.Substring(offset, 2);
-                    if (!Byte.TryParse(sequence, System.Globalization.NumberStyles.HexNumber, null, out output))
+                    if (!ByteParser.TryParse(sequence, System.Globalization.NumberStyles.HexNumber, null, out output))
                     {
                         throw new FormatException(String.Format("Could not parse the hexadecimal escape sequence '\\x{0}' as a hexadecimal byte", sequence));
                     }
@@ -654,13 +666,13 @@ namespace More
         public static Byte[] CreateSubArray(this Byte[] bytes, UInt32 offset, UInt32 length)
         {
             Byte[] subArray = new Byte[length];
-            Array.Copy(bytes, offset, subArray, 0, length);
+            ArrayCopier.Copy(bytes, offset, subArray, 0, length);
             return subArray;
         }
         public static SByte[] CreateSubSByteArray(this Byte[] bytes, UInt32 offset, UInt32 length)
         {
             SByte[] subArray = new SByte[length];
-            Array.Copy(bytes, offset, subArray, 0, length);
+            ArrayCopier.Copy(bytes, offset, subArray, 0, length);
             return subArray;
         }
     }

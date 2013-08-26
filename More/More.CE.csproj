@@ -1,19 +1,19 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{708A8043-D2E8-4D13-BB64-3E40D2DD2956}</ProjectGuid>
+    <ProjectGuid>{2D13809C-50A6-4047-BDFF-3F41B60FADBC}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Marler.NetworkTools</RootNamespace>
-    <AssemblyName>NetworkUtilitiesCE</AssemblyName>
+    <RootNamespace>Marler.Common</RootNamespace>
+    <AssemblyName>Marler.Common</AssemblyName>
     <ProjectTypeGuids>{4D628B5B-2FBC-4AA6-8C16-197242AEB884};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PlatformFamilyName>WindowsCE</PlatformFamilyName>
     <PlatformID>E2BECB1F-8C8C-41ba-B736-9BE7D946A398</PlatformID>
     <OSVersion>5.0</OSVersion>
-    <DeployDirSuffix>NetworkUtilitiesCE</DeployDirSuffix>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <NativePlatformName>Windows CE</NativePlatformName>
     <FormFactorID>
@@ -50,44 +50,30 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BufferPool.cs" />
-    <Compile Include="ConnectionDataLogger.cs" />
-    <Compile Include="ConnectionMessageLogger.cs" />
-    <Compile Include="DataLogger.cs" />
-    <Compile Include="Dns2.cs" />
-    <Compile Include="DomainName.cs" />
-    <Compile Include="Ftp.cs" />
-    <Compile Include="GenericUtilities.cs" />
-    <Compile Include="IncomingConnection.cs" />
-    <Compile Include="MessageLogger.cs" />
-    <Compile Include="NetworkRecord.cs" />
-    <Compile Include="Odp.cs" />
-    <Compile Include="ParseUtilities.cs" />
-    <Compile Include="PathExtensions.cs" />
+    <Compile Include="ArrayReflectors.cs" />
+    <Compile Include="BigEndianSerialization.cs" />
+    <Compile Include="BinaryStream.cs" />
+    <Compile Include="ByteBuffer.cs" />
+    <Compile Include="EndPoints.cs" />
+    <Compile Include="IDataHandler.cs" />
+    <Compile Include="LineParser.cs" />
+    <Compile Include="MissingInWindowsCE.cs" />
     <Compile Include="Ports.cs" />
-    <Compile Include="PortSet.cs" />
-    <Compile Include="PortSetListener.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RecordHandler.cs" />
-    <Compile Include="ResourceFactory.cs" />
+    <Compile Include="ProcessExecutor.cs" />
     <Compile Include="SelectServer.cs" />
-    <Compile Include="ServerHandler.cs" />
-    <Compile Include="ServerListener.cs" />
-    <Compile Include="SocketConstructorArgs.cs" />
-    <Compile Include="SocketExceptionNewMessage.cs" />
-    <Compile Include="SocketThread.cs" />
-    <Compile Include="SocketTunnel.cs" />
-    <Compile Include="SocketWrappers.cs" />
+    <Compile Include="Serialization.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="Sos.cs" />
+    <Compile Include="SosTypes.cs" />
+    <Compile Include="StaticData.cs" />
+    <Compile Include="ThreadModel.cs" />
+    <Compile Include="CommandLineParser.cs" />
+    <Compile Include="ObjectManager.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SortedList.cs" />
-    <Compile Include="Telnet.cs" />
-    <Compile Include="Tunnel.cs" />
-    <Compile Include="Xdr.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Common\Marler.Common.CE.csproj">
-      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
-      <Name>Marler.Common.CE</Name>
-    </ProjectReference>
+    <Compile Include="Threads.cs" />
+    <Compile Include="UniqueIndexObjectDictionary.cs" />
+    <Compile Include="WaitEvent.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
   <ProjectExtensions>

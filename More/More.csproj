@@ -56,6 +56,7 @@
     <Compile Include="ByteBuffer.cs" />
     <Compile Include="IniParser.cs" />
     <Compile Include="Pdl.cs" />
+    <Compile Include="Ports.cs" />
     <Compile Include="ProgramSettings.cs" />
     <Compile Include="EndPoints.cs" />
     <Compile Include="MissingInWindowsCE.cs" />

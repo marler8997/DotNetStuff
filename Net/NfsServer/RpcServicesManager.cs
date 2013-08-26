@@ -51,6 +51,7 @@ namespace More.Net
             }
             if (npcServerEndPoint != null)
             {
+#if !WindowsCE
                 Nfs3Server.NfsServerManager nfsServerManager = new Nfs3Server.NfsServerManager(nfsServer);
                 NpcReflector reflector = new NpcReflector(
                     new NpcExecutionObject(nfsServerManager, "Nfs3ServerManager", null, null),
@@ -58,6 +59,7 @@ namespace More.Net
                     );
                 tcpListeners.Add(new TcpSelectListener(npcServerEndPoint, 32, new NpcStreamSelectServerCallback(
                     NpcCallback.Instance, reflector, new DefaultNpcHtmlGenerator("NfsServer", reflector))));
+#endif
             }
 
             selectServer.Run(selectServerEventLog, new byte[1024], tcpListeners.ToArray(),
@@ -86,6 +88,7 @@ namespace More.Net
         }
         */
     }
+#if !WindowsCE
     class NpcCallback : INpcServerCallback
     {
         private static NpcCallback instance = null;
@@ -151,4 +154,5 @@ namespace More.Net
             }
         }
     }
+#endif
 }

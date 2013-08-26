@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace More.Physics
+namespace More
 {
     public delegate PoweredPrime[] PrimeFactorizer(UInt32 value);
 
@@ -80,6 +80,7 @@ namespace More.Physics
     }
     public static class Pollard
     {
+        /*
         public static void PrimeFactorization(UInt32 value)
         {
             UInt32 x = 2, y = 2, d = 1;
@@ -88,6 +89,7 @@ namespace More.Physics
 
             }
         }
+        */
     }
 
 

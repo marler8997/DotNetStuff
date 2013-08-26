@@ -7,12 +7,14 @@ using More;
 
 namespace More.Net
 {
+
+#if !WindowsCE
     [NpcInterface]
     public interface IMount1And3Handler
     {
         Mount3Procedure.MountReply Handle(Mount3Procedure.MountCall mountCall);
     }
-
+#endif
     public class Mount1And3Server : RpcServerHandler
     {
         private readonly RpcServicesManager servicesManager;

@@ -10,7 +10,9 @@ using More.Net.Nfs3Procedure;
 
 namespace More.Net
 {
+#if !WindowsCE
     [NpcInterface]
+#endif
     public interface INfs3Server
     {
         GetFileAttributesReply GETATTR(GetFileAttributesCall getFileAttributesCall);
@@ -28,7 +30,7 @@ namespace More.Net
         FileSystemStatusReply FSSTAT(FileSystemStatusCall fileSystemStatusCall);
         FSInfoReply FSINFO(FSInfoCall fsInfoCall);
     }
-
+    
     public class Nfs3Server : RpcServerHandler, INfs3Server
     {
         public class NfsServerManager : INfs3ServerNiceInterface

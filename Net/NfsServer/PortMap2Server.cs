@@ -8,12 +8,13 @@ using More.Net.PortMap2Procedure;
 
 namespace More.Net
 {
+#if !WindowsCE
     [NpcInterface]
+#endif
     public interface IPortMap2Handler
     {
         GetPortReply Handle(GetPortCall getPortCall);
     }
-
     class PortMap2Server : RpcServerHandler, IPortMap2Handler
     {
         private readonly RpcServicesManager servicesManager;

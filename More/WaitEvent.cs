@@ -5,19 +5,33 @@ using System.Threading;
 
 namespace More
 {
-    public delegate Int32 WaitEvent();
+    // returns true to execute the next event
+    public delegate void WaitEvent(TimeAndWaitEvent timeAndWaitEvent);
     public class TimeAndWaitEvent
     {
-        public Int64 stopwatchTimeToHandleEvent;
-        public readonly WaitEvent waitEvent;
-        public TimeAndWaitEvent(Int64 stopwatchTimeToHandleEvent, WaitEvent waitEvent)
+        public Int64 stopwatchTicksToHandleEvent;
+        public WaitEvent waitEvent;
+        public TimeAndWaitEvent(Int64 stopwatchTicksToHandleEvent, WaitEvent waitEvent)
         {
-            this.stopwatchTimeToHandleEvent = stopwatchTimeToHandleEvent;
+            this.stopwatchTicksToHandleEvent = stopwatchTicksToHandleEvent;
             this.waitEvent = waitEvent;
         }
-        public Int64 MillisFromNow()
+        public TimeAndWaitEvent(Int64 now, Int32 millisFromNow, WaitEvent waitEvent)
         {
-            return (stopwatchTimeToHandleEvent - Stopwatch.GetTimestamp()).StopwatchTicksAsInt64Milliseconds();
+            this.stopwatchTicksToHandleEvent = now + millisFromNow.MillisToStopwatchTicks();
+            this.waitEvent = waitEvent;
+        }
+        public void SetNextWaitEventTime(Int64 now, Int32 millisFromNow)
+        {
+            this.stopwatchTicksToHandleEvent = now + millisFromNow.MillisToStopwatchTicks();
+        }
+        public Int32 MillisFromNow()
+        {
+            return (stopwatchTicksToHandleEvent - Stopwatch.GetTimestamp()).StopwatchTicksAsInt32Milliseconds();
+        }
+        public Int32 MillisFromNow(Int64 now)
+        {
+            return (stopwatchTicksToHandleEvent - now).StopwatchTicksAsInt32Milliseconds();
         }
     }
     public class TimeAndWaitEventDecreasingComparer : IComparer<TimeAndWaitEvent>
@@ -34,18 +48,21 @@ namespace More
         private TimeAndWaitEventDecreasingComparer() { }
         public Int32 Compare(TimeAndWaitEvent x, TimeAndWaitEvent y)
         {
-            return (x.stopwatchTimeToHandleEvent > y.stopwatchTimeToHandleEvent) ? -1 :
-                ((x.stopwatchTimeToHandleEvent < y.stopwatchTimeToHandleEvent) ? 1 : 0);
+            return (x.stopwatchTicksToHandleEvent > y.stopwatchTicksToHandleEvent) ? -1 :
+                ((x.stopwatchTicksToHandleEvent < y.stopwatchTicksToHandleEvent) ? 1 : 0);
         }
     }
+    //
+    // Not Thread Safe
+    //
     public class WaitEventManager
     {
         // If a thread is waiting for events from a WaitEventManger, they should wait on this AutoResetEvent which will
         // pop if a new event is added that happens sooner then the current next event.
         public readonly AutoResetEvent newEventThatHappensSooner;
-        Int32 nextEventMillisFromNow;
 
-        SortedList<TimeAndWaitEvent> waitEvents;
+        readonly SortedList<TimeAndWaitEvent> waitEvents;
+        //UInt32 nextEventMillisFromNow;
 
         public WaitEventManager()
             : this(new AutoResetEvent(false))
@@ -54,43 +71,32 @@ namespace More
         public WaitEventManager(AutoResetEvent eventToSignalWhenNewSoonerEventIsAdded)
         {
             this.newEventThatHappensSooner = eventToSignalWhenNewSoonerEventIsAdded;
-            this.nextEventMillisFromNow = -1;
             this.waitEvents = new SortedList<TimeAndWaitEvent>(128, 128, TimeAndWaitEventDecreasingComparer.Instance);
         }
-
-
-        public void Add(TimeAndWaitEvent timeAndWaitEvent)
+        public void Add(TimeAndWaitEvent newEvent)
         {
-            waitEvents.Add(timeAndWaitEvent);
-
-            //
-            // Check if the new event happens sooner than the current next event
-            //
-            if (nextEventMillisFromNow < 0 || waitEvents.count <= 0)
+            if (waitEvents.count <= 0)
             {
-                nextEventMillisFromNow = (Int32)timeAndWaitEvent.MillisFromNow();
+                waitEvents.Add(newEvent);
                 newEventThatHappensSooner.Set();
             }
             else
             {
-                TimeAndWaitEvent nextTimeAndWaitEvent = waitEvents.elements[waitEvents.count - 1];
-                Int64 millisFromNow = nextTimeAndWaitEvent.MillisFromNow();
-                if (millisFromNow < nextEventMillisFromNow)
+                //
+                // Check if this new event happens sooner than the next event
+                //
+                Int64 now = Stopwatch.GetTimestamp();
+                Int32 nextEventMillisFromNow = waitEvents.elements[waitEvents.count - 1].MillisFromNow(now);
+                Int32 newEventMillisFromNow = newEvent.MillisFromNow(now);
+
+                waitEvents.Add(newEvent);
+
+                if(newEventMillisFromNow < nextEventMillisFromNow)
                 {
-                    nextEventMillisFromNow = (Int32)millisFromNow;
                     newEventThatHappensSooner.Set();
                 }
             }
         }
-        /*
-        public void Add(Int32 waitTimeMillis, IWaitEvent waitEvent)
-        {
-            TimeAndWaitEvent newTimeAndWaitEvent = new TimeAndWaitEvent(waitEvent);
-            newTimeAndWaitEvent.nextWaitTimeInStopwatchTicks = Stopwatch.GetTimestamp() + waitTimeMillis.MillisToStopwatchTicks();
-
-            waitEvents.Add(newTimeAndWaitEvent);
-        }
-        */
 
         //
         // Handles events and return milliseconds from now of next event, or returns 0 for no more events
@@ -99,32 +105,26 @@ namespace More
         {
             while (true)
             {
-                if (waitEvents.count <= 0)
-                {
-                    nextEventMillisFromNow = -1;
-                    return 0;
-                }
+                if (waitEvents.count <= 0) return 0;
 
                 TimeAndWaitEvent nextTimeAndWaitEvent = waitEvents.elements[waitEvents.count - 1];
 
-                Int64 millisFromNow = nextTimeAndWaitEvent.MillisFromNow();
-                if (millisFromNow > 0)
-                {
-                    // return milliseconds till next event
-                    nextEventMillisFromNow = (Int32)millisFromNow;
-                    return nextEventMillisFromNow;
-                }
+                Int32 millisFromNow = nextTimeAndWaitEvent.MillisFromNow();
+                if (millisFromNow > 0) return millisFromNow;
 
                 waitEvents.count--;
                 waitEvents.elements[waitEvents.count] = null; // remove reference
 
-                Int32 nextWaitMilliseconds = nextTimeAndWaitEvent.waitEvent();
-                if (nextWaitMilliseconds > 0)
+                Int64 nextTimeAndWaitEventTicks = nextTimeAndWaitEvent.stopwatchTicksToHandleEvent;
+                nextTimeAndWaitEvent.waitEvent(nextTimeAndWaitEvent);
+
+                if (nextTimeAndWaitEvent.waitEvent != null)
                 {
-                    nextTimeAndWaitEvent.stopwatchTimeToHandleEvent =
-                        Stopwatch.GetTimestamp() + nextWaitMilliseconds.MillisToStopwatchTicks();
-                    waitEvents.Add(nextTimeAndWaitEvent);
-                }
+                    if(nextTimeAndWaitEvent.stopwatchTicksToHandleEvent != nextTimeAndWaitEventTicks)
+                    {
+                        waitEvents.Add(nextTimeAndWaitEvent);
+                    }
+                }                
             }
         }
     }

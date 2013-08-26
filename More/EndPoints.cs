@@ -5,8 +5,10 @@ using System.Net.Sockets;
 
 #if WindowsCE
 using IPParser = System.Net.MissingInCEIPParser;
+using UInt16Parser = System.MissingInCEUInt16Parser;
 #else
 using IPParser = System.Net.IPAddress;
+using UInt16Parser = System.UInt16;
 #endif
 
 namespace More
@@ -33,7 +35,7 @@ namespace More
 
             String portString = ipOrHostAndPort.Substring(colonIndex + 1);
             UInt16 port;
-            if (!UInt16.TryParse(portString, out port))
+            if (!UInt16Parser.TryParse(portString, out port))
             {
                 throw new FormatException(String.Format("Port '{0}', could not be parsed as a 2 byte unsigned integer", portString));
             }
@@ -58,7 +60,7 @@ namespace More
                 ipOrHost = ipOrHostAndOptionalPort.Remove(colonIndex);
 
                 String portString = ipOrHostAndOptionalPort.Substring(colonIndex + 1);
-                if (!UInt16.TryParse(portString, out port))
+                if (!UInt16Parser.TryParse(portString, out port))
                 {
                     throw new FormatException(String.Format("Port '{0}', could not be parsed as a 2 byte unsigned integer", portString));
                 }

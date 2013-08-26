@@ -1,6 +1,12 @@
 ﻿using System;
 using System.Text;
 
+#if WindowsCE
+using ArrayCopier = System.MissingInCEArrayCopier;
+#else
+using ArrayCopier = System.Array;
+#endif
+
 namespace More
 {
     public class FixedLengthByteArrayReflector : ClassFieldReflector
@@ -22,13 +28,13 @@ namespace More
         public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
             Byte[] objBytes = (Byte[])fieldInfo.GetValue(instance);
-            Array.Copy(objBytes, 0, array, offset, fixedLength);
+            ArrayCopier.Copy(objBytes, 0, array, offset, fixedLength);
             return offset + fixedLength;
         }
         public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
         {
             Byte[] value = new Byte[fixedLength];
-            Array.Copy(array, offset, value, 0, fixedLength);
+            ArrayCopier.Copy(array, offset, value, 0, fixedLength);
             fieldInfo.SetValue(instance, value);
             return offset + fixedLength;
         }
@@ -80,7 +86,7 @@ namespace More
             if(objBytes.Length > 255) throw new InvalidOperationException(String.Format("A byte length array has a max size of 255 but your array is {0}", objBytes.Length));
 
             array[offset] = (Byte)(objBytes.Length);
-            Array.Copy(objBytes, 0, array, offset + 1, objBytes.Length);
+            ArrayCopier.Copy(objBytes, 0, array, offset + 1, objBytes.Length);
             return offset + (UInt32)objBytes.Length + 1;
         }
         Byte GetLength(Object instance)
@@ -99,7 +105,7 @@ namespace More
             }
 
             Byte[] value = new Byte[length];
-            Array.Copy(array, offset + 1, value, 0, length);
+            ArrayCopier.Copy(array, offset + 1, value, 0, length);
             fieldInfo.SetValue(instance, value);
 
             return offset + length + 1;

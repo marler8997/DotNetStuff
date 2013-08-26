@@ -56,6 +56,7 @@
     <Compile Include="Nfs3Server.cs" />
     <Compile Include="NfsServerLog.cs" />
     <Compile Include="NfsServerProgram.cs" />
+    <Compile Include="NpcClasses.cs" />
     <Compile Include="PortMap2Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RpcServicesManager.cs" />
@@ -63,13 +64,9 @@
     <Compile Include="ShareObject.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\Marler.Common.CE.csproj">
-      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
-      <Name>Marler.Common.CE</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Marler.Net.CE.csproj">
-      <Project>{708A8043-D2E8-4D13-BB64-3E40D2DD2956}</Project>
-      <Name>Marler.Net.CE</Name>
+    <ProjectReference Include="..\..\More\More.CE.csproj">
+      <Project>{2D13809C-50A6-4047-BDFF-3F41B60FADBC}</Project>
+      <Name>More.CE</Name>
     </ProjectReference>
     <ProjectReference Include="..\NfsLibrary\NfsLibraryCE.csproj">
       <Project>{F7DD73A4-5294-4FB9-8E65-C39DB552FC81}</Project>

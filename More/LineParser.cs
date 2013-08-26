@@ -3,6 +3,12 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text;
 
+#if WindowsCE
+using ArrayCopier = System.MissingInCEArrayCopier;
+#else
+using ArrayCopier = System.Array;
+#endif
+
 namespace More
 {
     public class LineParser
@@ -26,13 +32,13 @@ namespace More
         public void Add(Byte[] data)
         {
             buffer.EnsureCapacity(this.dataOffsetLimit + (UInt32)data.Length);
-            Array.Copy(data, 0, buffer.array, this.dataOffsetLimit, data.Length);
+            ArrayCopier.Copy(data, 0, buffer.array, this.dataOffsetLimit, data.Length);
             this.dataOffsetLimit += (UInt32)data.Length;
         }
         public void Add(Byte[] data, UInt32 offset, UInt32 length)
         {
             buffer.EnsureCapacity(this.dataOffsetLimit + length);
-            Array.Copy(data, offset, buffer.array, this.dataOffsetLimit, length);
+            ArrayCopier.Copy(data, offset, buffer.array, this.dataOffsetLimit, length);
             this.dataOffsetLimit += length;
         }
         public String GetLine()
@@ -57,7 +63,7 @@ namespace More
             if (this.nextStartOfLineOffset <= 0 || this.nextStartOfLineOffset >= this.dataOffsetLimit) return null;
             
             UInt32 copyLength = this.dataOffsetLimit - this.nextStartOfLineOffset;
-            Array.Copy(buffer.array, this.nextStartOfLineOffset, buffer.array, 0, copyLength);
+            ArrayCopier.Copy(buffer.array, this.nextStartOfLineOffset, buffer.array, 0, copyLength);
             this.nextStartOfLineOffset = 0;
             this.nextIndexToCheck = 0;
             this.dataOffsetLimit = copyLength;

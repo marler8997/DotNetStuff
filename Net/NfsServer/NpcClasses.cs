@@ -3,7 +3,9 @@ using More.Net.Nfs3Procedure;
 
 namespace More.Net
 {
+#if !WindowsCE
     [NpcInterface]
+#endif
     public interface INfs3ServerNiceInterface
     {
         String[] ShareNames();

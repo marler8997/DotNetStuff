@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
 
+using More;
+
 namespace System
 {
     public static class CEMissingTypeExtensions
@@ -17,6 +19,77 @@ namespace System
             
         }
         */
+
+    }
+    public static class MissingInCEArrayCopier
+    {
+        public static void Copy(Array srcArray, Int64 srcOffset, Array dstArray, Int64 dstOffset, Int64 length)
+        {
+            if (srcOffset > Int32.MaxValue || dstOffset > Int32.MaxValue || length > Int32.MaxValue) throw new InvalidOperationException(String.Format(
+                "Platform Error: The Compact .NET framework does not support Array.Copy for Int64 values, this call will perform differently on the compact .NET framework"));
+
+            Array.Copy(srcArray, (Int32)srcOffset, dstArray, (Int32)dstOffset, (Int32)length);
+        }
+    }
+    public static class MissingInCEByteParser
+    {
+        public static Boolean TryParse(String str, out Byte value)
+        {
+            try
+            {
+                value = Byte.Parse(str);
+                return true;
+            }
+            catch (FormatException)
+            {
+                value = 0;
+                return false;
+            }
+            catch (OverflowException)
+            {
+                value = 0;
+                return false;
+            }
+        }
+        public static Boolean TryParse(String str, Globalization.NumberStyles style, IFormatProvider provider, out Byte value)
+        {
+            try
+            {
+                value = Byte.Parse(str, style, provider);
+                return true;
+            }
+            catch (FormatException)
+            {
+                value = 0;
+                return false;
+            }
+            catch (OverflowException)
+            {
+                value = 0;
+                return false;
+            }
+        }
+    }
+    public static class MissingInCEUInt16Parser
+    {
+        public static Boolean TryParse(String str, out UInt16 value)
+        {
+            try
+            {
+                value = UInt16.Parse(str);
+                return true;
+            }
+            catch (FormatException)
+            {
+                value = 0;
+                return false;
+            }
+            catch (OverflowException)
+            {
+                value = 0;
+                return false;
+            }
+        }
     }
     public static class MissingInCEEnumReflection
     {

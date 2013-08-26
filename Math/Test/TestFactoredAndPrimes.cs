@@ -5,7 +5,7 @@ using System.Text;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace More.Physics.Test
+namespace More.Test
 {
     public struct CompositAndPercentageChecked
     {

@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace More.Physics
+namespace More
 {
     public static class PrimeCount
     {

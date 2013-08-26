@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace More.Physics
+namespace More
 {
     public struct PoweredPrime
     {

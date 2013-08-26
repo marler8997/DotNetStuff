@@ -5,6 +5,12 @@ using System.IO;
 
 using More;
 
+#if WindowsCE
+using ArrayCopier = System.MissingInCEArrayCopier;
+#else
+using ArrayCopier = System.Array;
+#endif
+
 namespace More.Net
 {
     public class RecordParser
@@ -52,7 +58,7 @@ namespace More.Net
 
                     this.copiedFragmentData = new Byte[fragmentLength];
 
-                    Array.Copy(bytes, offset, copiedFragmentData, 0, fragmentBytesAvailable);
+                    ArrayCopier.Copy(bytes, offset, copiedFragmentData, 0, fragmentBytesAvailable);
                     this.copiedFramentDataLength = fragmentBytesAvailable;
 
                     return;
@@ -64,7 +70,7 @@ namespace More.Net
 
                     if(fragmentBytesAvailable >= fragmentBytesNeeded)
                     {
-                        Array.Copy(bytes, offset, copiedFragmentData, copiedFramentDataLength, fragmentBytesNeeded);
+                        ArrayCopier.Copy(bytes, offset, copiedFragmentData, copiedFramentDataLength, fragmentBytesNeeded);
 
                         recordHandler(clientString, socket, copiedFragmentData, 0, copiedFramentDataLength);
                         offset += fragmentBytesNeeded;
@@ -74,7 +80,7 @@ namespace More.Net
                         continue;
                     }
 
-                    Array.Copy(bytes, offset, copiedFragmentData, copiedFramentDataLength, fragmentBytesAvailable);
+                    ArrayCopier.Copy(bytes, offset, copiedFragmentData, copiedFramentDataLength, fragmentBytesAvailable);
                     this.copiedFramentDataLength += fragmentBytesAvailable;
 
                     return;

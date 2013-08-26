@@ -7,13 +7,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NfsLibraryCE", "NfsLibrary\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NfsServerCE", "NfsServer\NfsServerCE.csproj", "{BFAFA06B-9106-4E1C-B146-6646E133FAC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Net.CE", "Marler.Net.CE.csproj", "{708A8043-D2E8-4D13-BB64-3E40D2DD2956}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.CE", "..\More\More.CE.csproj", "{2D13809C-50A6-4047-BDFF-3F41B60FADBC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Common.CE", "..\Common\Marler.Common.CE.csproj", "{9AF5441B-8208-44E6-9686-A29D8019FBD5}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Sos.CE", "..\Sos\Marler.Sos.CE.csproj", "{69BF55A9-91A7-48B6-9796-5C963B7343C3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Net.Npc.CE", "Marler.Net.Npc\Marler.Net.Npc.CE.csproj", "{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Net.CE", "More.Net.CE.csproj", "{708A8043-D2E8-4D13-BB64-3E40D2DD2956}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,22 +31,14 @@ Global
 		{BFAFA06B-9106-4E1C-B146-6646E133FAC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BFAFA06B-9106-4E1C-B146-6646E133FAC0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BFAFA06B-9106-4E1C-B146-6646E133FAC0}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{2D13809C-50A6-4047-BDFF-3F41B60FADBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D13809C-50A6-4047-BDFF-3F41B60FADBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D13809C-50A6-4047-BDFF-3F41B60FADBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D13809C-50A6-4047-BDFF-3F41B60FADBC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{708A8043-D2E8-4D13-BB64-3E40D2DD2956}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{708A8043-D2E8-4D13-BB64-3E40D2DD2956}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{708A8043-D2E8-4D13-BB64-3E40D2DD2956}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{708A8043-D2E8-4D13-BB64-3E40D2DD2956}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{69BF55A9-91A7-48B6-9796-5C963B7343C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{69BF55A9-91A7-48B6-9796-5C963B7343C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{69BF55A9-91A7-48B6-9796-5C963B7343C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{69BF55A9-91A7-48B6-9796-5C963B7343C3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{677F8BEC-0DC9-468C-B9ED-3CA6C4160508}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

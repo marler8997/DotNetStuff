@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace More.Physics.Test
+namespace More.Test
 {
     [TestClass]
     public class TestEulersToitentFunction

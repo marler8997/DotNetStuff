@@ -7,6 +7,14 @@ using More;
 
 namespace More.Net
 {
+    public enum ConsoleLogLevel
+    {
+        None,
+        Warning,
+        Info,
+        All,
+    }
+
     public class NfsServerProgramOptions : CLParser
     {
         public CLGenericArgument<IPAddress> listenIPAddress;
@@ -15,13 +23,8 @@ namespace More.Net
 
         public CLGenericArgument<UInt16> npcListenPort;
 
-        public CLSwitch dontLogCallsInternally;
-        public CLSwitch dontLogCallsToConsole;
-        public CLSwitch dontLogFileSystemCallsToConsole;
-        public CLSwitch dontLogWarningsToConsole;
-        public CLSwitch dontLogSerializationPerformanceToConsole;
-        public CLSwitch dontLogServerEventsToConsole;
-        public CLSwitch dontLogNpcEventsToConsole;
+        public CLEnumArgument<ConsoleLogLevel> consoleLogLevel;
+        public CLSwitch internalPerformanceLog;
 
         public NfsServerProgramOptions()
         {
@@ -41,26 +44,12 @@ namespace More.Net
             npcListenPort = new CLGenericArgument<UInt16>(UInt16.Parse, 'n', "NpcListenPort", "The TCP port that the NPC server will be listening to (If no port is specified, the NPC server will not be running)");
             Add(npcListenPort);
 
-            dontLogCallsInternally = new CLSwitch("DontLogCallsInternally", "Log all RPC calls internally to be dumped upon request");
-            Add(dontLogCallsInternally);
+            consoleLogLevel = new CLEnumArgument<ConsoleLogLevel>('c', "ConsoleLogLevel", "Level of statements to log to Console");
+            consoleLogLevel.SetDefault(ConsoleLogLevel.None);
+            Add(consoleLogLevel);
 
-            dontLogCallsToConsole = new CLSwitch("DontLogCallsToConsole", "Log all RPC calls to the Console");
-            Add(dontLogCallsToConsole);
-
-            dontLogFileSystemCallsToConsole = new CLSwitch("DontLogFileSystemCalls", "Log all file system calls to Console");
-            Add(dontLogFileSystemCallsToConsole);
-
-            dontLogWarningsToConsole = new CLSwitch("DontLogWarningsToConsole", "Log all warnings to the Console");
-            Add(dontLogWarningsToConsole);
-
-            dontLogSerializationPerformanceToConsole = new CLSwitch("DontLogSerializationPerfToConsole", "Log serialization performance to Console");
-            Add(dontLogSerializationPerformanceToConsole);
-
-            dontLogServerEventsToConsole = new CLSwitch("DontLogServerEventsToConsole", "Log server events to Console");
-            Add(dontLogServerEventsToConsole);
-
-            dontLogNpcEventsToConsole = new CLSwitch("DontLogNpcEventsToConsole", "Log NPC events to Console");
-            Add(dontLogNpcEventsToConsole);
+            internalPerformanceLog = new CLSwitch('i', "InternalPerformanceLog", "Log performance internally");
+            Add(internalPerformanceLog);
         }
 
         public override void PrintUsageHeader()
@@ -114,15 +103,15 @@ namespace More.Net
             //
             // Logging Options
             //
-            NfsServerLog.storePerformance                   = !options.dontLogCallsInternally.set;
-            NfsServerLog.sharedFileSystemLogger             = options.dontLogFileSystemCallsToConsole.set          ? null : Console.Out;
-            NfsServerLog.rpcCallLogger                      = options.dontLogCallsToConsole.set                    ? null : Console.Out;
-            NfsServerLog.warningLogger                      = options.dontLogWarningsToConsole.set                 ? null : Console.Out;
-            NfsServerLog.npcEventsLogger                    = options.dontLogNpcEventsToConsole.set                ? null : Console.Out;
+            NfsServerLog.storePerformance                   = options.internalPerformanceLog.set;
+            NfsServerLog.sharedFileSystemLogger             = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Info   ) ? Console.Out : null;
+            NfsServerLog.rpcCallLogger                      = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Info   ) ? Console.Out : null;
+            NfsServerLog.warningLogger                      = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Warning) ? Console.Out : null;
+            NfsServerLog.npcEventsLogger                    = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Info   ) ? Console.Out : null;
 
-            RpcPerformanceLog.rpcMessageSerializationLogger = options.dontLogSerializationPerformanceToConsole.set ? null : Console.Out;
+            RpcPerformanceLog.rpcMessageSerializationLogger = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Info   ) ? Console.Out : null;
 
-            TextWriter selectServerEventLog                 = options.dontLogServerEventsToConsole.set             ? null : Console.Out;
+            TextWriter selectServerEventLog                 = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.All    ) ? Console.Out : null;
 
             //
             // Permissions

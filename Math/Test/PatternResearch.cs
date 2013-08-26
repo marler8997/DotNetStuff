@@ -3,7 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace More.Physics.Test
+namespace More.Test
 {
     [TestClass]
     public class PatternResearch

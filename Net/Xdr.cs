@@ -4,6 +4,12 @@ using System.Text;
 
 using More;
 
+#if WindowsCE
+using ArrayCopier = System.MissingInCEArrayCopier;
+#else
+using ArrayCopier = System.Array;
+#endif
+
 namespace More.Net
 {
     public static class Xdr
@@ -183,7 +189,7 @@ namespace More.Net
                     throw new InvalidOperationException(String.Format("The XdrOpaqueFixedLength length is {0}, but your the byte array for field '{1}' length is {2}",
                         dataLength, fieldInfo.Name, valueAsArray.Length));
 
-                Array.Copy(valueAsArray, 0, array, offset, dataLength);
+                ArrayCopier.Copy(valueAsArray, 0, array, offset, dataLength);
             }
 
             // Add Padding
@@ -197,7 +203,7 @@ namespace More.Net
         public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
         {
             Byte[] data = new Byte[dataLength];
-            Array.Copy(array, offset, data, 0, dataLength);
+            ArrayCopier.Copy(array, offset, data, 0, dataLength);
 
             fieldInfo.SetValue(instance, data);
 
@@ -261,7 +267,7 @@ namespace More.Net
             array[offset + 3] = (Byte)(valueAsArray.Length      );
             offset += 4;
 
-            Array.Copy(valueAsArray, 0, array, offset, valueAsArray.Length);
+            ArrayCopier.Copy(valueAsArray, 0, array, offset, valueAsArray.Length);
 
             UInt32 valueAsArrayMod4Length = Xdr.UpToNearestMod4((UInt32)valueAsArray.Length);
             for (UInt32 i = (UInt32)valueAsArray.Length; i < valueAsArrayMod4Length; i++)
@@ -283,7 +289,7 @@ namespace More.Net
             }
 
             Byte[] data = new Byte[length];
-            Array.Copy(array, offset, data, 0, length);
+            ArrayCopier.Copy(array, offset, data, 0, length);
 
             fieldInfo.SetValue(instance, data);
 

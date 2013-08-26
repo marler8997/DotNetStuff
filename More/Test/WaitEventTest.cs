@@ -18,12 +18,11 @@ namespace More
             this.expectedToHandle = false;
         }
 
-        public int HandleEvent()
+        public void HandleEvent(TimeAndWaitEvent timeAndWaitEvent)
         {
             if (this.expectedToHandle == false) Assert.Fail("Did not expect to handle this event yet");
             Console.WriteLine("Handling {0}", id);
             this.expectedToHandle = false;
-            return 0;
         }
     }
 
@@ -46,11 +45,11 @@ namespace More
 
             Int64 startTime = Stopwatch.GetTimestamp();
 
-            waitEvents.Add(new TimeAndWaitEvent(startTime + 700.MillisToStopwatchTicks(), waitEventVerifiers[2].HandleEvent));
-            waitEvents.Add(new TimeAndWaitEvent(startTime + 600.MillisToStopwatchTicks(), waitEventVerifiers[1].HandleEvent));
-            waitEvents.Add(new TimeAndWaitEvent(startTime + 800.MillisToStopwatchTicks(), waitEventVerifiers[3].HandleEvent));
-            waitEvents.Add(new TimeAndWaitEvent(startTime + 0.MillisToStopwatchTicks(), waitEventVerifiers[0].HandleEvent));
-            waitEvents.Add(new TimeAndWaitEvent(startTime + 900.MillisToStopwatchTicks(), waitEventVerifiers[4].HandleEvent));
+            waitEvents.Add(new TimeAndWaitEvent(startTime, 700, waitEventVerifiers[2].HandleEvent));
+            waitEvents.Add(new TimeAndWaitEvent(startTime, 600, waitEventVerifiers[1].HandleEvent));
+            waitEvents.Add(new TimeAndWaitEvent(startTime, 800, waitEventVerifiers[3].HandleEvent));
+            waitEvents.Add(new TimeAndWaitEvent(startTime, 0  , waitEventVerifiers[0].HandleEvent));
+            waitEvents.Add(new TimeAndWaitEvent(startTime, 900, waitEventVerifiers[4].HandleEvent));
 
 
             for (int i = 0; i < waitEventVerifiers.Length; i++)
@@ -62,10 +61,6 @@ namespace More
                 Assert.IsFalse(waitEventVerifiers[i].expectedToHandle);
                 Thread.Sleep(nextSleep + 1);
             }
-
-
-
-
         }
     }
 }

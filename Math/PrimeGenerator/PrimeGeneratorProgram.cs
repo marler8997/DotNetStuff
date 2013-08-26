@@ -8,7 +8,7 @@ namespace More
     {
         public override void PrintUsageHeader()
         {
-            Console.WriteLine("Usage: PrimeGenerator.exe n (n is the nth prime number starting from 1)");
+            Console.WriteLine("Usage: PrimeGenerator.exe M (M is the maximum number to go to)");
         }
 
     }
@@ -35,46 +35,67 @@ namespace More
                     1, nonOptionArgs.Count);
             }
 
-            UInt32 n = UInt32.Parse(nonOptionArgs[0]);
-            if (n == 0) return options.ErrorAndUsage("n cannot be 0");
-            if (n == 1)
-            {
-                Console.WriteLine("Prime number 1 is {0}", 2);
-                return 0;
-            }
+            UInt32 MaxNumber = UInt32.Parse(nonOptionArgs[0]);
+            if (MaxNumber == 0) return options.ErrorAndUsage("MaxNumber cannot be 0");
+
+            UInt32 C1Length = (MaxNumber + (((MaxNumber % 2) == 1) ? (UInt32)1 : 0)) / 2;
 
             //
             // Generate the primes
             //
-            Console.WriteLine("Allocating array of length {0}...", n - 1);
-            UInt32[] intervals = new UInt32[n-1];
+            Console.WriteLine("Allocating two arrays of length {0}...", C1Length);
+            UInt32[] coprimes1 = new UInt32[C1Length];
+            UInt32[] coprimes2 = new UInt32[C1Length];
             Console.WriteLine("Done allocating memory");
 
 
             Int64 sequenceGenerationStartTime = Stopwatch.GetTimestamp();
 
             //
-            // Fill with 2s
+            // InitializeCoprimes1
             //
-            for (UInt32 i = 0; i < intervals.Length; i++)
+            UInt32 sum = 1;
+            for (UInt32 i = 0; i < C1Length; i++)
             {
-                intervals[i] = 2;
+                coprimes1[i] = sum;
+                sum += 2;
             }
 
             //
             // Generate sequence
             //
-            for (UInt32 i = 0; i < intervals.Length; i++)
+            UInt32 coprimes1Length = C1Length, coprimes2Length;
+            UInt32 n = 1;
+            UInt32 Pn;
+
+            while(true)
             {
-                UInt32 currentPrime = 1 + intervals[i];
+                Coprimes.CnMinusOneToCn(coprimes1, coprimes1Length, coprimes2, out coprimes2Length);
+                n++;
 
-                UInt32 dstIndex = i;
-                for (UInt32 j = i; j < intervals.Length; j++)
+                Pn = coprimes2[2];
+                if (Pn * Pn > coprimes1[coprimes1Length - 1])
                 {
+                    Console.WriteLine("Pn {0}, coprimes.length = {1}, coprimes[last] = {2}, n = {3}",
+                        Pn, coprimes1Length, coprimes1[coprimes1Length - 1], n);
+                    n += coprimes1Length;
+                    Pn = coprimes1[coprimes1Length - 1];
+                    break;
+                }
 
+                Coprimes.CnMinusOneToCn(coprimes2, coprimes2Length, coprimes1, out coprimes1Length);
+                n++;
+
+                Pn = coprimes1[2];
+                if (Pn * Pn > coprimes2[coprimes2Length - 1])
+                {
+                    Console.WriteLine("Pn {0}, coprimes.length = {1}, coprimes[last] = {2}, n = {3}",
+                        Pn, coprimes2Length, coprimes2[coprimes2Length - 1], n);
+                    n += coprimes2Length;
+                    Pn = coprimes2[coprimes2Length - 1];
+                    break;
                 }
             }
-
 
             //
             // Print sequence generation time
@@ -83,17 +104,10 @@ namespace More
             Console.WriteLine("Sequence Generation Time: {0} milliseconds",
                 (sequenceGenerationEndTime - sequenceGenerationStartTime).StopwatchTicksAsUInt32Milliseconds());
 
-
-
             //
-            // Calculate and print the nth prime
+            // Print the nth prime number
             //
-            UInt32 prime = 1;
-            for (UInt32 i = 0; i < intervals.Length; i++)
-            {
-                prime += intervals[i];
-            }
-            Console.WriteLine("Prime number {0} is {1}", n, prime);
+            Console.WriteLine("Prime {0} is equal to {1}", n, Pn);
 
             return 0;
         }

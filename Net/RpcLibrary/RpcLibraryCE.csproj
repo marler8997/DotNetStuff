@@ -61,13 +61,13 @@
     <Compile Include="RpcTcpClientConnection.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\Marler.Common.CE.csproj">
-      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
-      <Name>Marler.Common.CE</Name>
+    <ProjectReference Include="..\..\More\More.CE.csproj">
+      <Project>{2D13809C-50A6-4047-BDFF-3F41B60FADBC}</Project>
+      <Name>More.CE</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Marler.Net.CE.csproj">
+    <ProjectReference Include="..\More.Net.CE.csproj">
       <Project>{708A8043-D2E8-4D13-BB64-3E40D2DD2956}</Project>
-      <Name>Marler.Net.CE</Name>
+      <Name>More.Net.CE</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />

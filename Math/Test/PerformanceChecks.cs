@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace More.Physics.Test
+namespace More.Test
 {
     [TestClass]
     public class PerformanceChecks
@@ -81,11 +81,12 @@ namespace More.Physics.Test
             //PerformanceTestEratosthenesSeivePrimeGenerators(0xC0000000); // OutOfMemoryException
             //PerformanceTestEratosthenesSeivePrimeGenerators(0xB7000000);
 
+            PerformanceTestEratosthenesSeivePrimeGenerators(10000000);
             //PerformanceTestEratosthenesSeivePrimeGenerators(20000);
             //PerformanceTestEratosthenesSeivePrimeGenerators(200000);
             //PerformanceTestEratosthenesSeivePrimeGenerators(2000000);
             //PerformanceTestEratosthenesSeivePrimeGenerators(20000000);
-            PerformanceTestEratosthenesSeivePrimeGenerators(1000000000);
+            //PerformanceTestEratosthenesSeivePrimeGenerators(1000000000);
             //PerformanceTestEratosthenesSeivePrimeGenerators(2000000000);
         }
         void PerformanceTestEratosthenesSeivePrimeGenerators(UInt32 maxPrime)

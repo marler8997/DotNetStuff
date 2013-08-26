@@ -3,6 +3,12 @@ using System.Text;
 using System.Reflection;
 using System.Runtime.Serialization;
 
+#if WindowsCE
+using ArrayCopier = System.MissingInCEArrayCopier;
+#else
+using ArrayCopier = System.Array;
+#endif
+
 namespace More
 {
 
@@ -732,7 +738,7 @@ namespace More
         public UInt32 Serialize(Byte[] array, UInt32 offset)
         {
             if (this.bytes == null) return offset;
-            Array.Copy(this.bytes, this.offset, array, offset, this.length);
+            ArrayCopier.Copy(this.bytes, this.offset, array, offset, this.length);
             return offset + this.length;
         }
         public UInt32 Deserialize(Byte[] array, UInt32 offset, UInt32 offsetLimit)
@@ -748,7 +754,7 @@ namespace More
             }
 
             this.bytes = new Byte[length];
-            Array.Copy(array, offset, this.bytes, 0, length);
+            ArrayCopier.Copy(array, offset, this.bytes, 0, length);
 
             this.offset = 0;
             this.length = length;

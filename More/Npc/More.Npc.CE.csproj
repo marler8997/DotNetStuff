@@ -69,17 +69,9 @@
     <Compile Include="ReflectionUtilities.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Common\Marler.Common.CE.csproj">
-      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
-      <Name>Marler.Common.CE</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Sos\Marler.Sos.CE.csproj">
-      <Project>{69BF55A9-91A7-48B6-9796-5C963B7343C3}</Project>
-      <Name>Marler.Sos.CE</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Marler.Net.CE.csproj">
-      <Project>{708A8043-D2E8-4D13-BB64-3E40D2DD2956}</Project>
-      <Name>Marler.Net.CE</Name>
+    <ProjectReference Include="..\More.CE.csproj">
+      <Project>{2D13809C-50A6-4047-BDFF-3F41B60FADBC}</Project>
+      <Name>More.CE</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />

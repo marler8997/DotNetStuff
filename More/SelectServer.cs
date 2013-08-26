@@ -634,7 +634,13 @@ namespace More.Net
         }
         public TcpListener(Socket boundSocket, Int32 socketBackLog, AcceptHandler acceptHandler)
         {
-            if (!boundSocket.IsBound) throw new InvalidOperationException("You must bind the socket before using this constructor");
+#if WindowsCE
+            if (boundSocket.LocalEndPoint == null) 
+#else
+            if (!boundSocket.IsBound) 
+#endif
+                throw new InvalidOperationException("You must bind the socket before using this constructor");
+
             this.boundSocket = boundSocket;
             this.socketBackLog = socketBackLog;
             this.acceptHandler = acceptHandler;
@@ -884,7 +890,13 @@ namespace More.Net
         }
         public void AddListener(Socket boundSocket, Int32 backlog, AcceptHandler acceptHandler)
         {
-            if (!boundSocket.IsBound) throw new InvalidOperationException("This method requires that the socket is bound");
+#if WindowsCE
+            if (boundSocket.LocalEndPoint == null)
+#else
+            if (!boundSocket.IsBound) 
+#endif
+                throw new InvalidOperationException("This method requires that the socket is bound");
+
             boundSocket.Listen(backlog);
 
             lock (tcpListenSockets)
