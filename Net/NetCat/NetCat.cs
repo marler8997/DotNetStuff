@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
@@ -105,20 +106,41 @@ namespace More.Net
                 }
             }
 
-            TextReaderToSocket consoleReader = new TextReaderToSocket(null, Console.In, connectedSocket, optionsParser.bufferSizes.ArgValue);
-            SocketToTextWriter socketReader = new SocketToTextWriter(null, connectedSocket, Console.Out, optionsParser.bufferSizes.ArgValue);
+            new NetcatLoop(connectedSocket, optionsParser.bufferSizes.ArgValue);
+
+            return 0;
+        }
+    }
+    public class NetcatLoop : ITunnelCallback
+    {
+        readonly Socket socket;
+
+        public NetcatLoop(Socket connectedSocket, Int32 bufferSizes)
+        {
+            this.socket = connectedSocket;
+
+            //
+            // Open Console as raw streams
+            //
+            Stream consoleInputStream = Console.OpenStandardInput();
+            Stream consoleOutputStream = Console.OpenStandardOutput();
+
+            StreamToSocket consoleToSocket = new StreamToSocket(this, consoleInputStream, connectedSocket, bufferSizes);
+            SocketToStream socketToConsole = new SocketToStream(this, connectedSocket, consoleOutputStream, bufferSizes);
 
             //
             // The Console Reader Thread is set to a background thread because it will never close
             // so it should not keep the program from exiting...the socket reader will determine that
             //
-            Thread consoleReaderThread = new Thread(consoleReader.Run);
+            Thread consoleReaderThread = new Thread(consoleToSocket.Run);
             consoleReaderThread.IsBackground = true;
             consoleReaderThread.Start();
 
-            socketReader.Run();
-
-            return 0;
+            socketToConsole.Run();
+        }
+        public void TunnelClosed(ITunnel tunnel)
+        {
+            socket.ShutdownAndDispose();
         }
     }
 }

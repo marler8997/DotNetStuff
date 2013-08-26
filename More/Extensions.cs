@@ -64,6 +64,34 @@ namespace More
         }
     }
 #endif
+
+
+    public enum EncodingType
+    {
+        Default = 0,
+        Ascii   = 1,
+        Utf7    = 2,
+        Utf8    = 3,
+        Utf32   = 4,
+        Unicode = 5,
+    }
+    public static class EncodingParser
+    {
+        public static Encoding GetEncoding(this EncodingType encodingType)
+        {
+            switch (encodingType)
+            {
+                case EncodingType.Default: return Encoding.Default;
+                case EncodingType.Ascii: return Encoding.ASCII;
+                case EncodingType.Utf7: return Encoding.UTF7;
+                case EncodingType.Utf8: return Encoding.UTF8;
+                case EncodingType.Utf32: return Encoding.UTF32;
+                case EncodingType.Unicode: return Encoding.Unicode;
+            }
+            throw new InvalidOperationException(String.Format("Unknown EncodingType '{0}'", encodingType));
+        }
+    }
+
     public class ArrayBuilder
     {
         const Int32 InitialArraySize = 16;

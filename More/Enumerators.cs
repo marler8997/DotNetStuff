@@ -130,27 +130,16 @@ namespace More
     public class SingleObjectList : IList
     {
         public Object obj;
-        public SingleObjectList()
-        {
-        }
-        public SingleObjectList(Object obj)
-        {
-            this.obj = obj;
-        }
-        public void SetObject(Object obj)
-        {
-            this.obj = obj;
-        }
+        public SingleObjectList() { }
+        public SingleObjectList(Object obj) { this.obj = obj; }
+        public void SetObject(Object obj)   { this.obj = obj; }
         public int Add(object value)
         {
             if (this.obj != null) throw new InvalidOperationException("This list only holds one object");
             this.obj = value;
             return 0;
         }
-        public void Clear()
-        {
-            this.obj = null;
-        }
+        public void Clear() { this.obj = null; }
         public Boolean Contains(object value)
         {
             return this.obj != null && this.obj == value;
@@ -164,14 +153,8 @@ namespace More
             if (index != 0) throw new ArgumentOutOfRangeException("index");
             obj = value;
         }
-        public bool IsFixedSize
-        {
-            get { return true; }
-        }
-        public bool IsReadOnly
-        {
-            get { return false; }
-        }
+        public bool IsFixedSize { get { return true; } }
+        public bool IsReadOnly { get { return false; } }
         public void Remove(object value)
         {
             if (this.obj == value)
