@@ -10,6 +10,115 @@ namespace More.Test
     public class TwimPrimeResearch
     {
         [TestMethod]
+        public void CheckIfThereIsAlwaysATwoLessThanTheThirdFilterNumber()
+        {
+            UInt32 lastCnk = 1;
+
+            for (UInt32 n = 1; n < 100; n++)
+            {
+
+                UInt32 PnPlusOne = PrimeTable.Values[n];
+
+                UInt32 lastCoprime = PnPlusOne;
+                UInt32 nextCandidateCoprime = PnPlusOne + 2;
+                UInt32 k = 2;
+
+
+                while (true)
+                {
+                    //
+                    // Check if the next candidate is coprime
+                    //
+                    Boolean isCoprime = true;
+                    for (UInt32 primeIndex = 0; primeIndex < n; primeIndex++)
+                    {
+                        UInt32 prime = PrimeTable.Values[primeIndex];
+                        if ((nextCandidateCoprime % prime) == 0)
+                        {
+                            isCoprime = false;
+                            break;
+                        }
+                    }
+
+                    if (isCoprime)
+                    {
+                        if (nextCandidateCoprime - lastCoprime == 2)
+                        {
+                            Console.WriteLine("n = {0,5:N0}, k = {1,5:N0}, C_n,k = {3,5:N0}, C_n,2^2 = {5,5:N0} C_n,k-Last(C_n,k) = {6:N0}",
+                                n, k, k + 1, nextCandidateCoprime, lastCoprime, PnPlusOne * PnPlusOne, nextCandidateCoprime - lastCnk);
+
+
+                            lastCnk = nextCandidateCoprime;
+                            break;
+                        }
+
+                        lastCoprime = nextCandidateCoprime;
+                        k++;
+                    }
+                    nextCandidateCoprime += 2;
+                }
+            }
+
+        }
+        [TestMethod]
+        public void CountTwinPrimes()
+        {
+            for (UInt32 n = 1; n < 100; n++)
+            {
+                UInt32 PnPlusOne = PrimeTable.Values[n];
+                UInt32 PnPlusOneSquared = PnPlusOne * PnPlusOne;
+
+                UInt32 lastCoprime = PnPlusOne;
+                UInt32 nextCandidateCoprime = PnPlusOne + 2;
+                UInt32 k = 2;
+
+                UInt32 twinPrimeCount = 0;
+
+                while (true)
+                {
+                    //
+                    // Check if the next candidate is coprime
+                    //
+                    Boolean isCoprime = true;
+                    for (UInt32 primeIndex = 0; primeIndex < n; primeIndex++)
+                    {
+                        UInt32 prime = PrimeTable.Values[primeIndex];
+                        if ((nextCandidateCoprime % prime) == 0)
+                        {
+                            isCoprime = false;
+                            break;
+                        }
+                    }
+
+                    if (isCoprime)
+                    {
+                        if (nextCandidateCoprime - lastCoprime == 2)
+                        {
+                            twinPrimeCount++;
+                            //Console.WriteLine("n = {0,5:N0}, k = {1,5:N0}, C_n,k = {3,5:N0}, C_n,2^2 = {5,5:N0}",
+                            //    n, k, k + 1, nextCandidateCoprime, lastCoprime, PnPlusOneSquared);
+
+                        }
+
+                        lastCoprime = nextCandidateCoprime;
+                        k++;
+                    }
+                    nextCandidateCoprime += 2;
+                    if (nextCandidateCoprime >= PnPlusOneSquared) break;
+                }
+
+
+                //Console.WriteLine("n = {0,5:N0}, C_n,2^2 = {1,5:N0}, TwinPrimeCount = {2}",
+                //    n, PnPlusOneSquared, twinPrimeCount);
+                Console.WriteLine("{0},{1},{2}",
+                    n, PrimeTable.Values[n-1], twinPrimeCount);
+
+            }
+        }
+
+
+
+        [TestMethod]
         public void PrettyFormatPrintCoprimeIntervalPatterns()
         {
             for (UInt32 i = 1; i <= 3; i++)

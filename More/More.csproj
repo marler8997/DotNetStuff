@@ -53,7 +53,7 @@
     <Compile Include="LfdReader.cs" />
     <Compile Include="LineParser.cs" />
     <Compile Include="BinaryStream.cs" />
-    <Compile Include="ByteBuffer.cs" />
+    <Compile Include="Buffer.cs" />
     <Compile Include="IniParser.cs" />
     <Compile Include="Pdl.cs" />
     <Compile Include="Ports.cs" />
@@ -78,7 +78,7 @@
     <Compile Include="Threads.cs" />
     <Compile Include="ThreadWatcher.cs" />
     <Compile Include="UniqueIndexObjectDictionary.cs" />
-    <Compile Include="WaitEvent.cs" />
+    <Compile Include="WaitActions.cs" />
     <Compile Include="WorkerThread.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

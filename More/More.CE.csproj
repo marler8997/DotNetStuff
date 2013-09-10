@@ -8,8 +8,8 @@
     <ProjectGuid>{2D13809C-50A6-4047-BDFF-3F41B60FADBC}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Marler.Common</RootNamespace>
-    <AssemblyName>Marler.Common</AssemblyName>
+    <RootNamespace>More</RootNamespace>
+    <AssemblyName>More.CE</AssemblyName>
     <ProjectTypeGuids>{4D628B5B-2FBC-4AA6-8C16-197242AEB884};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PlatformFamilyName>WindowsCE</PlatformFamilyName>
     <PlatformID>E2BECB1F-8C8C-41ba-B736-9BE7D946A398</PlatformID>
@@ -53,7 +53,7 @@
     <Compile Include="ArrayReflectors.cs" />
     <Compile Include="BigEndianSerialization.cs" />
     <Compile Include="BinaryStream.cs" />
-    <Compile Include="ByteBuffer.cs" />
+    <Compile Include="Buffer.cs" />
     <Compile Include="EndPoints.cs" />
     <Compile Include="IDataHandler.cs" />
     <Compile Include="LineParser.cs" />
@@ -73,7 +73,6 @@
     <Compile Include="SortedList.cs" />
     <Compile Include="Threads.cs" />
     <Compile Include="UniqueIndexObjectDictionary.cs" />
-    <Compile Include="WaitEvent.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
   <ProjectExtensions>

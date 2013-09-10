@@ -85,7 +85,9 @@ namespace More
                 case EncodingType.Ascii: return Encoding.ASCII;
                 case EncodingType.Utf7: return Encoding.UTF7;
                 case EncodingType.Utf8: return Encoding.UTF8;
+#if !WindowsCE
                 case EncodingType.Utf32: return Encoding.UTF32;
+#endif
                 case EncodingType.Unicode: return Encoding.Unicode;
             }
             throw new InvalidOperationException(String.Format("Unknown EncodingType '{0}'", encodingType));
