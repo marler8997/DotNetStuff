@@ -36,11 +36,10 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Mount1.cs" />
-    <Compile Include="Mount3.cs" />
-    <Compile Include="Nfs3.cs" />
+    <Compile Include="Mount.cs" />
+    <Compile Include="Nfs.cs" />
     <Compile Include="NfsPath.cs" />
-    <Compile Include="PortMap2.cs" />
+    <Compile Include="PortMap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -18,35 +18,39 @@ using FileName = System.String;
 
 namespace More.Net
 {
-
-    public enum Nfs3Command {
-        NULL        = 0,
-        GETATTR     = 1,
-        SETATTR     = 2,
-        LOOKUP      = 3,
-        ACCESS      = 4,
-        READLINK    = 5,
-        READ        = 6,
-        WRITE       = 7,
-        CREATE      = 8,
-        MKDIR       = 9,
-        SYMLINK     = 10,
-        MKNOD       = 11,
-        REMOVE      = 12,
-        RMDIR       = 13,
-        RENAME      = 14,
-        LINK        = 15,
-        READDIR     = 16,
-        READDIRPLUS = 17,
-        FSSTAT      = 18,
-        FSINFO      = 19,
-        PATHCONF    = 20,
-        COMMIT      = 21,
+    public static class Nfs
+    {
+        public const String Name = "Nfs";
+        public const UInt32 ProgramNumber = 100003;
     }
-
+    public enum Nfs3Command
+    {
+        NULL = 0,
+        GETATTR = 1,
+        SETATTR = 2,
+        LOOKUP = 3,
+        ACCESS = 4,
+        READLINK = 5,
+        READ = 6,
+        WRITE = 7,
+        CREATE = 8,
+        MKDIR = 9,
+        SYMLINK = 10,
+        MKNOD = 11,
+        REMOVE = 12,
+        RMDIR = 13,
+        RENAME = 14,
+        LINK = 15,
+        READDIR = 16,
+        READDIRPLUS = 17,
+        FSSTAT = 18,
+        FSINFO = 19,
+        PATHCONF = 20,
+        COMMIT = 21,
+    }
     public static class Nfs3
     {
-        public const UInt32 ProgramNumber = 100003;
+        public const UInt32 ProgramVersion = 3;
 
         /*
         public const UInt32 NULL                 = 0;
@@ -84,7 +88,7 @@ namespace More.Net
             {
                 if (programHeader == null)
                 {
-                    programHeader = new RpcProgramHeader(RpcVersion.Two, ProgramNumber, 3);
+                    programHeader = new RpcProgramHeader(RpcVersion.Two, Nfs.ProgramNumber, ProgramVersion);
                 }
                 return programHeader;
             }

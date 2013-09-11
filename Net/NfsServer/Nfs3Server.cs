@@ -144,7 +144,7 @@ namespace More.Net
 
         public override Boolean ProgramHeaderSupported(RpcProgramHeader programHeader)
         {
-            return programHeader.program == Nfs3.ProgramNumber && programHeader.programVersion == 3;
+            return programHeader.program == Nfs.ProgramNumber && programHeader.programVersion == 3;
         }
         public override RpcReply Call(String clientString, RpcCall call, byte[] callParameters, UInt32 callOffset, UInt32 callMaxOffset, out ISerializer replyParameters)
         {

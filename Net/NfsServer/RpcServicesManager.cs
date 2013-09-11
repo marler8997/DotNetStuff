@@ -26,9 +26,20 @@ namespace More.Net
             ByteBuffer sendBuffer = new ByteBuffer(4096, 1024);
 
             //
+            // Create Mappings List
+            //
+            NamedMapping[] namedMappings = new NamedMapping[] {
+                new NamedMapping(PortMap.Name, new Mapping(PortMap.ProgramNumber, PortMap2.ProgramVersion, PortMap.IPProtocolTcp, (UInt32)portmapPort)),
+                new NamedMapping(PortMap.Name, new Mapping(PortMap.ProgramNumber, PortMap2.ProgramVersion, PortMap.IPProtocolUdp, (UInt32)portmapPort)),
+                new NamedMapping(Mount.Name  , new Mapping(Mount.ProgramNumber  , Mount1.ProgramVersion  , PortMap.IPProtocolTcp, (UInt32)mountPort)),
+                new NamedMapping(Mount.Name  , new Mapping(Mount.ProgramNumber  , Mount3.ProgramVersion  , PortMap.IPProtocolTcp, (UInt32)mountPort)),
+                new NamedMapping(Nfs.Name    , new Mapping(Nfs.ProgramNumber    , Nfs3.ProgramVersion    , PortMap.IPProtocolTcp, (UInt32)nfsPort)),
+            };
+
+            //
             // Start Servers
             //
-            PortMap2Server portMapServer = new PortMap2Server(this, sendBuffer, mountPort, nfsPort);
+            PortMap2Server portMapServer = new PortMap2Server(this, namedMappings, sendBuffer);
             Mount1And3Server mountServer = new Mount1And3Server(this, sharedFileSystem, sendBuffer);
             Nfs3Server nfsServer = new Nfs3Server(this, sharedFileSystem, sendBuffer, readSizeMax, suggestedReadSizeMultiple);
 
@@ -55,7 +66,9 @@ namespace More.Net
                 Nfs3Server.NfsServerManager nfsServerManager = new Nfs3Server.NfsServerManager(nfsServer);
                 NpcReflector reflector = new NpcReflector(
                     new NpcExecutionObject(nfsServerManager, "Nfs3ServerManager", null, null),
-                    new NpcExecutionObject(nfsServer, "Nfs3Server", null, null)
+                    new NpcExecutionObject(nfsServer, "Nfs3Server", null, null),
+                    new NpcExecutionObject(portMapServer, "Portmap2Server", null, null),
+                    new NpcExecutionObject(mountServer, "Mount1And3Server", null, null)
                     );
                 tcpListeners.Add(new TcpSelectListener(npcServerEndPoint, 32, new NpcStreamSelectServerCallback(
                     NpcCallback.Instance, reflector, new DefaultNpcHtmlGenerator("NfsServer", reflector))));

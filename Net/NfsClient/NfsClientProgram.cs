@@ -65,16 +65,17 @@ namespace More.Net
                 //IPEndPoint portmapEndPoint = new IPEndPoint(serverHost, 111);
                 portmapConnection.socket.Connect(serverHost, 111);
 
-        
+
+                /*
                 //
                 // Get NFS Port
                 //
-                PortMap2Procedure.GetPort getNfsPort = new PortMap2Procedure.GetPort(new PortMap2Procedure.GetPortCall(
+                PortMap2Procedure.GetPortCall getNfsPort = new PortMap2Procedure.GetPortCall(
                         Nfs3.ProgramHeader.program,
                         Nfs3.ProgramHeader.programVersion,
                         6                 , // TCP
                         0                   // Port 0
-                        ));
+                        );
                 portmapConnection.CallBlockingTcp(getNfsPort, buffer);
 
                 Console.WriteLine();
@@ -151,7 +152,6 @@ namespace More.Net
 
 
 
-                /*
                 //
                 // Get FileSystemInfo
                 //

@@ -13,24 +13,30 @@ namespace More.Net
 #endif
     public interface IPortMap2Handler
     {
-        GetPortReply Handle(GetPortCall getPortCall);
+        GetPortReply GETPORT(GetPortCall getPortCall);
+        DumpReply DUMP();
     }
     class PortMap2Server : RpcServerHandler, IPortMap2Handler
     {
         private readonly RpcServicesManager servicesManager;
-        public readonly Int32 mountPort;
-        public readonly Int32 nfsPort;
+        readonly NamedMapping[] namedMappings;
 
-        public PortMap2Server(RpcServicesManager servicesManager, ByteBuffer sendBuffer, Int32 mountPort, Int32 nfsPort)
+        public PortMap2Server(RpcServicesManager servicesManager, NamedMapping[] namedMappings, ByteBuffer sendBuffer)
             : base("PortMap2", sendBuffer)
         {
             this.servicesManager = servicesManager;
-            this.mountPort = mountPort;
-            this.nfsPort = nfsPort;
+            this.namedMappings = namedMappings;
         }
         public override Boolean ProgramHeaderSupported(RpcProgramHeader programHeader)
         {
-            return programHeader.program == PortMap2.ProgramNumber && programHeader.programVersion == 2;
+            if (programHeader.program != PortMap.ProgramNumber || programHeader.programVersion != PortMap2.ProgramVersion)
+            {
+                if (NfsServerLog.warningLogger != null) NfsServerLog.warningLogger.WriteLine(
+                     "[{0}] [WARNING] Received RPC call for PortMap program {1} version {2}, but only program {3} version {4} are supported",
+                     serviceName, programHeader.program, programHeader.programVersion, PortMap2.ProgramHeader, PortMap2.ProgramVersion);
+                return false;
+            }
+            return true;
         }
         public override RpcReply Call(String clientString, RpcCall call, Byte[] callParameters, UInt32 callOffset, UInt32 callMaxOffset, out ISerializer replyParameters)
         {
@@ -45,8 +51,15 @@ namespace More.Net
                 case PortMap2.GETPORT:
 
                     GetPortCall getPortCall = new GetPortCall(callParameters, callOffset, callMaxOffset);
-                    replyParameters = Handle(getPortCall);
-                    callData = getPortCall;
+                    callData = getPortCall.CreateSerializer();
+
+                    replyParameters = GETPORT(getPortCall).CreateSerializer();
+
+                    break;
+                case PortMap2.DUMP:
+
+                    callData = VoidSerializer.Instance;
+                    replyParameters = DUMP().CreateSerializer();
 
                     break;
                 case PortMap2.CALLIT:
@@ -65,50 +78,68 @@ namespace More.Net
             return new RpcReply(RpcVerifier.None);
         }
 
-        public GetPortReply Handle(GetPortCall getPortCall)
+        public GetPortReply GETPORT(GetPortCall getPortCall)
         {
             GetPortReply getPortReply = new GetPortReply(getPortCall.program, getPortCall.programVersion, getPortCall.transportProtocol, 0);
 
-            // For now only support tcp
-            if (getPortCall.transportProtocol == 6)
+            String matchingProgramName = null;
+            Boolean foundMatchingProgramVersion = false;
+
+            for (int i = 0; i < namedMappings.Length; i++)
             {
-
-                switch (getPortCall.program)
+                NamedMapping namedMapping = namedMappings[i];
+                Mapping mapping = namedMapping.mapping;
+                if(getPortCall.program == mapping.program)
                 {
-                    case Mount3.ProgramNumber:
+                    matchingProgramName = namedMapping.programName;
 
-                        if (getPortCall.programVersion != 3 && getPortCall.programVersion != 1)
+                    if(getPortCall.programVersion == mapping.version)
+                    {
+                        foundMatchingProgramVersion = true;
+
+                        if (getPortCall.transportProtocol == mapping.protocol)
                         {
-                            if (NfsServerLog.warningLogger != null)
-                                NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Client requested port for MOUNT version {0} but only version 1 and 3 are supported",
-                                getPortCall.programVersion);
-                            break;
+                            getPortReply.port = mapping.port;
                         }
-
-                        getPortReply.port = (UInt32)mountPort;
-                        break;
-                    case Nfs3.ProgramNumber:
-
-                        if (getPortCall.programVersion != 3)
-                        {
-                            if (NfsServerLog.warningLogger != null)
-                                NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Client requested port for MOUNT version {0} but only version {1} is supported",
-                                getPortCall.programVersion, 3);
-                            break;
-                        }
-
-                        getPortReply.port = (UInt32)nfsPort;
-                        break;
-                    default:
-                        if (NfsServerLog.warningLogger != null)
-                            NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Client requested port for unknown program {0}", getPortCall.program);
-                        break;
+                    }
                 }
-
             }
 
+            if (getPortReply.port == 0 && NfsServerLog.warningLogger != null)
+            {
+                if (matchingProgramName == null)
+                {
+                    NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Client requested port for Program {1} but it was not found",
+                        serviceName, getPortCall.program);
+                }
+                else if (!foundMatchingProgramVersion)
+                {
+                    NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Client requested port for Program '{1}' ({2}) but version {3} was not found in the mapping list",
+                        serviceName, matchingProgramName, getPortCall.program, getPortCall.programVersion);
+                }
+                else
+                {
+                    NfsServerLog.warningLogger.WriteLine("[{0}] [Warning] Client requested port for Program '{1}' ({2}) Version {3}, but ip protocol {4} is not supported",
+                        serviceName, matchingProgramName, getPortCall.program, getPortCall.programVersion, getPortCall.transportProtocol);
+                }
+            }
 
             return getPortReply;
+        }
+        public DumpReply DUMP()
+        {
+            MappingEntry previousEntry = null;
+            for(int i = 0; i < namedMappings.Length; i++)
+            {
+                NamedMapping namedMapping = namedMappings[i];
+                Mapping mapping = namedMapping.mapping;
+                
+                MappingEntry entry = new MappingEntry(mapping);
+                entry.nextMapping = previousEntry;
+                previousEntry = entry;
+            }
+
+            return new DumpReply(previousEntry);
         }
     }
 }
