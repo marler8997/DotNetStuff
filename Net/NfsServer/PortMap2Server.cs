@@ -135,7 +135,7 @@ namespace More.Net
                 Mapping mapping = namedMapping.mapping;
                 
                 MappingEntry entry = new MappingEntry(mapping);
-                entry.nextMapping = previousEntry;
+                entry.SetNextMapping(previousEntry);
                 previousEntry = entry;
             }
 

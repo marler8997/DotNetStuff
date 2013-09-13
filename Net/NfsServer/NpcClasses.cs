@@ -8,9 +8,10 @@ namespace More.Net
 #endif
     public interface INfs3ServerNiceInterface
     {
-        String[] ShareNames();
+        String[] RootShareNames();
         ShareObject[] ShareObjects();
-        FSInfoReply FSInfoByName(String shareName);
+        FileSystemStatusReply FSStatusByName(String directory);
+        FSInfoReply FSInfoByName(String directory);
         NonRecursiveReadDirPlusReply ReadDirPlus(String directoryName, UInt64 cookie, UInt32 maxDirectoryInfoBytes);
     }
     

@@ -128,36 +128,68 @@ namespace More.Net.PortMap2Procedure
         //
         static IReflector NextMappingEntryReflectorCreator(Reflectors reflectorsReference)
         {
-            return new Reflectors(new ClassFieldReflectors<MappingEntry>(typeof(MappingEntry), "nextMapping", reflectorsReference));
+            return new XdrBooleanDescriminateReflector(
+
+                new XdrBooleanReflector(typeof(MappingEntry), "haveNextMapping"),
+
+                new Reflectors(new ClassFieldReflectors<MappingEntry>(typeof(MappingEntry), "nextMapping", reflectorsReference)),
+
+                VoidReflector.Reflectors);
         }
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new ClassFieldReflectors<Mapping>(typeof(MappingEntry), "mapping", Mapping.memberSerializers),
             null // Placeholder for next mapping
         }, NextMappingEntryReflectorCreator);
 
+
         public Mapping mapping;
-        public MappingEntry nextMapping;
+        public Boolean haveNextMapping;
+        MappingEntry nextMapping;
 
         public MappingEntry(Mapping mapping)
         {
             this.mapping = mapping;
         }
+        public MappingEntry NextMapping { get { return nextMapping; } }
+        public void SetNextMapping(MappingEntry nextMapping)
+        {
+            if (nextMapping == null)
+            {
+                this.nextMapping = null;
+                this.haveNextMapping = false;
+            }
+            else
+            {
+                this.nextMapping = nextMapping;
+                this.haveNextMapping = true;
+            }
+        }
     }
     public class DumpReply : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new ClassFieldReflectors<DumpReply>(typeof(DumpReply), "mappingList", MappingEntry.memberSerializers),
+            new XdrBooleanDescriminateReflector(
+                new XdrBooleanReflector(typeof(DumpReply), "haveMappingList"),
+                new Reflectors(new ClassFieldReflectors<DumpReply>(typeof(DumpReply), "mappingList", MappingEntry.memberSerializers)),
+                VoidReflector.Reflectors),
+
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
+        public Boolean haveMappingList;
         public MappingEntry mappingList;
+
         public DumpReply(Byte[] data, UInt32 offset, UInt32 offsetLimit)
         {
             memberSerializers.Deserialize(this, data, offset, offsetLimit);
         }
         public DumpReply(MappingEntry mappingList)
         {
-            this.mappingList = mappingList;
+            if (mappingList != null)
+            {
+                haveMappingList = true;
+                this.mappingList = mappingList;
+            }
         }
     }
 }

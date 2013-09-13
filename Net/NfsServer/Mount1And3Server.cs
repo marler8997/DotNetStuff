@@ -75,23 +75,19 @@ namespace More.Net
                     return new RpcReply(RpcVerifier.None, RpcAcceptStatus.ProcedureUnavailable);
             }
 
-            if (NfsServerLog.warningLogger != null)
-                NfsServerLog.warningLogger.WriteLine("[{0}] Rpc {1} => {2}", serviceName, ISerializerString.DataSmallString(callData), ISerializerString.DataSmallString(replyParameters));
+            if (NfsServerLog.rpcCallLogger != null)
+                NfsServerLog.rpcCallLogger.WriteLine("[{0}] {1} {2} => {3}", serviceName, methodName,
+                    ISerializerString.DataSmallString(callData), ISerializerString.DataSmallString(replyParameters));
             return new RpcReply(RpcVerifier.None);
         }
 
         public Mount3Reply MNT(String directory)
         {
-            ShareObject shareObject;
-            Nfs3Procedure.Status status = sharedFileSystem.TryGetSharedDirectory(directory, out shareObject);
+            RootShareDirectory rootShareDirectory;
+            ShareObject directoryShareObject;
+            Nfs3Procedure.Status status = sharedFileSystem.TryGetDirectory(directory, out rootShareDirectory, out directoryShareObject);
             if (status != Nfs3Procedure.Status.Ok) return new Mount3Reply(status);
-
-            if (shareObject == null) return new Mount3Reply(Nfs3Procedure.Status.ErrorNoSuchFileOrDirectory);
-
-            status = shareObject.CheckStatus();
-            if (status != Nfs3Procedure.Status.Ok) return new Mount3Reply(status);
-
-            return new Mount3Reply(shareObject.fileHandleBytes, null);
+            return new Mount3Reply(directoryShareObject.fileHandleBytes, null);
         }
     }
 }

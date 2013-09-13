@@ -7,15 +7,17 @@ using FileID = System.UInt64;
 
 namespace More.Net
 {
-    public class ShareDirectory
+    public class RootShareDirectory
     {
         public readonly DirectoryInfo directoryInfo;
         public readonly DriveInfo driveInfo;
 
         public readonly String localShareDirectory;
         public readonly String shareName;
+
         public ShareObject shareObject;
-        public ShareDirectory(String localShareDirectory, String shareName)
+
+        public RootShareDirectory(String localShareDirectory, String shareName)
         {
             if (!NfsPath.IsValidUnixFileName(shareName))
                 throw new ArgumentException(String.Format("The share name you provided '{0}' is not valid (cannot have '/')", shareName));
@@ -38,33 +40,32 @@ namespace More.Net
         private readonly IFileIDsAndHandlesDictionary filesDictionary;
         public readonly IPermissions permissions;
 
-        public readonly ShareDirectory[] shareDirectories;
+        public readonly RootShareDirectory[] rootShareDirectories;
 
         private readonly Dictionary<Byte[], ShareObject> shareObjectsByHandle;
         private readonly Dictionary<String, ShareObject> shareObjectsByLocalPath;
 
-        public SharedFileSystem(IFileIDsAndHandlesDictionary filesDictionary, IPermissions permissions, ShareDirectory[] shareDirectories)
+        public SharedFileSystem(IFileIDsAndHandlesDictionary filesDictionary, IPermissions permissions, RootShareDirectory[] rootShareDirectories)
         {
             this.filesDictionary = filesDictionary;
             this.permissions = permissions;
 
-            this.shareDirectories = shareDirectories;
+            this.rootShareDirectories = rootShareDirectories;
             
             shareObjectsByHandle = new Dictionary<Byte[], ShareObject>(filesDictionary);
             shareObjectsByLocalPath = new Dictionary<String, ShareObject>();
-            for (int i = 0; i < shareDirectories.Length; i++)
+            for (int i = 0; i < rootShareDirectories.Length; i++)
             {
-                ShareDirectory shareDirectory = shareDirectories[i];
-                ShareObject shareObject = CreateNewShareObject(Nfs3Procedure.FileType.Directory, shareDirectory.localShareDirectory, shareDirectory.shareName);
+                RootShareDirectory rootShareDirectory = rootShareDirectories[i];
+                ShareObject shareObject = CreateNewShareObject(Nfs3Procedure.FileType.Directory, rootShareDirectory.localShareDirectory, rootShareDirectory.shareName);
                 if (shareObject == null)
                 {
                     throw new DirectoryNotFoundException(String.Format(
-                        "You are trying to share local directory '{0}', but it either does not exist or is not a directory", shareDirectory.localShareDirectory));
+                        "You are trying to share local directory '{0}', but it either does not exist or is not a directory", rootShareDirectory.localShareDirectory));
                 }
-                shareDirectory.shareObject = shareObject;
+                rootShareDirectory.shareObject = shareObject;
             }
         }
-
         public ShareObject[] CreateArrayOfShareObjects()
         {
             ShareObject[] shareObjects = new ShareObject[shareObjectsByLocalPath.Count];
@@ -76,8 +77,8 @@ namespace More.Net
             }
             return shareObjects;
         }
-
-        public Nfs3Procedure.Status TryGetShareDirectory(Byte[] handle, out ShareDirectory outputShareDirectory)
+        /*
+        public Nfs3Procedure.Status TryGetShareDirectory(Byte[] handle, out RootShareDirectory rootShareDirectory, out ShareObject shareDirectoryObject)
         {
             ShareObject shareObject;
             Nfs3Procedure.Status status = TryGetSharedObject(handle, out shareObject);
@@ -100,16 +101,8 @@ namespace More.Net
             outputShareDirectory = null;
             return Nfs3Procedure.Status.ErrorBadHandle;
         }
+        */
 
-        private void DisposeShareObject(ShareObject shareObject)
-        {
-            if (NfsServerLog.sharedFileSystemLogger != null)
-                NfsServerLog.sharedFileSystemLogger.WriteLine("[SharedFileSystem] Disposing Share Object: {0}", shareObject);
-
-            filesDictionary.Dispose(shareObject.fileID);
-            shareObjectsByLocalPath.Remove(shareObject.localPathAndName);
-            shareObjectsByHandle.Remove(shareObject.fileHandleBytes);
-        }
 
         private ShareObject CreateNewShareObject(Nfs3Procedure.FileType fileType, String localPathAndName, String shareName)
         {
@@ -124,7 +117,15 @@ namespace More.Net
                 NfsServerLog.sharedFileSystemLogger.WriteLine("[SharedFileSystem] New Share Object: {0}", shareObject);
             return shareObject;
         }
+        private void DisposeShareObject(ShareObject shareObject)
+        {
+            if (NfsServerLog.sharedFileSystemLogger != null)
+                NfsServerLog.sharedFileSystemLogger.WriteLine("[SharedFileSystem] Disposing Share Object: {0}", shareObject);
 
+            filesDictionary.Dispose(shareObject.fileID);
+            shareObjectsByLocalPath.Remove(shareObject.localPathAndName);
+            shareObjectsByHandle.Remove(shareObject.fileHandleBytes);
+        }
         public void UpdateShareObjectPathAndName(ShareObject shareObject, String newLocalPathAndName, String newName)
         {
             // Dispose share object at new location
@@ -279,34 +280,96 @@ namespace More.Net
             return status;
         }
 
-        public Nfs3Procedure.Status TryGetSharedDirectory(String shareName, out ShareObject shareObject)
+
+
+
+        public Nfs3Procedure.Status TryGetDirectory(String shareDirectoryName, out RootShareDirectory rootShareDirectory, out ShareObject shareDirectoryObject)
         {
-            if (shareName[0] == '/')
+            String subPath;
+            String rootShareName = NfsPath.SplitShareNameAndSubPath(shareDirectoryName, out subPath);
+            if (rootShareName == null)
             {
-                shareName = shareName.Substring(1);
+                rootShareDirectory = null;
+                shareDirectoryObject = null;
+                return Nfs3Procedure.Status.ErrorInvalidArgument;
             }
-            // if (shareName.Contains('/'))
-            if (shareName.Contains("/"))
+
+            Nfs3Procedure.Status status = TryGetRootSharedDirectory(rootShareName, out rootShareDirectory);
+            if (status != Nfs3Procedure.Status.Ok) { shareDirectoryObject = null; return status; }
+            if (rootShareDirectory == null) { shareDirectoryObject = null; return Nfs3Procedure.Status.ErrorNoSuchFileOrDirectory; }
+
+            if (subPath == null)
             {
-                shareObject = null;
+                shareDirectoryObject = rootShareDirectory.shareObject;
+            }
+            else
+            {
+                String localPathAndName = NfsPath.LocalCombine(rootShareDirectory.localShareDirectory, subPath);
+
+                status = TryGetSharedObject(localPathAndName, subPath, out shareDirectoryObject);
+                if (status != Nfs3Procedure.Status.Ok) return status;
+                if (shareDirectoryObject == null) return Nfs3Procedure.Status.ErrorNoSuchFileOrDirectory;
+
+                shareDirectoryObject.RefreshFileAttributes(permissions);
+            }
+            return Nfs3Procedure.Status.Ok;
+        }
+        
+        //Nfs3Procedure.Status TryGetShareObject(String sharePathAndName, out RootShareDirectory rootShareDirectory, out ShareObject share)
+
+
+
+
+        Nfs3Procedure.Status TryGetRootSharedDirectory(String rootShareName, out RootShareDirectory rootShareDirectory)
+        {
+            if (rootShareName[0] == '/')
+            {
+                rootShareName = rootShareName.Substring(1);
+            }
+            if (rootShareName.Contains("/"))
+            {
+                rootShareDirectory = null;
                 return Nfs3Procedure.Status.ErrorNoSuchFileOrDirectory;
             }
 
-            for (int i = 0; i < shareDirectories.Length; i++)
+            for (int i = 0; i < rootShareDirectories.Length; i++)
             {
-                ShareDirectory shareDirectory = shareDirectories[i];
-                if (shareName.Equals(shareDirectory.shareName))
+                rootShareDirectory = rootShareDirectories[i];
+                if (rootShareName.Equals(rootShareDirectory.shareName))
                 {
-                    shareObject = shareDirectory.shareObject;
-                    Nfs3Procedure.Status status = shareObject.CheckStatus();
+                    Nfs3Procedure.Status status = rootShareDirectory.shareObject.CheckStatus();
                     if(status != Nfs3Procedure.Status.Ok)
-                        throw new InvalidOperationException(String.Format("The root share directory [{0}] has become invalid (status={1})", shareDirectory, status));
+                        throw new InvalidOperationException(String.Format("The root share directory [{0}] has become invalid (status={1})", rootShareDirectory, status));
                     return Nfs3Procedure.Status.Ok;
                 }
             }
 
-            shareObject = null;
+            rootShareDirectory = null;
             return Nfs3Procedure.Status.ErrorNoSuchFileOrDirectory;
+        }
+
+        public Nfs3Procedure.Status TryGetRootSharedDirectory(Byte[] handle, out RootShareDirectory rootShareDirectory)
+        {
+            ShareObject shareObject;
+            Nfs3Procedure.Status status = TryGetSharedObject(handle, out shareObject);
+            if (status != Nfs3Procedure.Status.Ok) { rootShareDirectory = null; return status; }
+
+            for (int i = 0; i < rootShareDirectories.Length; i++)
+            {
+                rootShareDirectory = rootShareDirectories[i];
+                if (shareObject == rootShareDirectory.shareObject || shareObject.localPathAndName.StartsWith(rootShareDirectory.localShareDirectory))
+                {
+                    return Nfs3Procedure.Status.Ok;
+                }
+            }
+            rootShareDirectory = null;
+            return Nfs3Procedure.Status.ErrorNoSuchFileOrDirectory;
+        }
+
+
+        public Nfs3Procedure.Status TryGetSharedObject(String localPathAndName, out ShareObject shareObject)
+        {
+            return TryGetSharedObject(localPathAndName, NfsPath.LeafName(localPathAndName), out shareObject);
         }
         public Nfs3Procedure.Status TryGetSharedObject(String localPathAndName, String shareName, out ShareObject shareObject)
         {
@@ -334,7 +397,7 @@ namespace More.Net
                 }
             }
         }
-        public ShareObject TryGetSharedObject(Nfs3Procedure.FileType expectedFileType, String parentDirectory, String localPathAndName)
+        public ShareObject TryGetSharedObject(Nfs3Procedure.FileType expectedFileType, String localParentDirectory, String localPathAndName)
         {
             switch (expectedFileType)
             {
@@ -355,7 +418,7 @@ namespace More.Net
                 DisposeShareObject(shareObject);
             }
 
-            String shareName = NfsPath.LocalPathDiff(parentDirectory, localPathAndName);
+            String shareName = NfsPath.LocalPathDiff(localParentDirectory, localPathAndName);
             if (!NfsPath.IsValidUnixFileName(shareName))
                 throw new InvalidOperationException(String.Format("The file you supplied '{0}' is not a valid unix file name", shareName));
 

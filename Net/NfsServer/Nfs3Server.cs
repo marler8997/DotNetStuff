@@ -40,9 +40,9 @@ namespace More.Net
             {
                 this.server = server;
             }
-            public String[] ShareNames()
+            public String[] RootShareNames()
             {
-                ShareDirectory[] shareDirectories = server.sharedFileSystem.shareDirectories;
+                RootShareDirectory[] shareDirectories = server.sharedFileSystem.rootShareDirectories;
                 String[] shareNames = new String[shareDirectories.Length];
                 for (int i = 0; i < shareDirectories.Length; i++)
                 {
@@ -54,21 +54,35 @@ namespace More.Net
             {
                 return server.sharedFileSystem.CreateArrayOfShareObjects();
             }
-            public FSInfoReply FSInfoByName(String shareName)
+            public FileSystemStatusReply FSStatusByName(String directory)
             {
-                ShareObject shareObject;
-                Status status = server.sharedFileSystem.TryGetSharedDirectory(shareName, out shareObject);
+                RootShareDirectory rootShareDirectory;
+                ShareObject shareDirectoryObject;
+
+                Status status = server.sharedFileSystem.TryGetDirectory(directory, out rootShareDirectory, out shareDirectoryObject);
+                if (status != Status.Ok) return new FileSystemStatusReply(status, OptionalFileAttributes.None);
+
+                return server.FSSTAT(new FileSystemStatusCall(shareDirectoryObject.fileHandleBytes));
+            }
+            public FSInfoReply FSInfoByName(String directory)
+            {
+                RootShareDirectory rootShareDirectory;
+                ShareObject shareDirectoryObject;
+
+                Status status = server.sharedFileSystem.TryGetDirectory(directory, out rootShareDirectory, out shareDirectoryObject);
                 if (status != Status.Ok) return new FSInfoReply(status, OptionalFileAttributes.None);
 
-                return server.FSINFO(new FSInfoCall(shareObject.fileHandleBytes));
+                return server.FSINFO(new FSInfoCall(shareDirectoryObject.fileHandleBytes));
             }
-            public NonRecursiveReadDirPlusReply ReadDirPlus(String directoryName, ulong cookie, uint maxDirectoryInfoBytes)
+            public NonRecursiveReadDirPlusReply ReadDirPlus(String directory, ulong cookie, uint maxDirectoryInfoBytes)
             {
-                ShareObject shareObject;
-                Status status = server.sharedFileSystem.TryGetSharedDirectory(directoryName, out shareObject);
+                RootShareDirectory rootShareDirectory;
+                ShareObject shareDirectoryObject;
+
+                Status status = server.sharedFileSystem.TryGetDirectory(directory, out rootShareDirectory, out shareDirectoryObject);
                 if (status != Status.Ok) return new NonRecursiveReadDirPlusReply(new ReadDirPlusReply(status, OptionalFileAttributes.None));
 
-                return new NonRecursiveReadDirPlusReply(server.READDIRPLUS(new ReadDirPlusCall(shareObject.fileHandleBytes, cookie, null, maxDirectoryInfoBytes, UInt32.MaxValue)));
+                return new NonRecursiveReadDirPlusReply(server.READDIRPLUS(new ReadDirPlusCall(shareDirectoryObject.fileHandleBytes, cookie, null, maxDirectoryInfoBytes, UInt32.MaxValue)));
             }
         }
 
@@ -638,7 +652,7 @@ namespace More.Net
                     directoryShareObject.optionalFileAttributes,
                     directoryShareObject.optionalFileHandleClass);
                 lastEntry = firstEntry;
-                directoryInfoByteCount += 16 + (UInt32)directoryShareObject.shareName.Length;
+                directoryInfoByteCount += 16 + (UInt32)directoryShareObject.shareLeafName.Length;
             }
 
             FileType currentFileType = FileType.Directory;
@@ -666,7 +680,7 @@ namespace More.Net
                     }
                     else
                     {
-                        UInt32 entryInfoByteCount = 16 + (UInt32)shareObject.shareName.Length;
+                        UInt32 entryInfoByteCount = 16 + (UInt32)shareObject.shareLeafName.Length;
                         if (directoryInfoByteCount + entryInfoByteCount > readDirPlusCall.maxDirectoryBytes)
                         {
                             return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, firstEntry, false);
@@ -677,7 +691,7 @@ namespace More.Net
                         shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
                         EntryPlus newEntry = new EntryPlus(
                             shareObject.fileID,
-                            shareObject.shareName,
+                            shareObject.shareLeafName,
                             shareObject.cookie,
                             shareObject.optionalFileAttributes,//OptionalFileAttributes.None,
                             shareObject.optionalFileHandleClass);
@@ -713,30 +727,26 @@ namespace More.Net
 
 
 
-        public FileSystemStatusReply FSSTAT(FileSystemStatusCall fileSystemInfoCall)
+        public FileSystemStatusReply FSSTAT(FileSystemStatusCall fsStatCall)
         {
-            ShareDirectory shareDirectory;
-            Nfs3Procedure.Status status = sharedFileSystem.TryGetShareDirectory(fileSystemInfoCall.fileSystemRoot, out shareDirectory);
+            RootShareDirectory rootShareDirectory;
+            Nfs3Procedure.Status status = sharedFileSystem.TryGetRootSharedDirectory(fsStatCall.fileSystemRoot, out rootShareDirectory);
             if (status != Nfs3Procedure.Status.Ok) return new FileSystemStatusReply(status, OptionalFileAttributes.None);
 
-            DriveInfo driveInfo = shareDirectory.driveInfo;
-
-            return MakeFileSystemStatusReply(shareDirectory.driveInfo, OptionalFileAttributes.None);
+            return MakeFileSystemStatusReply(rootShareDirectory.driveInfo, OptionalFileAttributes.None);
         }
         public FSInfoReply FSINFO(FSInfoCall fsInfoCall)
         {
-            ShareDirectory shareDirectory;
-            Nfs3Procedure.Status status = sharedFileSystem.TryGetShareDirectory(fsInfoCall.handle, out shareDirectory);
+            RootShareDirectory rootShareDirectory;
+            Nfs3Procedure.Status status = sharedFileSystem.TryGetRootSharedDirectory(fsInfoCall.handle, out rootShareDirectory);
             if (status != Nfs3Procedure.Status.Ok) return new FSInfoReply(status, OptionalFileAttributes.None);
-
-            DriveInfo driveInfo = shareDirectory.driveInfo;
 
             return new FSInfoReply(
                 OptionalFileAttributes.None,
                 (UInt32)fileContents.bytes.Length, (UInt32)fileContents.bytes.Length, suggestedReadSizeMultiple,
                 0x10000, 0x10000, 0x1000,
                 0x1000,
-                (UInt64)driveInfo.AvailableFreeSpace,
+                (UInt64)rootShareDirectory.driveInfo.AvailableFreeSpace,
                 1,
                 0,
                 FileProperties.Fsf3Link | FileProperties.Fsf3SymLink | FileProperties.Fsf3Homogeneous | FileProperties.Fsf3CanSetTime

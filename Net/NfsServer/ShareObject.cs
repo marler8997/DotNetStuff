@@ -12,7 +12,7 @@ namespace More.Net
         public readonly UInt64 cookie;
 
         public String localPathAndName;
-        public String shareName;
+        public String shareLeafName;
         private FileInfo fileInfo;
 
         public readonly Byte[] fileHandleBytes;
@@ -21,7 +21,7 @@ namespace More.Net
         public readonly Nfs3Procedure.FileAttributes fileAttributes;
         public readonly Nfs3Procedure.OptionalFileAttributes optionalFileAttributes;
 
-        public ShareObject(Nfs3Procedure.FileType fileType, UInt64 fileID, Byte[] fileHandleBytes, String localPathAndName, String shareName)
+        public ShareObject(Nfs3Procedure.FileType fileType, UInt64 fileID, Byte[] fileHandleBytes, String localPathAndName, String shareLeafName)
         {
             this.fileType = fileType;
             this.fileID = fileID;
@@ -31,11 +31,9 @@ namespace More.Net
             this.optionalFileHandleClass = new Nfs3Procedure.OptionalFileHandle(fileHandleBytes);
 
             this.localPathAndName = localPathAndName;
-            this.shareName = shareName;
+            SetShareLeafName(shareLeafName);
             this.fileInfo = null;
 
-            if (!NfsPath.IsValidUnixFileName(shareName))
-                throw new InvalidOperationException(String.Format("The file you supplied '{0}' is not a valid unix file name", shareName));
 
             this.fileAttributes = new Nfs3Procedure.FileAttributes();
             this.fileAttributes.fileType = fileType;
@@ -61,11 +59,24 @@ namespace More.Net
         public void UpdatePathAndName(String localPathAndName, String shareName)
         {
             this.localPathAndName = localPathAndName;
-            this.shareName = shareName;
+            SetShareLeafName(shareLeafName);
             this.fileInfo = null;
-            if (!NfsPath.IsValidUnixFileName(shareName))
-                throw new InvalidOperationException(String.Format("The file you supplied '{0}' is not a valid unix file name", shareName));
         }
+        void SetShareLeafName(String shareLeafName)
+        {
+            if (NfsPath.IsValidUnixFileName(shareLeafName))
+            {
+                this.shareLeafName = shareLeafName;
+            }
+            else
+            {
+                String newShareLeafName = NfsPath.LeafName(shareLeafName);
+                if (!NfsPath.IsValidUnixFileName(newShareLeafName))
+                    throw new InvalidOperationException(String.Format("The file you supplied '{0}' is not a valid unix file name", shareLeafName));
+                this.shareLeafName = newShareLeafName;
+            }
+        }
+
         public Nfs3Procedure.Status CheckStatus()
         {
             switch (fileType)

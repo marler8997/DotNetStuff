@@ -1,17 +1,17 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{4DF1C6D9-6CEF-49AF-9FFF-5C2645897E79}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{B6966843-3843-4C0D-9DA2-1318FA4782EC}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Marler.NetworkTools</RootNamespace>
-    <AssemblyName>ProxyServer</AssemblyName>
+    <RootNamespace>Nfs.Test</RootNamespace>
+    <AssemblyName>Nfs.Test</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -31,28 +31,23 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ProxyHandler.cs" />
-    <Compile Include="ProxyServer.cs" />
-    <Compile Include="ProxyServerProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="NfsPathTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\More\More.csproj">
-      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
-      <Name>More</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\More.Net.csproj">
-      <Project>{DA99C4F0-3EF4-4D75-8A28-A8789B19B96F}</Project>
-      <Name>More.Net</Name>
+    <ProjectReference Include="..\NfsLibrary\NfsLibrary.csproj">
+      <Project>{F4EBCD21-D4EA-4AE0-99F8-AF5649015B88}</Project>
+      <Name>NfsLibrary</Name>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

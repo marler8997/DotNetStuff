@@ -147,9 +147,8 @@ namespace More.Net
                     Byte[] ipv6Addr = new Byte[16];
                     Array.Copy(buffer, 4, ipv6Addr, 0, 16);
                     port = (buffer[20] << 8 | buffer[21]);
-                    return new IPEndPoint(new IPAddress(ipv6Addr), port);
 
-                    break;
+                    return new IPEndPoint(new IPAddress(ipv6Addr), port);
                 default:
                     throw new Proxy5Exception(String.Format("Expected Address type to be {0} ({1}),{2} ({3}), or {4} ({5}), but got {6}",
                         SocksAddressType.IPv4, (Int32)SocksAddressType.IPv4,

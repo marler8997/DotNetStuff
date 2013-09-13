@@ -31,20 +31,30 @@ namespace More.Net
             NamedMapping[] namedMappings = new NamedMapping[] {
                 new NamedMapping(PortMap.Name, new Mapping(PortMap.ProgramNumber, PortMap2.ProgramVersion, PortMap.IPProtocolTcp, (UInt32)portmapPort)),
                 new NamedMapping(PortMap.Name, new Mapping(PortMap.ProgramNumber, PortMap2.ProgramVersion, PortMap.IPProtocolUdp, (UInt32)portmapPort)),
+
                 new NamedMapping(Mount.Name  , new Mapping(Mount.ProgramNumber  , Mount1.ProgramVersion  , PortMap.IPProtocolTcp, (UInt32)mountPort)),
+                new NamedMapping(Mount.Name  , new Mapping(Mount.ProgramNumber  , Mount1.ProgramVersion  , PortMap.IPProtocolUdp, (UInt32)mountPort)),
+
                 new NamedMapping(Mount.Name  , new Mapping(Mount.ProgramNumber  , Mount3.ProgramVersion  , PortMap.IPProtocolTcp, (UInt32)mountPort)),
+                new NamedMapping(Mount.Name  , new Mapping(Mount.ProgramNumber  , Mount3.ProgramVersion  , PortMap.IPProtocolUdp, (UInt32)mountPort)),
+
                 new NamedMapping(Nfs.Name    , new Mapping(Nfs.ProgramNumber    , Nfs3.ProgramVersion    , PortMap.IPProtocolTcp, (UInt32)nfsPort)),
+                new NamedMapping(Nfs.Name    , new Mapping(Nfs.ProgramNumber    , Nfs3.ProgramVersion    , PortMap.IPProtocolUdp, (UInt32)nfsPort)),
             };
 
-            //
-            // Start Servers
-            //
             PortMap2Server portMapServer = new PortMap2Server(this, namedMappings, sendBuffer);
             Mount1And3Server mountServer = new Mount1And3Server(this, sharedFileSystem, sendBuffer);
             Nfs3Server nfsServer = new Nfs3Server(this, sharedFileSystem, sendBuffer, readSizeMax, suggestedReadSizeMultiple);
 
+
+            //
+            // Create Endpoints
+            //
             if (listenIPAddress == null) listenIPAddress = IPAddress.Any;
             IPEndPoint portMapEndPoint = new IPEndPoint(listenIPAddress, portmapPort);
+            IPEndPoint mountEndPoint = new IPEndPoint(listenIPAddress, mountPort);
+            IPEndPoint nfsEndPoint = new IPEndPoint(listenIPAddress, nfsPort);
+
 
             selectServer = new MultipleListenersSelectServer();
             selectServer.PrepareToRun();
@@ -52,9 +62,9 @@ namespace More.Net
             this.serverStartTimeStopwatchTicks = Stopwatch.GetTimestamp();
 
             List<TcpSelectListener> tcpListeners = new List<TcpSelectListener>();
-            tcpListeners.Add(new TcpSelectListener(portMapEndPoint                         , backlog, portMapServer));
-            tcpListeners.Add(new TcpSelectListener(new IPEndPoint(listenIPAddress, mountPort), backlog, mountServer));
-            tcpListeners.Add(new TcpSelectListener(new IPEndPoint(listenIPAddress, nfsPort)  , backlog, nfsServer));
+            tcpListeners.Add(new TcpSelectListener(portMapEndPoint, backlog, portMapServer));
+            tcpListeners.Add(new TcpSelectListener(mountEndPoint  , backlog, mountServer));
+            tcpListeners.Add(new TcpSelectListener(nfsEndPoint    , backlog, nfsServer));
 
             if (debugServerEndPoint != null)
             {
@@ -77,7 +87,9 @@ namespace More.Net
 
             selectServer.Run(selectServerEventLog, new byte[1024], tcpListeners.ToArray(),
                 new UdpSelectListener[]{
-                    new UdpSelectListener(portMapEndPoint, portMapServer)
+                    new UdpSelectListener(portMapEndPoint, portMapServer),
+                    new UdpSelectListener(mountEndPoint  , mountServer),
+                    new UdpSelectListener(nfsEndPoint    , nfsServer),
                 }
             );
         }

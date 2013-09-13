@@ -128,13 +128,13 @@ namespace More.Net
             /*Nfs3Procedure.ModeFlags.SaveSwappedText | Nfs3Procedure.ModeFlags.SetUidOnExec | Nfs3Procedure.ModeFlags.SetGidOnExec;*/
             IPermissions permissions = new ConstantPermissions(defaultDirectoryPermissions, defaultFilePermissions);
 
-            ShareDirectory[] shareDirectories = new ShareDirectory[] {
-                new ShareDirectory(shareDirectory, shareName),
+            RootShareDirectory[] rootShareDirectories = new RootShareDirectory[] {
+                new RootShareDirectory(shareDirectory, shareName),
             };
 
             IFileIDsAndHandlesDictionary fileIDDictionary = new FreeStackFileIDDictionary(512, 512, 4096, 1024);
 
-            SharedFileSystem sharedFileSystem = new SharedFileSystem(fileIDDictionary, permissions, shareDirectories);
+            SharedFileSystem sharedFileSystem = new SharedFileSystem(fileIDDictionary, permissions, rootShareDirectories);
 
             try
             {
