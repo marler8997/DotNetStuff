@@ -3,17 +3,17 @@ using System.Collections.Generic;
 
 namespace More
 {
-    public interface Buffer<T>
+    public interface ISimpleList<T>
     {
         UInt32 Count { get; }
         T this[UInt32 index] { get; }
         void Add(T value);
     }
-    public class FixedArrayBuffer<T> : Buffer<T>
+    public class FixedSimpleList<T> : ISimpleList<T>
     {
         readonly T[] array;
         UInt32 nextIndex;
-        public FixedArrayBuffer(UInt32 fixedLength)
+        public FixedSimpleList(UInt32 fixedLength)
         {
             this.array = new T[fixedLength];
         }
@@ -30,10 +30,10 @@ namespace More
             array[nextIndex++] = value;
         }
     }
-    public class ListBuffer<T> : Buffer<T>
+    public class DynamicSimpleList<T> : ISimpleList<T>
     {
         readonly List<T> list;
-        public ListBuffer()
+        public DynamicSimpleList()
         {
             this.list = new List<T>();
         }

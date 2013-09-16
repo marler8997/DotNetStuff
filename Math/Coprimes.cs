@@ -42,7 +42,7 @@ namespace More
         }
 
 
-        public static UInt32[] BruteForceCreateCn(UInt32 n, UInt32 count, Buffer<UInt32> GnBuffer)
+        public static UInt32[] BruteForceCreateCn(UInt32 n, UInt32 count, ISimpleList<UInt32> GnBuffer)
         {
             if (n == 0) throw new ArgumentOutOfRangeException("n", n, "n cannot be 0");
 
@@ -79,6 +79,36 @@ namespace More
         }
 
 
+        public static void BruteForceCreateCnWithLimit(UInt32 n, UInt32 limit, ISimpleList<UInt32> Cn, ISimpleList<UInt32> GnBuffer)
+        {
+            if (n == 0) throw new ArgumentOutOfRangeException("n", n, "n cannot be 0");
+
+            Cn.Add(1);
+
+            for (UInt32 potentialCoprime = 2; potentialCoprime <= limit; potentialCoprime++)
+            {
+                Boolean isCoprime = true;
+                for (UInt32 primeIndex = 0; primeIndex < n; primeIndex++)
+                {
+                    UInt32 prime = PrimeTable.Values[primeIndex];
+                    if ((potentialCoprime % prime) == 0)
+                    {
+                        isCoprime = false;
+
+                        if (primeIndex == n - 1)
+                        {
+                            GnBuffer.Add(potentialCoprime);
+                        }
+                        break;
+                    }
+                }
+
+                if (isCoprime)
+                {
+                    Cn.Add(potentialCoprime);
+                }
+            }
+        }
 
 
         //
