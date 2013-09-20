@@ -18,7 +18,7 @@ namespace More.Net
             this.urlTranslator = urlTranslator;
             this.timeout = timeout;
         }
-        public void HandleResource(HttpRequest request, HttpResponse response)
+        public void HandleResource(ParsedHttpRequest request, HttpResponse response)
         {
             StringWriter stdout = new StringWriter();
             StringWriter stderr = new StringWriter();

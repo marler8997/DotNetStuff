@@ -36,6 +36,9 @@ namespace More.Pdl
         // returns definition key
         public void AddEnumOrFlagsDefinition(EnumOrFlagsDefinition enumOrFlagsDefinition)
         {
+            if(enumOrFlagsDefinitionMap.ContainsKey(enumOrFlagsDefinition.globalReferenceNameLowerInvariant))
+                throw new InvalidOperationException(String.Format("Found enum type key '{0}' twice", enumOrFlagsDefinition.globalReferenceNameLowerInvariant));
+
             enumOrFlagsDefinitionMap.Add(enumOrFlagsDefinition.globalReferenceNameLowerInvariant, enumOrFlagsDefinition);
             if (enumOrFlagsDefinition.isFlagsDefinition)
             {

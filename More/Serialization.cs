@@ -64,6 +64,27 @@ namespace More
         void DataString(T instance, StringBuilder builder);
         void DataSmallString(T instance, StringBuilder builder);
     }
+    public class VoidInstanceSerializer : IInstanceSerializer<Object>
+    {
+        static VoidInstanceSerializer instance;
+        public static VoidInstanceSerializer Instance
+        {
+            get
+            {
+                if (instance == null) instance = new VoidInstanceSerializer();
+                return instance;
+            }
+        }
+        private VoidInstanceSerializer(){}
+        public UInt32 SerializationLength(Object instance)
+        { return 0; }
+        public UInt32 Serialize(byte[] bytes, uint offset, Object instance)
+        { return offset; }
+        public UInt32 Deserialize(byte[] bytes, uint offset, uint offsetLimit, out Object instance)
+        { instance = null;  return offset; }
+        public void DataString(Object instance, StringBuilder builder) { }
+        public void DataSmallString(Object instance, StringBuilder builder) { }
+    }
     public abstract class FixedLengthInstanceSerializer<T> : IInstanceSerializer<T>
     {
         public readonly UInt32 fixedSerializationLength;
@@ -131,7 +152,6 @@ namespace More
         public void DataString(StringBuilder builder)      { serializer.DataString(instance, builder); }
         public void DataSmallString(StringBuilder builder) { serializer.DataSmallString(instance, builder); }
     }
-
     public class FixedLengthInstanceSerializerAdapter<T> : ISerializer
     {
         readonly FixedLengthInstanceSerializer<T> serializer;
@@ -156,6 +176,40 @@ namespace More
         public void DataString(StringBuilder builder)      { serializer.DataString(instance, builder); }
         public void DataSmallString(StringBuilder builder) { serializer.DataSmallString(instance, builder); }
     }
+    public class FixedLengthInstanceSerializerToReflectorAdapter<T> : IReflector
+    {
+        readonly FixedLengthInstanceSerializer<T> serializer;
+        public FixedLengthInstanceSerializerToReflectorAdapter(FixedLengthInstanceSerializer<T> serializer)
+        {
+            this.serializer = serializer;
+        }
+        public UInt32 FixedSerializationLength() { return serializer.FixedSerializationLength(); }
+        public UInt32 SerializationLength(Object instance)
+        {
+            return serializer.SerializationLength((T)instance);
+        }
+        public UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
+        {
+            return serializer.Serialize(array, offset, (T)instance);
+        }
+        public UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
+        {
+            T output;
+            offset = serializer.Deserialize(array, offset, offsetLimit, out output);
+            instance = output;
+            return offset;
+        }
+        public void DataString(Object instance, StringBuilder builder)
+        {
+            serializer.DataString((T)instance, builder);
+        }
+        public void DataSmallString(Object instance, StringBuilder builder)
+        {
+            serializer.DataSmallString((T)instance, builder);
+        }
+    }
+
+
 
 
     
@@ -207,18 +261,19 @@ namespace More
     }
     */
 
-    public static class ISerializerString
+    public static class DataStringBuilder
     {
-        public static String DataString(ISerializer reflector)
+        /*
+        public static String DataString(ISerializer serializer)
         {
             StringBuilder builder = new StringBuilder();
-            reflector.DataString(builder);
+            serializer.DataString(builder);
             return builder.ToString();
         }
-        public static String DataSmallString(ISerializer reflector)
+        public static String DataSmallString(ISerializer serializer)
         {
             StringBuilder builder = new StringBuilder();
-            reflector.DataSmallString(builder);
+            serializer.DataSmallString(builder);
             return builder.ToString();
         }
         public static String DataString(IReflector reflector, Object instance)
@@ -233,20 +288,67 @@ namespace More
             reflector.DataSmallString(instance, builder);
             return builder.ToString();
         }
-        /*
-        public static String DataString<T>(IGenericReflector<T> reflector, T instance)
+        public static String DataString<T>(IInstanceSerializer<T> instanceSerializer, T instance)
         {
             StringBuilder builder = new StringBuilder();
-            reflector.DataString(instance, builder);
+            instanceSerializer.DataString(instance, builder);
             return builder.ToString();
         }
-        public static String DataSmallString<T>(IGenericReflector<T> reflector, T instance)
+        public static String DataSmallString<T>(IInstanceSerializer<T> instanceSerializer, T instance)
         {
             StringBuilder builder = new StringBuilder();
-            reflector.DataSmallString(instance, builder);
+            instanceSerializer.DataSmallString(instance, builder);
             return builder.ToString();
         }
         */
+        public static String DataString(this ISerializer serializer, StringBuilder builder)
+        {
+            builder.Length = 0;
+            serializer.DataString(builder);
+            String dataString = builder.ToString();
+            builder.Length = 0;
+            return dataString;
+        }
+        public static String DataSmallString(this ISerializer serializer, StringBuilder builder)
+        {
+            builder.Length = 0;
+            serializer.DataSmallString(builder);
+            String dataString = builder.ToString();
+            builder.Length = 0;
+            return dataString;
+        }
+        public static String DataString(this IReflector reflector, Object instance, StringBuilder builder)
+        {
+            builder.Length = 0;
+            reflector.DataString(instance, builder);
+            String dataString = builder.ToString();
+            builder.Length = 0;
+            return dataString;
+        }
+        public static String DataSmallString(this IReflector reflector, Object instance, StringBuilder builder)
+        {
+            builder.Length = 0;
+            reflector.DataSmallString(instance, builder);
+            String dataString = builder.ToString();
+            builder.Length = 0;
+            return dataString;
+        }
+        public static String DataString<T>(this IInstanceSerializer<T> instanceSerializer, T instance, StringBuilder builder)
+        {
+            builder.Length = 0;
+            instanceSerializer.DataString(instance, builder);
+            String dataString = builder.ToString();
+            builder.Length = 0;
+            return dataString;
+        }
+        public static String DataSmallString<T>(this IInstanceSerializer<T> instanceSerializer, T instance, StringBuilder builder)
+        {
+            builder.Length = 0;
+            instanceSerializer.DataSmallString(instance, builder);
+            String dataString = builder.ToString();
+            builder.Length = 0;
+            return dataString;
+        }
     }
 
     public class ReflectorToSerializerAdapater : ISerializer
@@ -280,7 +382,33 @@ namespace More
         public void DataString(StringBuilder builder)      { reflector.DataString(instance, builder); }
         public void DataSmallString(StringBuilder builder) { reflector.DataSmallString(instance, builder); }
     }
+    public class ReflectorToInstanceSerializerAdapater<T> : IInstanceSerializer<T>
+    {
+        public delegate T Constructor();
 
+        protected readonly IReflector reflector;
+        readonly Constructor constructor;
+        public ReflectorToInstanceSerializerAdapater(IReflector reflector, Constructor constructor)
+        {
+            this.reflector = reflector;
+            this.constructor = constructor;
+        }
+        public uint SerializationLength(T instance)
+        {
+            return reflector.SerializationLength(instance);
+        }
+        public uint Serialize(byte[] bytes, uint offset, T instance)
+        {
+            return reflector.Serialize(instance, bytes, offset);
+        }
+        public uint Deserialize(byte[] bytes, uint offset, uint offsetLimit, out T instance)
+        {
+            instance = constructor();
+            return reflector.Deserialize(instance, bytes, offset, offsetLimit);
+        }
+        public void DataString(T instance, StringBuilder builder) { reflector.DataString(instance, builder); }
+        public void DataSmallString(T instance, StringBuilder builder) { reflector.DataSmallString(instance, builder); }
+    }
     public class Reflectors : IReflector
     {
         public readonly IReflector[] reflectors;
@@ -377,6 +505,95 @@ namespace More
     }
 
 
+    /*
+    public class ListReflector<T>
+    {
+        public delegate UInt32 Length();
+        public delegate Array GetArray();
+
+        readonly Length elementCountMethod;
+        readonly IReflector[] elementReflectors;
+
+        UInt32 fixedElementSerializationLength;
+
+        public ListReflector(Length elementCountMethod, params IReflector[] elementReflectors)
+        {
+            if (elementCountMethod == null) throw new ArgumentNullException("elementCountMethod");
+            if (elementReflectors == null) throw new ArgumentNullException("elementReflectors");
+
+            this.elementCountMethod = elementCountMethod;
+            this.elementReflectors = elementReflectors;
+
+            this.fixedElementSerializationLength = 0;
+            for (int i = 0; i < elementReflectors.Length; i++)
+            {
+                UInt32 fieldFixedSerializationLength = elementReflectors[i].FixedSerializationLength();
+                if (fieldFixedSerializationLength == UInt32.MaxValue)
+                {
+                    this.fixedElementSerializationLength = UInt32.MaxValue; // length is not fixed
+                    return;
+                }
+                this.fixedElementSerializationLength += fieldFixedSerializationLength;
+            }
+
+        }
+        public UInt32 FixedSerializationLength()
+        {
+            return UInt32.MaxValue;
+        }
+        public UInt32 SerializationLength(Object instance)
+        {
+            UInt32 elementCount = elementCountMethod();
+            if(fixedElementSerializationLength != UInt32.MaxValue)
+            {
+                return elementCount * fixedElementSerializationLength;
+            }
+
+
+
+
+
+
+
+            UInt32 length = 0;
+            for(int i = 0; i < reflectors.Length; i++)
+            {
+                length += reflectors[i].SerializationLength(instance);
+            }
+            return length;
+        }
+        public UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
+        {
+            for(int i = 0; i < reflectors.Length; i++)
+            {
+                offset = reflectors[i].Serialize(instance, array, offset);
+            }
+            return offset;
+        }
+        public UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
+        {
+            for(int i = 0; i < reflectors.Length; i++)
+            {
+                offset = reflectors[i].Deserialize(instance, array, offset, offsetLimit);
+            }
+            return offset;
+        }
+        public void DataString(Object instance, StringBuilder builder)
+        {
+            for (int i = 0; i < reflectors.Length; i++)
+            {
+                reflectors[i].DataString(instance, builder);
+            }
+        }
+        public void DataSmallString(Object instance, StringBuilder builder)
+        {
+            for (int i = 0; i < reflectors.Length; i++)
+            {
+                reflectors[i].DataSmallString(instance, builder);
+            }
+        }
+    }
+    */
 
     public class VoidSerializer: ISerializer
     {
@@ -439,7 +656,7 @@ namespace More
     }
     public class SubclassSerializer : ISerializer
     {
-        protected readonly IReflector[] reflectors;
+        readonly IReflector[] reflectors;
         protected readonly UInt32 fixedSerializationLength;
 
         public SubclassSerializer(Reflectors reflectors)

@@ -19,6 +19,7 @@ using ArrayCopier = System.Array;
 
 namespace More
 {
+    /*
     public static class GenericExtensions
     {
         public static void DataString<T>(this T value, StringBuilder builder)
@@ -26,6 +27,7 @@ namespace More
             builder.Append(value.ToString());
         }
     }
+    */
 #if !WindowsCE
     public static class GCExtensions
     {
@@ -133,6 +135,64 @@ namespace More
             }
 
             return this.array;
+        }
+    }
+    public class GenericArrayBuilder<T>
+    {
+        const Int32 InitialArraySize = 16;
+
+        T[] array;
+        Int32 count;
+
+        public GenericArrayBuilder()
+            : this(InitialArraySize)
+        {
+        }
+        public GenericArrayBuilder(Int32 initialArraySize)
+        {
+            this.array = new T[initialArraySize];
+            this.count = 0;
+        }
+        public void Add(T obj)
+        {
+            if (this.count >= array.Length)
+            {
+                T[] newArray = new T[this.array.Length * 2];
+                Array.Copy(this.array, newArray, this.count);
+                this.array = newArray;
+            }
+            this.array[this.count++] = obj;
+        }
+        public T[] Build()
+        {
+            if (array.Length != count)
+            {
+                T[] newArray = new T[this.count];
+                Array.Copy(this.array, newArray, this.count);
+                this.array = newArray;
+            }
+            return this.array;
+        }
+    }
+
+    public static class CharExtensions
+    {
+        /*
+        static Char ToLower(this Char c)
+        {
+            return (c >= 'A' && c <= 'Z') ? (Char)(c + 'a' - 'A') : c;
+        }
+        static Char ToUpper(this Char c)
+        {
+            return (c >= 'a' && c <= 'z') ? (Char)(c + 'A' - 'a') : c;
+        }
+        */
+        public static Int32 HexValue(this Char c)
+        {
+            if (c >= '0' && c <= '9') return (c - '0');
+            if (c >= 'A' && c <= 'F') return (c - 'A') + 10;
+            if (c >= 'a' && c <= 'f') return (c - 'a') + 10;
+            throw new FormatException(String.Format("Expected 0-9, A-F, or a-f but got '{0}' (charcode={1})", c, (UInt32)c));
         }
     }
     public static class StringExtensions
@@ -360,6 +420,49 @@ namespace More
                 offset++;
             }
         }
+
+        public static String UnderscoreToCamelCase(this String underscoreString)
+        {
+            if (String.IsNullOrEmpty(underscoreString)) return underscoreString;
+
+            Char[] buffer = new Char[underscoreString.Length];
+            Int32 bufferIndex = 0;
+
+            Int32 offset = 0;
+
+            while (true)
+            {
+                if (underscoreString[offset] != '_') break;
+                offset++;
+                if (offset >= underscoreString.Length) return "";
+            }
+
+            buffer[bufferIndex++] = Char.ToUpper(underscoreString[offset]);
+            offset++;
+
+            while (offset < underscoreString.Length)
+            {
+                Char c = underscoreString[offset];
+                if (c != '_')
+                {
+                    buffer[bufferIndex++] = Char.ToLower(c);
+                }
+                else
+                {
+                    while (true)
+                    {
+                        offset++;
+                        if (offset >= underscoreString.Length) goto DONE;
+                        c = underscoreString[offset];
+                        if (c != '_') break;
+                    }
+                    buffer[bufferIndex++] = Char.ToUpper(c);
+                }
+                offset++;
+            }
+            DONE:
+            return new String(buffer, 0, bufferIndex);
+        }
     }
     public static class Int24
     {
@@ -553,6 +656,21 @@ namespace More
             bytes[offset + 3] = (Byte)value;
         }
         */
+        //
+        // Read 8-byte types
+        //
+        public static UInt64 BigEndianReadUInt64(this Byte[] bytes, UInt32 offset)
+        {
+            return (UInt64)(
+                (bytes[offset    ] << 56) |
+                (bytes[offset    ] << 48) |
+                (bytes[offset    ] << 40) |
+                (bytes[offset    ] << 32) |
+                (bytes[offset    ] << 24) |
+                (bytes[offset + 1] << 16) |
+                (bytes[offset + 2] <<  8) |
+                (bytes[offset + 3]      ) );
+        }
 
         public static Boolean IsInRange(UInt32 value, Byte byteCount)
         {
@@ -688,8 +806,8 @@ namespace More
             while (hexStringOffset < hexStringLimit)
             {
                 bytes[offset++] = (Byte)(
-                    (Sos.HexValue(hexString[hexStringOffset]) << 4) +
-                    Sos.HexValue(hexString[hexStringOffset + 1]));
+                    (hexString[hexStringOffset    ].HexValue() << 4) +
+                     hexString[hexStringOffset + 1].HexValue()       );
                 hexStringOffset += 2;
             }
         }
@@ -827,6 +945,10 @@ namespace More
         public static Int64 StopwatchTicksAsMicroseconds(this Int64 stopwatchTicks)
         {
             return stopwatchTicks * 1000000L / Stopwatch.Frequency;
+        }
+        public static Double StopwatchTicksAsDoubleMicroseconds(this Int64 stopwatchTicks)
+        {
+            return (Double)(stopwatchTicks * 1000000L) / (Double)Stopwatch.Frequency;
         }
         public static Int32 StopwatchTicksAsInt32Milliseconds(this Int64 stopwatchTicks)
         {

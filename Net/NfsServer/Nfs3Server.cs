@@ -74,15 +74,16 @@ namespace More.Net
 
                 return server.FSINFO(new FSInfoCall(shareDirectoryObject.fileHandleBytes));
             }
-            public NonRecursiveReadDirPlusReply ReadDirPlus(String directory, ulong cookie, uint maxDirectoryInfoBytes)
+            public ReadDirPlusReply ReadDirPlus(String directory, ulong cookie, uint maxDirectoryInfoBytes)
             {
                 RootShareDirectory rootShareDirectory;
                 ShareObject shareDirectoryObject;
 
                 Status status = server.sharedFileSystem.TryGetDirectory(directory, out rootShareDirectory, out shareDirectoryObject);
-                if (status != Status.Ok) return new NonRecursiveReadDirPlusReply(new ReadDirPlusReply(status, OptionalFileAttributes.None));
+                if (status != Status.Ok) return new ReadDirPlusReply(status, OptionalFileAttributes.None);
 
-                return new NonRecursiveReadDirPlusReply(server.READDIRPLUS(new ReadDirPlusCall(shareDirectoryObject.fileHandleBytes, cookie, null, maxDirectoryInfoBytes, UInt32.MaxValue)));
+                //return new NonRecursiveReadDirPlusReply(server.READDIRPLUS(new ReadDirPlusCall(shareDirectoryObject.fileHandleBytes, cookie, null, maxDirectoryInfoBytes, UInt32.MaxValue)));
+                return server.READDIRPLUS(new ReadDirPlusCall(shareDirectoryObject.fileHandleBytes, cookie, null, maxDirectoryInfoBytes, UInt32.MaxValue));
             }
         }
 
@@ -164,6 +165,7 @@ namespace More.Net
         {
             String nfsMethodName;
             ISerializer callData;
+            Int32 extraPerfoamanceData = -1;
 
             Int64 beforeCall = Stopwatch.GetTimestamp();
 
@@ -223,6 +225,7 @@ namespace More.Net
 
                     replyParameters = READ(readCall).CreateSerializer();
 
+                    extraPerfoamanceData = (Int32)readCall.count;
                     break;
                 case (UInt32)Nfs3Command.WRITE:
                     nfsMethodName = "WRITE";
@@ -233,6 +236,7 @@ namespace More.Net
 
                     replyParameters = WRITE(writeCall).CreateSerializer();
 
+                    extraPerfoamanceData = (Int32)writeCall.count;
                     break;
                 case (UInt32)Nfs3Command.CREATE:
                     nfsMethodName = "CREATE";
@@ -336,14 +340,35 @@ namespace More.Net
             Int64 callStopwatchTicks = afterCall - beforeCall;
             if (NfsServerLog.rpcCallLogger != null)
             {
-                NfsServerLog.rpcCallLogger.WriteLine("[{0}] {1} {2} => {3} {4:0.00} milliseconds", serviceName, nfsMethodName,
-                    printCall ? ISerializerString.DataSmallString(callData) : "[Call Ommited From Log]",
-                    printReply ? ISerializerString.DataSmallString(replyParameters) : "[Reply Ommited From Log]" ,
+                NfsServerLog.rpcCallLogger.WriteLine(
+#if WindowsCE
+                    JediTimer.JediTimerPrefix() + 
+#endif                    
+                    "[{0}] {1} {2} => {3} {4:0.00} milliseconds", serviceName, nfsMethodName,
+                    printCall ? DataStringBuilder.DataSmallString(callData, NfsServerLog.sharedDataStringBuilder) : "[Call Ommited From Log]",
+                    printReply ? DataStringBuilder.DataSmallString(replyParameters, NfsServerLog.sharedDataStringBuilder) : "[Reply Ommited From Log]",
                     callStopwatchTicks.StopwatchTicksAsDoubleMilliseconds());
             }
-            if (NfsServerLog.storePerformance)
+            else if (NfsServerLog.warningLogger != null)
             {
-                NfsServerLog.StoreNfsCallPerformance((Nfs3Command)call.procedure, (Int32)callStopwatchTicks.StopwatchTicksAsMicroseconds());
+                Double callMilliseconds = callStopwatchTicks.StopwatchTicksAsDoubleMilliseconds();
+                if (callMilliseconds >= 40)
+                {
+                    NfsServerLog.warningLogger.WriteLine(
+#if WindowsCE
+JediTimer.JediTimerPrefix() +
+#endif                    
+                        "[{0}] [Warning] {1} {2} => {3} {4:0.00} milliseconds", serviceName, nfsMethodName,
+                        printCall ? DataStringBuilder.DataSmallString(callData, NfsServerLog.sharedDataStringBuilder) : "[Call Ommited From Log]",
+                        printReply ? DataStringBuilder.DataSmallString(replyParameters, NfsServerLog.sharedDataStringBuilder) : "[Reply Ommited From Log]",
+                        callMilliseconds);
+                }
+            }
+
+            if (NfsServerLog.performanceLog != null)
+            {
+                NfsServerLog.performanceLog.Log((Nfs3Command)call.procedure,
+                    (UInt32)callStopwatchTicks.StopwatchTicksAsMicroseconds(), extraPerfoamanceData);
             }
 
             //servicesManager.PrintPerformance();
@@ -365,7 +390,7 @@ namespace More.Net
             if (status != Status.Ok) return new SetFileAttributesReply(status, BeforeAndAfterAttributes.None);
 
             shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
-            SizeAndTimes before = new SizeAndTimes(shareObject.fileAttributes);
+            SizeAndTimes before = AutoExtensions.CreateSizeAndTimes(shareObject.fileAttributes);
 
             // TODO: change the permissions
 
@@ -450,7 +475,7 @@ namespace More.Net
 
             shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
 
-            SizeAndTimes sizeAndTimesBeforeWrite = new SizeAndTimes(shareObject.fileAttributes);
+            SizeAndTimes sizeAndTimesBeforeWrite = AutoExtensions.CreateSizeAndTimes(shareObject.fileAttributes);
 
             FileInfo fileInfo = shareObject.AccessFileInfo();
 
@@ -501,7 +526,7 @@ namespace More.Net
                 }
 
                 directoryShareObject.RefreshFileAttributes(sharedFileSystem.permissions);
-                SizeAndTimes directorySizeAndTimesBeforeCreate = new SizeAndTimes(directoryShareObject.fileAttributes);
+                SizeAndTimes directorySizeAndTimesBeforeCreate = AutoExtensions.CreateSizeAndTimes(directoryShareObject.fileAttributes);
 
                 // Todo: handle exceptions
                 fileStream = new FileStream(localPathAndName, FileMode.Create);
@@ -536,7 +561,7 @@ namespace More.Net
             if (status != Nfs3Procedure.Status.ErrorNoSuchFileOrDirectory) return new MkdirReply(status, BeforeAndAfterAttributes.None);
 
             parentDirectoryShareObject.RefreshFileAttributes(sharedFileSystem.permissions);
-            SizeAndTimes directorySizeAndTimesBeforeCreate = new SizeAndTimes(parentDirectoryShareObject.fileAttributes);
+            SizeAndTimes directorySizeAndTimesBeforeCreate = AutoExtensions.CreateSizeAndTimes(parentDirectoryShareObject.fileAttributes);
 
             // Todo: handle exceptions
             Directory.CreateDirectory(localPathAndName);
@@ -569,7 +594,7 @@ namespace More.Net
             if (status != Status.Ok) return new RemoveReply(status, BeforeAndAfterAttributes.None);
 
             parentDirectoryShareObject.RefreshFileAttributes(sharedFileSystem.permissions);
-            SizeAndTimes directorySizeAndTimesBeforeCreate = new SizeAndTimes(parentDirectoryShareObject.fileAttributes);
+            SizeAndTimes directorySizeAndTimesBeforeCreate = AutoExtensions.CreateSizeAndTimes(parentDirectoryShareObject.fileAttributes);
 
             status = sharedFileSystem.RemoveFileOrDirectory(parentDirectoryShareObject.localPathAndName, removeCall.fileName);
             if (status != Status.Ok) return new RemoveReply(status, BeforeAndAfterAttributes.None);
@@ -592,10 +617,10 @@ namespace More.Net
 
 
             oldParentDirectoryShareObject.RefreshFileAttributes(sharedFileSystem.permissions);
-            SizeAndTimes oldDirectorySizeAndTimesBeforeCreate = new SizeAndTimes(oldParentDirectoryShareObject.fileAttributes);
+            SizeAndTimes oldDirectorySizeAndTimesBeforeCreate = AutoExtensions.CreateSizeAndTimes(oldParentDirectoryShareObject.fileAttributes);
 
             newParentDirectoryShareObject.RefreshFileAttributes(sharedFileSystem.permissions);
-            SizeAndTimes newDirectorySizeAndTimesBeforeCreate = new SizeAndTimes(newParentDirectoryShareObject.fileAttributes);            
+            SizeAndTimes newDirectorySizeAndTimesBeforeCreate = AutoExtensions.CreateSizeAndTimes(newParentDirectoryShareObject.fileAttributes);            
             
             status = sharedFileSystem.Move(oldParentDirectoryShareObject, renameCall.oldName,
                 newParentDirectoryShareObject, renameCall.newName);
@@ -621,10 +646,10 @@ namespace More.Net
             Status status = sharedFileSystem.TryGetSharedObject(readDirPlusCall.directoryHandle, out directoryShareObject);
             if (status != Status.Ok) return new ReadDirPlusReply(status, OptionalFileAttributes.None);
 
-            UInt64 cookie = readDirPlusCall.cookie;      
+            UInt64 cookie = readDirPlusCall.cookie;
 
-            EntryPlus firstEntry = null;
             EntryPlus lastEntry = null;
+            GenericArrayBuilder<EntryPlus> entriesBuilder = new GenericArrayBuilder<EntryPlus>();
 
             UInt32 directoryInfoByteCount = 0;
 
@@ -645,13 +670,15 @@ namespace More.Net
                 foundCookieObject = true; // This is the first call so there is no cookie to look for
 
                 // Handle the '.' directory (will always be included if cookie is 0)
-                firstEntry = new EntryPlus(
+                if (lastEntry != null) lastEntry.IsNotLastEntry();
+                lastEntry = new EntryPlus(
                     directoryShareObject.fileID,
                     ".",
                     directoryShareObject.cookie,
                     directoryShareObject.optionalFileAttributes,
                     directoryShareObject.optionalFileHandleClass);
-                lastEntry = firstEntry;
+                entriesBuilder.Add(lastEntry);
+
                 directoryInfoByteCount += 16 + (UInt32)directoryShareObject.shareLeafName.Length;
             }
 
@@ -683,27 +710,21 @@ namespace More.Net
                         UInt32 entryInfoByteCount = 16 + (UInt32)shareObject.shareLeafName.Length;
                         if (directoryInfoByteCount + entryInfoByteCount > readDirPlusCall.maxDirectoryBytes)
                         {
-                            return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, firstEntry, false);
+                            return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, entriesBuilder.Build(), false);
                         }
 
                         directoryInfoByteCount += entryInfoByteCount;
 
                         shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
-                        EntryPlus newEntry = new EntryPlus(
+
+                        if (lastEntry != null) lastEntry.IsNotLastEntry();
+                        lastEntry = new EntryPlus(
                             shareObject.fileID,
                             shareObject.shareLeafName,
                             shareObject.cookie,
                             shareObject.optionalFileAttributes,//OptionalFileAttributes.None,
                             shareObject.optionalFileHandleClass);
-
-                        if (firstEntry == null)
-                        {
-                            firstEntry = newEntry;
-                            lastEntry = newEntry;
-                        }
-
-                        lastEntry.SetNextEntry(newEntry);
-                        lastEntry = newEntry;
+                        entriesBuilder.Add(lastEntry);
                     }
                 }
 
@@ -722,9 +743,8 @@ namespace More.Net
 
             if (!foundCookieObject) return new ReadDirPlusReply(Status.ErrorBadCookie, directoryShareObject.optionalFileAttributes);
 
-            return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, firstEntry, true);
+            return new ReadDirPlusReply(directoryShareObject.optionalFileAttributes, null, entriesBuilder.Build(), true);
         }
-
 
 
         public FileSystemStatusReply FSSTAT(FileSystemStatusCall fsStatCall)

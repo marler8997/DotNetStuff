@@ -9,7 +9,25 @@ using More;
 
 namespace More.Net
 {
-    public class HttpRequest
+
+
+
+
+    public class ClientHttpRequest
+    {
+        public readonly String method;
+        public readonly String url;
+        public readonly String httpVersion;
+
+        public readonly Byte[] body;
+
+    }
+
+
+
+
+
+    public class ParsedHttpRequest
     {
         public const Int32 RequestBufferInitialCapacity = 1024;
 
@@ -35,7 +53,7 @@ namespace More.Net
 
         public Boolean ParsedSuccessfully { get { return parserState == RequestParserState.Done; } }
 
-        public HttpRequest(NetworkStream stream, MessageLogger messageLogger, IDataLogger dataLogger)
+        public ParsedHttpRequest(NetworkStream stream, MessageLogger messageLogger, IDataLogger dataLogger)
         {
             int bytesRead;
             byte[] readBuffer = new byte[2048];
@@ -88,7 +106,7 @@ namespace More.Net
                         case RequestParserState.Url:
                             if (readBuffer[offset] == '?')
                             {
-                                url = HttpUtility.UrlDecode(stringBuilder.ToString());
+                                url = Http.UrlDecode(stringBuilder.ToString());
 
                                 hKey = String.Empty;
                                 urlArguments = new Dictionary<String, String>();
@@ -100,7 +118,7 @@ namespace More.Net
                             }
                             else
                             {
-                                url = HttpUtility.UrlDecode(stringBuilder.ToString());
+                                url = Http.UrlDecode(stringBuilder.ToString());
                                 parserState = RequestParserState.Version;
                             }
                             offset++;
@@ -116,7 +134,7 @@ namespace More.Net
                             {
                                 offset++;
 
-                                url = HttpUtility.UrlDecode(url);
+                                url = Http.UrlDecode(url);
                                 parserState = RequestParserState.Version;
                             }
                             else
@@ -128,8 +146,8 @@ namespace More.Net
                             if (readBuffer[offset] == '&')
                             {
                                 offset++;
-                                hKey = HttpUtility.UrlDecode(hKey);
-                                hValue = HttpUtility.UrlDecode(hValue);
+                                hKey = Http.UrlDecode(hKey);
+                                hValue = Http.UrlDecode(hValue);
                                 if (urlArguments.TryGetValue(hKey, out temp))
                                     urlArguments[hKey] = String.Format("{0},{1}", temp, hValue);
                                 else
@@ -141,8 +159,8 @@ namespace More.Net
                             else if (readBuffer[offset] == ' ')
                             {
                                 offset++;
-                                hKey = HttpUtility.UrlDecode(hKey);
-                                hValue = HttpUtility.UrlDecode(hValue);
+                                hKey = Http.UrlDecode(hKey);
+                                hValue = Http.UrlDecode(hValue);
                                 if (urlArguments.TryGetValue(hKey, out temp))
                                     urlArguments[hKey] = String.Format("{0},{1}", temp, hValue);
                                 else

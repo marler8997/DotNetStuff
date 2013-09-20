@@ -24,7 +24,7 @@ namespace More.Net
             this.defaultIndexFile = defaultIndexFile;
         }
 
-        public void HandleResource(HttpRequest request, HttpResponse response)
+        public void HandleResource(ParsedHttpRequest request, HttpResponse response)
         {
             String urlResource = urlTranslator.UrlToFile(request.url);
 
@@ -56,7 +56,7 @@ namespace More.Net
                     String urlIterator = request.url;
                     while (true)
                     {
-                        urlIterator = HttpProtocol.GetParentUrl(urlIterator);
+                        urlIterator = Http.GetParentUrl(urlIterator);
                         if (urlIterator == null) break;
                         urlStack.Push(urlIterator);
                     }
@@ -72,9 +72,9 @@ namespace More.Net
                         while (urlStack.Count > 0)
                         {
                             String directory = urlStack.Pop();
-                            stringBuilder.Append(String.Format("<a href=\"{0}\">{1}/</a>\n", directory, HttpProtocol.GetUrlFilename(directory)));
+                            stringBuilder.Append(String.Format("<a href=\"{0}\">{1}/</a>\n", directory, Http.GetUrlFilename(directory)));
                         }
-                        stringBuilder.Append(String.Format("{0}/\n", HttpProtocol.GetUrlFilename(request.url)));
+                        stringBuilder.Append(String.Format("{0}/\n", Http.GetUrlFilename(request.url)));
                     }
                     //
                     // Print Directories / Files
@@ -147,7 +147,7 @@ namespace More.Net
             }
             else
             {
-                response.status = HttpProtocol.HttpResponseNotFound;
+                response.status = Http.ResponseNotFound;
                 String bodyStr = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">\n";
                 bodyStr += "<HTML><HEAD>\n";
                 bodyStr += "<META http-equiv=Content-Type content=\"text/html; charset=windows-1252\">\n";

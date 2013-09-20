@@ -23,7 +23,7 @@ namespace More.Net
             handlerDictionary.Add(extension, handler);
         }
 
-        public void HandleResource(HttpRequest request, HttpResponse response)
+        public void HandleResource(ParsedHttpRequest request, HttpResponse response)
         {
             Int32 dotIndex = request.url.LastIndexOf('.');
             if (dotIndex >= 0 && dotIndex + 1 < request.url.Length)

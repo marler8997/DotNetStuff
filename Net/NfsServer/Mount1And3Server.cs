@@ -31,7 +31,7 @@ namespace More.Net
             return programHeader.program == Mount.ProgramNumber &&
                 (programHeader.programVersion == 1 || programHeader.programVersion == 3);
         }
-        public override RpcReply Call(String clientString, RpcCall call, Byte[] callParameters, UInt32 callOffset, UInt32 callMaxOffset, out ISerializer replyParameters)
+        public override RpcReply Call(String clientString, RpcCall call, Byte[] callParameters, UInt32 callOffset, UInt32 callOffsetLimit, out ISerializer replyParameters)
         {
             String methodName;
 
@@ -47,7 +47,7 @@ namespace More.Net
                 case Mount.MNT:
                     methodName = "MNT";
 
-                    MountCall mountCall = new MountCall(callParameters, callOffset, callMaxOffset);
+                    MountCall mountCall = new MountCall(callParameters, callOffset, callOffsetLimit);
                     callData = mountCall.CreateSerializer();
 
                     if(call.programHeader.programVersion == 1)
@@ -65,7 +65,7 @@ namespace More.Net
                 case Mount.UMNT:
                     methodName = "UMNT";
 
-                    UnmountCall unmountCall = new UnmountCall(callParameters, callOffset, callMaxOffset);
+                    UnmountCall unmountCall = new UnmountCall(callParameters, callOffset, callOffsetLimit);
                     callData = unmountCall.CreateSerializer();
                     break;
                     
@@ -77,7 +77,8 @@ namespace More.Net
 
             if (NfsServerLog.rpcCallLogger != null)
                 NfsServerLog.rpcCallLogger.WriteLine("[{0}] {1} {2} => {3}", serviceName, methodName,
-                    ISerializerString.DataSmallString(callData), ISerializerString.DataSmallString(replyParameters));
+                    DataStringBuilder.DataSmallString(callData, NfsServerLog.sharedDataStringBuilder),
+                    DataStringBuilder.DataSmallString(replyParameters,NfsServerLog.sharedDataStringBuilder));
             return new RpcReply(RpcVerifier.None);
         }
 

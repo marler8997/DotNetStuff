@@ -21,15 +21,18 @@ namespace More.Pdl
         Int32      = 8,
         Int64      = 9,
 
+        // String types
+        Ascii      = 10,
+
         // Enum/Flags Types
-        Enum       = 10,
-        Flags      = 11,
+        Enum       = 11,
+        Flags      = 12,
 
         // The Object Type
-        Object     = 12,
+        Object     = 13,
 
         // The Serializer Type
-        Serializer = 13,
+        Serializer = 14,
     }
     public enum PdlArraySizeTypeEnum
     {
@@ -85,7 +88,7 @@ namespace More.Pdl
         public static Boolean IntegerTypeIsUnsigned(this PdlType type)
         {
             if (type <= PdlType.UInt64) return true;
-            if (type <= PdlType.Int64 ) return true;
+            if (type <= PdlType.Int64 ) return false;
             throw new InvalidOperationException(String.Format("Cannot call this method on a non-integer type '{0}'", type));
         }
         public static String EnglishNumberString(this Byte value)
@@ -288,6 +291,7 @@ namespace More.Pdl
         public String CodeTypeString()
         {
             if (type == PdlType.Serializer) return "ISerializer";
+            if (type == PdlType.Ascii && arrayType != null) return "String";
             if (arrayType == null) return CodeBaseTypeString;
             return CodeBaseTypeString + "[]";
         }
@@ -376,6 +380,58 @@ namespace More.Pdl
                     default: return type.ToString();
                 }
             }
+        }
+    }
+    public class AsciiTypeReference : TypeReference
+    {
+        public AsciiTypeReference(String typeString, PdlArrayType arrayType)
+            : base(typeString, PdlType.Ascii, arrayType)
+        {
+        }
+        public override UInt32 FixedElementSerializationLength
+        {
+            get { return 1; }
+        }
+        public override String ElementDynamicSerializationLengthExpression(String instanceString)
+        {
+            throw new InvalidOperationException("CodeBug: this method should not be called on an integer type reference");
+        }
+        public override String ElementSerializeExpression(String arrayString, String offsetString, String instanceString)
+        {
+            return String.Format("{0}[{1}] = (Byte){2}", arrayString, offsetString, instanceString);
+        }
+        public override String ElementFixedLengthDeserializeExpression(String arrayString, String offsetString)
+        {
+            return String.Format("(Byte){0}[{1}]", arrayString, offsetString);
+        }
+        public override String ElementDeserializeArrayExpression(String arrayString, String offsetString, String countString)
+        {
+            return String.Format("Encoding.ASCII.GetString({0}, (Int32){1}, (Int32){2})",
+                arrayString, offsetString, countString);
+        }
+        public override string ElementDataStringExpression(string builderString, string instanceString, bool small)
+        {
+            return String.Format("{0}.Append({1})", builderString, instanceString);
+        }
+        public override IntegerTypeReference AsIntegerTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override EnumOrFlagsTypeReference AsEnumOrFlagsTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override ObjectTypeReference AsObjectTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override SerializerTypeReference AsSerializerTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override String CodeBaseTypeString
+        {
+            get { return "Char"; }
         }
     }
     public class EnumOrFlagsTypeReference : TypeReference

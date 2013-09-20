@@ -11,6 +11,22 @@ namespace More
     [TestClass]
     public class ExtensionTests
     {
+        [TestMethod]
+        public void UnderscoreToCamelCaseTest()
+        {
+            Assert.AreEqual("TheString", "the_string".UnderscoreToCamelCase());
+            Assert.AreEqual("TheString", "_the_string".UnderscoreToCamelCase());
+            Assert.AreEqual("TheString", "_the_string_".UnderscoreToCamelCase());
+            Assert.AreEqual("TheString", "the__string".UnderscoreToCamelCase());
+            Assert.AreEqual("TheString", "__the_string".UnderscoreToCamelCase());
+            Assert.AreEqual("TheString", "_the_string__".UnderscoreToCamelCase());
+            Assert.AreEqual("TheString", "____the___string___".UnderscoreToCamelCase());
+
+            Assert.AreEqual("TheString", "__THE_STRING".UnderscoreToCamelCase());
+            Assert.AreEqual("TheString", "_tHe_sTrInG__".UnderscoreToCamelCase());
+
+        }
+
         public void ValidateLiteralString(String literal, String actual)
         {
             Int32 outLength;

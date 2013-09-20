@@ -7,13 +7,27 @@ namespace More.Pdl
 {
     public static class PdlCodeGenerator
     {
-        static void GenerateEnumDefinition(TextWriter writer, UInt32 tabs, EnumOrFlagsDefinition definition)
+        static void GenerateEnumDefinition(String rootNamespace, TextWriter writer, UInt32 tabs, EnumOrFlagsDefinition definition)
         {
+            String typeName = definition.typeName;
+            Boolean subNamespace = false;
+            Int32 lastDotIndex = definition.typeName.LastIndexOf('.');
+            if (lastDotIndex >= 0)
+            {
+                typeName = definition.typeName.Substring(lastDotIndex + 1);
+
+                subNamespace = true;
+                writer.WriteLine("}");
+                writer.WriteLine("namespace {0}", definition.typeName.Remove(lastDotIndex));
+                writer.WriteLine("{");
+                tabs++;
+            }
+
             if (definition.isFlagsDefinition)
             {
                 writer.WriteLine(tabs * 4, "[Flags]");
             }
-            writer.WriteLine(tabs * 4, "public enum {0} {{", definition.typeName);
+            writer.WriteLine(tabs * 4, "public enum {0} {{", typeName);
             if (definition.isFlagsDefinition)
             {
                 foreach (FlagsValueDefinition flagValues in definition.flagValues)
@@ -30,6 +44,13 @@ namespace More.Pdl
             }
             writer.WriteLine(tabs * 4, "}");
 
+            if (subNamespace)
+            {
+                tabs--;
+                writer.WriteLine("}");
+                writer.WriteLine("namespace {0}", rootNamespace);
+                writer.WriteLine("{");
+            }
         }
         public static void GenerateCode(TextWriter writer, PdlFile pdlFile, String @namespace)
         {
@@ -57,7 +78,7 @@ namespace More.Pdl
             {
                 if (enumOrFlagsDefinition.isGlobalType)
                 {
-                    GenerateEnumDefinition(writer, 1, enumOrFlagsDefinition);
+                    GenerateEnumDefinition(@namespace, writer, 1, enumOrFlagsDefinition);
                 }
             }
 
@@ -129,7 +150,7 @@ namespace More.Pdl
                 // Print static instance serializer
                 //
                 writer.WriteLine("        static InstanceSerializer serializer = null;");
-                writer.WriteLine("        public static {0}InstanceSerializer<{1}> Serializer", (fixedSerializationLength == UInt32.MaxValue) ? "I": "FixedLength", objectDefinition.name);
+                writer.WriteLine("        public static InstanceSerializer Serializer");
                 writer.WriteLine("        {");
                 writer.WriteLine("            get");
                 writer.WriteLine("            {");
@@ -138,7 +159,7 @@ namespace More.Pdl
                 writer.WriteLine("            }");
                 writer.WriteLine("        }");
                 writer.WriteLine();
-                writer.WriteLine("        class InstanceSerializer : {0}InstanceSerializer<{1}>",
+                writer.WriteLine("        public class InstanceSerializer : {0}InstanceSerializer<{1}>",
                     (fixedSerializationLength == UInt32.MaxValue) ? "I" : "FixedLength", objectDefinition.name);
                 writer.WriteLine("        {");
                 writer.WriteLine("            public InstanceSerializer() {}");
@@ -322,7 +343,9 @@ namespace More.Pdl
                             }
                             writer.WriteLine("                for(UInt32 i = 0; i < {0}; i++)", arrayLengthString);
                             writer.WriteLine("                {");
-                            String serializeExpression = typeReference.ElementSerializeExpression("bytes", "offset", "instance." + field.name + "[i]");
+                            String elementInstanceString = String.Format("instance.{0}[{1}i]", field.name,
+                                (field.typeReference.type == PdlType.Ascii) ? "(Int32)" : "");
+                            String serializeExpression = typeReference.ElementSerializeExpression("bytes", "offset", elementInstanceString);
                             if (fieldFixedElementSerializationLength == UInt32.MaxValue)
                             {
                                 writer.WriteLine("                    offset = {0};", serializeExpression);
@@ -456,7 +479,7 @@ namespace More.Pdl
                     writer.WriteLine();
                     foreach (EnumOrFlagsDefinition enumOrFlagsDefinition in objectDefinition.enumOrFlagDefinitions)
                     {
-                        GenerateEnumDefinition(writer, 2, enumOrFlagsDefinition);
+                        GenerateEnumDefinition(@namespace, writer, 2, enumOrFlagsDefinition);
                     }
                 }
 
@@ -474,7 +497,7 @@ namespace More.Pdl
                 //
                 // Print No-Parameter Constructor
                 //
-                writer.WriteLine("        private {0}() {{ }}", objectDefinition.name);
+                writer.WriteLine("        public {0}() {{ }}", objectDefinition.name);
 
                 //
                 // Print Parameter Constructor

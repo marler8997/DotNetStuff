@@ -21,6 +21,7 @@ namespace More.Net
             if (status != Nfs3Procedure.Status.Ok) throw new InvalidOperationException(String.Format("Nfs Command Failed (status={0})", status));
         }
 
+
         static void Main(string[] args)
         {
             if (args.Length != 2)
@@ -32,8 +33,8 @@ namespace More.Net
             //
             // Options
             //
-            Boolean forceMountToUsePrivelegedSourcePort = true;
-            Boolean forceNfsToUsePrivelegedSourcePort = true;
+            Boolean forceMountToUsePrivelegedSourcePort = false;
+            Boolean forceNfsToUsePrivelegedSourcePort = false;
 
             String serverHost = args[0];
             String remoteMountDirectory = args[1];
@@ -55,6 +56,7 @@ namespace More.Net
 
             try
             {
+                StringBuilder builder = new StringBuilder();
                 ByteBuffer buffer = new ByteBuffer(1024, 1024);
 
                 //
@@ -66,21 +68,31 @@ namespace More.Net
                 portmapConnection.socket.Connect(serverHost, 111);
 
 
-                /*
                 //
-                // Get NFS Port
+                // Dump
                 //
-                PortMap2Procedure.GetPortCall getNfsPort = new PortMap2Procedure.GetPortCall(
+                PortMap2Procedure.DumpReply dumpReply = new PortMap2Procedure.DumpReply();
+                ISerializer dumpReplySerializer = dumpReply.CreateSerializer();
+                portmapConnection.CallBlockingTcp(PortMap2.DUMP, VoidSerializer.Instance,
+                    dumpReply.CreateSerializer(), buffer);
+
+                builder.Length = 0;
+                dumpReplySerializer.DataString(builder);
+                Console.WriteLine(builder.ToString());
+
+                //
+                // Get Nfs Port
+                //
+                Mapping getNfsPortMapping = new Mapping(
                         Nfs3.ProgramHeader.program,
                         Nfs3.ProgramHeader.programVersion,
-                        6                 , // TCP
+                        PortMap.IPProtocolTcp,
                         0                   // Port 0
                         );
-                portmapConnection.CallBlockingTcp(getNfsPort, buffer);
+                GetPortReply getNfsPortReply = portmapConnection.CallBlockingTcp(PortMap2.GETPORT,
+                    getNfsPortMapping.CreateSerializerAdapater(), GetPortReply.Serializer, buffer);
 
-                Console.WriteLine();
-                Console.WriteLine(ISerializerString.DataString(getNfsPort.reply));
-
+                Console.WriteLine("Nfs Port: {0}", getNfsPortReply.port);
 
                 //
                 // Connect to NFS Service
@@ -91,27 +103,26 @@ namespace More.Net
                 {
                     nfsConnection.BindToPrivelegedPort();
                 }
-                nfsConnection.socket.Connect(serverHost, (Int32)getNfsPort.reply.port);
+                nfsConnection.socket.Connect(serverHost, (Int32)getNfsPortReply.port);
         
                 //
                 // Test NFS Service
                 //
-                Nfs3Procedure.Null nullNfsCall = new Nfs3Procedure.Null();
-                nfsConnection.CallBlockingTcp(nullNfsCall, buffer);
+                nfsConnection.CallBlockingTcp((UInt32)Nfs3Command.NULL, VoidSerializer.Instance, VoidSerializer.Instance, buffer);
 
                 //
-                // Connect to Mount service
+                // Get Mount Port
                 //
-                PortMap2Procedure.GetPort getMountPort = new PortMap2Procedure.GetPort(new PortMap2Procedure.GetPortCall(
-                        Mount3.ProgramHeader.program       , // Mount
+                Mapping getMountPort = new Mapping(
+                        Mount3.ProgramHeader.program,
                         Mount3.ProgramHeader.programVersion,
-                        6,                                   // Tcp
-                        0                                    // Port 0
-                        ));
-                portmapConnection.CallBlockingTcp(getMountPort, buffer);
+                        PortMap.IPProtocolTcp,
+                        0                   // Port 0
+                        );
+                GetPortReply getMountPortReply = portmapConnection.CallBlockingTcp(PortMap2.GETPORT,
+                    getMountPort.CreateSerializerAdapater(), GetPortReply.Serializer, buffer);
 
-                Console.WriteLine();
-                Console.WriteLine(ISerializerString.DataString(getMountPort.reply));
+                Console.WriteLine("Mount Port: {0}", getMountPortReply.port);
 
                 //
                 // Connect to Mount Service
@@ -122,36 +133,43 @@ namespace More.Net
                 {
                     mountConnection.BindToPrivelegedPort();
                 }
-                mountConnection.socket.Connect(serverHost, (Int32)getMountPort.reply.port);
+                mountConnection.socket.Connect(serverHost, (Int32)getMountPortReply.port);
 
                 //
                 // Test Mount Service
                 //
-                Mount3Procedure.Null nullMountCall = new Mount3Procedure.Null();
-                mountConnection.CallBlockingTcp(nullNfsCall, buffer);
+                mountConnection.CallBlockingTcp<Object>(Mount.NULL, VoidSerializer.Instance, VoidInstanceSerializer.Instance, buffer);
 
                 //
                 // Mount the remote direcory
                 //
-                Mount3Procedure.Mount mount = new Mount3Procedure.Mount(new Mount3Procedure.MountCall(remoteMountDirectory));
-                mountConnection.CallBlockingTcp(mount, buffer);
+                Mount3Reply mountReply = new Mount3Reply(Status.ErrorInvalidArgument);
+                ISerializer mountReplySerializer = mountReply.CreateSerializer();
+                MountCall mountCall = new MountCall(remoteMountDirectory);
+                mountConnection.CallBlockingTcp(Mount.MNT, mountCall.CreateSerializer(),
+                    mountReplySerializer, buffer);
 
                 Console.WriteLine();
-                Console.WriteLine(ISerializerString.DataString(mount.reply));
-                AssertOK(mount.reply.status);
+                Console.WriteLine(DataStringBuilder.DataString(mountReplySerializer, builder));
+                AssertOK(mountReply.status);
 
-                Byte[] rootDirectoryHandle = mount.reply.fileHandle;
+                Byte[] rootDirectoryHandle = mountReply.fileHandle;
 
+                ReadDirPlusCall readDirPlusCall = new ReadDirPlusCall(rootDirectoryHandle, 0, null, 512, UInt32.MaxValue);
+                ReadDirPlusReply readDirPlusReply = new ReadDirPlusReply(Status.ErrorInvalidArgument, null);
+                nfsConnection.CallBlockingTcp((UInt32)Nfs3Command.READDIRPLUS, readDirPlusCall.CreateSerializer(),
+                    readDirPlusReply.CreateSerializer(), buffer);
+                for (int i = 0; i < readDirPlusReply.entries.Length; i++)
+                {
+                    EntryPlus entry = readDirPlusReply.entries[i];
+                    Console.WriteLine("Entry[{0}] = {1}", i, entry.fileName);
+                }
 
-                ReadDirPlus readDirPlus = new ReadDirPlus(new ReadDirPlusCall(rootDirectoryHandle, 0, null, 512, UInt32.MaxValue));
-                nfsConnection.CallBlockingTcp(readDirPlus, buffer);
-
-                Console.WriteLine();
-                Console.WriteLine(ISerializerString.DataString(readDirPlus.reply.CreateSerializer()));
+                //Console.WriteLine();
+                //Console.WriteLine(ISerializerString.DataString(readDirPlus.reply.CreateSerializer()));
                 
-
-
-
+                /*
+                
                 //
                 // Get FileSystemInfo
                 //

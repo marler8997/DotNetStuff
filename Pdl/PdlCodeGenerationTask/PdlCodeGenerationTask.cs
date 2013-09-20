@@ -24,7 +24,9 @@ namespace More.Pdl
                     Int32 bytesRead = stream.Read(readBuffer, 0, readBuffer.Length);
                     if (bytesRead <= 0) break;
                     sha.Add(readBuffer, 0, bytesRead);
-                    builder.Append(encoding.GetString(readBuffer, 0, bytesRead));
+
+                    String str = encoding.GetString(readBuffer, 0, bytesRead);
+                    builder.Append(str);
                 }
             }
             this.contents = builder.ToString();

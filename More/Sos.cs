@@ -748,13 +748,6 @@ namespace More
         //
         // Deserialization Methods
         //
-        public static Int32 HexValue(this Char c)
-        {
-            if (c >= '0' && c <= '9') return (c - '0');
-            if (c >= 'A' && c <= 'F') return (c - 'A') + 10;
-            if (c >= 'a' && c <= 'f') return (c - 'a') + 10;
-            throw new FormatException(String.Format("Expected 0-9, A-F, or a-f but got '{0}' (charcode={1})", c, (UInt32)c));
-        }
         public static Int32 EnumValueLength(String str, Int32 offset, Int32 offsetLimit)
         {
             //

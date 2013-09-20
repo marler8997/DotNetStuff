@@ -45,6 +45,12 @@
   <ItemGroup>
     <None Include="TestObjects.pdl" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\More\More.csproj">
+      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
+      <Name>More</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

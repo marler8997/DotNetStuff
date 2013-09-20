@@ -57,7 +57,7 @@ namespace More.Net
             for (int i = 0; i < rootShareDirectories.Length; i++)
             {
                 RootShareDirectory rootShareDirectory = rootShareDirectories[i];
-                ShareObject shareObject = CreateNewShareObject(Nfs3Procedure.FileType.Directory, rootShareDirectory.localShareDirectory, rootShareDirectory.shareName);
+                ShareObject shareObject = CreateNewShareObject(FileType.Directory, rootShareDirectory.localShareDirectory, rootShareDirectory.shareName);
                 if (shareObject == null)
                 {
                     throw new DirectoryNotFoundException(String.Format(
@@ -104,7 +104,7 @@ namespace More.Net
         */
 
 
-        private ShareObject CreateNewShareObject(Nfs3Procedure.FileType fileType, String localPathAndName, String shareName)
+        private ShareObject CreateNewShareObject(FileType fileType, String localPathAndName, String shareName)
         {
             FileID newFileID;
             Byte[] newFileHandle = filesDictionary.NewFileHandle(out newFileID);
@@ -210,11 +210,11 @@ namespace More.Net
             // Move
             //
             String newLocalPathAndName = NfsPath.LocalCombine(newParentShareObject.localPathAndName, newName);
-            Nfs3Procedure.FileType fileType = oldShareObject.fileType;
+            FileType fileType = oldShareObject.fileType;
 
             if(Directory.Exists(newLocalPathAndName))
             {
-                if (oldShareObject.fileType != Nfs3Procedure.FileType.Directory)
+                if (oldShareObject.fileType != FileType.Directory)
                     return Nfs3Procedure.Status.ErrorAlreadyExists;
 
                 try
@@ -230,7 +230,7 @@ namespace More.Net
             }
             else if (File.Exists(newLocalPathAndName))
             {
-                if (oldShareObject.fileType != Nfs3Procedure.FileType.Regular)
+                if (oldShareObject.fileType != FileType.Regular)
                     return Nfs3Procedure.Status.ErrorAlreadyExists;
 
                 File.Delete(newLocalPathAndName);
@@ -239,11 +239,11 @@ namespace More.Net
             }
             else
             {
-                if (oldShareObject.fileType == Nfs3Procedure.FileType.Regular)
+                if (oldShareObject.fileType == FileType.Regular)
                 {
                     File.Move(oldLocalPathAndName, newLocalPathAndName);
                 }
-                else if (oldShareObject.fileType == Nfs3Procedure.FileType.Directory)
+                else if (oldShareObject.fileType == FileType.Directory)
                 {
                     Directory.Move(oldLocalPathAndName, newLocalPathAndName);
                 }
@@ -383,12 +383,12 @@ namespace More.Net
             {
                 if(File.Exists(localPathAndName))
                 {
-                    shareObject = CreateNewShareObject(Nfs3Procedure.FileType.Regular, localPathAndName, shareName);
+                    shareObject = CreateNewShareObject(FileType.Regular, localPathAndName, shareName);
                     return Nfs3Procedure.Status.Ok;
                 }
                 else if (Directory.Exists(localPathAndName))
                 {
-                    shareObject = CreateNewShareObject(Nfs3Procedure.FileType.Directory, localPathAndName, shareName);
+                    shareObject = CreateNewShareObject(FileType.Directory, localPathAndName, shareName);
                     return Nfs3Procedure.Status.Ok;
                 }
                 else
@@ -397,14 +397,14 @@ namespace More.Net
                 }
             }
         }
-        public ShareObject TryGetSharedObject(Nfs3Procedure.FileType expectedFileType, String localParentDirectory, String localPathAndName)
+        public ShareObject TryGetSharedObject(FileType expectedFileType, String localParentDirectory, String localPathAndName)
         {
             switch (expectedFileType)
             {
-                case Nfs3Procedure.FileType.Regular:
+                case FileType.Regular:
                     if (!File.Exists(localPathAndName)) return null;
                     break;
-                case Nfs3Procedure.FileType.Directory:
+                case FileType.Directory:
                     if (!Directory.Exists(localPathAndName)) return null;
                     break;
                 default:

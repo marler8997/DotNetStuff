@@ -12,9 +12,10 @@ namespace More.Net
         ShareObject[] ShareObjects();
         FileSystemStatusReply FSStatusByName(String directory);
         FSInfoReply FSInfoByName(String directory);
-        NonRecursiveReadDirPlusReply ReadDirPlus(String directoryName, UInt64 cookie, UInt32 maxDirectoryInfoBytes);
+        //NonRecursiveReadDirPlusReply ReadDirPlus(String directoryName, UInt64 cookie, UInt32 maxDirectoryInfoBytes);
+        ReadDirPlusReply ReadDirPlus(String directoryName, UInt64 cookie, UInt32 maxDirectoryInfoBytes);
     }
-    
+    /*
     public class NonRecursiveEntryPlus
     {
         public UInt64 fileID;
@@ -63,5 +64,5 @@ namespace More.Net
             this.endOfEntries = reply.endOfEntries;
         }
     }
-
+    */
 }

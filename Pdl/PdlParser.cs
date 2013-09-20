@@ -36,6 +36,7 @@ namespace More.Pdl
         static void Debug(String message)
         {
             //Console.Error.WriteLine("[DEBUG] " + message);
+            //Console.Out.WriteLine("[DEBUG] " + message);
         }
         static void Debug(String fmt, params Object[] obj)
         {
@@ -127,6 +128,7 @@ namespace More.Pdl
             nextLine = reader.ReadLineIgnoreComments();
 
 
+
             EnumOrFlagsDefinition enumDefinition = pdlFile.TryGetEnumOrFlagsDefinition(currentObjectDefinition, typeStringLowerInvariant);
             if (enumDefinition != null)
             {
@@ -161,6 +163,17 @@ namespace More.Pdl
                 {
                     throw new ParseException(fieldLine, "Expected line to have 0 or 1 fields but had {0}", fieldLine.fields.Length);
                 }                
+                return;
+            }
+
+            //
+            // Check if it a string type
+            //
+            if (typeStringLowerInvariant.Equals("ascii"))
+            {
+                VerifyFieldCount(fieldLine, 1);
+                currentObjectDefinition.Add(new ObjectDefinitionField(
+                    new AsciiTypeReference(typeString, arrayType), fieldLine.fields[0]));
                 return;
             }
 
@@ -238,10 +251,6 @@ namespace More.Pdl
                 return ParsePdlFile(lfdReader);
             }
         }
-
-
-
-
 
 
 

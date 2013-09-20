@@ -8,7 +8,7 @@ namespace More.Net
 {
     public class HttpResponse
     {
-        public Int32 status;
+        public UInt16 status;
         public String version;
 
         public Dictionary<String, String> Headers;

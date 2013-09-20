@@ -25,28 +25,28 @@ namespace More.Net
     }
     public enum Nfs3Command
     {
-        NULL = 0,
-        GETATTR = 1,
-        SETATTR = 2,
-        LOOKUP = 3,
-        ACCESS = 4,
-        READLINK = 5,
-        READ = 6,
-        WRITE = 7,
-        CREATE = 8,
-        MKDIR = 9,
-        SYMLINK = 10,
-        MKNOD = 11,
-        REMOVE = 12,
-        RMDIR = 13,
-        RENAME = 14,
-        LINK = 15,
-        READDIR = 16,
+        NULL        =  0,
+        GETATTR     =  1,
+        SETATTR     =  2,
+        LOOKUP      =  3,
+        ACCESS      =  4,
+        READLINK    =  5,
+        READ        =  6,
+        WRITE       =  7,
+        CREATE      =  8,
+        MKDIR       =  9,
+        SYMLINK     = 10,
+        MKNOD       = 11,
+        REMOVE      = 12,
+        RMDIR       = 13,
+        RENAME      = 14,
+        LINK        = 15,
+        READDIR     = 16,
         READDIRPLUS = 17,
-        FSSTAT = 18,
-        FSINFO = 19,
-        PATHCONF = 20,
-        COMMIT = 21,
+        FSSTAT      = 18,
+        FSINFO      = 19,
+        PATHCONF    = 20,
+        COMMIT      = 21,
     }
     public static class Nfs3
     {
@@ -123,6 +123,7 @@ namespace More.Net
 }    
 namespace More.Net.Nfs3Procedure
 {
+    /*
     public enum FileType
     {
         Regular         = 1,
@@ -132,6 +133,26 @@ namespace More.Net.Nfs3Procedure
         SymbolicLink    = 5,
         Socket          = 6,
         NamedPipe       = 7
+    }
+    [Flags]
+    public enum ModeFlags
+    {
+        OtherExecute    = 0x0001,
+        OtherWrite      = 0x0002,
+        OtherRead       = 0x0004,
+        GroupExecute    = 0x0008,
+        GroupWrite      = 0x0010,
+        GroupRead       = 0x0020,
+        OwnerExecute    = 0x0040,
+        OwnerWrite      = 0x0080,
+        OwnerRead       = 0x0100,
+        SaveSwappedText = 0x0200,
+        SetGidOnExec    = 0x0400,
+        SetUidOnExec    = 0x0800,
+        UnknownFlag1    = 0x1000,
+        UnknownFlag2    = 0x2000,
+        UnknownFlag3    = 0x3000,
+        UnknownFlag4    = 0x4000,
     }
     public enum Status
     {
@@ -165,26 +186,7 @@ namespace More.Net.Nfs3Procedure
         ErrorBadType                 = 10007,
         ErrorJukeBox                 = 10008,
     }
-    [Flags]
-    public enum ModeFlags
-    {
-        OtherExecute    = 0x0001,
-        OtherWrite      = 0x0002,
-        OtherRead       = 0x0004,
-        GroupExecute    = 0x0008,
-        GroupWrite      = 0x0010,
-        GroupRead       = 0x0020,
-        OwnerExecute    = 0x0040,
-        OwnerWrite      = 0x0080,
-        OwnerRead       = 0x0100,
-        SaveSwappedText = 0x0200,
-        SetGidOnExec    = 0x0400,
-        SetUidOnExec    = 0x0800,
-        UnknownFlag1    = 0x1000,
-        UnknownFlag2    = 0x2000,
-        UnknownFlag3    = 0x3000,
-        UnknownFlag4    = 0x4000,
-    }
+    */
     [Flags]
     public enum FileProperties
     {
@@ -193,6 +195,29 @@ namespace More.Net.Nfs3Procedure
         Fsf3Homogeneous = 0x008,
         Fsf3CanSetTime = 0x010,
     }
+
+    public static class AutoExtensions
+    {
+        public static readonly Reflectors TimeReflector = new Reflectors(new
+            FixedLengthInstanceSerializerToReflectorAdapter<Time>(Time.Serializer));
+
+        public static readonly Reflectors SizeAndTimesReflector = new Reflectors(new 
+            FixedLengthInstanceSerializerToReflectorAdapter<SizeAndTimes>(SizeAndTimes.Serializer));
+
+        public static readonly Reflectors FileAttributesReflector = new Reflectors(new
+            FixedLengthInstanceSerializerToReflectorAdapter<FileAttributes>(FileAttributes.Serializer));
+
+        public static SizeAndTimes CreateSizeAndTimes(FileAttributes fileAttributes)
+        {
+            SizeAndTimes sizeAndTimes = new SizeAndTimes();
+            sizeAndTimes.fileSize = fileAttributes.fileSize;
+            sizeAndTimes.lastModifyTime = new Time(fileAttributes.lastModifyTime.seconds, fileAttributes.lastModifyTime.nanoseconds);
+            sizeAndTimes.lastAttributeModifyTime = new Time(fileAttributes.lastAttributeModifyTime.seconds, fileAttributes.lastAttributeModifyTime.nanoseconds);
+            return sizeAndTimes;
+        }
+    }
+
+    /*
     public class Time// : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -298,16 +323,17 @@ namespace More.Net.Nfs3Procedure
             this.lastAttributeModifyTime = lastAttributeModifyTime;
         }
     }
+    */
     public class BeforeAndAfterAttributes
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(BeforeAndAfterAttributes), "beforeIncluded"),
-                new Reflectors(new ClassFieldReflectors<SizeAndTimes>  (typeof(BeforeAndAfterAttributes), "before", SizeAndTimes.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<SizeAndTimes>  (typeof(BeforeAndAfterAttributes), "before", AutoExtensions.SizeAndTimesReflector)),
                 VoidReflector.Reflectors),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(BeforeAndAfterAttributes), "afterIncluded"),
-                new Reflectors(new ClassFieldReflectors<FileAttributes>(typeof(BeforeAndAfterAttributes), "after", FileAttributes.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<FileAttributes>(typeof(BeforeAndAfterAttributes), "after", AutoExtensions.FileAttributesReflector)),
                 VoidReflector.Reflectors),            
         });
 
@@ -341,7 +367,7 @@ namespace More.Net.Nfs3Procedure
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector                    (typeof(OptionalFileAttributes), "fileAttributesIncluded"),
-                new Reflectors(new ClassFieldReflectors<FileAttributes>(typeof(OptionalFileAttributes), "fileAttributes", FileAttributes.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<FileAttributes>(typeof(OptionalFileAttributes), "fileAttributes", AutoExtensions.FileAttributesReflector)),
                 VoidReflector.Reflectors
             )
         });
@@ -422,12 +448,12 @@ namespace More.Net.Nfs3Procedure
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setLastAccessTime"),
-                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastAccessTime", Time.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastAccessTime", AutoExtensions.TimeReflector)),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector          (typeof(SetAttributesStruct), "setLastModifyTime"),
-                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastModifyTime", Time.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastModifyTime", AutoExtensions.TimeReflector)),
                 VoidReflector.Reflectors
             ),
         });
@@ -476,17 +502,6 @@ namespace More.Net.Nfs3Procedure
     }
 
     //
-    // Null Procedure
-    //
-    public class Null : RpcProcedure
-    {
-        public Null()
-            : base("Null", (UInt32)Nfs3Command.NULL, VoidSerializer.Instance, VoidSerializer.Instance)
-        {
-        }
-    }
-
-    //
     // GetFileAttributes Procedure
     //
     public class GetFileAttributesCall : ISerializerCreator
@@ -514,7 +529,7 @@ namespace More.Net.Nfs3Procedure
                 new XdrEnumReflector(typeof(GetFileAttributesReply), "status", typeof(Status)),
                 VoidReflector.ReflectorsArray,
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
-                    new ClassFieldReflectors<FileAttributes>(typeof(GetFileAttributesReply), "fileAttributes", FileAttributes.memberSerializers)})
+                    new ClassFieldReflectors<FileAttributes>(typeof(GetFileAttributesReply), "fileAttributes", AutoExtensions.FileAttributesReflector)})
             ),
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
@@ -544,7 +559,7 @@ namespace More.Net.Nfs3Procedure
             new ClassFieldReflectors<SetAttributesStruct>(typeof(SetFileAttributesCall), "setAttributes", SetAttributesStruct.memberSerializers),
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(SetFileAttributesCall), "checkGuardTime"),
-                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetFileAttributesCall), "guardTime", Time.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<Time>(typeof(SetFileAttributesCall), "guardTime", AutoExtensions.TimeReflector)),
                 VoidReflector.Reflectors),
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
@@ -1192,17 +1207,6 @@ namespace More.Net.Nfs3Procedure
     //
     // ReadDirPlus Procedure
     //
-    public class ReadDirPlus : RpcProcedure
-    {
-        public readonly ReadDirPlusReply reply;
-
-        public ReadDirPlus(ReadDirPlusCall call)
-            : base("ReadDirPlus", (UInt32)Nfs3Command.READDIRPLUS, call.CreateSerializer())
-        {
-            this.reply = (ReadDirPlusReply)FormatterServices.GetUninitializedObject(typeof(ReadDirPlusReply));
-            this.responseSerializer = this.reply.CreateSerializer();
-        }
-    }
     public class ReadDirPlusCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -1235,31 +1239,26 @@ namespace More.Net.Nfs3Procedure
     }
     public class EntryPlus : ISerializerCreator
     {
-        static IReflector NextEntryReflectorCreator(Reflectors reflectorsReference)
-        {
-            return new XdrBooleanDescriminateReflector(
-
-                new XdrBooleanReflector(typeof(EntryPlus), "nextEntryIncluded"),
-
-                new Reflectors(new ClassFieldReflectors<EntryPlus>(typeof(EntryPlus), "nextEntry", reflectorsReference)),
-
-                VoidReflector.Reflectors);
-        }
-
-        //
-        // These serializers have to be created weirdly because there are some circular references in it
-        //
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new BigEndianUInt64Reflector                    (typeof(EntryPlus), "fileID"),
             new XdrStringReflector                          (typeof(EntryPlus), "fileName", UInt32.MaxValue),
             new BigEndianUInt64Reflector                    (typeof(EntryPlus), "cookie"),
             new ClassFieldReflectors<OptionalFileAttributes>(typeof(EntryPlus), "optionalAttributes", OptionalFileAttributes.memberSerializers),
             new ClassFieldReflectors<OptionalFileHandle>    (typeof(EntryPlus), "optionalHandle", OptionalFileHandle.memberSerializers),
-            null // Placeholder
-        },
-            NextEntryReflectorCreator);
+            new XdrBooleanReflector                         (typeof(EntryPlus), "nextEntryIncluded"),
+        });
+        public static readonly ReflectorToInstanceSerializerAdapater<EntryPlus> instanceSerializer =
+            new ReflectorToInstanceSerializerAdapater<EntryPlus>(memberSerializers, DeserializationConstructor);
+        static EntryPlus DeserializationConstructor()
+        {
+            return new EntryPlus();
+        }
 
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
+        public static Boolean IsLastElement(EntryPlus entryPlue)
+        {
+            return !entryPlue.nextEntryIncluded;
+        }
 
         public FileID fileID;
         public String fileName;
@@ -1267,8 +1266,10 @@ namespace More.Net.Nfs3Procedure
         public OptionalFileAttributes optionalAttributes;
         public OptionalFileHandle optionalHandle;
         Boolean nextEntryIncluded;
-        EntryPlus nextEntry;
 
+        EntryPlus()
+        {
+        }
         public EntryPlus(Byte[] data, UInt32 offset, UInt32 offsetLimit)
         {
             memberSerializers.Deserialize(this, data, offset, offsetLimit);
@@ -1287,19 +1288,9 @@ namespace More.Net.Nfs3Procedure
             this.optionalHandle = optionalHandle;
             this.nextEntryIncluded = false;
         }
-        public EntryPlus NextEntry { get { return nextEntry; } }
-        public void SetNextEntry(EntryPlus nextEntry)
+        public void IsNotLastEntry()
         {
-            if (nextEntry == null)
-            {
-                this.nextEntry = null;
-                this.nextEntryIncluded = false;
-            }
-            else
-            {
-                this.nextEntry = nextEntry;
-                this.nextEntryIncluded = true;
-            }
+            this.nextEntryIncluded = true;
         }
     }
     public class ReadDirPlusReply : ISerializerCreator
@@ -1310,7 +1301,8 @@ namespace More.Net.Nfs3Procedure
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(ReadDirPlusReply), "entriesIncluded"),
                 new Reflectors(new IReflector[] {
-                    new ClassFieldReflectors<EntryPlus>(typeof(ReadDirPlusReply), "entry", EntryPlus.memberSerializers),
+                    new DynamicElementLengthDelimitedArrayReflector<EntryPlus>(typeof(ReadDirPlusReply),
+                        "entries", EntryPlus.IsLastElement, EntryPlus.instanceSerializer),
                     new XdrBooleanReflector               (typeof(ReadDirPlusReply), "endOfEntries")}),
                 VoidReflector.Reflectors),
         };
@@ -1323,21 +1315,22 @@ namespace More.Net.Nfs3Procedure
             ),
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
+        
 
         public Status status;
         public OptionalFileAttributes optionalDirectoryAttributes;
         public Byte[] cookieVerifier;
         public Boolean entriesIncluded;
-        public EntryPlus entry;
+        public EntryPlus[] entries;
         public Boolean endOfEntries;
 
-        public ReadDirPlusReply(OptionalFileAttributes optionalDirectoryAttributes, Byte[] cookieVerifier, EntryPlus entry, Boolean endOfEntries)
+        public ReadDirPlusReply(OptionalFileAttributes optionalDirectoryAttributes, Byte[] cookieVerifier, EntryPlus[] entries, Boolean endOfEntries)
         {
             this.status = Status.Ok;
             this.optionalDirectoryAttributes = optionalDirectoryAttributes;
             this.cookieVerifier = cookieVerifier;
-            this.entriesIncluded = (entry == null) ? false : true;
-            this.entry = entry;
+            this.entriesIncluded = (entries != null);
+            this.entries = entries;
             this.endOfEntries = endOfEntries;
         }
         public ReadDirPlusReply(Status status, OptionalFileAttributes optionalDirectoryAttributes)

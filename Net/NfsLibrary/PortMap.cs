@@ -48,6 +48,7 @@ namespace More.Net
             this.mapping = mapping;
         }
     }
+    /*
     public class Mapping
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
@@ -56,9 +57,15 @@ namespace More.Net
             new BigEndianUInt32Reflector(typeof(Mapping), "protocol"),
             new BigEndianUInt32Reflector(typeof(Mapping), "port"),
         });
+        public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
+
 
         public UInt32 program, version, protocol, port;
 
+        public Mapping(Byte[] data, UInt32 offset, UInt32 offsetLimit)
+        {
+            memberSerializers.Deserialize(this, data, offset, offsetLimit);
+        }
         public Mapping(UInt32 program, UInt32 version, UInt32 protocol, UInt32 port)
         {
             this.program = program;
@@ -67,9 +74,11 @@ namespace More.Net
             this.port = port;
         }
     }
+    */
 }
 namespace More.Net.PortMap2Procedure
 {
+    /*
     //
     // GetPort Procedure
     //
@@ -117,12 +126,19 @@ namespace More.Net.PortMap2Procedure
             this.port = port;
         }
     }
-
+    */
     //
     // Dump Procedure
     //
     public class MappingEntry
     {
+        public static readonly Reflectors mappingSerializers = new Reflectors(new IReflector[] {
+            new BigEndianUInt32Reflector(typeof(Mapping), "program"),
+            new BigEndianUInt32Reflector(typeof(Mapping), "version"),
+            new BigEndianUInt32Reflector(typeof(Mapping), "protocol"),
+            new BigEndianUInt32Reflector(typeof(Mapping), "port"),
+        });
+
         //
         // These serializers have to be created weirdly because is a some circular references in it
         //
@@ -137,7 +153,7 @@ namespace More.Net.PortMap2Procedure
                 VoidReflector.Reflectors);
         }
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new ClassFieldReflectors<Mapping>(typeof(MappingEntry), "mapping", Mapping.memberSerializers),
+            new ClassFieldReflectors<Mapping>(typeof(MappingEntry), "mapping", mappingSerializers),
             null // Placeholder for next mapping
         }, NextMappingEntryReflectorCreator);
 
@@ -170,7 +186,7 @@ namespace More.Net.PortMap2Procedure
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
                 new XdrBooleanReflector(typeof(DumpReply), "haveMappingList"),
-                new Reflectors(new ClassFieldReflectors<DumpReply>(typeof(DumpReply), "mappingList", MappingEntry.memberSerializers)),
+                new Reflectors(new ClassFieldReflectors<MappingEntry>(typeof(DumpReply), "mappingList", MappingEntry.memberSerializers)),
                 VoidReflector.Reflectors),
 
         });
@@ -179,6 +195,9 @@ namespace More.Net.PortMap2Procedure
         public Boolean haveMappingList;
         public MappingEntry mappingList;
 
+        public DumpReply()
+        {
+        }
         public DumpReply(Byte[] data, UInt32 offset, UInt32 offsetLimit)
         {
             memberSerializers.Deserialize(this, data, offset, offsetLimit);

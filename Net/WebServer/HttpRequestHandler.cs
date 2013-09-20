@@ -35,7 +35,7 @@ namespace More.Net
                 //
                 MemoryStream requestBuffer = new MemoryStream(1024);
 
-                HttpRequest request = new HttpRequest(stream, messageLogger, connectionDataLogger.AToBDataLogger);
+                ParsedHttpRequest request = new ParsedHttpRequest(stream, messageLogger, connectionDataLogger.AToBDataLogger);
 
                 //
                 // 2. Log the Request
@@ -57,11 +57,11 @@ namespace More.Net
 
                 if (!request.ParsedSuccessfully)
                 {
-                    response.status = HttpProtocol.HttpResponseBadRequest;
+                    response.status = Http.ResponseBadRequest;
                 }
                 else
                 {
-                    response.status = HttpProtocol.HttpResponseOK;
+                    response.status = Http.ResponseOK;
 
                     try
                     {
@@ -96,7 +96,7 @@ namespace More.Net
 
                 // Put together the response string
                 StringBuilder headerStringBuilder = new StringBuilder(
-                    String.Format("{0} {1}\n", response.version, HttpProtocol.responseStatus[response.status]));
+                    String.Format("{0} {1}\n", response.version, Http.ResponseMap[response.status]));
                 foreach (KeyValuePair<String, String> headerPair in response.Headers)
                 {
                     headerStringBuilder.Append(String.Format("{0}: {1}\n", headerPair.Key, headerPair.Value));

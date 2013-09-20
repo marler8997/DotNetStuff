@@ -17,7 +17,7 @@ namespace More.Net
         public readonly ModeFlags defaultDirectoryPermissions;
         public readonly ModeFlags defaultFilePermissions;
 
-        public ConstantPermissions(Nfs3Procedure.ModeFlags defaultDirectoryPermissions,
+        public ConstantPermissions(ModeFlags defaultDirectoryPermissions,
             ModeFlags defaultFilePermissions)
         {
             this.defaultDirectoryPermissions = defaultDirectoryPermissions;
@@ -25,7 +25,7 @@ namespace More.Net
         }
         public ModeFlags GetPermissions(ShareObject shareObject)
         {
-            return (shareObject.fileType == Nfs3Procedure.FileType.Directory) ? defaultDirectoryPermissions :
+            return (shareObject.fileType == FileType.Directory) ? defaultDirectoryPermissions :
                 defaultFilePermissions;
         }
     }

@@ -48,6 +48,8 @@
     <Compile Include="DomainName.cs" />
     <Compile Include="FrameAndHeartbeatHandler.cs" />
     <Compile Include="Ftp.cs" />
+    <Compile Include="HttpRequest.cs" />
+    <Compile Include="HttpResponse.cs" />
     <Compile Include="IncomingConnection.cs" />
     <Compile Include="Odp.cs" />
     <Compile Include="ParseUtilities.cs" />

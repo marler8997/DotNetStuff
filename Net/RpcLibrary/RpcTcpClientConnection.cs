@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Sockets;
 using System.Net;
+using System.Text;
 
 using More;
 
@@ -30,13 +31,13 @@ namespace More.Net
 
             this.nextTransactionID = 0;
         }
-        public void CallBlockingTcp(RpcProcedure procedure, ByteBuffer buffer)
+        public void CallBlockingTcp(UInt32 procedureNumber, ISerializer requestSerializer, ISerializer responseSerializer, ByteBuffer buffer)
         {
             UInt32 transmissionID = nextTransactionID++;
 
             RpcMessage callMessage = new RpcMessage(transmissionID, new RpcCall(programHeader,
-                procedure.procedureNumber, credentials, verifier));
-            callMessage.SendTcp(socket, buffer, procedure.requestSerializer);
+                procedureNumber, credentials, verifier));
+            callMessage.SendTcp(socket, buffer, requestSerializer);
 
             UInt32 contentOffset, contentMaxOffset;
             RpcMessage replyMessage = new RpcMessage(socket, buffer, out contentOffset, out contentMaxOffset);
@@ -50,11 +51,46 @@ namespace More.Net
             RpcReply reply = replyMessage.reply;
             RpcCallFailedException.VerifySuccessfulReply(callMessage.call, reply);
 
-            UInt32 offset = procedure.responseSerializer.Deserialize(buffer.array, contentOffset, contentMaxOffset);
+            UInt32 offset = responseSerializer.Deserialize(buffer.array, contentOffset, contentMaxOffset);
 
             if (offset != contentMaxOffset)
+            {
+                StringBuilder dataBuilder = new StringBuilder();
                 throw new InvalidOperationException(String.Format("Deserialization of rpc message '{0}' as the following '{1}' resulted in an offset of {2}, but the record had {3} bytes",
-                    ISerializerString.DataString(reply), ISerializerString.DataString(procedure.responseSerializer), offset, contentMaxOffset));
+                    DataStringBuilder.DataString(reply, dataBuilder), DataStringBuilder.DataString(responseSerializer, dataBuilder), offset, contentMaxOffset));
+            }
+        }
+        public T CallBlockingTcp<T>(UInt32 procedureNumber, ISerializer requestSerializer, IInstanceSerializer<T> responseSerializer, ByteBuffer buffer)
+        {
+            UInt32 transmissionID = nextTransactionID++;
+
+            RpcMessage callMessage = new RpcMessage(transmissionID, new RpcCall(programHeader,
+                procedureNumber, credentials, verifier));
+            callMessage.SendTcp(socket, buffer, requestSerializer);
+
+            UInt32 contentOffset, contentOffsetLimit;
+            RpcMessage replyMessage = new RpcMessage(socket, buffer, out contentOffset, out contentOffsetLimit);
+
+            if (replyMessage.messageType != RpcMessageType.Reply)
+                throw new InvalidOperationException(String.Format("Received an Rpc call from '{0}' but expected an rpc reply", socket.RemoteEndPoint));
+
+            if (replyMessage.transmissionID != transmissionID)
+                throw new InvalidOperationException(String.Format("Expected reply with transmission id {0} but got {1}", transmissionID, replyMessage.transmissionID));
+
+            RpcReply reply = replyMessage.reply;
+            RpcCallFailedException.VerifySuccessfulReply(callMessage.call, reply);
+
+            T instance;
+            UInt32 offset = responseSerializer.Deserialize(buffer.array, contentOffset, contentOffsetLimit, out instance);
+
+            if (offset != contentOffsetLimit)
+            {
+                StringBuilder dataBuidler = new StringBuilder();
+                throw new InvalidOperationException(String.Format("Deserialization of rpc message '{0}' as the following '{1}' resulted in an offset of {2}, but the record had {3} bytes",
+                    DataStringBuilder.DataString(reply, dataBuidler), DataStringBuilder.DataString(responseSerializer, instance, dataBuidler), offset, contentOffsetLimit));
+            }
+
+            return instance;
         }
         public void BindToPrivelegedPort()
         {

@@ -83,7 +83,7 @@ namespace More.Net
             this.messageType = RpcMessageType.Reply;
             this.reply = reply;
         }
-        public RpcMessage(Socket socket, ByteBuffer buffer, out UInt32 contentOffset, out UInt32 contentMaxOffset)
+        public RpcMessage(Socket socket, ByteBuffer buffer, out UInt32 contentOffset, out UInt32 contentOffsetLimit)
             : base(memberSerializers)
         {
             //
@@ -107,7 +107,7 @@ namespace More.Net
             //
             // Deserialize
             //
-            contentMaxOffset = (UInt32)rpcMessageSize;
+            contentOffsetLimit = (UInt32)rpcMessageSize;
 
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StartSerialize();
             contentOffset = Deserialize(buffer.array, 0, (UInt32)rpcMessageSize);
@@ -137,7 +137,7 @@ namespace More.Net
 
             if (offset != totalMessageLength + 4)
                 throw new InvalidOperationException(String.Format("[CodeBug] The caclulated serialization length of RpcMessage '{0}' was {1} but actual size was {2}",
-                    ISerializerString.DataString(this), totalMessageLength, offset));
+                    DataStringBuilder.DataString(this, new StringBuilder()), totalMessageLength, offset));
 
             //
             // Insert the record header
@@ -166,7 +166,7 @@ namespace More.Net
 
             if (offset != totalMessageLength)
                 throw new InvalidOperationException(String.Format("[CodeBug] The caclulated serialization length of RpcMessage '{0}' was {1} but actual size was {2}",
-                    ISerializerString.DataString(this), totalMessageLength, offset));
+                    DataStringBuilder.DataString(this, new StringBuilder()), totalMessageLength, offset));
 
             socket.SendTo(buffer.array, 0, (Int32)totalMessageLength, SocketFlags.None, endPoint);
         }

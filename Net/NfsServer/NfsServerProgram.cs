@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 
@@ -7,7 +8,7 @@ using More;
 
 namespace More.Net
 {
-    public enum ConsoleLogLevel
+    public enum LogLevel
     {
         None,
         Warning,
@@ -23,8 +24,14 @@ namespace More.Net
 
         public CLGenericArgument<UInt16> npcListenPort;
 
-        public CLEnumArgument<ConsoleLogLevel> consoleLogLevel;
-        public CLSwitch internalPerformanceLog;
+        public CLStringArgument logFile;
+
+        public CLEnumArgument<LogLevel> logLevel;
+        public CLStringArgument performanceLog;
+
+#if WindowsCE
+        public CLSwitch jediTimer;
+#endif
 
         public NfsServerProgramOptions()
         {
@@ -44,17 +51,25 @@ namespace More.Net
             npcListenPort = new CLGenericArgument<UInt16>(UInt16.Parse, 'n', "NpcListenPort", "The TCP port that the NPC server will be listening to (If no port is specified, the NPC server will not be running)");
             Add(npcListenPort);
 
-            consoleLogLevel = new CLEnumArgument<ConsoleLogLevel>('c', "ConsoleLogLevel", "Level of statements to log to Console");
-            consoleLogLevel.SetDefault(ConsoleLogLevel.None);
-            Add(consoleLogLevel);
+            logFile = new CLStringArgument('f', "LogFile", "Log file (logs to stdout if not specified)");
+            Add(logFile);
 
-            internalPerformanceLog = new CLSwitch('i', "InternalPerformanceLog", "Log performance internally");
-            Add(internalPerformanceLog);
+
+            logLevel = new CLEnumArgument<LogLevel>('v', "LogLevel", "Level of statements to log");
+            logLevel.SetDefault(LogLevel.None);
+            Add(logLevel);
+
+            performanceLog = new CLStringArgument('p', "PerformanceLog", "Where to log performance ('internal',<filename>)");
+            Add(performanceLog);
+            
+#if WindowsCE
+            jediTimer = new CLSwitch('j', "JediTimer", "Adds the jedi timer timestamp to printed commands");
+            Add(jediTimer);
+#endif
         }
-
         public override void PrintUsageHeader()
         {
-            Console.WriteLine("Usage: NfsServer.exe [options] <share-directory> <share-name>");
+            Console.WriteLine("Usage: NfsServer.exe [options] (<local-share-path1> <remote-share-name1>)...");
         }
     }
 
@@ -62,18 +77,33 @@ namespace More.Net
     {
         static void Main(String[] args)
         {
+#if WindowsCE
+            try
+            {
+#endif
+            NfsServerLog.stopwatchTicksBase = Stopwatch.GetTimestamp();
+
             NfsServerProgramOptions options = new NfsServerProgramOptions();
             List<String> nonOptionArguments = options.Parse(args);
 
-            if (nonOptionArguments.Count != 2)
+            if (nonOptionArguments.Count < 2)
             {
-                options.ErrorAndUsage("Expected 2 non-option arguments but got '{0}'", nonOptionArguments.Count);
+                options.ErrorAndUsage("Expected at least 2 non-option arguments but got '{0}'", nonOptionArguments.Count);
                 return;
             }
-
-            String shareDirectory = nonOptionArguments[0];
-            String shareName = nonOptionArguments[1];
+            if (nonOptionArguments.Count % 2 == 1)
+            {
+                options.ErrorAndUsage("Expected an even number of non-option arguments but got {0}", nonOptionArguments.Count);
+            }
             
+            RootShareDirectory[] rootShareDirectories = new RootShareDirectory[nonOptionArguments.Count / 2];
+            for (int i = 0; i < rootShareDirectories.Length; i++)
+            {
+                String localSharePath = nonOptionArguments[2 * i];
+                String remoteShareName = nonOptionArguments[2 * i + 1];
+                rootShareDirectories[i] = new RootShareDirectory(localSharePath, remoteShareName);
+            }
+
             //
             // Options not exposed via command line yet
             //
@@ -102,55 +132,96 @@ namespace More.Net
                     
             //
             // Logging Options
-            //
-            NfsServerLog.storePerformance                   = options.internalPerformanceLog.set;
-            NfsServerLog.sharedFileSystemLogger             = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Info   ) ? Console.Out : null;
-            NfsServerLog.rpcCallLogger                      = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Info   ) ? Console.Out : null;
-            NfsServerLog.warningLogger                      = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Warning) ? Console.Out : null;
-            NfsServerLog.npcEventsLogger                    = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Info   ) ? Console.Out : null;
+            //                
+#if WindowsCE
+            JediTimer.printJediTimerPrefix = options.jediTimer.set;
+#endif
+            if(options.performanceLog.set)
+            {
 
-            RpcPerformanceLog.rpcMessageSerializationLogger = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.Info   ) ? Console.Out : null;
+                if(options.performanceLog.ArgValue.Equals("internal", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    NfsServerLog.performanceLog = new InternalPerformanceLog();
+                    if (!options.debugListenPort.set)
+                    {
+                        options.ErrorAndUsage("Invalid option combination: you cannot set '-i internal' unless you also set -d <port>");
+                        return;
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        FileStream fileStream = new FileStream(options.performanceLog.ArgValue, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+                        NfsServerLog.performanceLog = new WriterPerformanceLog(fileStream);
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine("Failed to create performance log file '{0}'", options.performanceLog.ArgValue);
+                        throw e;
+                    }
+                }
+            }
 
-            TextWriter selectServerEventLog                 = (options.consoleLogLevel.ArgValue >= ConsoleLogLevel.All    ) ? Console.Out : null;
+            TextWriter selectServerEventsLog = null;
+            if (options.logLevel.ArgValue != LogLevel.None)
+            {
+                TextWriter logWriter;
+                if (options.logFile.set)
+                {
+                    logWriter = new StreamWriter(new FileStream(options.logFile.ArgValue, FileMode.Create, FileAccess.Write, FileShare.Read));
+                }
+                else
+                {
+                    logWriter = Console.Out;
+                }
+
+                NfsServerLog.sharedFileSystemLogger             = (options.logLevel.ArgValue >= LogLevel.Info   ) ? logWriter : null;
+                NfsServerLog.rpcCallLogger                      = (options.logLevel.ArgValue >= LogLevel.Info   ) ? logWriter : null;
+                NfsServerLog.warningLogger                      = (options.logLevel.ArgValue >= LogLevel.Warning) ? logWriter : null;
+                NfsServerLog.npcEventsLogger                    = (options.logLevel.ArgValue >= LogLevel.Info   ) ? logWriter : null;
+
+                RpcPerformanceLog.rpcMessageSerializationLogger = (options.logLevel.ArgValue >= LogLevel.Info   ) ? logWriter : null;
+
+                selectServerEventsLog = (options.logLevel.ArgValue >= LogLevel.All) ? logWriter : null;
+            }
 
             //
             // Permissions
             //
-            Nfs3Procedure.ModeFlags defaultDirectoryPermissions =
-                Nfs3Procedure.ModeFlags.OtherExecute | Nfs3Procedure.ModeFlags.OtherWrite | Nfs3Procedure.ModeFlags.OtherRead |
-                Nfs3Procedure.ModeFlags.GroupExecute | Nfs3Procedure.ModeFlags.GroupWrite | Nfs3Procedure.ModeFlags.GroupRead |
-                Nfs3Procedure.ModeFlags.OwnerExecute | Nfs3Procedure.ModeFlags.OwnerWrite | Nfs3Procedure.ModeFlags.OwnerRead;
-            /*Nfs3Procedure.ModeFlags.SaveSwappedText | Nfs3Procedure.ModeFlags.SetUidOnExec | Nfs3Procedure.ModeFlags.SetGidOnExec;*/
-            Nfs3Procedure.ModeFlags defaultFilePermissions =
-                Nfs3Procedure.ModeFlags.OtherExecute | Nfs3Procedure.ModeFlags.OtherWrite | Nfs3Procedure.ModeFlags.OtherRead |
-                Nfs3Procedure.ModeFlags.GroupExecute | Nfs3Procedure.ModeFlags.GroupWrite | Nfs3Procedure.ModeFlags.GroupRead |
-                Nfs3Procedure.ModeFlags.OwnerExecute | Nfs3Procedure.ModeFlags.OwnerWrite | Nfs3Procedure.ModeFlags.OwnerRead;
-            /*Nfs3Procedure.ModeFlags.SaveSwappedText | Nfs3Procedure.ModeFlags.SetUidOnExec | Nfs3Procedure.ModeFlags.SetGidOnExec;*/
+            ModeFlags defaultDirectoryPermissions =
+                ModeFlags.OtherExecute | ModeFlags.OtherWrite | ModeFlags.OtherRead |
+                ModeFlags.GroupExecute | ModeFlags.GroupWrite | ModeFlags.GroupRead |
+                ModeFlags.OwnerExecute | ModeFlags.OwnerWrite | ModeFlags.OwnerRead;
+            /*ModeFlags.SaveSwappedText | ModeFlags.SetUidOnExec | ModeFlags.SetGidOnExec;*/
+            ModeFlags defaultFilePermissions =
+                ModeFlags.OtherExecute | ModeFlags.OtherWrite | ModeFlags.OtherRead |
+                ModeFlags.GroupExecute | ModeFlags.GroupWrite | ModeFlags.GroupRead |
+                ModeFlags.OwnerExecute | ModeFlags.OwnerWrite | ModeFlags.OwnerRead;
+            /*ModeFlags.SaveSwappedText | ModeFlags.SetUidOnExec | ModeFlags.SetGidOnExec;*/
             IPermissions permissions = new ConstantPermissions(defaultDirectoryPermissions, defaultFilePermissions);
 
-            RootShareDirectory[] rootShareDirectories = new RootShareDirectory[] {
-                new RootShareDirectory(shareDirectory, shareName),
-            };
 
             IFileIDsAndHandlesDictionary fileIDDictionary = new FreeStackFileIDDictionary(512, 512, 4096, 1024);
 
             SharedFileSystem sharedFileSystem = new SharedFileSystem(fileIDDictionary, permissions, rootShareDirectories);
 
-            try
-            {
-                new RpcServicesManager().Run(
-                    selectServerEventLog,
-                    debugServerEndPoint,
-                    npcServerEndPoint,
-                    listenIPAddress,
-                    backlog, sharedFileSystem,
-                    Ports.PortMap, mountListenPort, Ports.Nfs,
-                    readSizeMax, suggestedReadSizeMultiple);
+            new RpcServicesManager().Run(
+                selectServerEventsLog,
+                debugServerEndPoint,
+                npcServerEndPoint,
+                listenIPAddress,
+                backlog, sharedFileSystem,
+                Ports.PortMap, mountListenPort, Ports.Nfs,
+                readSizeMax, suggestedReadSizeMultiple);
+            
+#if WindowsCE
             }
-            finally
+            catch (Exception e)
             {
-                if (NfsServerLog.storePerformance == true) NfsServerLog.PrintNfsCalls(Console.Out);
+                Console.WriteLine(e.ToString());
             }
+#endif
         }
     }
 }

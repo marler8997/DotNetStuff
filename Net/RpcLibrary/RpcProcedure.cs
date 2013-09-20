@@ -7,7 +7,7 @@ using More;
 
 namespace More.Net
 {
-    //publicIReflectorAccessor
+    /*
     public class RpcProcedure
     {
         public readonly String procedureName;
@@ -32,4 +32,5 @@ namespace More.Net
             this.requestSerializer = requestSerializer;
         }
     }
+    */
 }

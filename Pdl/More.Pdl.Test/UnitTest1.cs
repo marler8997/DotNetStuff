@@ -2,6 +2,8 @@
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using More.Net.PdlTestObjects;
+
 namespace More.Pdl.Test
 {
     [TestClass]

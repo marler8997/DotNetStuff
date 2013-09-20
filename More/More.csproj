@@ -44,6 +44,7 @@
     <Compile Include="ContextTypeFinder.cs" />
     <Compile Include="ArrayReflectors.cs" />
     <Compile Include="Enumerators.cs" />
+    <Compile Include="Http.cs" />
     <Compile Include="IDataHandler.cs" />
     <Compile Include="FixedInterfaces.cs" />
     <Compile Include="IRandomGenerator.cs" />
@@ -61,6 +62,7 @@
     <Compile Include="EndPoints.cs" />
     <Compile Include="MissingInWindowsCE.cs" />
     <Compile Include="ProcessExecutor.cs" />
+    <Compile Include="RollingLog.cs" />
     <Compile Include="SelectServer.cs" />
     <Compile Include="SelectSocketTunnels.cs" />
     <Compile Include="Serialization.cs" />

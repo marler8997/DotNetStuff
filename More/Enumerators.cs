@@ -4,6 +4,44 @@ using System.Collections.Generic;
 
 namespace More
 {
+    /*
+    public class ILinkedList<T>
+    {
+        class Node<T>
+        {
+            T current;
+            Node<T> next;
+            public Node(T obj)
+            {
+                this.current = obj;
+            }
+        }
+
+
+        Node<T> root;
+        Node<T> last;
+        UInt32 count;
+        public ILinkedList()
+        {
+            this.count = 0;
+        }
+        public ILinkedList(T obj)
+        {
+            this.root = new Node<T>(obj);
+            this.count = 0;
+        }
+
+        public ILinkedList Add(T next)
+        {
+            this.next = new ILinkedList<T>(next);
+            return next;
+        }
+        public T[] ToArray()
+        {
+
+        }
+    }
+    */
     public static class EnumeratorExtensions
     {
         public static IEnumerator<T> GetArrayEnumerator<T>(this T[] array)

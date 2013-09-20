@@ -330,4 +330,101 @@ namespace More
             builder.Append(']');
         }
     }
+
+
+    //
+    // Used to serialize arrays of objects that have dynamic serialization lengths
+    // and the size is determined by some delimited value
+    //
+    public class DynamicElementLengthDelimitedArrayReflector<ElementType> : ClassFieldReflector
+    {
+        public delegate Boolean IsLastElement(ElementType element);
+
+        readonly IsLastElement isLastElementCallback;
+        readonly IInstanceSerializer<ElementType> elementSerializer;
+
+        public DynamicElementLengthDelimitedArrayReflector(Type classThatHasThisField, String fieldName,
+            IsLastElement isLastElementCallback, IInstanceSerializer<ElementType> elementSerializer)
+            : base(classThatHasThisField, fieldName, typeof(ElementType[]))
+        {
+            this.isLastElementCallback = isLastElementCallback;
+            this.elementSerializer = elementSerializer;
+        }
+        public override UInt32 FixedSerializationLength()
+        {
+            return UInt32.MaxValue;
+        }
+        public ElementType[] CheckAndGetValue(Object instance)
+        {
+            ElementType[] elements = (ElementType[])fieldInfo.GetValue(instance);
+            if (elements == null || elements.Length <= 0) throw new InvalidOperationException(String.Format(
+                 "Field '{0}' of type '{1}' was designated as a delimited array type and cannot be null or have no elements",
+                 fieldInfo.Name, fieldInfo.GetType().Name));
+            return elements;
+        }
+        public override UInt32 SerializationLength(Object instance)
+        {
+            ElementType[] elements = CheckAndGetValue(instance);
+            UInt32 length = 0;
+            for (int i = 0; i < elements.Length; i++)
+            {
+                length += elementSerializer.SerializationLength(elements[i]);
+            }
+            return length;
+        }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
+        {
+            ElementType[] elements = CheckAndGetValue(instance);
+            for (int i = 0; i < elements.Length; i++)
+            {
+                offset = elementSerializer.Serialize(array, offset, elements[i]);
+            }
+            return offset;
+        }
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 offsetLimit)
+        {
+            GenericArrayBuilder<ElementType> arrayBuilder = new GenericArrayBuilder<ElementType>();
+
+            while(true)
+            {
+                ElementType element;
+                offset = elementSerializer.Deserialize(array, offset, offsetLimit, out element);
+
+                arrayBuilder.Add(element);
+                if (isLastElementCallback(element))
+                {
+                    fieldInfo.SetValue(instance, arrayBuilder.Build());
+                    return offset;
+                }
+            }
+        }
+        public override void DataSmallString(Object instance, StringBuilder builder)
+        {
+            Object valueAsObject = fieldInfo.GetValue(instance);
+            if (valueAsObject == null)
+            {
+                builder.Append("null");
+                return;
+            }
+            ElementType[] valueAsArray = (ElementType[])valueAsObject;
+            builder.Append(String.Format("[{0} elements]", valueAsArray.Length));
+        }
+        public override void DataString(Object instance, StringBuilder builder)
+        {
+            Object valueAsObject = fieldInfo.GetValue(instance);
+            if (valueAsObject == null)
+            {
+                builder.Append("null");
+                return;
+            }
+
+            ElementType[] valueAsArray = (ElementType[])valueAsObject;
+            builder.Append('[');
+            for (int i = 0; i < valueAsArray.Length; i++)
+            {
+                elementSerializer.DataString(valueAsArray[i], builder);
+            }
+            builder.Append(']');
+        }
+    }
 }

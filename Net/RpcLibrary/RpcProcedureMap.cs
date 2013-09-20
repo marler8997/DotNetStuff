@@ -4,6 +4,7 @@ using System.Text;
 
 namespace More.Net
 {
+    /*
     public interface IRpcProcedureMap
     {
         RpcProcedure Lookup(UInt32 procedureNumber);
@@ -30,4 +31,5 @@ namespace More.Net
             return procedure;
         }
     }
+    */
 }

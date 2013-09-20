@@ -37,16 +37,12 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
-    <Reference Include="System.Web" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DefaultUrlToFileTranslator.cs" />
     <Compile Include="BatchResourceHandler.cs" />
     <Compile Include="ExtensionFilteredResourceHandler.cs" />
-    <Compile Include="HttpProtocol.cs" />
-    <Compile Include="HttpRequest.cs" />
     <Compile Include="HttpRequestHandler.cs" />
-    <Compile Include="HttpResponse.cs" />
     <Compile Include="ResourceHandler.cs" />
     <Compile Include="UrlToFileTranslator.cs" />
     <Compile Include="WebServerProgram.cs" />

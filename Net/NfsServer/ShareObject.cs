@@ -7,7 +7,7 @@ namespace More.Net
 {
     public class ShareObject
     {
-        public readonly Nfs3Procedure.FileType fileType;
+        public readonly FileType fileType;
         public readonly UInt64 fileID;
         public readonly UInt64 cookie;
 
@@ -18,10 +18,10 @@ namespace More.Net
         public readonly Byte[] fileHandleBytes;
         public readonly Nfs3Procedure.OptionalFileHandle optionalFileHandleClass;
 
-        public readonly Nfs3Procedure.FileAttributes fileAttributes;
+        public readonly FileAttributes fileAttributes;
         public readonly Nfs3Procedure.OptionalFileAttributes optionalFileAttributes;
 
-        public ShareObject(Nfs3Procedure.FileType fileType, UInt64 fileID, Byte[] fileHandleBytes, String localPathAndName, String shareLeafName)
+        public ShareObject(FileType fileType, UInt64 fileID, Byte[] fileHandleBytes, String localPathAndName, String shareLeafName)
         {
             this.fileType = fileType;
             this.fileID = fileID;
@@ -35,20 +35,20 @@ namespace More.Net
             this.fileInfo = null;
 
 
-            this.fileAttributes = new Nfs3Procedure.FileAttributes();
+            this.fileAttributes = new FileAttributes();
             this.fileAttributes.fileType = fileType;
             this.fileAttributes.fileID = fileID;
             this.fileAttributes.fileSystemID = 0;
-            if (fileType != Nfs3Procedure.FileType.Regular)
+            if (fileType != FileType.Regular)
             {
                 this.fileAttributes.fileSize = 0;
                 this.fileAttributes.diskSize = 0;
             }
-            this.fileAttributes.lastAccessTime                      = new Nfs3Procedure.Time();
-            this.fileAttributes.lastModifyTime                      = new Nfs3Procedure.Time();
-            this.fileAttributes.lastAttributeModifyTime             = new Nfs3Procedure.Time();
+            this.fileAttributes.lastAccessTime                      = new Time();
+            this.fileAttributes.lastModifyTime                      = new Time();
+            this.fileAttributes.lastAttributeModifyTime             = new Time();
 
-            if (fileType == Nfs3Procedure.FileType.Directory)
+            if (fileType == FileType.Directory)
             {
                 this.fileAttributes.fileSize = 4096;
                 this.fileAttributes.diskSize = 4096;
@@ -81,10 +81,10 @@ namespace More.Net
         {
             switch (fileType)
             {
-                case Nfs3Procedure.FileType.Regular:
+                case FileType.Regular:
                     if (!File.Exists(localPathAndName)) return Nfs3Procedure.Status.ErrorStaleFileHandle;
                     break;
-                case Nfs3Procedure.FileType.Directory:
+                case FileType.Directory:
                     if (!Directory.Exists(localPathAndName)) return Nfs3Procedure.Status.ErrorStaleFileHandle;
                     break;
             }
@@ -112,20 +112,20 @@ namespace More.Net
             //
             // Update file attributes
             //
-            Nfs3Procedure.ModeFlags newPermissions = permissions.GetPermissions(this);
+            ModeFlags newPermissions = permissions.GetPermissions(this);
             if (newPermissions != fileAttributes.protectionMode)
             {
                 attributesChanged = true;
                 fileAttributes.protectionMode = newPermissions;
             }
 
-            fileAttributes.hardLinks = (fileType == Nfs3Procedure.FileType.Directory) ?
+            fileAttributes.hardLinks = (fileType == FileType.Directory) ?
                 2U : 1U;
 
             fileAttributes.ownerUid = 0;
             fileAttributes.gid = 0;
 
-            if (fileType == Nfs3Procedure.FileType.Regular)
+            if (fileType == FileType.Regular)
             {
                 UInt64 newFileSize = (UInt64)fileInfo.Length;
                 if (fileAttributes.fileSize != newFileSize)

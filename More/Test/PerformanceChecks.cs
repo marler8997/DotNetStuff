@@ -15,6 +15,79 @@ namespace More
     public class PerformanceChecks
     {
         [TestMethod]
+        public void PerformanceTestArrayBuilder()
+        {
+            PerformanceTestArrayBuilderInt32(500);
+            //PerformanceTestArrayBuilderObject(500);
+        }
+        public static void PerformanceTestArrayBuilderInt32(Int32 arrayLength)
+        {
+            long before;
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000; i++)
+            {
+                ArrayBuilder builder = new ArrayBuilder(typeof(Int32));
+                for (int j = 0; j < arrayLength; j++)
+                {
+                    builder.Add(j);
+                }
+                Array array = builder.Build();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000; i++)
+            {
+                GenericArrayBuilder<Int32> builder = new GenericArrayBuilder<Int32>();
+                for (int j = 0; j < arrayLength; j++)
+                {
+                    builder.Add(j);
+                }
+                Array array = builder.Build();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+        }
+        public static void PerformanceTestArrayBuilderObject(Int32 arrayLength)
+        {
+            long before;
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000; i++)
+            {
+                ArrayBuilder builder = new ArrayBuilder(typeof(Object));
+                for (int j = 0; j < arrayLength; j++)
+                {
+                    builder.Add(new Object());
+                }
+                Array array = builder.Build();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000; i++)
+            {
+                GenericArrayBuilder<Object> builder = new GenericArrayBuilder<Object>();
+                for (int j = 0; j < arrayLength; j++)
+                {
+                    builder.Add(new Object());
+                }
+                Array array = builder.Build();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+        }
+
+
+        [TestMethod]
         public void PerformanceTestBitArrays()
         {
             PerformanceTestBitArrays(100000);

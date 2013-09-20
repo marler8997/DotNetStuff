@@ -41,14 +41,14 @@ namespace More.Net
         private static String CheckForFailureInReply(RpcCall call, RpcReply reply)
         {
             if (reply.status != RpcReplyStatus.Accepted)
-                return ISerializerString.DataString(reply.rejectedReply);
+                return DataStringBuilder.DataString(reply.rejectedReply, new StringBuilder());
 
             RpcAcceptedReply acceptedReply = reply.acceptedReply;
             if (acceptedReply.status == RpcAcceptStatus.Success) return null;
 
             if (acceptedReply.status == RpcAcceptStatus.ProgramMismatch)
             {
-                return String.Format("ProgramMismatch: {0}", ISerializerString.DataString(acceptedReply.mismatchInfo));
+                return String.Format("ProgramMismatch: {0}", DataStringBuilder.DataString(acceptedReply.mismatchInfo, new StringBuilder()));
             }
             else
             {
@@ -59,7 +59,7 @@ namespace More.Net
         {
             String failureReason = CheckForFailureInReply(call, reply);
             if (failureReason == null) throw new InvalidOperationException(
-                String.Format("Expected this rpc reply '{0}' to have a failure but did not?", ISerializerString.DataString(reply)));
+                String.Format("Expected this rpc reply '{0}' to have a failure but did not?", DataStringBuilder.DataString(reply, new StringBuilder())));
             return failureReason;
         }
         public static void VerifySuccessfulReply(RpcCall call, RpcReply reply)
@@ -71,7 +71,7 @@ namespace More.Net
         }
 
         private RpcCallFailedException(RpcCall call, String failureReason)
-            : base(String.Format("{0} failed: {1}", ISerializerString.DataString(call), failureReason))
+            : base(String.Format("{0} failed: {1}", DataStringBuilder.DataString(call, new StringBuilder()), failureReason))
         {
         }
 

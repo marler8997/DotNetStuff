@@ -11,7 +11,7 @@ namespace More.Net
 {
     public interface IResourceHandler
     {
-        void HandleResource(HttpRequest request, HttpResponse response);
+        void HandleResource(ParsedHttpRequest request, HttpResponse response);
     }
 
 }
