@@ -218,6 +218,36 @@ namespace More
             Console.WriteLine("Performing analysis...");
             Console.WriteLine("-----------------------------------");
 
+            //
+            // Count the number of primes
+            //
+            UInt32 currentCoprimeIndex = 1;
+            UInt32 nextPrimeIndex = n + 1;
+            UInt32 primeCount = 1;
+            //Console.WriteLine("Cn,2 = P{0} = {1}", nextPrimeIndex + 1, Cn[1]);
+            while (true)
+            {
+                currentCoprimeIndex++;
+                if(currentCoprimeIndex >= cnCount) break;
+                UInt32 coprime = Cn[currentCoprimeIndex];
+
+                UInt32 nextPrime = PrimeTable.Values[nextPrimeIndex];
+                while (true)
+                {
+                    if (coprime == nextPrime)
+                    {
+                        //Console.WriteLine("Cn,{0} = P{1} = {2}", currentCoprimeIndex + 1, nextPrimeIndex + 1, nextPrime);
+                        primeCount++;
+                        nextPrimeIndex++;
+                        break;
+                    }
+                    currentCoprimeIndex++;
+                    if (currentCoprimeIndex >= cnCount) break;
+                    coprime = Cn[currentCoprimeIndex];
+                }
+            }
+            Console.WriteLine("There are {0} primes in this coprime set", primeCount);
+
 
             //
             // Count Intervals and get max interval
@@ -385,8 +415,8 @@ namespace More
                 UInt32 coprime = Cn[i];
                 if (coprime > currentFilterNumber)
                 {
-                    Console.WriteLine("There are {0} twin coprimes between {1} and {2}",
-                        currentTwinCoprimeCount, previousFilterNumber, currentFilterNumber);
+                    //Console.WriteLine("There are {0} twin coprimes between {1} and {2}",
+                    //    currentTwinCoprimeCount, previousFilterNumber, currentFilterNumber);
                     currentFilterNumberIndex++;
                     if (currentFilterNumberIndex >= GnList.Count) break;
                     previousFilterNumber = currentFilterNumber;

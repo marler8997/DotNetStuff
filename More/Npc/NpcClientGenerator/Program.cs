@@ -340,17 +340,17 @@ namespace More
                     {
                         Console.WriteLine("        /// <summary>The constructor with an endpoint</summary>");
                     }
-                    Console.WriteLine("        public {0}(EndPoint endPoint)", typeName);
+                    Console.WriteLine("        public {0}(EndPoint endPoint, Boolean threadSafe)", typeName);
                     Console.WriteLine("        {");
-                    Console.WriteLine("            this.npcClientCaller = new NpcClient(endPoint);");
+                    Console.WriteLine("            this.npcClientCaller = new NpcClient(endPoint, threadSafe);");
                     Console.WriteLine("        }");
                     if (xmlComments)
                     {
                         Console.WriteLine("        /// <summary>The constructor with a socket</summary>");
                     }
-                    Console.WriteLine("        public {0}(Socket socket)", typeName);
+                    Console.WriteLine("        public {0}(Socket socket, Boolean threadSafe)", typeName);
                     Console.WriteLine("        {");
-                    Console.WriteLine("            this.npcClientCaller = new NpcClient(socket);");
+                    Console.WriteLine("            this.npcClientCaller = new NpcClient(socket, threadSafe);");
                     Console.WriteLine("        }");
 
                     List<Method> methodList = pair.Value;

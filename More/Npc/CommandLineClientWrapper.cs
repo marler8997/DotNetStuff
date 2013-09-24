@@ -105,7 +105,7 @@ namespace More
         readonly InterfaceMapping interfaceMapping;
         public CommandLineClient(EndPoint serverEndPoint, InterfaceMapping interfaceMapping)
         {
-            this.client = new NpcClient(serverEndPoint);
+            this.client = new NpcClient(serverEndPoint, false);
             client.UpdateAndVerifyEnumAndObjectTypes();
             this.interfaceMapping = interfaceMapping;
         }

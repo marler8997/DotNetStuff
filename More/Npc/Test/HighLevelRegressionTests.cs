@@ -93,7 +93,7 @@ namespace More
             serverThread.Start();
             Thread.Sleep(100);
 
-            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort));
+            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort), false);
 
             client.Call("NpcMethodsForTest.EmptyCall");
             client.Call("NpcMethodsForTest.EmptyCall");
@@ -131,7 +131,7 @@ namespace More
 
             Thread.Sleep(100);
 
-            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort));
+            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort), false);
 
             client.Call("NpcMethodsForTest.EmptyCall");
             client.Call("NpcMethodsForTest.EmptyCall");

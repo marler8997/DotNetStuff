@@ -67,15 +67,24 @@ namespace More.Net
             {
                 if (timerAddress == null)
                 {
-                    IntPtr handle = CreateFile("TRC1:", GenericRead | GenericWrite, 0, IntPtr.Zero, OpenExisting, 0, IntPtr.Zero);
-                    if (handle == IntPtr.Zero || handle == new IntPtr(-1))
-                        throw new InvalidOperationException("CreateFile returned invalid handle");
+                    IntPtr handle = IntPtr.Zero;
+                    HPTimerHWtruct timerStruct;
+                    try
+                    {
+                        handle = CreateFile("TRC1:", GenericRead | GenericWrite, 0, IntPtr.Zero, OpenExisting, 0, IntPtr.Zero);
+                        if (handle == IntPtr.Zero || handle == new IntPtr(-1))
+                            throw new InvalidOperationException("CreateFile returned invalid handle");
 
-                    HPTimerHWtruct timerStruct = new HPTimerHWtruct();
-                    timerStruct.Revision = 1;
-                    Int32 bytesReturned;
-                    if (!DeviceIoControl(handle, MapTimerHw, ref timerStruct, 20, null, 0, out bytesReturned, IntPtr.Zero))
-                        throw new InvalidOperationException("DeviceIoControl returned 0");
+                        timerStruct = new HPTimerHWtruct();
+                        timerStruct.Revision = 1;
+                        Int32 bytesReturned;
+                        if (!DeviceIoControl(handle, MapTimerHw, ref timerStruct, 20, null, 0, out bytesReturned, IntPtr.Zero))
+                            throw new InvalidOperationException("DeviceIoControl returned 0");
+                    }
+                    finally
+                    {
+                        if (handle != IntPtr.Zero && handle != new IntPtr(-1)) CloseHandle(handle);
+                    }
 
                     if (timerStruct.TimerRegPtr == IntPtr.Zero)
                         throw new InvalidOperationException("HPTimerHWStruct.TimerRegPtr is 0");

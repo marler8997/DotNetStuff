@@ -463,6 +463,50 @@ namespace More
             DONE:
             return new String(buffer, 0, bufferIndex);
         }
+        /*
+        public static String CamelToUpperUnderscoreCase(this String camelString)
+        {
+            if (String.IsNullOrEmpty(camelString)) return camelString;
+
+            Char[] buffer = new Char[underscoreString.Length];
+            Int32 bufferIndex = 0;
+
+            Int32 offset = 0;
+
+            while (true)
+            {
+                if (underscoreString[offset] != '_') break;
+                offset++;
+                if (offset >= underscoreString.Length) return "";
+            }
+
+            buffer[bufferIndex++] = Char.ToUpper(underscoreString[offset]);
+            offset++;
+
+            while (offset < underscoreString.Length)
+            {
+                Char c = underscoreString[offset];
+                if (c != '_')
+                {
+                    buffer[bufferIndex++] = Char.ToLower(c);
+                }
+                else
+                {
+                    while (true)
+                    {
+                        offset++;
+                        if (offset >= underscoreString.Length) goto DONE;
+                        c = underscoreString[offset];
+                        if (c != '_') break;
+                    }
+                    buffer[bufferIndex++] = Char.ToUpper(c);
+                }
+                offset++;
+            }
+        DONE:
+            return new String(buffer, 0, bufferIndex);
+        }
+        */
     }
     public static class Int24
     {
