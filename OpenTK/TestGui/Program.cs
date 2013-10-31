@@ -1,6 +1,6 @@
 ﻿using System;
 
-using Marler.OpenTK.Common;
+using More.OpenTK;
 
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -127,17 +127,13 @@ namespace TestGui
 
             return false;
         }
-
         public override void Render()
         {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-
-
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadIdentity();
             GL.Ortho(0, ClientRectangle.Width, 0, ClientRectangle.Height, -100, 100);
-
 
             topLeftBox.DrawComponent();
             topRightBox.DrawComponent();

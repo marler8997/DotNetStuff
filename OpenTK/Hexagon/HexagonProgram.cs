@@ -5,7 +5,7 @@ using System.Threading;
 
 using Marler.Audio;
 using More;
-using Marler.OpenTK.Common;
+using More.OpenTK;
 
 using OpenTK;
 using OpenTK.Graphics;

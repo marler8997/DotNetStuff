@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 using More;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public class FpsMonitor
     {

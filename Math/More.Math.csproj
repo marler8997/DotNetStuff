@@ -39,10 +39,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Angle.cs" />
     <Compile Include="Buffer.cs" />
     <Compile Include="Coprimes.cs" />
+    <Compile Include="FactoredNumbers.cs" />
     <Compile Include="PrimeEnumerators.cs" />
     <Compile Include="PrimeFactorization.cs" />
+    <Compile Include="PrimeFactors.cs" />
     <Compile Include="PrimeGenerators.cs" />
     <Compile Include="PrimeTable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

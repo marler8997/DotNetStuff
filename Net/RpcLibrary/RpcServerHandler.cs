@@ -13,93 +13,159 @@ using ArrayCopier = System.Array;
 
 namespace More.Net
 {
-    public class RecordParser
+    public class RecordBuilder
     {
-        public delegate void RecordHandler(String clientString, Socket socket, Byte[] bytes, UInt32 offset, UInt32 maxOffset);
+        public delegate void RecordHandler(String clientString, Socket socket, Byte[] bytes, UInt32 offset, UInt32 length);
         readonly RecordHandler recordHandler;
 
+        enum State
+        {
+            Initial,
+            PartialLengthReceived,
+            LengthReceived
+        };
+
+        State state;
         Byte[] copiedFragmentData;
         UInt32 copiedFramentDataLength;
 
-        public RecordParser(RecordHandler recordHandler)
+        public RecordBuilder(RecordHandler recordHandler)
         {
+            this.state = State.Initial;
             this.recordHandler = recordHandler;
         }
-        public void ParseAndHandleRecords(String clientString, Socket socket, Byte[] bytes, UInt32 offset, UInt32 offsetLimit)
+        public void Reset()
         {
-            while (offset < offsetLimit)
+            this.copiedFragmentData = null;
+            this.copiedFramentDataLength = 0;
+        }
+
+        // This function is highly tested
+        public void HandleData(String clientString, Socket socket, Byte[] bytes, UInt32 offset, UInt32 offsetLimit)
+        {
+            switch (state)
             {
-                if (copiedFragmentData == null)
-                {
-                    //
-                    // TODO: fix this corner case
-                    //
-                    if (offsetLimit - offset < 4) throw new NotImplementedException("You have run into a corner case where the fragment length was not sent in a single packet...this corner case is not yet implemented");
-
-                    Boolean isLastFragment = (bytes[offset] & 0x80) == 0x80;
-                    if(!isLastFragment) throw new NotSupportedException("Multifragment records are not supported");
-
-                    Int32 fragmentLength =
-                        (0x7F000000 & (bytes[offset    ] << 24)) |
-                        (0x00FF0000 & (bytes[offset + 1] << 16)) |
-                        (0x0000FF00 & (bytes[offset + 2] <<  8)) |
-                        (0x000000FF & (bytes[offset + 3]      )) ;
-
-                    offset += 4;
-
-                    UInt32 fragmentBytesAvailable = offsetLimit - offset;
-
-                    if (fragmentBytesAvailable >= fragmentLength)
+                case State.Initial:
                     {
+                        while (offset < offsetLimit)
+                        {
+                            //
+                            // Only a few bytes of the length were received
+                            //
+                            if (offsetLimit - offset < 4)
+                            {
+                                copiedFramentDataLength = offsetLimit - offset;
+                                copiedFragmentData = new Byte[4];
+                                for (int i = 0; i < copiedFramentDataLength; i++)
+                                {
+                                    this.copiedFragmentData[i] = bytes[offset + i];
+                                }
+                                state = State.PartialLengthReceived;
+                                return;
+                            }
+
+                            Boolean isLastFragment = (bytes[offset] & 0x80) == 0x80;
+                            if (!isLastFragment) throw new NotSupportedException("Multifragment records are not supported");
+
+                            Int32 fragmentLength =
+                                (0x7F000000 & (bytes[offset    ] << 24)) |
+                                (0x00FF0000 & (bytes[offset + 1] << 16)) |
+                                (0x0000FF00 & (bytes[offset + 2] << 8 )) |
+                                (0x000000FF & (bytes[offset + 3]      )) ;
+
+                            offset += 4;
+
+                            UInt32 fragmentBytesAvailable = offsetLimit - offset;
+
+                            if (fragmentBytesAvailable < fragmentLength)
+                            {
+                                this.copiedFragmentData = new Byte[fragmentLength];
+                                ArrayCopier.Copy(bytes, offset, copiedFragmentData, 0, fragmentBytesAvailable);
+                                this.copiedFramentDataLength = fragmentBytesAvailable;
+                                state = State.LengthReceived;
+                                return;
+                            }
+
+                            recordHandler(clientString, socket, bytes, offset, (UInt32)fragmentLength);
+                            offset += (UInt32)fragmentLength;
+                        }
+                    }
+                    return;
+                case State.PartialLengthReceived:
+                    {
+                        while (true)
+                        {
+                            copiedFragmentData[copiedFramentDataLength] = bytes[offset];
+                            offset++;
+                            if (copiedFramentDataLength == 3) break;
+                            copiedFramentDataLength++;
+                            if (offset >= offsetLimit) return;
+                        }
+
+                        Boolean isLastFragment = (copiedFragmentData[0] & 0x80) == 0x80;
+                        if (!isLastFragment) throw new NotSupportedException("Multifragment records are not supported");
+
+                        Int32 fragmentLength =
+                            (0x7F000000 & (copiedFragmentData[0] << 24)) |
+                            (0x00FF0000 & (copiedFragmentData[1] << 16)) |
+                            (0x0000FF00 & (copiedFragmentData[2] << 8 )) |
+                            (0x000000FF & (copiedFragmentData[3]      )) ;
+
+                        UInt32 fragmentBytesAvailable = offsetLimit - offset;
+
+                        if (fragmentBytesAvailable < fragmentLength)
+                        {
+                            this.copiedFragmentData = new Byte[fragmentLength];
+                            ArrayCopier.Copy(bytes, offset, copiedFragmentData, 0, fragmentBytesAvailable);
+                            this.copiedFramentDataLength = fragmentBytesAvailable;
+                            state = State.LengthReceived;
+                            return;
+                        }
+
                         recordHandler(clientString, socket, bytes, offset, (UInt32)fragmentLength);
                         offset += (UInt32)fragmentLength;
-                        continue;
+
+                        state = State.Initial;
+                        goto case State.Initial;
                     }
-
-                    this.copiedFragmentData = new Byte[fragmentLength];
-
-                    ArrayCopier.Copy(bytes, offset, copiedFragmentData, 0, fragmentBytesAvailable);
-                    this.copiedFramentDataLength = fragmentBytesAvailable;
-
-                    return;
-                }
-                else
-                {
-                    UInt32 fragmentBytesAvailable = offsetLimit - offset;
-                    UInt32 fragmentBytesNeeded = (UInt32)copiedFragmentData.Length - copiedFramentDataLength;
-
-                    if(fragmentBytesAvailable >= fragmentBytesNeeded)
+                case State.LengthReceived:
                     {
-                        ArrayCopier.Copy(bytes, offset, copiedFragmentData, copiedFramentDataLength, fragmentBytesNeeded);
+                        UInt32 fragmentBytesAvailable = offsetLimit - offset;
+                        UInt32 fragmentBytesNeeded = (UInt32)copiedFragmentData.Length - copiedFramentDataLength;
 
-                        recordHandler(clientString, socket, copiedFragmentData, 0, copiedFramentDataLength);
-                        offset += fragmentBytesNeeded;
+                        if (fragmentBytesAvailable < fragmentBytesNeeded)
+                        {
+                            ArrayCopier.Copy(bytes, offset, copiedFragmentData, copiedFramentDataLength, fragmentBytesAvailable);
+                            copiedFramentDataLength += fragmentBytesAvailable;
+                            return;
+                        }
+                        else
+                        {
+                            ArrayCopier.Copy(bytes, offset, copiedFragmentData, copiedFramentDataLength, fragmentBytesNeeded);
 
-                        this.copiedFragmentData = null;
+                            recordHandler(clientString, socket, copiedFragmentData, 0, (UInt32)copiedFragmentData.Length);
+                            offset += fragmentBytesNeeded;
 
-                        continue;
+                            this.copiedFragmentData = null;
+
+                            this.state = State.Initial;
+                            goto case State.Initial;
+                        }
                     }
-
-                    ArrayCopier.Copy(bytes, offset, copiedFragmentData, copiedFramentDataLength, fragmentBytesAvailable);
-                    this.copiedFramentDataLength += fragmentBytesAvailable;
-
-                    return;
-                }
             }
         }
     }
-
     public abstract class RpcServerHandler : StreamSelectServerCallback, DatagramSelectServerCallback
     {
         public readonly String serviceName;
-        readonly Dictionary<Socket, RecordParser> socketToRecordBuilder;
+        readonly Dictionary<Socket, RecordBuilder> socketToRecordParser;
         
         private readonly ByteBuffer sendBuffer;
 
         public RpcServerHandler(String serviceName, ByteBuffer sendBuffer)
         {
             this.serviceName = serviceName;
-            this.socketToRecordBuilder = new Dictionary<Socket, RecordParser>();
+            this.socketToRecordParser = new Dictionary<Socket, RecordBuilder>();
             this.sendBuffer = sendBuffer;
         }
 
@@ -124,27 +190,27 @@ namespace More.Net
         public ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket)
         {
             //Console.WriteLine("[{0}] New Client '{1}'", serviceName, socket.RemoteEndPoint);
-            socketToRecordBuilder.Add(socket, new RecordParser(HandleTcpRecord));
+            socketToRecordParser.Add(socket, new RecordBuilder(HandleTcpRecord));
             return ServerInstruction.NoInstruction;
         }
         public ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket)
         {
             //Console.WriteLine("[{0}] Close Client", serviceName);
-            socketToRecordBuilder.Remove(socket);
+            socketToRecordParser.Remove(socket);
             return ServerInstruction.NoInstruction;
         }
         public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)
         {
             String clientString = String.Format("TCP:{0}", socket.SafeRemoteEndPointString());
 
-            RecordParser recordParser;
-            if (!socketToRecordBuilder.TryGetValue(socket, out recordParser))
+            RecordBuilder recordBuilder;
+            if (!socketToRecordParser.TryGetValue(socket, out recordBuilder))
             {
                 Console.WriteLine("[{0}] No entry in dictionary for client '{1}'", serviceName, clientString);
                 return ServerInstruction.CloseClient;
             }
 
-            recordParser.ParseAndHandleRecords(clientString, socket, bytes, 0, bytesRead);
+            recordBuilder.HandleData(clientString, socket, bytes, 0, bytesRead);
             return ServerInstruction.NoInstruction;
         }
         public ServerInstruction DatagramPacket(System.Net.EndPoint endPoint, Socket socket, Byte[] bytes, UInt32 bytesRead)

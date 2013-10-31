@@ -894,8 +894,34 @@ namespace More
             builder.Append("]");
         }
     }
+
+    public static class IListExtensions
+    {
+        public static String ListString<T>(this IList<T> list)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.Append('[');
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (i > 0) builder.Append(',');
+                T item = list[i];
+                if(item == null) builder.Append("null");
+                else builder.Append(item.ToString());
+            }
+            builder.Append(']');
+            return builder.ToString();
+        }
+    }
+
     public static class DictionaryExtensions
     {
+        public static U GetValueNiceErrorMessage<T,U>(this Dictionary<T,U> dictionary, T key)
+        {
+            U value;
+            if (!dictionary.TryGetValue(key, out value)) throw new KeyNotFoundException(String.Format("Key '{0}' was not found in the dictionary",
+                 key.SerializeObject()));
+            return value;
+        }
         public static String ToDataString<T,U>(this Dictionary<T,U> dictionary)
         {
             StringBuilder builder = new StringBuilder();
@@ -920,6 +946,15 @@ namespace More
                 builder.Append(pair.Value);
             }
             builder.Append('}');
+        }
+        public static U GetOrCreate<T, U>(this Dictionary<T, U> dictionary, T key) where U : new()
+        {
+            U value;
+            if (dictionary.TryGetValue(key, out value)) return value;
+
+            value = new U();
+            dictionary.Add(key, value);
+            return value;
         }
     }
     public static class StackExtensions

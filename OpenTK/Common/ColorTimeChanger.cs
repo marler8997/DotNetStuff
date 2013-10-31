@@ -4,7 +4,7 @@ using System.Drawing;
 
 using OpenTK.Graphics;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public class ColorTimeChanger
     {

@@ -6,21 +6,6 @@ namespace More.Net
 #if WindowsCE
     class JediTimer
     {
-        [DllImport("coredll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern IntPtr CreateFile(
-            String lpFileName,
-            UInt32 dwDesiredAccess,
-            UInt32 dwShareMode,
-            IntPtr SecurityAttributes,
-            UInt32 dwCreationDisposition,
-            UInt32 dwFlagsAndAttributes,
-            IntPtr hTemplateFile
-        );
-
-        [DllImport("coredll", CharSet = CharSet.Auto, SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern Boolean CloseHandle(IntPtr hObject);
-
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport("coredll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern Boolean DeviceIoControl(
@@ -71,7 +56,7 @@ namespace More.Net
                     HPTimerHWtruct timerStruct;
                     try
                     {
-                        handle = CreateFile("TRC1:", GenericRead | GenericWrite, 0, IntPtr.Zero, OpenExisting, 0, IntPtr.Zero);
+                        handle = WindowsCESafeNativeMethods.CreateFile("TRC1:", GenericRead | GenericWrite, 0, IntPtr.Zero, OpenExisting, 0, IntPtr.Zero);
                         if (handle == IntPtr.Zero || handle == new IntPtr(-1))
                             throw new InvalidOperationException("CreateFile returned invalid handle");
 
@@ -83,7 +68,7 @@ namespace More.Net
                     }
                     finally
                     {
-                        if (handle != IntPtr.Zero && handle != new IntPtr(-1)) CloseHandle(handle);
+                        if (handle != IntPtr.Zero && handle != new IntPtr(-1)) WindowsCESafeNativeMethods.CloseHandle(handle);
                     }
 
                     if (timerStruct.TimerRegPtr == IntPtr.Zero)

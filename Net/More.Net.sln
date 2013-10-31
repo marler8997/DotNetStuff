@@ -33,9 +33,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnsServer", "DnsServer\DnsS
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telnet", "Telnet\Telnet.csproj", "{B0C0F292-7F73-4BD9-BAA4-1A8C520B194B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RpcLibrary", "RpcLibrary\RpcLibrary.csproj", "{7022BDB0-9155-4FA0-B000-A6CF238498FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Rpc", "RpcLibrary\More.Rpc.csproj", "{7022BDB0-9155-4FA0-B000-A6CF238498FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NfsLibrary", "NfsLibrary\NfsLibrary.csproj", "{F4EBCD21-D4EA-4AE0-99F8-AF5649015B88}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Nfs", "NfsLibrary\More.Nfs.csproj", "{F4EBCD21-D4EA-4AE0-99F8-AF5649015B88}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NfsClient", "NfsClient\NfsClient.csproj", "{082A9B3E-6CCF-4071-9C6B-400213DA6CC8}"
 EndProject

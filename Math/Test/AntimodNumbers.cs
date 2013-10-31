@@ -24,7 +24,7 @@ namespace More.Test
         {
             for (UInt32 i = 1; i <= max; i++)
             {
-                UInt32 squareRootOfMax = (UInt32)Math.Sqrt(i);
+                UInt32 squareRootOfMax = (UInt32)System.Math.Sqrt(i);
 
                 Boolean isUnModOne = true;
 

@@ -85,6 +85,40 @@ namespace More
         public String ReadLine() { return reader.ReadLine(); }
         public void Dispose() { reader.Dispose();  }
     }
+    public class StreamLineReader : ILineReader
+    {
+        readonly Stream stream;
+        readonly LineParser lineParser;
+        readonly Byte[] receiveBuffer;
+
+        public StreamLineReader(Encoding encoding, Stream stream)
+            : this(encoding, stream, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength)
+        {
+        }
+        public StreamLineReader(Encoding encoding, Stream stream, UInt32 lineBufferInitialCapacity, UInt32 lineBufferExpandLength)
+        {
+            this.stream = stream;
+            this.lineParser = new LineParser(encoding, lineBufferInitialCapacity, lineBufferExpandLength);
+            this.receiveBuffer = new Byte[512];
+        }
+        public void Dispose()
+        {
+            stream.Dispose();
+        }
+        public string ReadLine()
+        {
+            while (true)
+            {
+                String line = lineParser.GetLine();
+                if (line != null) return line;
+
+                Int32 bytesRead = stream.Read(receiveBuffer, 0, receiveBuffer.Length);
+                if (bytesRead <= 0) return null;
+
+                lineParser.Add(receiveBuffer, 0, (UInt32)bytesRead);
+            }
+        }
+    }
     public class SocketLineReader : ILineReader
     {
         public readonly Socket socket;
@@ -97,7 +131,6 @@ namespace More
             this.lineParser = new LineParser(encoding, lineBufferInitialCapacity, lineBufferExpandLength);
             this.receiveBuffer = new Byte[512];
         }
-
         public void Dispose()
         {
             Socket socket = this.socket;

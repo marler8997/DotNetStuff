@@ -4,7 +4,7 @@ using System.Threading;
 
 using More;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public class FpsSynchronizer
     {

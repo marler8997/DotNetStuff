@@ -3,32 +3,83 @@ using System.Collections.Generic;
 
 namespace More
 {
-    public delegate PoweredPrime[] PrimeFactorizer(UInt32 value);
+    public interface IPrimeFactorizer
+    {
+        PoweredPrime[] PrimeFactorize(UInt32 value);
+        PoweredPrime[] Divide(UInt32 value, PoweredPrime[] denominatorFactors);        
+    }
+
+
+    //public delegate PoweredPrime[] PrimeFactorizer(UInt32 value);
 
     //
     // Not Thread Safe
     //
-    public class BruteForcePrimeFactorizer
+    public class BruteForcePrimeFactorizer : IPrimeFactorizer
     {
-        readonly List<PoweredPrime> primeBuffer;
+        readonly List<PoweredPrime> sharedPrimeList;
         public BruteForcePrimeFactorizer()
         {
-            primeBuffer = new List<PoweredPrime>();
+            sharedPrimeList = new List<PoweredPrime>();
         }
         public PoweredPrime[] PrimeFactorize(UInt32 value)
         {
-            if (value < 2) return null;
+            if (value < 2) return PoweredPrime.None;
 
             PoweredPrime[] primeFactors;
-            lock (primeBuffer)
+            lock (sharedPrimeList)
             {
-                PrimeFactorization.BruteFoce(value, primeBuffer);
-                primeFactors = primeBuffer.ToArray();
-                primeBuffer.Clear();
+                PrimeFactorization.BruteFoce(value, sharedPrimeList);
+                primeFactors = sharedPrimeList.ToArray();
+                sharedPrimeList.Clear();
             }
             return primeFactors;
         }
+        public PoweredPrime[] Divide(UInt32 value, PoweredPrime[] denominatorFactors)
+        {
+            PoweredPrime[] resultingFactors;
+            lock (sharedPrimeList)
+            {
+                PrimeFactorization.BruteFoce(value, sharedPrimeList);
+
+                denominatorFactors.DivideInto(sharedPrimeList);
+                resultingFactors = sharedPrimeList.ToArray();
+                sharedPrimeList.Clear();
+            }
+            return resultingFactors;
+        }
     }
+
+    public class CachingFactorizer : IPrimeFactorizer
+    {
+        readonly IPrimeFactorizer underlyingFactorizer;
+
+        readonly Dictionary<UInt32, PoweredPrime[]> cachedUInt32Factorizations = new Dictionary<UInt32, PoweredPrime[]>();
+        readonly Dictionary<Rational, FactoredRational> PositiveRationalFactorizations = new Dictionary<Rational, FactoredRational>();
+
+        public CachingFactorizer(IPrimeFactorizer underlyingFactorizer)
+        {
+            if (underlyingFactorizer == null) throw new ArgumentNullException("underlyingFactorizer");
+            this.underlyingFactorizer = underlyingFactorizer;
+        }
+        public PoweredPrime[] PrimeFactorize(UInt32 value)
+        {
+            PoweredPrime[] factors;
+            if (cachedUInt32Factorizations.TryGetValue(value, out factors)) return factors;
+
+            factors = underlyingFactorizer.PrimeFactorize(value);
+
+            if (factors == null) return null;
+            
+            cachedUInt32Factorizations.Add(value, factors);
+            return factors;
+        }
+        public PoweredPrime[] Divide(UInt32 value, PoweredPrime[] denominatorFactors)
+        {
+            return underlyingFactorizer.Divide(value, denominatorFactors);
+        }
+    }
+
 
     public static class PrimeFactorization
     {
@@ -52,9 +103,7 @@ namespace More
                     value = value / currentPrime;
                     if (value == 1)
                     {
-                        PoweredPrime poweredPrime;
-                        poweredPrime.value = currentPrime;
-                        poweredPrime.power = currentPrimePower;
+                        PoweredPrime poweredPrime = new PoweredPrime(currentPrime, currentPrimePower);
                         sortedPrimeFactors.Add(poweredPrime);
                         return;
                     }
@@ -63,9 +112,7 @@ namespace More
                 {
                     if (currentPrimePower > 0)
                     {
-                        PoweredPrime poweredPrime;
-                        poweredPrime.value = currentPrime;
-                        poweredPrime.power = currentPrimePower;
+                        PoweredPrime poweredPrime = new PoweredPrime(currentPrime, currentPrimePower);
                         sortedPrimeFactors.Add(poweredPrime);
                     }
 

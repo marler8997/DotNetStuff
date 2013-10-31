@@ -4,7 +4,7 @@ using System.Security;
 
 using OpenTK;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct MSG

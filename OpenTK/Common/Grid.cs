@@ -4,7 +4,7 @@ using System.Text;
 //using Microsoft.Xna.Framework;  
 //using Microsoft.Xna.Framework.Graphics;  
 /*
-namespace Marler.OpenTK.Common  
+namespace More.OpenTK  
 {
     //Grid Class V1.0.1  
 	//Generates, calculates and draws basic informations for the  

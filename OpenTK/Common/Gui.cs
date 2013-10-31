@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
 
 

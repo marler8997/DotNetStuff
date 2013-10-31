@@ -46,9 +46,9 @@
       <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
       <Name>More</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NfsLibrary\NfsLibrary.csproj">
+    <ProjectReference Include="..\NfsLibrary\More.Nfs.csproj">
       <Project>{F4EBCD21-D4EA-4AE0-99F8-AF5649015B88}</Project>
-      <Name>NfsLibrary</Name>
+      <Name>More.Nfs</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

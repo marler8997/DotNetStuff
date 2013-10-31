@@ -8,7 +8,7 @@ using More;
 using OpenTK;
 using OpenTK.Graphics;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public abstract class CustomApplicationWindow : GameWindow
     {

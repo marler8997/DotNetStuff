@@ -39,7 +39,7 @@ namespace More.Test
             {
                 UInt32 nextPotentialPrime = this.currentPrime += 2;
 
-                Int32 squareRoot = (Int32)Math.Sqrt(currentPrime);
+                Int32 squareRoot = (Int32)System.Math.Sqrt(currentPrime);
                 Int32 i;
                 for (i = 0; true; i++)
                 {
@@ -56,7 +56,7 @@ namespace More.Test
                 // Number is composite, save statistics
                 Single percentageChecked = (float)(100 * i) / (float)knownPrimes.Count;
                 compositePercentageChecked.Add(new CompositAndPercentageChecked(currentPrime, knownPrimes[i], percentageChecked));
-                percentageCheckedHistogram[(UInt32)Math.Ceiling(percentageChecked)]++;
+                percentageCheckedHistogram[(UInt32)System.Math.Ceiling(percentageChecked)]++;
             }
         }
     }
@@ -102,15 +102,15 @@ namespace More.Test
         {
             BruteForcePrimeFactorizer bruteForceFactorizer = new BruteForcePrimeFactorizer();
 
-            TestFactorizer(bruteForceFactorizer.PrimeFactorize);
+            TestFactorizer(bruteForceFactorizer);
             //GetMaxPrime(bruteForceFactorizer.PrimeFactorize, 1024);
 
         }
 
-        void TestFactorizer(PrimeFactorizer factorizer)
+        void TestFactorizer(IPrimeFactorizer factorizer)
         {
-            Assert.IsNull(factorizer(0));
-            Assert.IsNull(factorizer(1));
+            Assert.IsNull(factorizer.PrimeFactorize(0));
+            Assert.IsNull(factorizer.PrimeFactorize(1));
             TestFactorize(factorizer,  2, new PoweredPrime(2, 1));
             TestFactorize(factorizer,  3, new PoweredPrime(3, 1));
             TestFactorize(factorizer,  4, new PoweredPrime(2, 2));
@@ -131,9 +131,9 @@ namespace More.Test
             TestFactorize(factorizer, 19, new PoweredPrime(19, 1));
         }
 
-        void TestFactorize(PrimeFactorizer factorizer, UInt32 value, params PoweredPrime[] expectedPrimeFactors)
+        void TestFactorize(IPrimeFactorizer factorizer, UInt32 value, params PoweredPrime[] expectedPrimeFactors)
         {
-            PoweredPrime[] calculatedPrimeFactors = factorizer(value);
+            PoweredPrime[] calculatedPrimeFactors = factorizer.PrimeFactorize(value);
 
             builder.Length = 0;
             calculatedPrimeFactors.SerializeArray(builder);
@@ -147,14 +147,14 @@ namespace More.Test
             }
         }
 
-        void GetMaxPrime(PrimeFactorizer factorizer, UInt32 printEvery)
+        void GetMaxPrime(IPrimeFactorizer factorizer, UInt32 printEvery)
         {
             UInt32 i = 0;
             while (true)
             {
                 try
                 {
-                    PoweredPrime[] primeFactors = factorizer(i);
+                    PoweredPrime[] primeFactors = factorizer.PrimeFactorize(i);
                     if (i % printEvery == 0)
                     {
                         builder.Length = 0;

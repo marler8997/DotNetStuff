@@ -4,7 +4,7 @@
 //using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 /*
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public class Particle
     {

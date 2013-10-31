@@ -3,7 +3,7 @@
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public abstract class Font
     {

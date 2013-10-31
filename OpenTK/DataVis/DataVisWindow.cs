@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-using Marler.OpenTK.Common;
+using More.OpenTK;
 
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;

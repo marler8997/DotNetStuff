@@ -2,7 +2,7 @@
 
 using OpenTK.Input;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public abstract class CustomControl
     {

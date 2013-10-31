@@ -53,9 +53,9 @@
       <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
       <Name>More</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Common\Marler.OpenTK.Common.csproj">
+    <ProjectReference Include="..\Common\More.OpenTK.Common.csproj">
       <Project>{41E1A435-2942-414C-8D73-A749CB7949C2}</Project>
-      <Name>Marler.OpenTK.Common</Name>
+      <Name>More.OpenTK.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

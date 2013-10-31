@@ -45,7 +45,7 @@ namespace More
             {
                 line = ReadLine();
                 if (line == null) return null;
-                if (!line.idOriginalCase.StartsWith("#")) return line;
+                if (!line.IsComment()) return line;
             }
         }
         public LfdLine ReadLine()
@@ -64,6 +64,13 @@ namespace More
                     // Empty Line
                     if (offset >= line.Length) break;
                     if (Char.IsWhiteSpace(line[offset])) continue;
+
+                    //
+                    // If the first character is a '#' then the line is a comment
+                    if (line[offset] == '#')
+                    {
+                        return new LfdLine((context.Count > 0) ? context.Peek() : null, line, lineNumber);
+                    }
 
                     //
                     // If the first character is '}' then the line must be a BLOCK_END line

@@ -152,6 +152,14 @@ namespace More
 
         public readonly UInt32 actualLineNumber;
 
+        public LfdLine(LfdLine parent, String comment, UInt32 actualLineNumber)
+        {
+            this.parent = parent;
+            this.idOriginalCase = comment;
+            this.idLowerInvariantCase = null;
+            this.fields = null;
+            this.actualLineNumber = actualLineNumber;
+        }
         public LfdLine(LfdLine parent, String id, String[] fields, UInt32 actualLineNumber)
         {
             if (id == null) throw new ArgumentNullException("id");
@@ -161,6 +169,10 @@ namespace More
             this.idLowerInvariantCase = id.ToLowerInvariant();
 
             this.fields = fields;
+        }
+        public Boolean IsComment()
+        {
+            return idLowerInvariantCase == null;
         }
         public String CreateContextString()
         {

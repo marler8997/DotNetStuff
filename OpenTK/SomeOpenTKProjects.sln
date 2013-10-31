@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.Audio", "..\Audio\Marler.Audio.csproj", "{CF327AF6-305E-4B60-9B14-798582D0C86F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marler.OpenTK.Common", "Common\Marler.OpenTK.Common.csproj", "{41E1A435-2942-414C-8D73-A749CB7949C2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.OpenTK.Common", "Common\More.OpenTK.Common.csproj", "{41E1A435-2942-414C-8D73-A749CB7949C2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hexagon", "Hexagon\Hexagon.csproj", "{46C8565A-D771-4B2D-90EE-61F20619296B}"
 EndProject
@@ -14,6 +14,16 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tank", "Tank\Tank.csproj", "{15C68670-5A6F-4BBB-A55A-6E7E54BE4E90}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More", "..\More\More.csproj", "{9AF5441B-8208-44E6-9686-A29D8019FBD5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArtificialIntelligence", "ArtificialIntelligence\ArtificialIntelligence.csproj", "{4529C8A6-464D-48D6-AE24-E867B068B971}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Math", "..\Math\More.Math.csproj", "{26E1CA06-51F3-41B2-AD6B-BE9181E67104}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Physics2D", "PhysicsEngine2D\More.Physics2D.csproj", "{8A5BFE22-6D23-4C6F-934D-E69129AC1E80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Physics3D", "More.Physics3D\More.Physics3D.csproj", "{A93132DC-D3A1-4EAF-9918-2C713767E635}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test3DEngine", "Test3DEngine\Test3DEngine.csproj", "{B297B9D8-45FC-496E-8237-75F569062068}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +59,26 @@ Global
 		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AF5441B-8208-44E6-9686-A29D8019FBD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4529C8A6-464D-48D6-AE24-E867B068B971}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4529C8A6-464D-48D6-AE24-E867B068B971}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4529C8A6-464D-48D6-AE24-E867B068B971}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4529C8A6-464D-48D6-AE24-E867B068B971}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26E1CA06-51F3-41B2-AD6B-BE9181E67104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26E1CA06-51F3-41B2-AD6B-BE9181E67104}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26E1CA06-51F3-41B2-AD6B-BE9181E67104}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26E1CA06-51F3-41B2-AD6B-BE9181E67104}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A5BFE22-6D23-4C6F-934D-E69129AC1E80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A5BFE22-6D23-4C6F-934D-E69129AC1E80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A5BFE22-6D23-4C6F-934D-E69129AC1E80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A5BFE22-6D23-4C6F-934D-E69129AC1E80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A93132DC-D3A1-4EAF-9918-2C713767E635}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A93132DC-D3A1-4EAF-9918-2C713767E635}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A93132DC-D3A1-4EAF-9918-2C713767E635}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A93132DC-D3A1-4EAF-9918-2C713767E635}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B297B9D8-45FC-496E-8237-75F569062068}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B297B9D8-45FC-496E-8237-75F569062068}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B297B9D8-45FC-496E-8237-75F569062068}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B297B9D8-45FC-496E-8237-75F569062068}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

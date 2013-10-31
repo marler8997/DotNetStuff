@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public struct BinaryFraction
     {

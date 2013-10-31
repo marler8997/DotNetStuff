@@ -1,6 +1,6 @@
 using System;
 /*
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     // TODO: make Animated Sprice From Row
     public class AnimatedSpriteColumn

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 /*
 using Microsoft.Xna.Framework.Input;
 
-namespace Marler.OpenTK.Common
+namespace More.OpenTK
 {
     public class CustomKeyboardMapping
     {

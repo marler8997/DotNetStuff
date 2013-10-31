@@ -6,11 +6,37 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 using More;
 
 namespace System
 {
+    public class WindowsCESafeNativeMethods
+    {
+        [DllImport("coredll", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern IntPtr CreateFile(
+            String lpFileName,
+            UInt32 dwDesiredAccess,
+            UInt32 dwShareMode,
+            IntPtr SecurityAttributes,
+            UInt32 dwCreationDisposition,
+            UInt32 dwFlagsAndAttributes,
+            IntPtr hTemplateFile
+        );
+
+        [DllImport("coredll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern Boolean CloseHandle(IntPtr hObject);
+
+        [DllImport("coredll", SetLastError = true, CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern Boolean GetDiskFreeSpaceEx(String lpDirectoryName,
+            out UInt64 lpFreeBytesAvailable,
+            out UInt64 lpTotalNumberOfBytes,
+            out UInt64 lpTotalNumberOfFreeBytes);
+    }
+
     public static class CEMissingTypeExtensions
     {
         /*
@@ -257,6 +283,10 @@ namespace System.IO
     public sealed class DriveInfo
     {
         public readonly String driveName;
+        
+        UInt64 availableAndFreeBytes;
+        UInt64 totalBytes;
+        UInt64 totalFreeBytes;
 
         // Summary:
         //     Provides access to information on the specified drive.
@@ -273,21 +303,18 @@ namespace System.IO
         //   System.ArgumentException:
         //     The first letter of driveName is not an uppercase or lowercase letter from
         //     'a' to 'z'.  -or- driveName does not refer to a valid drive.
-        public DriveInfo(string driveName)
+        public DriveInfo(String driveName)
         {
             this.driveName = driveName;
         }
 
-        // Summary:
-        //     Indicates the amount of available free space on a drive.
-        //
-        // Returns:
-        //     The amount of free space available on the drive, in bytes.
-        //
-        // Exceptions:
-        //   System.IO.IOException:
-        //     An I/O error occurred (for example, a disk error or a drive was not ready).
-        public long AvailableFreeSpace { get { return 999999; } }
+        void RefreshDiskSpace()
+        {
+            if(!WindowsCESafeNativeMethods.GetDiskFreeSpaceEx(driveName,
+                out availableAndFreeBytes, out totalBytes, out totalFreeBytes))
+                throw new IOException( "GetDiskFreeSpaceEx failed");
+        }
+
         //
         // Summary:
         //     Gets the name of the file system, such as NTFS or FAT32.
@@ -298,7 +325,7 @@ namespace System.IO
         // Exceptions:
         //   System.IO.IOException:
         //     An I/O error occurred (for example, a disk error or a drive was not ready).
-        public string DriveFormat { get { return "Unknown"; } }
+        public String DriveFormat { get { return "Unknown"; } }
         //
         // Summary:
         //     Gets the drive type.
@@ -316,14 +343,14 @@ namespace System.IO
         //
         // Returns:
         //     true if the drive is ready; false if the drive is not ready.
-        public bool IsReady { get { return true; } }
+        public Boolean IsReady { get { return true; } }
         //
         // Summary:
         //     Gets the name of a drive.
         //
         // Returns:
         //     The name of the drive.
-        public string Name { get { return driveName; } }
+        public String Name { get { return driveName; } }
         //
         // Summary:
         //     Gets the root directory of a drive.
@@ -332,28 +359,11 @@ namespace System.IO
         //     A System.IO.DirectoryInfo object that contains the root directory of the
         //     drive.
         public DirectoryInfo RootDirectory { get { throw new NotSupportedException(); } }
-        //
-        // Summary:
-        //     Gets the total amount of free space available on a drive.
-        //
-        // Returns:
-        //     The total free space available on a drive, in bytes.
-        //
-        // Exceptions:
-        //   System.IO.IOException:
-        //     An I/O error occurred (for example, a disk error or a drive was not ready).
-        public long TotalFreeSpace { get { return 999999; } }
-        //
-        // Summary:
-        //     Gets the total size of storage space on a drive.
-        //
-        // Returns:
-        //     The total size of the drive, in bytes.
-        //
-        // Exceptions:
-        //   System.IO.IOException:
-        //     An I/O error occurred (for example, a disk error or a drive was not ready).
-        public long TotalSize { get { return 999999; } }
+
+        public Int64 AvailableFreeSpace { get { RefreshDiskSpace(); return (Int64)availableAndFreeBytes; } }
+        public Int64 TotalFreeSpace     { get { RefreshDiskSpace(); return (Int64)totalFreeBytes; } }
+        public Int64 TotalSize          { get { RefreshDiskSpace(); return (Int64)totalBytes; } }
+
         //
         // Summary:
         //     Gets or sets the volume label of a drive.
@@ -395,7 +405,7 @@ namespace System.IO
         //
         // Returns:
         //     The name of the drive.
-        public override string ToString()
+        public override String ToString()
         {
             return driveName;
         }
