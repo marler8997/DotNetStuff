@@ -24,6 +24,26 @@ namespace More
             return (x > y) ? 1 : ((x < y) ? -1 : 0);
         }
     }
+    public class UInt32IncreasingComparer : IComparer<UInt32>
+    {
+        private static UInt32IncreasingComparer instance = null;
+        public static UInt32IncreasingComparer Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new UInt32IncreasingComparer();
+                }
+                return instance;
+            }
+        }
+        private UInt32IncreasingComparer() { }
+        public Int32 Compare(UInt32 x, UInt32 y)
+        {
+            return (x > y) ? 1 : ((x < y) ? -1 : 0);
+        }
+    }
     public class Int32DecreasingComparer : IComparer<Int32>
     {
         private static Int32DecreasingComparer instance = null;
@@ -50,13 +70,13 @@ namespace More
     public class SortedList<T>
     {
         public T[] elements;
-        public Int32 count;
+        public UInt32 count;
 
-        private readonly Int32 extendLength;
+        private readonly UInt32 extendLength;
 
         private readonly IComparer<T> comparer;
 
-        public SortedList(Int32 initialCapacity, Int32 extendLength, IComparer<T> comparer)
+        public SortedList(UInt32 initialCapacity, UInt32 extendLength, IComparer<T> comparer)
         {
             this.elements = new T[initialCapacity];
             this.count = 0;
@@ -75,14 +95,14 @@ namespace More
                 elements = newElements;
             }
 
-            Int32 position;
+            UInt32 position;
             for (position = 0; position < count; position++)
             {
                 T element = elements[position];
                 if (comparer.Compare(newElement, element) <= 0)
                 {
                     // Move remaining elements
-                    for (Int32 copyPosition = count; copyPosition > position; copyPosition--)
+                    for (UInt32 copyPosition = count; copyPosition > position; copyPosition--)
                     {
                         elements[copyPosition] = elements[copyPosition - 1];
                     }
@@ -136,7 +156,7 @@ namespace More
             throw new InvalidOperationException(String.Format("Element {0} was not in the list", element));
         }
 
-        public void RemoveFromStart(Int32 count)
+        public void RemoveFromStart(UInt32 count)
         {
             if (count <= 0) return;
             if (count >= this.count)

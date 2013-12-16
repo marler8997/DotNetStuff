@@ -711,7 +711,7 @@ namespace More.Net
             }
             else
             {
-                buffer.EnsureCapacity(bufferLength + 256);
+                buffer.EnsureCapacityCopyData(bufferLength + 256);
             }
 
             //

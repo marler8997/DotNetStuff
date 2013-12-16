@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphicalLogic", "GraphicalLogic\GraphicalLogic.csproj", "{75330E27-832C-42BF-B53B-FA6E5E538BFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{019CFC9D-2300-4A03-918B-24EB1900B043}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{35C113C5-9033-4E45-AB4B-9E05F8CEDDC4}"
+	ProjectSection(SolutionItems) = preProject
+		GraphicalLogic.vsmdi = GraphicalLogic.vsmdi
+		LocalTestRun.testrunconfig = LocalTestRun.testrunconfig
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = GraphicalLogic.vsmdi
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{75330E27-832C-42BF-B53B-FA6E5E538BFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75330E27-832C-42BF-B53B-FA6E5E538BFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75330E27-832C-42BF-B53B-FA6E5E538BFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75330E27-832C-42BF-B53B-FA6E5E538BFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{019CFC9D-2300-4A03-918B-24EB1900B043}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{019CFC9D-2300-4A03-918B-24EB1900B043}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{019CFC9D-2300-4A03-918B-24EB1900B043}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{019CFC9D-2300-4A03-918B-24EB1900B043}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

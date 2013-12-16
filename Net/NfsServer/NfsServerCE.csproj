@@ -72,13 +72,13 @@
       <Project>{2D13809C-50A6-4047-BDFF-3F41B60FADBC}</Project>
       <Name>More.CE</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NfsLibrary\NfsLibraryCE.csproj">
+    <ProjectReference Include="..\NfsLibrary\More.Nfs.CE.csproj">
       <Project>{F7DD73A4-5294-4FB9-8E65-C39DB552FC81}</Project>
-      <Name>NfsLibraryCE</Name>
+      <Name>More.Nfs.CE</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RpcLibrary\RpcLibraryCE.csproj">
+    <ProjectReference Include="..\RpcLibrary\More.Rpc.CE.csproj">
       <Project>{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}</Project>
-      <Name>RpcLibraryCE</Name>
+      <Name>More.Rpc.CE</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />

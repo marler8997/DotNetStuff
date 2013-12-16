@@ -1,0 +1,31 @@
+﻿
+
+
+
+Enum Byte ObjectType {
+  Data      0
+  Stream    1
+  Link      2
+  Directory 3
+}
+
+
+
+ObjectListEntry {
+#  Packed {
+#    Bit idIncluded
+#    ObjectType type
+#  }
+  Byte idIncluded
+  ObjectType type
+  Ascii name
+#  Permissions permissions
+  switch type {
+    case Link
+    default {
+      if idIncluded {
+        UInt32 id
+      }
+    }
+  }
+}

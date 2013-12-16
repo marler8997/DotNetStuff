@@ -2,10 +2,68 @@
 
 namespace More
 {
+    public struct ByteArraySegmentStruct
+    {
+        public Byte[] array;
+        public UInt32 offset;
+        public UInt32 length;
+        public ByteArraySegmentStruct(Byte[] array, UInt32 offset, UInt32 length)
+        {
+            this.array = array;
+            this.offset = offset;
+            this.length = length;
+        }
+    }
+    public struct ArraySegment<T>
+    {
+        public T[] array;
+        public UInt32 offset;
+        public UInt32 length;
+    }
+
+
+    public class Allocater<T>
+    {
+        public const UInt32 DefaultExpandLength = 128;
+        public const UInt32 DefaultInitialCapacity = 128;
+
+        public readonly UInt32 expandLength;
+
+        public T[] array;
+        public UInt32 length;
+
+        public Allocater()
+            : this(DefaultInitialCapacity, DefaultExpandLength)
+        {
+        }
+        public Allocater(UInt32 initialCapacity, UInt32 expandLength)
+        {
+            this.expandLength = expandLength;
+
+            this.array = new T[initialCapacity];
+            this.length = 0;
+        }
+        public UInt32 Allocate()
+        {
+            if (length >= array.Length)
+            {
+                T[] newArray = new T[array.Length + expandLength];
+                System.Array.Copy(array, newArray, array.Length);
+                this.array = newArray;
+            }
+            UInt32 index = length;
+            length++;
+            return index;
+        }
+    }
+
+
+
+
     public interface IBuffer
     {
         Byte[] Array { get; }
-        void EnsureCapacity(Int32 capacity);
+        void EnsureCapacityCopyData(Int32 capacity);
     }
 
 
@@ -31,7 +89,7 @@ namespace More
             this.array = new Byte[initialCapacity];
         }
         public Byte[] Array { get { return array; } }
-        public void EnsureCapacity(Int32 capacity)
+        public void EnsureCapacityCopyData(Int32 capacity)
         {
             if (array.Length < capacity)
             {
@@ -43,7 +101,7 @@ namespace More
                 this.array = newArray;
             }
         }
-        public void EnsureCapacity(UInt32 capacity)
+        public void EnsureCapacityCopyData(UInt32 capacity)
         {
             if ((UInt32)array.Length < capacity)
             {
@@ -74,7 +132,7 @@ namespace More
             this.expandLength = expandLength;
             this.array = new T[initialCapacity];
         }
-        public void EnsureCapacity(Int32 capacity)
+        public void EnsureCapacityCopyData(Int32 capacity)
         {
             if (array.Length < capacity)
             {
@@ -86,7 +144,7 @@ namespace More
                 this.array = newArray;
             }
         }
-        public void EnsureCapacity(UInt32 capacity)
+        public void EnsureCapacityCopyData(UInt32 capacity)
         {
             if ((UInt32)array.Length < capacity)
             {
@@ -98,6 +156,5 @@ namespace More
                 this.array = newArray;
             }
         }
-
     }
 }

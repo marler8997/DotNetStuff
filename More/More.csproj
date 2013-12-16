@@ -67,6 +67,7 @@
     <Compile Include="SelectSocketTunnels.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="SymExp.cs" />
     <Compile Include="Sha1.cs" />
     <Compile Include="Sos.cs" />
     <Compile Include="SosTypes.cs" />

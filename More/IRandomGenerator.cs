@@ -26,7 +26,7 @@ namespace More
         }
         public void GenerateRandom(byte[] bytes, int offset, int length)
         {
-            buffer.EnsureCapacity(length);
+            buffer.EnsureCapacityCopyData(length);
 
         }
     }

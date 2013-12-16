@@ -33,9 +33,9 @@ namespace More.Net
             get { return udpSocket.Available > 0; }
         }
 
-        public void Send(byte[] datagram, int datagramOffset, int datagramLength)
+        public void Send(byte[] datagram, UInt32 datagramOffset, UInt32 datagramLength)
         {
-            this.udpSocket.Send(datagram, datagramOffset, datagramLength, SocketFlags.None);
+            this.udpSocket.Send(datagram, (Int32)datagramOffset, (Int32)datagramLength, SocketFlags.None);
         }
 
         public int ReceiveHeaderNonBlocking()
@@ -46,16 +46,16 @@ namespace More.Net
         //
         // TODO: Fix this function
         //
-        public int ReceiveNonBlocking(byte[] buffer, int offset, int maxLength)
+        public int ReceiveNonBlocking(byte[] buffer, UInt32 offset, UInt32 maxLength)
         {
             if (udpSocket.Available <= 0) return -1;
             if (udpSocket.Blocking == true) udpSocket.Blocking = false;
-            return this.udpSocket.Receive(buffer, offset, maxLength, SocketFlags.None);
+            return this.udpSocket.Receive(buffer, (Int32)offset, (Int32)maxLength, SocketFlags.None);
         }
         //
         // TODO: Fix this function
         //
-        public int ReceiveBlocking(byte[] buffer, int offset, int maxLength, int timeoutMillis)
+        public int ReceiveBlocking(byte[] buffer, UInt32 offset, UInt32 maxLength, int timeoutMillis)
         {
             /*
             if (udpSocket.Blocking == false)
@@ -72,14 +72,14 @@ namespace More.Net
                     Console.WriteLine("[UdpDebug] UdpSocket was not blocking but now it should be");
                     udpSocket.Blocking = true;
                 }
-                return this.udpSocket.Receive(buffer, offset, offset + maxLength, SocketFlags.None);
+                return this.udpSocket.Receive(buffer, (Int32)offset, (Int32)(offset + maxLength), SocketFlags.None);
             }
 
             list.obj = udpSocket;
             Socket.Select(list, null, null, timeoutMillis * 1000);
             if (list.obj == null) return -1; // Timeout
 
-            Int32 bytesRead = this.udpSocket.Receive(buffer, offset, offset + maxLength, SocketFlags.None);
+            Int32 bytesRead = this.udpSocket.Receive(buffer, (Int32)offset, (Int32)(offset + maxLength), SocketFlags.None);
             if (bytesRead < 0) return -1; // This should never happen
             return bytesRead;
         }
@@ -114,26 +114,26 @@ namespace More.Net
         public EndPoint LocalEndPoint { get { return udpSocket.LocalEndPoint; } }
         public EndPoint RemoteEndPoint { get { return remoteEndPoint; } }
 
-        public void Send(Byte[] data, Int32 offset, Int32 length)
+        public void Send(Byte[] data, UInt32 offset, UInt32 length)
         {
-            Console.WriteLine("[TransmitterDebug] Sending {0} Bytes: {1}", length, BitConverter.ToString(data, offset, length));
-            this.udpSocket.SendTo(data, offset, length, SocketFlags.None, remoteEndPoint);
+            Console.WriteLine("[TransmitterDebug] Sending {0} Bytes: {1}", length, BitConverter.ToString(data, (Int32)offset, (Int32)length));
+            this.udpSocket.SendTo(data, (Int32)offset, (Int32)length, SocketFlags.None, remoteEndPoint);
         }
 
         public int ReceiveHeaderNonBlocking()
         {
             throw new NotImplementedException();
         }
-        public Int32 ReceiveHeaderBlocking(byte[] buffer, int offset, int timeoutMillis)
+        public Int32 ReceiveHeaderBlocking(byte[] buffer, UInt32 offset, UInt32 timeoutMillis)
         {
             throw new NotImplementedException();
         }
-        public int ReceiveNonBlocking(byte[] buffer, int offset, int maxLength)
+        public int ReceiveNonBlocking(byte[] buffer, UInt32 offset, UInt32 maxLength)
         {
             throw new InvalidOperationException("You cannot call receive on this type of udp transmitter");
         }
 
-        public int ReceiveBlocking(byte[] buffer, int offset, int maxLength, int timeoutMillis)
+        public int ReceiveBlocking(byte[] buffer, UInt32 offset, UInt32 maxLength, int timeoutMillis)
         {
             throw new InvalidOperationException("You cannot call receive on this type of udp transmitter");
         }
@@ -269,14 +269,14 @@ namespace More.Net
         public int MaximumDatagramSize { get { return 0xFFFF; } }
         public EndPoint LocalEndPoint { get { return null; } }
         public EndPoint RemoteEndPoint { get { return null; } }
-        public void Send(Byte[] data, Int32 offset, Int32 length)
+        public void Send(Byte[] data, UInt32 offset, UInt32 length)
         {
             Byte[] sendBytes = Cdp.BufferPool.GetBuffer(length);
             Array.Copy(data, offset, sendBytes, 0, length);
 
             lock (sendQueue)
             {
-                sendQueue.Enqueue(new Datagram(sendBytes, length));
+                sendQueue.Enqueue(new Datagram(sendBytes, (Int32)length));
                 // If there could be someone waiting for this queue
                 if(sendQueue.Count <= 1)
                 {
@@ -285,7 +285,7 @@ namespace More.Net
             }
             // TODO: Notify other transmitter blocking receive
         }
-        public Int32 ReceiveNonBlocking(Byte[] buffer, Int32 offset, Int32 maxLength)
+        public Int32 ReceiveNonBlocking(Byte[] buffer, UInt32 offset, UInt32 maxLength)
         {
             Datagram datagram;
             lock (otherTransmitter.sendQueue)
@@ -303,7 +303,7 @@ namespace More.Net
             return datagram.length;
         }
 
-        public Int32 ReceiveBlocking(Byte[] buffer, Int32 offset, Int32 maxLength, Int32 timeoutMillis)
+        public Int32 ReceiveBlocking(Byte[] buffer, UInt32 offset, UInt32 maxLength, Int32 timeoutMillis)
         {
             Datagram datagram = null;
             while (true)
@@ -438,7 +438,7 @@ namespace More.Net
             Int32 droppedDatagrams = 0;
             while (underlyingTransmitter.DatagramAvailable)
             {
-                Int32 length = underlyingTransmitter.ReceiveNonBlocking(receiveBuffer, 0, receiveBuffer.Length);
+                Int32 length = underlyingTransmitter.ReceiveNonBlocking(receiveBuffer, 0, (UInt32)receiveBuffer.Length);
                 if (length < 0) throw new InvalidOperationException(String.Format(
                     "Underlying transmitter said datagram was available but  ReceiveNoBlocking returned {0}", length));
 
@@ -456,7 +456,7 @@ namespace More.Net
             get { return underlyingTransmitter.MaximumDatagramSize; }
         }
 
-        public void Send(byte[] data, int offset, int length)
+        public void Send(byte[] data, UInt32 offset, UInt32 length)
         {
             Int64 now = Stopwatch.GetTimestamp();
             if (now <= dropSentDatagramsUntil)
@@ -493,7 +493,7 @@ namespace More.Net
 
             return underlyingTransmitter.ReceiveHeaderNonBlocking();
         }
-        public int ReceiveNonBlocking(byte[] buffer, int offset, int maxLength)
+        public int ReceiveNonBlocking(byte[] buffer, UInt32 offset, UInt32 maxLength)
         {
             if (DropReceive())
             {
@@ -503,7 +503,7 @@ namespace More.Net
 
             return underlyingTransmitter.ReceiveNonBlocking(buffer, offset, maxLength);
         }
-        public int ReceiveBlocking(byte[] buffer, int offset, int maxLength, int timeoutMillis)
+        public int ReceiveBlocking(byte[] buffer, UInt32 offset, UInt32 maxLength, int timeoutMillis)
         {
             Int64 diffStopwatchTicks = dropReceivedDatagramsUntil - Stopwatch.GetTimestamp();
             if (diffStopwatchTicks > 0)

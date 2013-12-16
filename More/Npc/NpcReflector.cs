@@ -60,23 +60,22 @@ namespace More
                 if (npcExecutionObject == null)
                 {
                     npcExecutionObject = new NpcExecutionObject(executionObject);
+                    npcExecutionObject.FindNpcMethods(hashSetToCheckInterfaces);
+                }
+                else
+                {
+                    if (npcExecutionObject.npcMethods == null)
+                    {
+                        npcExecutionObject.FindNpcMethods(hashSetToCheckInterfaces);
+                    }
                 }
 
                 npcExecutionObjects[i] = npcExecutionObject;
 
-                List<MethodInfo> npcMethodInfos = new List<MethodInfo>();
-                //Console.WriteLine("Getting Npc methods for '{0}'", executionObject.type.FullName);
-                npcExecutionObject.type.GetNpcMethods(npcMethodInfos, hashSetToCheckInterfaces);
-
-                if (npcMethodInfos.Count <= 0)
-                    throw new InvalidOperationException(String.Format(
-                        "Type '{0}' did not implement have any npc methods.  An npc method is a method inside an interface with the [NpcInterface] attribute.",
-                        npcExecutionObject.type.Name));
-
+                List<NpcMethodInfo> npcMethodInfos = npcExecutionObject.npcMethods;
                 for (int methodIndex = 0; methodIndex < npcMethodInfos.Count; methodIndex++)
                 {
-                    MethodInfo methodInfo = npcMethodInfos[methodIndex];
-                    NpcMethodInfo npcMethodInfo = new NpcMethodInfo(npcExecutionObject, methodInfo);
+                    NpcMethodInfo npcMethodInfo = npcMethodInfos[methodIndex];
                     //Console.WriteLine("   Registering types for method '{0}'", npcMethodInfo.npcMethodName);
 
                     //
@@ -90,7 +89,7 @@ namespace More
                     //
                     // Find the appropriate ToString method for the return type
                     //
-                    RegisterType(verifier, methodInfo.ReturnType);
+                    RegisterType(verifier, npcMethodInfo.methodInfo.ReturnType);
  
                     //
                     // Add method info to dictionary
@@ -109,7 +108,6 @@ namespace More
                         methodDictionary.Add(npcMethodInfo.npcMethodName, newMethod);
                         methodDictionary.Add(npcMethodInfo.npcMethodNameLowerInvariant, newMethod);
                     }
-                    npcExecutionObject.npcMethods.Add(npcMethodInfo);
                 }
             }
         }

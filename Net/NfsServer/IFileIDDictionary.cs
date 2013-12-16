@@ -26,8 +26,8 @@ namespace More.Net
     {
         UniqueIndexObjectDictionary<Byte[]> fileHandles;
 
-        public FreeStackFileIDDictionary(Int32 initialFreeStackCapacity, Int32 freeStackExtendLength, 
-            Int32 initialFileHandleCapacity, Int32 fileHandleExtendLength)
+        public FreeStackFileIDDictionary(UInt32 initialFreeStackCapacity, UInt32 freeStackExtendLength,
+            UInt32 initialFileHandleCapacity, UInt32 fileHandleExtendLength)
         {
             this.fileHandles = new UniqueIndexObjectDictionary<Byte[]>(
                 initialFreeStackCapacity, freeStackExtendLength,
@@ -48,7 +48,7 @@ namespace More.Net
                 (                 0x000000FF  & (obj[3]      )) ;
         }
 
-        Byte[] UniqueIndexObjectDictionary<Byte[]>.IObjectGenerator.GenerateObject(Int32 uniqueIndex)
+        Byte[] UniqueIndexObjectDictionary<Byte[]>.IObjectGenerator.GenerateObject(UInt32 uniqueIndex)
         {
             return new Byte[] {
                 (Byte)(uniqueIndex >> 24),
@@ -64,18 +64,18 @@ namespace More.Net
         }
         public Byte[] GetFileHandle(FileID fileID)
         {
-            return fileHandles.GetObject((Int32)fileID);
+            return fileHandles.GetObject((UInt32)fileID);
         }
         public Byte[] NewFileHandle(out UInt64 fileID)
         {
-            Int32 newFileID;
+            UInt32 newFileID;
             Byte[] newFileHandle = fileHandles.GenerateNewObject(out newFileID, this);
             fileID = (UInt64)newFileID;
             return newFileHandle;
         }
         public void Dispose(FileID fileID)
         {
-            fileHandles.Free((Int32)fileID);
+            fileHandles.Free((UInt32)fileID);
         }
     }
 }

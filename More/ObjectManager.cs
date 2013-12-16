@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace More
 {
-    public class ObjectManager<ObjectType> : Dictionary<ObjectType, Int32>
+    public class ObjectManager<ObjectType> : Dictionary<ObjectType, UInt32>
     {
         public interface IObjectFactory
         {
@@ -11,15 +11,15 @@ namespace More
         }
 
         readonly IObjectFactory factory;
-        readonly Int32 extendLength;
+        readonly UInt32 extendLength;
 
         ObjectType[] objects;
-        Int32 nextIndex;
+        UInt32 nextIndex;
 
-        readonly SortedList<Int32> sortedFreeIndices;
-        readonly Dictionary<ObjectType, Int32> objectToIndexDictionary;
+        readonly SortedList<UInt32> sortedFreeIndices;
+        readonly Dictionary<ObjectType, UInt32> objectToIndexDictionary;
 
-        public ObjectManager(IObjectFactory factory, Int32 initialCapacity, Int32 extendLength)
+        public ObjectManager(IObjectFactory factory, UInt32 initialCapacity, UInt32 extendLength)
         {
             if (extendLength <= 0) throw new ArgumentOutOfRangeException("Extend length cannot be less than 1");
 
@@ -29,18 +29,18 @@ namespace More
             this.objects = new ObjectType[initialCapacity];
             nextIndex = 0;
 
-            this.sortedFreeIndices = new SortedList<Int32>(initialCapacity, extendLength, Int32IncreasingComparer.Instance);
-            this.objectToIndexDictionary = new Dictionary<ObjectType, Int32>();
+            this.sortedFreeIndices = new SortedList<UInt32>(initialCapacity, extendLength, UInt32IncreasingComparer.Instance);
+            this.objectToIndexDictionary = new Dictionary<ObjectType, UInt32>();
         }
         public Boolean ThereExistsAllocatedObjectsThatAreFree()
         {
             return sortedFreeIndices.count > 0;
         }
-        public Int32 AllocatedObjectsCount()
+        public UInt32 AllocatedObjectsCount()
         {
             return nextIndex;
         }
-        public Int32 ReservedObjectsCount()
+        public UInt32 ReservedObjectsCount()
         {
             return nextIndex - sortedFreeIndices.count;
         }
@@ -48,10 +48,10 @@ namespace More
         {
             if (sortedFreeIndices.count > 0)
             {
-                Int32 index = sortedFreeIndices.GetAndRemoveLastElement();
+                UInt32 index = sortedFreeIndices.GetAndRemoveLastElement();
                 return objects[index];
             }
-            if (nextIndex >= Int32.MaxValue)
+            if (nextIndex >= UInt32.MaxValue)
                 throw new InvalidOperationException(String.Format("The Free Stack Unique Object Tracker is tracking too many objects: {0}", nextIndex));
 
             if (nextIndex >= objects.Length)
@@ -62,7 +62,7 @@ namespace More
                 objects = newObjectsArray;
             }
 
-            Int32 newestObjectIndex = nextIndex;
+            UInt32 newestObjectIndex = nextIndex;
             nextIndex++;
 
             ObjectType newestObject = factory.GenerateObject();
@@ -74,7 +74,7 @@ namespace More
         }
         public void Release(ObjectType obj)
         {
-            Int32 index;
+            UInt32 index;
             if (!TryGetValue(obj, out index))
                 throw new InvalidOperationException(String.Format("Object '{0}' was not found", obj));
 

@@ -17,7 +17,7 @@ namespace More.Net
         public RecordHandler(ByteBuffer buffer)
         {
             this.buffer = buffer;
-            this.buffer.EnsureCapacity(5);
+            this.buffer.EnsureCapacityCopyData(5);
             this.bytesOffset = 0;
             this.currentRecordSize = 0;
             this.bytesReturnedInLastRecord = 0;
@@ -68,7 +68,7 @@ namespace More.Net
             //
 
             // Make the bytes bigger if necessary
-            buffer.EnsureCapacity(bytesOffset + size);
+            buffer.EnsureCapacityCopyData(bytesOffset + size);
             bufferBytes = buffer.array;
             
             // Put the new bytes in

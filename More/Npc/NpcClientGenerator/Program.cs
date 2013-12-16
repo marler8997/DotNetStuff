@@ -41,19 +41,56 @@ namespace More
             methods.Add(method);
         }
     }
+    class PluggableObject
+    {
+        public readonly String currentObjectName;
+        public readonly String genericName;
+        public Boolean found;
+        public PluggableObject(String currentObjectName, String genericName)
+        {
+            this.currentObjectName = currentObjectName;
+            this.genericName = genericName;            
+        }
+    }
+    class ProgramOptions : CLParser
+    {
+        public readonly CLSwitch methods;
+        public readonly CLSwitch types;
+        public readonly CLSwitch xmlcomments;
+
+        public readonly CLStringArgument extraUsings;
+        public readonly CLStringArgument excludeTypes;
+        
+        public readonly CLStringArgument pluggableObjects;
+
+        public ProgramOptions()
+        {
+            methods = new CLSwitch('m', "methods", "Generate classes that wrap remote methods");
+            Add(methods);
+
+            types = new CLSwitch('t', "types", "Generate classes that define types found in these remote methods");
+            Add(types);
+
+            xmlcomments = new CLSwitch('x', "xmlcomments", "Generate valid XML comments (commonly used to comply with fxcop)");
+            Add(xmlcomments);
+
+            pluggableObjects = new CLStringArgument('p', "pluggable", "Allow the client to pass in the object name to the given interfaces");
+            Add(pluggableObjects);
+
+            extraUsings = new CLStringArgument('u', "using", "Add extra namespace to the usings list");
+            Add(extraUsings);
+
+            excludeTypes = new CLStringArgument('e', "exclude", "When generating types, exclude these ones (you will want to exclude types when the client already has access to the types)");
+            Add(excludeTypes);
+        }
+
+        public override void PrintUsageHeader()
+        {
+            Console.Error.WriteLine("NpcClientGenerator.exe [options] <host> <port>");
+        }
+    }
     class Program
     {
-        static void Usage()
-        {
-            Console.Error.WriteLine("Usage: NpcClientGenerator.exe <host> <port> [--methods] [--types] [--xmlcomments] [--exlude TypeName,TypeName,...]");
-            Console.Error.WriteLine("                              [--using Namespace,Namespace...]");
-            Console.Error.WriteLine("   --methods               Generate classes that wraps remote methods");
-            Console.Error.WriteLine("   --types                 Generate classes that define types found in these remote methods");
-            Console.Error.WriteLine("   --xmlcomments           Generate valid XML comments (commonly used to comply with fxcop)");
-            Console.Error.WriteLine("   --exclude Type,Type,... When generating types, exclude these ones (you will want to exclude types when the");
-            Console.Error.WriteLine("                           client already has access to the types)");
-            Console.Error.WriteLine("   --using Namespace,...   Add extra namespace to the usings list");
-        }
         public static String SplitName(String fullName, out String @namespace)
         {
             Int32 periodIndex = fullName.LastIndexOf('.');
@@ -85,89 +122,56 @@ namespace More
             Console.WriteLine("//");
 
             //
-            // Parse command line arguments
+            // Command line arguments
             //
-            if (args.Length < 3)
+            ProgramOptions options = new ProgramOptions();
+            List<String> nonOptionArgs = options.Parse(args);
+
+            if (nonOptionArgs.Count != 2)
             {
-                Console.WriteLine("Expected at least 3 arguments but got {0}", args.Length);
-                Usage();
-                return -1;
+                return options.ErrorAndUsage("Expected {0} non-option arguments but got {1}", 2, nonOptionArgs.Count);
             }
 
-            String host = args[0];
-            UInt16 port = UInt16.Parse(args[1]);
+            String host = nonOptionArgs[0];
+            UInt16 port = UInt16.Parse(nonOptionArgs[1]);
 
-            Boolean methods = false;
-            Boolean types = false;
-            Boolean xmlComments = false;
+            Boolean xmlComments = options.xmlcomments.set;
+
             HashSet<String> excludeTypeSet = null;
             String[] extraUsings = null;
+            Dictionary<String, PluggableObject> pluggableObjects = null;
 
-            for (int i = 2; i < args.Length; i++)
+            if(options.excludeTypes.set)
             {
-                String arg = args[i];
-                if (arg.Equals("--methods", StringComparison.CurrentCultureIgnoreCase))
+                excludeTypeSet = new HashSet<String>(options.excludeTypes.ArgValue.Split(new Char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
+            }
+            if (options.extraUsings.set)
+            {
+                extraUsings = options.extraUsings.ArgValue.Split(new Char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            }
+            if (options.pluggableObjects.set)
+            {
+                String[] pluggableObjectStrings = options.pluggableObjects.ArgValue.Split(new Char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                pluggableObjects = new Dictionary<String, PluggableObject>();
+                for (int i = 0; i < pluggableObjectStrings.Length; i++)
                 {
-                    methods = true;
-                }
-                else if (arg.Equals("--types", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    types = true;
-                }
-                else if (arg.Equals("--xmlcomments", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    xmlComments = true;
-                }
-                else if (arg.Equals("--exclude", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    if (excludeTypeSet != null)
-                        throw new InvalidOperationException("You've given the --exclude list more than once");
-
-                    if (i >= args.Length)
-                    {
-                        Console.Error.WriteLine("Error: the '--exclude' option expected an comma seperated list of types after it");
-                        return -1;
-                    }
-                    i++;
-                    excludeTypeSet = new HashSet<String>(args[i].Split(new Char[]{','}, StringSplitOptions.RemoveEmptyEntries));
-                }
-                else if (arg.Equals("--using", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    if (extraUsings != null)
-                        throw new InvalidOperationException("You've given the --using option more than once");
-
-                    if (i >= args.Length)
-                    {
-                        Console.Error.WriteLine("Error: the '--using' option expected an comma seperated list of namespaces after it");
-                        return -1;
-                    }
-                    i++;
-                    extraUsings = args[i].Split(new Char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                }
-                else
-                {
-                    Console.Error.WriteLine("Error: Unknown argument '{0}'", arg);
-                    Usage();
-                    return -1;
+                    String pluggableObjectString = pluggableObjectStrings[i];
+                    Int32 colonIndex = pluggableObjectString.IndexOf(":");
+                    if (colonIndex < 0) throw new InvalidOperationException(String.Format(
+                         "Pluggable Object '{0}' is missing a colon", pluggableObjectString));
+                    String currentObjectName = pluggableObjectString.Remove(colonIndex);
+                    pluggableObjects.Add(currentObjectName, new PluggableObject(currentObjectName,
+                        pluggableObjectString.Substring(colonIndex + 1)));
                 }
             }
 
             //
             // Connect to Npc service
             //
-            IPAddress hostIP;
-            if (!IPAddress.TryParse(host, out hostIP))
-            {
-                IPAddress[] addresses = Dns.GetHostAddresses(host);
-                if (addresses == null || addresses.Length <= 0)
-                {
-                    Console.WriteLine("Error: Could not resolve host \"{0}\" to an ip address", host);
-                    return -1;
-                }
-                hostIP = addresses[0];
-            }
+            EndPoint endPoint = EndPoints.EndPointFromIPOrHost(host, port);
+
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(new IPEndPoint(hostIP, port));            
+            socket.Connect(endPoint);            
             TextReader reader = new StreamReader(new NetworkStream(socket));
 
             //
@@ -190,7 +194,7 @@ namespace More
 
             String currentNamespace = null;
 
-            if (types)
+            if (options.types.set)
             {
                 socket.Send(Encoding.ASCII.GetBytes("type\n"));
 
@@ -281,7 +285,7 @@ namespace More
                 }
             }            
 
-            if (methods)
+            if (options.methods.set)
             {
                 MethodOrganizer methodOrganizer = new MethodOrganizer();
 
@@ -302,6 +306,31 @@ namespace More
                 {
                     String typeNamespace;
                     String typeName = SplitName(pair.Key, out typeNamespace);
+
+                    //
+                    // Check if it is pluggable
+                    //
+                    Boolean isPluggable;
+                    if(pluggableObjects == null)
+                    {
+                        isPluggable = false;
+                    }
+                    else
+                    {
+                        PluggableObject pluggableObject;
+                        if(pluggableObjects.TryGetValue(typeName, out pluggableObject))
+                        {
+                            isPluggable = true;
+                            pluggableObject.found = true;
+                            typeName = pluggableObject.genericName;
+                        }
+                        else
+                        {
+                            isPluggable = false;
+                        }
+                    }
+
+
                     if (!typeNamespace.Equals(currentNamespace))
                     {
                         if (!String.IsNullOrEmpty(currentNamespace)) Console.WriteLine("}");
@@ -435,12 +464,18 @@ namespace More
 
                         Console.Write("        public {0} {1}(", returnTypeIsVoid ? "void" : method.definition.returnSosTypeName, method.methodName);
 
+                        Boolean atFirstParameter = true;
+                        if (isPluggable)
+                        {
+                            Console.Write("String objectName");
+                            atFirstParameter = false;
+                        }
+
                         if (method.definition.parameters != null)
                         {
-                            Boolean atFirst = true;
                             foreach (SosMethodDefinition.Parameter parameter in method.definition.parameters)
                             {
-                                if (atFirst) atFirst = false; else Console.Write(", ");
+                                if (atFirstParameter) atFirstParameter = false; else Console.Write(", ");
 
                                 Console.Write(parameter.sosTypeName);
                                 Console.Write(' ');
@@ -452,14 +487,25 @@ namespace More
                         Console.WriteLine("        {");
 
 
-                        if (returnTypeIsVoid)
+                        String methodString;
+                        if (isPluggable)
                         {
-                            Console.Write("            npcClientCaller.Call(typeof(void), \"{0}\"", method.definition.fullMethodName);
+                            methodString = String.Format("objectName + \".{0}\"", method.methodName);
                         }
                         else
                         {
-                            Console.Write("            return ({0})npcClientCaller.Call(typeof({0}), \"{1}\"",
-                                method.definition.returnSosTypeName, method.definition.fullMethodName);
+                            methodString = "\"" + method.definition.fullMethodName + "\"";
+                        }
+
+
+                        if (returnTypeIsVoid)
+                        {
+                            Console.Write("            npcClientCaller.Call(typeof(void), {0}", methodString);
+                        }
+                        else
+                        {
+                            Console.Write("            return ({0})npcClientCaller.Call(typeof({0}), {1}",
+                                method.definition.returnSosTypeName, methodString);
                         }
 
                         if (method.definition.parameters != null)
@@ -480,6 +526,34 @@ namespace More
             }
 
             if(!String.IsNullOrEmpty(currentNamespace)) Console.WriteLine("}");
+
+            if(options.methods.set && options.pluggableObjects.set)
+            {
+                StringBuilder builder = null;
+                foreach (KeyValuePair<String, PluggableObject> pluggableObject in pluggableObjects)
+                {
+                    if (!pluggableObject.Value.found)
+                    {
+                        if (builder == null)
+                        {
+                            builder = new StringBuilder();
+                        }
+                        else
+                        {
+                            builder.Append(',');
+                        }
+                        builder.Append(pluggableObject.Key);
+                    }
+                }
+
+                if (builder != null)
+                {
+                    throw new InvalidOperationException(String.Format(
+                        "The service at '{0}' did not have the '{1}' object",
+                        host, builder.ToString()));
+                }
+            }
+
 
             return 0;
         }

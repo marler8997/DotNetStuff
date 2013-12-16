@@ -33,7 +33,7 @@ namespace More.Net
                 CdpTransmitter transmitter = new CdpTransmitter(udpTransmitter);
 
 
-                Int32 offset;
+                UInt32 offset;
                 Byte[] myMessage;
                 Byte[] payloadBuffer;
 
@@ -43,9 +43,9 @@ namespace More.Net
                 //
                 myMessage = Encoding.UTF8.GetBytes("This should be a normal payload with an immediate ack");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
                 Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                offset += myMessage.Length;
+                offset += (UInt32)myMessage.Length;
                 Console.WriteLine("[Client] Sending Payload With Ack...");
                 transmitter.ControllerSendPayloadWithAck(offset, timeout);
 
@@ -60,9 +60,9 @@ namespace More.Net
                 //
                 myMessage = Encoding.UTF8.GetBytes("This should be a random payload");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
                 Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                offset += myMessage.Length;
+                offset += (UInt32)myMessage.Length;
                 Console.WriteLine("[Client] Sending Random Payload...");
                 transmitter.ControllerSendRandomPayload(offset);
 
@@ -71,9 +71,9 @@ namespace More.Net
                 //
                 myMessage = Encoding.UTF8.GetBytes("This should be the first payload with no immediate ack");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
                 Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                offset += myMessage.Length;
+                offset += (UInt32)myMessage.Length;
                 Console.WriteLine("[Client] Sending Payload No Ack...");
                 transmitter.ControllerSendPayloadNoAck(offset);
 
@@ -82,9 +82,9 @@ namespace More.Net
                 //
                 myMessage = Encoding.UTF8.GetBytes("This should be the second payload with no immediate ack");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
                 Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                offset += myMessage.Length;
+                offset += (UInt32)myMessage.Length;
                 Console.WriteLine("[Client] Sending Payload No Ack...");
                 transmitter.ControllerSendPayloadNoAck(offset);
 
@@ -93,9 +93,9 @@ namespace More.Net
                 //
                 myMessage = Encoding.UTF8.GetBytes("This should be a normal payload with an immediate ack");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
                 Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                offset += myMessage.Length;
+                offset += (UInt32)myMessage.Length;
                 Console.WriteLine("[Client] Sending Payload With Ack...");
                 transmitter.ControllerSendPayloadWithAck(offset, timeout);
 
@@ -132,7 +132,7 @@ namespace More.Net
                 Int64 startTicks = Stopwatch.GetTimestamp();
                 Console.WriteLine("[Sender {0} millis] Sending...", (Stopwatch.GetTimestamp() - startTicks).StopwatchTicksAsInt64Milliseconds());
 
-                Int32 offset;
+                UInt32 offset;
                 Byte[] datagram = transmitter.RequestSendBuffer(10, out offset);
                 for (Byte i = 0; i < 10; i++)
                 {
@@ -170,7 +170,7 @@ namespace More.Net
 
                 for (int i = 0; i < 3; i++)
                 {
-                    Int32 offset;
+                    UInt32 offset;
                     Byte[] datagram = transmitter.RequestSendBuffer(10, out offset);
                     for (Byte j = 0; j < 10; j++)
                     {
@@ -181,7 +181,7 @@ namespace More.Net
 
                 Thread.Sleep(200);
                 {
-                    Int32 offset;
+                    UInt32 offset;
                     Byte[] datagram = transmitter.RequestSendBuffer(10, out offset);
                     for (Byte j = 0; j < 10; j++)
                     {

@@ -36,7 +36,7 @@ namespace More.Net
             {
                 Console.WriteLine("[{0} {1} millis] ReceiveBlocking, timeout is {2} milliseconds (Expecting TimeoutException)...",
                     name, (Stopwatch.GetTimestamp() - stopwatchStartTicks).StopwatchTicksAsInt64Milliseconds(), timeoutMillis);
-                receiveTransmitter.ReceiveBlocking(receiveBuffer, 0, receiveBuffer.Length, timeoutMillis);
+                receiveTransmitter.ReceiveBlocking(receiveBuffer, 0, (UInt32)receiveBuffer.Length, timeoutMillis);
                 Assert.Fail("Expected TimeoutException");
             }
             catch (TimeoutException)
@@ -48,7 +48,7 @@ namespace More.Net
         {
             Console.WriteLine("[{0} {1} millis] ReceiveBlocking, timeout is {2} milliseconds (Expecting Success)...",
                 name, (Stopwatch.GetTimestamp() - stopwatchStartTicks).StopwatchTicksAsInt64Milliseconds(), timeoutMillis);
-            Int32 bytesRead = receiveTransmitter.ReceiveBlocking(receiveBuffer, 0, receiveBuffer.Length, timeoutMillis);
+            Int32 bytesRead = receiveTransmitter.ReceiveBlocking(receiveBuffer, 0, (UInt32)receiveBuffer.Length, timeoutMillis);
             CdpTest.AssertEqual(expectedReceiveBuffer, receiveBuffer, bytesRead);
         }
     }

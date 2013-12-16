@@ -521,7 +521,7 @@ namespace More
     public static class ByteArray
     {
         //
-        // Set 1-yte types
+        // Set 1-byte types
         //
         public static void SetByteEnum<EnumType>(this Byte[] bytes, UInt32 offset, EnumType value)
         {
@@ -715,6 +715,52 @@ namespace More
                 (bytes[offset + 2] <<  8) |
                 (bytes[offset + 3]      ) );
         }
+
+
+
+
+        //
+        // http://www.dlugosz.com/ZIP2/VLI.html
+        //
+        public static UInt32 SetVarUInt32(this Byte[] bytes, UInt32 offset, UInt32 value)
+        {
+            if (value <= 127)
+            {
+                bytes[offset] = (Byte)value;
+                return offset + 1;
+            }
+            if (value <= 16383)
+            {
+                bytes[offset    ] = (Byte)(0xC0 | (value >> 8));
+                bytes[offset + 1] = (Byte)(value);
+                return offset + 2;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+        public static UInt32 ReadVarUInt32(this Byte[] bytes, UInt32 offset, out UInt32 value)
+        {
+            Byte firstByte = bytes[0];
+
+            if (firstByte <= 127)
+            {
+                value = firstByte;
+                return offset + 1;
+            }
+
+            if ((firstByte & 0xC0) == 0xC0)
+            {
+                value = (UInt32)(firstByte << 8 | bytes[offset + 1]);
+                return offset = 2;
+            }
+
+            throw new NotImplementedException();
+        }
+
+
+
 
         public static Boolean IsInRange(UInt32 value, Byte byteCount)
         {

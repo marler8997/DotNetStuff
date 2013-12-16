@@ -29,9 +29,9 @@ namespace More.Pdl
         //
         // Object Definitions
         //
-        readonly List<ObjectDefinition> objectDefinitions = new List<ObjectDefinition>();
-        readonly Dictionary<String, ObjectDefinition> objectDefinitionMap = new Dictionary<String, ObjectDefinition>();
-        public IEnumerable<ObjectDefinition> ObjectDefinitions { get { return objectDefinitions; } }
+        readonly List<NamedObjectDefinition> objectDefinitions = new List<NamedObjectDefinition>();
+        readonly Dictionary<String, NamedObjectDefinition> objectDefinitionMap = new Dictionary<String, NamedObjectDefinition>();
+        public IEnumerable<NamedObjectDefinition> ObjectDefinitions { get { return objectDefinitions; } }
 
         // returns definition key
         public void AddEnumOrFlagsDefinition(EnumOrFlagsDefinition enumOrFlagsDefinition)
@@ -50,7 +50,7 @@ namespace More.Pdl
             }
         }
 
-        public EnumOrFlagsDefinition TryGetEnumOrFlagsDefinition(ObjectDefinition currentObject, String typeNameLowerInvariant)
+        public EnumOrFlagsDefinition TryGetEnumOrFlagsDefinition(NamedObjectDefinition currentObject, String typeNameLowerInvariant)
         {
             EnumOrFlagsDefinition definition;
             String nameFromCurrentObject = currentObject.globalReferenceNameLowerInvariant + "." + typeNameLowerInvariant;
@@ -70,7 +70,7 @@ namespace More.Pdl
         }
 
         // returns definition key
-        public void AddObjectDefinition(ObjectDefinition objectDefinition)
+        public void AddObjectDefinition(NamedObjectDefinition objectDefinition)
         {
             if (objectDefinitionMap.ContainsKey(objectDefinition.globalReferenceNameLowerInvariant))
             {
@@ -81,9 +81,9 @@ namespace More.Pdl
             objectDefinitionMap.Add(objectDefinition.globalReferenceNameLowerInvariant, objectDefinition);
             objectDefinitions.Add(objectDefinition);
         }
-        public ObjectDefinition TryGetObjectDefinition(ObjectDefinition currentObject, String typeNameLowerInvariant)
+        public NamedObjectDefinition TryGetObjectDefinition(NamedObjectDefinition currentObject, String typeNameLowerInvariant)
         {
-            ObjectDefinition definition;
+            NamedObjectDefinition definition;
             String nameFromCurrentObject = currentObject.globalReferenceNameLowerInvariant + "." + typeNameLowerInvariant;
 
             // Try to get the defintion from any object defined in the current object
@@ -144,7 +144,7 @@ namespace More.Pdl
         public readonly List<EnumValueDefinition> enumValues;
         public readonly List<FlagsValueDefinition> flagValues;
 
-        public EnumOrFlagsDefinition(PdlFile pdlFile, Boolean isFlagsDefinition, ObjectDefinition objectDefinedIn,
+        public EnumOrFlagsDefinition(PdlFile pdlFile, Boolean isFlagsDefinition, NamedObjectDefinition objectDefinedIn,
             PdlType underlyingIntegerType, String typeName)
         {
             this.isFlagsDefinition = isFlagsDefinition;

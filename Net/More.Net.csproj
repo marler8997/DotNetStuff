@@ -58,6 +58,7 @@
     <Compile Include="PortSet.cs" />
     <Compile Include="PortSetListener.cs" />
     <Compile Include="ProxySelector.cs" />
+    <Compile Include="RecordBuilder.cs" />
     <Compile Include="RecordHandler.cs" />
     <Compile Include="ServerHandler.cs" />
     <Compile Include="GenericUtilities.cs" />

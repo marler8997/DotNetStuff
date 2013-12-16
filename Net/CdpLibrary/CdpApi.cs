@@ -64,7 +64,7 @@ namespace More.Net
         EndPoint LocalEndPoint { get; }
         EndPoint RemoteEndPoint { get; }
 
-        void Send(Byte[] datagram, Int32 datagramOffset, Int32 datagramLength);
+        void Send(Byte[] datagram, UInt32 datagramOffset, UInt32 datagramLength);
 
         Boolean DatagramAvailable { get; }
 
@@ -76,14 +76,14 @@ namespace More.Net
         // Returns size of datagram (0 is valid), or -1 if no datagrams available.
         // Will never return a negative number, only works for nonblocking transmitters.
         //  throws InvalidOperationException (if ReceiveIsBlocking is true)
-        Int32 ReceiveNonBlocking(Byte[] buffer, Int32 offset, Int32 maxLength);
+        Int32 ReceiveNonBlocking(Byte[] buffer, UInt32 offset, UInt32 maxLength);
 
 
         // timeoutMillis, set to 0 for no timeout
         // Returns size of datagram (0 is valid), or -1 on timeout.
         // Will never return a negative number, only works for blocking transmitters.
         //  throws InvalidOperationException (if ReceiveIsBlocking is false)
-        Int32 ReceiveBlocking(Byte[] buffer, Int32 offset, Int32 maxLength, Int32 timeoutMillis);
+        Int32 ReceiveBlocking(Byte[] buffer, UInt32 offset, UInt32 maxLength, Int32 timeoutMillis);
     }
 
     /*

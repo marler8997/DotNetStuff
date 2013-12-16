@@ -28,19 +28,19 @@ namespace More.Net
             //
             // Send Buffer
             //
-            transmitter.Send(sendBuffer, 0, sendBuffer.Length);
+            transmitter.Send(sendBuffer, 0, (UInt32)sendBuffer.Length);
             Assert.AreEqual(1, transmitter.DatagramsInSendQueue);
 
             //
             // Receive Buffer
             //
             receiveBuffer = new Byte[sendBuffer.Length];
-            length = transmitter.otherTransmitter.ReceiveNonBlocking(receiveBuffer, 0, receiveBuffer.Length);
+            length = transmitter.otherTransmitter.ReceiveNonBlocking(receiveBuffer, 0, (UInt32)receiveBuffer.Length);
             Assert.AreEqual(sendBuffer.Length, length);
             Assert.AreEqual(0, transmitter.DatagramsInSendQueue);
             CdpTest.AssertEqual(sendBuffer, receiveBuffer);
 
-            length = transmitter.otherTransmitter.ReceiveNonBlocking(receiveBuffer, 0, sendBuffer.Length);
+            length = transmitter.otherTransmitter.ReceiveNonBlocking(receiveBuffer, 0, (UInt32)sendBuffer.Length);
             Assert.AreEqual(-1, length);
 
             //
@@ -49,7 +49,7 @@ namespace More.Net
             for (int i = 0; i < 5; i++)
             {
                 sendBuffer[0] = (Byte)i;
-                transmitter.Send(sendBuffer, 0, sendBuffer.Length);
+                transmitter.Send(sendBuffer, 0, (UInt32)sendBuffer.Length);
                 Assert.AreEqual(i + 1, transmitter.DatagramsInSendQueue);
             }
             transmitter.Print(Console.Out);
@@ -57,7 +57,7 @@ namespace More.Net
             {
                 Console.WriteLine("Receiving datagram {0}", i + 1);
                 receiveBuffer = new Byte[sendBuffer.Length];
-                length = transmitter.otherTransmitter.ReceiveNonBlocking(receiveBuffer, 0, receiveBuffer.Length);
+                length = transmitter.otherTransmitter.ReceiveNonBlocking(receiveBuffer, 0, (UInt32)receiveBuffer.Length);
                 Assert.AreEqual(sendBuffer.Length, length);
                 Assert.AreEqual(4-i, transmitter.DatagramsInSendQueue);
 
@@ -65,7 +65,7 @@ namespace More.Net
                 CdpTest.AssertEqual(sendBuffer, receiveBuffer);
             }
 
-            length = transmitter.otherTransmitter.ReceiveNonBlocking(receiveBuffer, 0, sendBuffer.Length);
+            length = transmitter.otherTransmitter.ReceiveNonBlocking(receiveBuffer, 0, (UInt32)sendBuffer.Length);
             Assert.AreEqual(-1, length);
         }
 

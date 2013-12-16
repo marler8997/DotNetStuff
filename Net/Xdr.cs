@@ -225,6 +225,81 @@ namespace More.Net
             }
         }
     }
+
+
+    public class XdrOpaqueVarLengthReflector2 : ClassFieldReflector
+    {
+        public readonly UInt32 maxLength;
+
+        public XdrOpaqueVarLengthReflector2(Type typeThatContainsThisField, String fieldName, UInt32 maxLength)
+            : base(typeThatContainsThisField, fieldName, typeof(ByteArraySegmentStruct))
+        {
+            this.maxLength = maxLength;
+        }
+        public override UInt32 FixedSerializationLength()
+        {
+            return UInt32.MaxValue;
+        }
+        public override UInt32 SerializationLength(Object instance)
+        {
+            ByteArraySegmentStruct segment = (ByteArraySegmentStruct)fieldInfo.GetValue(instance);
+            return 4 + Xdr.UpToNearestMod4(segment.length);
+        }
+        public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
+        {
+            ByteArraySegmentStruct segment = (ByteArraySegmentStruct)fieldInfo.GetValue(instance);
+
+            array[offset    ] = (Byte)(segment.length >> 24);
+            array[offset + 1] = (Byte)(segment.length >> 16);
+            array[offset + 2] = (Byte)(segment.length >>  8);
+            array[offset + 3] = (Byte)(segment.length      );
+            offset += 4;
+
+            ArrayCopier.Copy(segment.array, segment.offset, array, offset, segment.length);
+
+            UInt32 valueAsArrayMod4Length = Xdr.UpToNearestMod4(segment.length);
+            for (UInt32 i = segment.length; i < valueAsArrayMod4Length; i++)
+            {
+                array[offset + i] = 0;
+            }
+
+            return offset + valueAsArrayMod4Length;
+        }
+        public override UInt32 Deserialize(Object instance, Byte[] array, UInt32 offset, UInt32 maxOffset)
+        {
+            UInt32 length = array.BigEndianReadUInt32(offset);
+            offset += 4;
+
+            if (length == 0)
+            {
+                fieldInfo.SetValue(instance, new ByteArraySegmentStruct(null, 0, 0));
+                return offset;
+            }
+
+            fieldInfo.SetValue(instance, new ByteArraySegmentStruct(array, offset, length));
+
+            UInt32 lengthMod4 = Xdr.UpToNearestMod4(length);
+
+            return offset + lengthMod4;
+        }
+        public override void DataString(Object instance, StringBuilder builder)
+        {
+            ByteArraySegmentStruct segment = (ByteArraySegmentStruct)fieldInfo.GetValue(instance);
+            builder.Append(fieldInfo.Name);
+            builder.Append(":[");
+            for (int i = 0; i < segment.length; i++)
+            {
+                if (i > 0) builder.Append(',');
+                builder.Append(segment.array[segment.offset + i]);
+            }
+            builder.Append(']');
+        }
+    }
+
+
+
+
+
     //
     // TODO: Check For Max Length
     //
@@ -272,7 +347,7 @@ namespace More.Net
             UInt32 valueAsArrayMod4Length = Xdr.UpToNearestMod4((UInt32)valueAsArray.Length);
             for (UInt32 i = (UInt32)valueAsArray.Length; i < valueAsArrayMod4Length; i++)
             {
-                array[i] = 0;
+                array[offset + i] = 0;
             }
 
             return offset + valueAsArrayMod4Length;
@@ -299,19 +374,25 @@ namespace More.Net
         }
         public override void DataString(Object instance, StringBuilder builder)
         {
-            String dataString;
+            builder.Append(fieldInfo.Name);
+            builder.Append(':');
 
             Object valueAsObject = fieldInfo.GetValue(instance);
             if (valueAsObject == null)
             {
-                dataString = "null";
+                builder.Append("null");
             }
             else
             {
                 Byte[] valueAsArray = (Byte[])valueAsObject;
-                dataString = BitConverter.ToString(valueAsArray);
+                builder.Append('[');
+                for (int i = 0; i < valueAsArray.Length; i++)
+                {
+                    if (i > 0) builder.Append(',');
+                    builder.Append(valueAsArray[i].ToString());
+                }
+                builder.Append(']');
             }
-            builder.Append(String.Format("{0}:{1}", fieldInfo.Name, dataString));
         }
     }
 

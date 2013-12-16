@@ -144,7 +144,7 @@ namespace More.Net
 
         private readonly RpcServicesManager servicesManager;
         private readonly SharedFileSystem sharedFileSystem;
-        private readonly PartialByteArraySerializer fileContents;
+        private ByteArraySegmentStruct fileContents;
         private readonly UInt32 suggestedReadSizeMultiple;
 
         public Nfs3Server(RpcServicesManager servicesManager, SharedFileSystem sharedFileSystem, ByteBuffer sendBuffer,
@@ -153,7 +153,7 @@ namespace More.Net
         {
             this.servicesManager = servicesManager;
             this.sharedFileSystem = sharedFileSystem;
-            this.fileContents = new PartialByteArraySerializer(new Byte[readSizeMax], 0, 0);
+            this.fileContents.array = new Byte[readSizeMax];
             this.suggestedReadSizeMultiple = suggestedReadSizeMultiple;
         }
 
@@ -444,13 +444,13 @@ JediTimer.JediTimerPrefix() +
 
             if(shareObject.fileType != FileType.Regular) return new ReadReply(Status.ErrorInvalidArgument, OptionalFileAttributes.None);
 
-            if (readCall.count > (UInt32)fileContents.bytes.Length) return new ReadReply(Status.ErrorInvalidArgument, OptionalFileAttributes.None);
+            if (readCall.count > (UInt32)fileContents.array.Length) return new ReadReply(Status.ErrorInvalidArgument, OptionalFileAttributes.None);
 
             Boolean reachedEndOfFile;
             UInt32 bytesRead;
             try
             {
-                bytesRead = ReadFile(shareObject.AccessFileInfo(), readCall.offset, fileContents.bytes, readCall.count, FileShare.ReadWrite, out reachedEndOfFile);
+                bytesRead = ReadFile(shareObject.AccessFileInfo(), readCall.offset, fileContents.array, readCall.count, FileShare.ReadWrite, out reachedEndOfFile);
             }
             catch (IOException)
             {
@@ -486,13 +486,13 @@ JediTimer.JediTimerPrefix() +
             using (FileStream fileStream = fileInfo.Open(FileMode.Open))
             {
                 fileStream.Position = (Int64)writeCall.offset;
-                fileStream.Write(writeCall.data, 0, writeCall.data.Length);
+                fileStream.Write(writeCall.data.array, (Int32)writeCall.data.offset, (Int32)writeCall.data.length);
             }
 
             shareObject.RefreshFileAttributes(sharedFileSystem.permissions);
 
             return new WriteReply(new BeforeAndAfterAttributes(sizeAndTimesBeforeWrite, shareObject.fileAttributes),
-                (UInt32)writeCall.data.Length, writeCall.stableHow, null);
+                writeCall.data.length, writeCall.stableHow, null);
         }
         public CreateReply CREATE(CreateCall createCall)
         {
@@ -763,11 +763,15 @@ JediTimer.JediTimerPrefix() +
 
             return new FSInfoReply(
                 OptionalFileAttributes.None,
-                (UInt32)fileContents.bytes.Length, (UInt32)fileContents.bytes.Length, suggestedReadSizeMultiple,
+                (UInt32)fileContents.array.Length, (UInt32)fileContents.array.Length, suggestedReadSizeMultiple,
                 0x10000, 0x10000, 0x1000,
                 0x1000,
-                (UInt64)rootShareDirectory.driveInfo.AvailableFreeSpace,
-                1,
+#if WindowsCE
+                0x100000000, // 4 Gigabytes
+#else
+                UInt64.MaxValue,
+#endif
+ 1,
                 0,
                 FileProperties.Fsf3Link | FileProperties.Fsf3SymLink | FileProperties.Fsf3Homogeneous | FileProperties.Fsf3CanSetTime
                 );

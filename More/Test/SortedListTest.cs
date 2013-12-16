@@ -63,11 +63,11 @@ namespace More
                 //
                 // remove some
                 //
-                int removeCount = generator.Next(increasingList.count);
+                int removeCount = generator.Next((Int32)increasingList.count);
                 Console.WriteLine("remove count {0}", removeCount);
                 for (int j = 0; j < removeCount; j++)
                 {
-                    int removeIndex = generator.Next(increasingList.count - 1);
+                    int removeIndex = generator.Next((Int32)increasingList.count - 1);
 
                     increasingList.Remove(increasingList.elements[removeIndex]);
                     AssertIncreasing(increasingList);
@@ -76,7 +76,7 @@ namespace More
                 int32Printer.Print(increasingList);
 
                 increasingList.Clear();
-                Assert.AreEqual(0, increasingList.count);
+                Assert.AreEqual(0U, increasingList.count);
 
             }
 
@@ -101,11 +101,11 @@ namespace More
                 //
                 // remove some
                 //
-                int removeCount = generator.Next(decreasingList.count);
+                int removeCount = generator.Next((Int32)decreasingList.count);
                 Console.WriteLine("remove count {0}", removeCount);
                 for (int j = 0; j < removeCount; j++)
                 {
-                    int removeIndex = generator.Next(decreasingList.count - 1);
+                    int removeIndex = generator.Next((Int32)decreasingList.count - 1);
 
                     decreasingList.Remove(decreasingList.elements[removeIndex]);
                     AssertDecreasing(decreasingList);
@@ -114,8 +114,7 @@ namespace More
                 int32Printer.Print(decreasingList);
 
                 decreasingList.Clear();
-                Assert.AreEqual(0, decreasingList.count);
-
+                Assert.AreEqual(0U, decreasingList.count);
             }
         }
 
@@ -226,12 +225,12 @@ namespace More
         }
         void AssertList(String[] expected, SortedList<String> actual)
         {
-            Assert.AreEqual(expected.Length, actual.count);
+            Assert.AreEqual((UInt32)expected.Length, actual.count);
             for (int i = 0; i < expected.Length; i++)
             {
                 Assert.AreEqual(expected[i], actual.elements[i], String.Format("at index {0}", i));
             }
-            for (int i = actual.count; i < actual.elements.Length; i++)
+            for (UInt32 i = actual.count; i < actual.elements.Length; i++)
             {
                 Assert.IsNull(actual.elements[i]);
             }

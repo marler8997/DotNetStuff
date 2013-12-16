@@ -49,7 +49,7 @@ namespace More.Net
         }
         public static UInt32 SetupFrame(ByteBuffer buffer, UInt32 frameOffset, UInt32 contentLength)
         {
-            buffer.EnsureCapacity(frameOffset + 3 + contentLength);
+            buffer.EnsureCapacityCopyData(frameOffset + 3 + contentLength);
             InsertLength(buffer.array, frameOffset, contentLength);
             return frameOffset + 3;
         }
@@ -135,7 +135,7 @@ namespace More.Net
             else
             {
                 processLength = currentBufferLength + length;
-                buffer.EnsureCapacity(processLength);
+                buffer.EnsureCapacityCopyData(processLength);
                 Array.Copy(data, offset, buffer.array, currentBufferLength, length);
                 currentBufferLength = processLength;
                 processOffset = 0;
@@ -179,7 +179,7 @@ namespace More.Net
                     //
                     if (processOffset > 0 || processArray != buffer.array)
                     {
-                        buffer.EnsureCapacity(3);
+                        buffer.EnsureCapacityCopyData(3);
                         Array.Copy(processArray, processOffset, buffer.array, 0, processLength);
                         currentBufferLength = processLength;
                     }
@@ -198,7 +198,7 @@ namespace More.Net
                     //
                     if (processOffset > 0 || processArray != buffer.array)
                     {
-                        buffer.EnsureCapacity(frameLength);
+                        buffer.EnsureCapacityCopyData(frameLength);
                         Array.Copy(processArray, processOffset, buffer.array, 0, processLength);
                         currentBufferLength = processLength;
                     }

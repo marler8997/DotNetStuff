@@ -7,44 +7,44 @@ namespace More
     {
         public interface IObjectGenerator
         {
-            ObjectType GenerateObject(Int32 uniqueIndex);
+            ObjectType GenerateObject(UInt32 uniqueIndex);
         }
 
         ObjectType[] objects;
-        Int32 nextIndex;
+        UInt32 nextIndex;
 
-        readonly Int32 extendLength;
+        readonly UInt32 extendLength;
 
-        readonly SortedList<Int32> sortedFreeIndices;
-        readonly Dictionary<ObjectType, Int32> objectToIndexDictionary;
+        readonly SortedList<UInt32> sortedFreeIndices;
+        readonly Dictionary<ObjectType, UInt32> objectToIndexDictionary;
 
-        public UniqueIndexObjectDictionary(Int32 initialFreeStackCapacity, Int32 freeStackExtendLength,
-            Int32 initialTotalObjectsCapacity, Int32 extendLength, IEqualityComparer<ObjectType> objectComparer)
+        public UniqueIndexObjectDictionary(UInt32 initialFreeStackCapacity, UInt32 freeStackExtendLength,
+            UInt32 initialTotalObjectsCapacity, UInt32 extendLength, IEqualityComparer<ObjectType> objectComparer)
         {
             this.objects = new ObjectType[initialTotalObjectsCapacity];
             nextIndex = 0;
 
             this.extendLength = extendLength;
 
-            this.sortedFreeIndices = new SortedList<Int32>(initialFreeStackCapacity, freeStackExtendLength, Int32IncreasingComparer.Instance);
-            this.objectToIndexDictionary = new Dictionary<ObjectType, Int32>(objectComparer);
+            this.sortedFreeIndices = new SortedList<UInt32>(initialFreeStackCapacity, freeStackExtendLength, UInt32IncreasingComparer.Instance);
+            this.objectToIndexDictionary = new Dictionary<ObjectType, UInt32>(objectComparer);
         }
-        public UniqueIndexObjectDictionary(Int32 initialFreeStackCapacity, Int32 freeStackExtendLength,
-            Int32 initialTotalObjectsCapacity, Int32 extendLength)
+        public UniqueIndexObjectDictionary(UInt32 initialFreeStackCapacity, UInt32 freeStackExtendLength,
+            UInt32 initialTotalObjectsCapacity, UInt32 extendLength)
         {
             this.objects = new ObjectType[initialTotalObjectsCapacity];
             nextIndex = 0;
 
             this.extendLength = extendLength;
 
-            this.sortedFreeIndices = new SortedList<Int32>(initialFreeStackCapacity, freeStackExtendLength, Int32IncreasingComparer.Instance);
-            this.objectToIndexDictionary = new Dictionary<ObjectType, Int32>();
+            this.sortedFreeIndices = new SortedList<UInt32>(initialFreeStackCapacity, freeStackExtendLength, UInt32IncreasingComparer.Instance);
+            this.objectToIndexDictionary = new Dictionary<ObjectType, UInt32>();
         }
-        private Int32 GetFreeUniqueIndex()
+        private UInt32 GetFreeUniqueIndex()
         {
             if (sortedFreeIndices.count > 0) return sortedFreeIndices.GetAndRemoveLastElement();
 
-            if (nextIndex >= Int32.MaxValue)
+            if (nextIndex >= UInt32.MaxValue)
                 throw new InvalidOperationException(String.Format("The Free Stack Unique Object Tracker is tracking too many objects: {0}", nextIndex));
 
             // Make sure the local path buffer is big enough
@@ -56,13 +56,13 @@ namespace More
                 objects = newObjectsArray;
             }
 
-            Int32 newestObjectIndex = nextIndex;
+            UInt32 newestObjectIndex = nextIndex;
             nextIndex++;
             return newestObjectIndex;
         }
-        public Int32 GetUniqueIndexOf(ObjectType obj)
+        public UInt32 GetUniqueIndexOf(ObjectType obj)
         {
-            Int32 uniqueIndex;
+            UInt32 uniqueIndex;
             if (objectToIndexDictionary.TryGetValue(obj, out uniqueIndex)) return uniqueIndex;
 
             uniqueIndex = GetFreeUniqueIndex();
@@ -71,20 +71,20 @@ namespace More
 
             return uniqueIndex;
         }
-        public ObjectType GetObject(Int32 uniqueIndex)
+        public ObjectType GetObject(UInt32 uniqueIndex)
         {
             return objects[uniqueIndex];
         }
-        public Int32 Add(ObjectType newObject)
+        public UInt32 Add(ObjectType newObject)
         {
-            Int32 uniqueIndex = GetFreeUniqueIndex();
+            UInt32 uniqueIndex = GetFreeUniqueIndex();
 
             objects[uniqueIndex] = newObject;
             objectToIndexDictionary.Add(newObject, uniqueIndex);
 
             return uniqueIndex;
         }
-        public ObjectType GenerateNewObject(out Int32 uniqueIndex, IObjectGenerator objectGenerator)
+        public ObjectType GenerateNewObject(out UInt32 uniqueIndex, IObjectGenerator objectGenerator)
         {
             uniqueIndex = GetFreeUniqueIndex();
 
@@ -94,7 +94,7 @@ namespace More
 
             return newObject;
         }
-        public void Free(Int32 uniqueIndex)
+        public void Free(UInt32 uniqueIndex)
         {
             ObjectType obj = objects[uniqueIndex];
             objectToIndexDictionary.Remove(obj);

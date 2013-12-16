@@ -153,7 +153,7 @@ namespace More
 
         public UInt32 WaitActionTimes(Buffer<Int32> times, Int64 now)
         {
-            times.EnsureCapacity(waitActions.count);
+            times.EnsureCapacityCopyData(waitActions.count);
 
             UInt32 count = 0;
             for (int i = (Int32)waitActions.count - 1; i >= 0; i--)

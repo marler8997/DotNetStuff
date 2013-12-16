@@ -90,7 +90,7 @@ namespace More.Net
             // TODO: catch socket exception to prevent server from failing
             //
 
-            buffer.EnsureCapacity(12);
+            buffer.EnsureCapacityCopyData(12);
             socket.ReadFullSize(buffer.array, 0, 4); // read the size
             Int32 rpcMessageSize = (
                 (0x7F000000 & (buffer.array[0] << 24)) |
@@ -101,7 +101,7 @@ namespace More.Net
             if ((buffer.array[0] & 0x80) != 0x80)
                 throw new NotImplementedException(String.Format("Records with multiple fragments it not currently implemented"));
 
-            buffer.EnsureCapacity(rpcMessageSize);
+            buffer.EnsureCapacityCopyData(rpcMessageSize);
             socket.ReadFullSize(buffer.array, 0, rpcMessageSize);
 
             //
@@ -125,7 +125,7 @@ namespace More.Net
             UInt32 messageContentLength = (messageContents == null) ? 0 : messageContents.SerializationLength();
             UInt32 totalMessageLength = SerializationLength() + messageContentLength;
 
-            buffer.EnsureCapacity(4 + totalMessageLength); // Extra 4 bytes for the record header
+            buffer.EnsureCapacityCopyData(4 + totalMessageLength); // Extra 4 bytes for the record header
 
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StartSerialize();
             UInt32 offset = Serialize(buffer.array, 4);
@@ -154,7 +154,7 @@ namespace More.Net
             UInt32 messageContentLength = (messageContents == null) ? 0 : messageContents.SerializationLength();
             UInt32 totalMessageLength = SerializationLength() + messageContentLength;
 
-            buffer.EnsureCapacity(totalMessageLength); // Extra 4 bytes for the record header
+            buffer.EnsureCapacityCopyData(totalMessageLength); // Extra 4 bytes for the record header
 
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StartSerialize();
             UInt32 offset = Serialize(buffer.array, 0);

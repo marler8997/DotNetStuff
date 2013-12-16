@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RpcLibraryCE", "RpcLibrary\RpcLibraryCE.csproj", "{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Rpc.CE", "RpcLibrary\More.Rpc.CE.csproj", "{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NfsLibraryCE", "NfsLibrary\NfsLibraryCE.csproj", "{F7DD73A4-5294-4FB9-8E65-C39DB552FC81}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "More.Nfs.CE", "NfsLibrary\More.Nfs.CE.csproj", "{F7DD73A4-5294-4FB9-8E65-C39DB552FC81}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NfsServerCE", "NfsServer\NfsServerCE.csproj", "{BFAFA06B-9106-4E1C-B146-6646E133FAC0}"
 EndProject

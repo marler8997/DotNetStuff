@@ -771,8 +771,8 @@ namespace More.Net.Nfs3Procedure
                 new XdrDescriminatedUnionReflector<Status>.KeyAndSerializer(Status.Ok, new IReflector[] {
                     new ClassFieldReflectors<OptionalFileAttributes>(typeof(ReadReply), "optionalFileAttributes", OptionalFileAttributes.memberSerializers),
                     new BigEndianUInt32Reflector                             (typeof(ReadReply), "count"),
-                    new XdrBooleanReflector                            (typeof(ReadReply), "endOfFile"),
-                    new XdrOpaqueVarLengthReflector<PartialByteArraySerializer>(typeof(ReadReply), "fileData", -1),
+                    new XdrBooleanReflector                         (typeof(ReadReply), "endOfFile"),
+                    new XdrOpaqueVarLengthReflector2                (typeof(ReadReply), "fileDataSegment", UInt32.MaxValue),
                 })
             ),
         });
@@ -782,15 +782,16 @@ namespace More.Net.Nfs3Procedure
         public OptionalFileAttributes optionalFileAttributes;
         public Count count;
         public Boolean endOfFile;
-        public PartialByteArraySerializer fileData;
+        //public PartialByteArraySerializer fileData;
+        public ByteArraySegmentStruct fileDataSegment;
 
-        public ReadReply(OptionalFileAttributes optionalFileAttributes, Count count, Boolean endOfFile, PartialByteArraySerializer fileData)
+        public ReadReply(OptionalFileAttributes optionalFileAttributes, Count count, Boolean endOfFile, ByteArraySegmentStruct fileDataSegment)
         {
             this.status = Status.Ok;
             this.optionalFileAttributes = optionalFileAttributes;
             this.count = count;
             this.endOfFile = endOfFile;
-            this.fileData = fileData;
+            this.fileDataSegment = fileDataSegment;
         }
         public ReadReply(Status status, OptionalFileAttributes optionalFileAttributes)
         {
@@ -813,11 +814,11 @@ namespace More.Net.Nfs3Procedure
     public class WriteCall : ISerializerCreator
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
-            new XdrOpaqueVarLengthReflector(typeof(WriteCall), "fileHandle", Nfs3.FileHandleMaxSize),
-            new BigEndianUInt64Reflector         (typeof(WriteCall), "offset"),
-            new BigEndianUInt32Reflector         (typeof(WriteCall), "count"),
-            new XdrEnumReflector           (typeof(WriteCall), "stableHow", typeof(StableHowEnum)),
-            new XdrOpaqueVarLengthReflector(typeof(WriteCall), "data", UInt32.MaxValue),
+            new XdrOpaqueVarLengthReflector (typeof(WriteCall), "fileHandle", Nfs3.FileHandleMaxSize),
+            new BigEndianUInt64Reflector    (typeof(WriteCall), "offset"),
+            new BigEndianUInt32Reflector    (typeof(WriteCall), "count"),
+            new XdrEnumReflector            (typeof(WriteCall), "stableHow", typeof(StableHowEnum)),
+            new XdrOpaqueVarLengthReflector2(typeof(WriteCall), "data", UInt32.MaxValue),
         });
         public ISerializer CreateSerializer() { return new SerializerFromObjectAndReflectors(this, memberSerializers); }
 
@@ -825,13 +826,13 @@ namespace More.Net.Nfs3Procedure
         public Offset offset;
         public Count count;
         public StableHowEnum stableHow;
-        public Byte[] data;
+        public ByteArraySegmentStruct data;
         
         public WriteCall(Byte[] data, UInt32 offset, UInt32 offsetLimit)
         {
             memberSerializers.Deserialize(this, data, offset, offsetLimit);
         }
-        public WriteCall(Byte[] fileHandle, StableHowEnum stableHow, Byte[] data, Offset offset, Count count)
+        public WriteCall(Byte[] fileHandle, StableHowEnum stableHow, ByteArraySegmentStruct data, Offset offset, Count count)
         {
             this.fileHandle = fileHandle;
             this.data = data;

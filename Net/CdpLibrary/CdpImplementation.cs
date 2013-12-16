@@ -27,20 +27,20 @@ namespace More.Net
     }
     public static class Cdp
     {
-        public const Int32 HeaderLengthWithPayloadID    = 2;
-        public const Int32 HeaderLengthWithoutPayloadID = 1;
+        public const UInt32 HeaderLengthWithPayloadID    = 2;
+        public const UInt32 HeaderLengthWithoutPayloadID = 1;
 
-        public const Int32 MaxDatagramOverUdp           = 0xFFFF;
+        public const UInt32 MaxDatagramOverUdp           = 0xFFFF;
 
-        public const Int32 MaxPayloadWithIDOverUdp      = MaxDatagramOverUdp - HeaderLengthWithPayloadID;
-        public const Int32 MaxPayloadWithoutIDOverUdp   = MaxDatagramOverUdp - HeaderLengthWithoutPayloadID;
+        public const UInt32 MaxPayloadWithIDOverUdp      = MaxDatagramOverUdp - HeaderLengthWithPayloadID;
+        public const UInt32 MaxPayloadWithoutIDOverUdp   = MaxDatagramOverUdp - HeaderLengthWithoutPayloadID;
 
-        public const Int32 MaxPayloadID                 = 0x0FFF;
+        public const UInt32 MaxPayloadID                 = 0x0FFF;
 
 
         private static LinearBucketSizeBufferPool bufferPool = null; // Note that this buffer pool is thread safe
 
-        public static void StaticInit(Int32 maxPayloadWithID)
+        public static void StaticInit(UInt32 maxPayloadWithID)
         {
             if (maxPayloadWithID > MaxPayloadWithIDOverUdp)
                 throw new ArgumentOutOfRangeException(String.Format("You supplied a max payload (with id) of {0} but the max is {1}", maxPayloadWithID, MaxPayloadWithIDOverUdp));
@@ -51,7 +51,7 @@ namespace More.Net
                 bufferPool = new LinearBucketSizeBufferPool(maxPayloadWithID + HeaderLengthWithPayloadID, 64, 256, 4);
             }
         }
-        public static void TryStaticInit(Int32 maxPayloadWithID)
+        public static void TryStaticInit(UInt32 maxPayloadWithID)
         {
             if (bufferPool == null)
             {
@@ -82,10 +82,10 @@ namespace More.Net
         // If return value is 1, the payload id is the next in the seqeunce, 
         // If the return value is < 0x800, the payload is out of order
         // Else, (== 0 or >= 0x800), the payload is a resend of a previous payload
-        public static Int32 PayloadDiff(Int32 currentPayloadID, Int32 previousPayloadID)
+        public static Int32 PayloadDiff(UInt32 currentPayloadID, UInt32 previousPayloadID)
         {
-            Int32 payloadIDDiff = (MaxPayloadID & currentPayloadID) - (MaxPayloadID & previousPayloadID);
-            if (payloadIDDiff < 0) payloadIDDiff += MaxPayloadID + 1;
+            Int32 payloadIDDiff = (Int32)(MaxPayloadID & currentPayloadID) - (Int32)(MaxPayloadID & previousPayloadID);
+            if (payloadIDDiff < 0) payloadIDDiff += (Int32)(MaxPayloadID + 1);
             return payloadIDDiff;
         }
 
@@ -202,7 +202,7 @@ namespace More.Net
     struct CdpBufferPoolDatagram
     {
         public Byte[] datagram;
-        public Int32 length;
+        public UInt32 length;
         /*
         public CdpBufferPoolDatagram(Byte[] datagram, Int32 length)
         {
@@ -215,7 +215,7 @@ namespace More.Net
     {
         public EndPoint endPoint;
         public Byte[] datagram;
-        public Int32 length;
+        public UInt32 length;
         /*
         public CdpBufferPoolDatagram(EndPoint endPoint, Byte[] datagram, Int32 length)
         {
@@ -227,14 +227,14 @@ namespace More.Net
     }
     class DatagramQueue
     {
-        readonly Int32 extendLength;
+        readonly UInt32 extendLength;
 
         public CdpBufferPoolDatagram[] queue;
-        Int32 queueCount;
+        UInt32 queueCount;
 
-        Int32 firstPayloadIDInQueue;
+        UInt32 firstPayloadIDInQueue;
 
-        public DatagramQueue(Int32 initialCapacity, Int32 extendLength)
+        public DatagramQueue(UInt32 initialCapacity, UInt32 extendLength)
         {
             //if(extendLength < 1) throw new ArgumentOutOfRangeException();
             this.extendLength = extendLength;
@@ -242,11 +242,11 @@ namespace More.Net
             this.queue = new CdpBufferPoolDatagram[initialCapacity];
             this.queueCount = 0;
         }
-        public Int32 PayloadIDToIndex(Int32 payloadID)
+        public UInt32 PayloadIDToIndex(UInt32 payloadID)
         {
             return payloadID - firstPayloadIDInQueue;
         }
-        public void QueueSend(Int32 payloadID, Byte[] datagram, Int32 length)
+        public void QueueSend(UInt32 payloadID, Byte[] datagram, UInt32 length)
         {
             if(queue.Length <= queueCount)
             {
@@ -291,7 +291,7 @@ namespace More.Net
 
         Byte[] lastSendBufferRequested;
 
-        internal Int32 nextPayloadID;
+        internal UInt32 nextPayloadID;
         
         readonly DatagramQueue datagramQueue;
         
@@ -321,7 +321,7 @@ namespace More.Net
         // This method must be called to get a buffer before sending
         // This function returns the offset into the buffer that the client should put its data
         //
-        public Byte[] RequestSendBuffer(Int32 payloadSize, out Int32 payloadOffset)
+        public Byte[] RequestSendBuffer(UInt32 payloadSize, out UInt32 payloadOffset)
         {
             if (this.lastSendBufferRequested != null)
                 throw new InvalidOperationException("You've already requested a send buffer");
@@ -345,14 +345,14 @@ namespace More.Net
             headerBuffer[0] = (Byte)CdpFlagValue.Halt << 4;
             connectedDatagramTransmitter.Send(headerBuffer, 0, 1);
         }
-        public void HandlerSendHeader(Byte flagValue, Int32 payloadID)
+        public void HandlerSendHeader(Byte flagValue, UInt32 payloadID)
         {
             headerBuffer[0] = (Byte)(         ((Byte)flagValue << 4)  |
                                       (0x0F & (      payloadID >> 8)) );
             headerBuffer[1] = (Byte) payloadID;
             connectedDatagramTransmitter.Send(headerBuffer, 0, 2);
         }
-        private Byte[] GetRequestedBuffer(Int32 offsetLimit)
+        private Byte[] GetRequestedBuffer(UInt32 offsetLimit)
         {
             if (offsetLimit < Cdp.HeaderLengthWithPayloadID)
                 throw new ArgumentOutOfRangeException(String.Format("The offset limit you provided ({0}) is out of range (must be >= {1})",
@@ -363,7 +363,7 @@ namespace More.Net
             if (bufferToSend == null) throw new InvalidOperationException("You haven't requested a send buffer");
             return bufferToSend;
         }
-        public void ControllerSendRandomPayload(Int32 offsetLimit)
+        public void ControllerSendRandomPayload(UInt32 offsetLimit)
         {
             Byte[] bufferToSend = GetRequestedBuffer(offsetLimit);
 
@@ -372,14 +372,14 @@ namespace More.Net
             connectedDatagramTransmitter.Send(bufferToSend, 1, offsetLimit);
             Cdp.BufferPool.FreeBuffer(bufferToSend);
         }
-        public void ControllerSendPayloadNoAck(Int32 offsetLimit)
+        public void ControllerSendPayloadNoAck(UInt32 offsetLimit)
         {
             // TODO: Check for acks/resends/halts
 
             Byte[] bufferToSend = GetRequestedBuffer(offsetLimit);
 
             // Cdp Header
-            Int32 payloadID = nextPayloadID++;
+            UInt32 payloadID = nextPayloadID++;
             
             bufferToSend[0] = (Byte)(         ((Byte)CdpFlagValue.PayloadNoAck << 4)  |
                                       (0x0F & (      payloadID                 >> 8)) );
@@ -390,7 +390,7 @@ namespace More.Net
 
             connectedDatagramTransmitter.Send(bufferToSend, 0, offsetLimit);            
         }
-        public void ControllerSendPayloadWithAck(Int32 offsetLimit, ICdpTimeout timeout)
+        public void ControllerSendPayloadWithAck(UInt32 offsetLimit, ICdpTimeout timeout)
         {
             // 1. Check for acks/resends/halts
 
@@ -400,7 +400,7 @@ namespace More.Net
             try
             {
                 // Cdp Header
-                Int32 payloadID = nextPayloadID++;                
+                UInt32 payloadID = nextPayloadID++;                
                 bufferToSend[0] = (Byte)(         ((Byte)CdpFlagValue.PayloadWithAck << 4)  |
                                         (0x0F & (        payloadID                   >> 8)) );
                 bufferToSend[1] = (Byte)payloadID;
@@ -447,7 +447,7 @@ namespace More.Net
                     else
                     {
                         Byte receivedFlagValue = (Byte)(headerBuffer[0] >> 4);
-                        Int32 receivedPayloadID = (0xF00 & (headerBuffer[0] << 8)) | (0xFF & headerBuffer[1]);
+                        UInt32 receivedPayloadID = (UInt32)((0xF00 & (headerBuffer[0] << 8)) | (0xFF & headerBuffer[1]));
                         if (receivedFlagValue == (Byte)CdpFlagValue.Ack)
                         {
                             if (receivedPayloadID == payloadID)
@@ -465,7 +465,7 @@ namespace More.Net
                         {
                             if (receivedPayloadID <= payloadID)
                             {
-                                Int32 index = datagramQueue.PayloadIDToIndex(receivedPayloadID);
+                                UInt32 index = datagramQueue.PayloadIDToIndex(receivedPayloadID);
                                 if (index >= 0)
                                 {
                                     if (receivedPayloadID < payloadID)
@@ -584,7 +584,7 @@ namespace More.Net
                     return true;
                 }
 
-                Int32 payloadID = (0xF00 & (datagram[offset] << 8)) | (0xFF & datagram[offset + 1]);
+                UInt32 payloadID = (UInt32)((0xF00 & (datagram[offset] << 8)) | (0xFF & datagram[offset + 1]));
 
                 while(true)
                 {

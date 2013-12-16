@@ -85,7 +85,7 @@ namespace More.Pdl
             //
             // Print class definitions
             //
-            foreach (ObjectDefinition objectDefinition in pdlFile.ObjectDefinitions)
+            foreach (NamedObjectDefinition objectDefinition in pdlFile.ObjectDefinitions)
             {
                 List<ObjectDefinitionField> objectDefinitionFields = objectDefinition.Fields;
 

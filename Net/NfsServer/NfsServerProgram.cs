@@ -96,6 +96,11 @@ namespace More.Net
                 options.ErrorAndUsage("Expected an even number of non-option arguments but got {0}", nonOptionArguments.Count);
             }
             
+            //
+            //
+
+
+
             RootShareDirectory[] rootShareDirectories = new RootShareDirectory[nonOptionArguments.Count / 2];
             for (int i = 0; i < rootShareDirectories.Length; i++)
             {

@@ -42,19 +42,20 @@ namespace More.Pdl
         {
             Debug(String.Format(fmt, obj));
         }
-        public static void ParseObjectFieldLine(PdlFile pdlFile, LfdReader reader, ObjectDefinition currentObjectDefinition, LfdLine fieldLine, out LfdLine nextLine)
+        public static void ParseObjectFieldLine(PdlFile pdlFile, LfdReader reader, NamedObjectDefinition containingNamedObject,
+            IFieldContainer containingObject, LfdLine fieldLine, out LfdLine nextLine)
         {
             //
             // Check if it is only a definition (enum or flag)
             //
             if (fieldLine.idLowerInvariantCase.Equals("enum"))
             {
-                ParseEnumOrFlagsDefinition(pdlFile, reader, currentObjectDefinition, fieldLine, out nextLine, false);
+                ParseEnumOrFlagsDefinition(pdlFile, reader, containingNamedObject, fieldLine, out nextLine, false);
                 return;
             }
             if (fieldLine.idLowerInvariantCase.Equals("flags"))
             {
-                ParseEnumOrFlagsDefinition(pdlFile, reader, currentObjectDefinition, fieldLine, out nextLine, true);
+                ParseEnumOrFlagsDefinition(pdlFile, reader, containingNamedObject, fieldLine, out nextLine, true);
                 return;
             }
 
@@ -97,10 +98,10 @@ namespace More.Pdl
 
                 String objectDefinitionAndFieldName = fieldLine.fields[0];
 
-                ObjectDefinition fieldObjectDefinition = ParseObjectDefinition(pdlFile, reader, fieldLine, currentObjectDefinition,
-                    objectDefinitionAndFieldName, out nextLine);
+                NamedObjectDefinition fieldObjectDefinition = ParseObjectDefinition(pdlFile, reader, fieldLine,
+                    containingNamedObject, objectDefinitionAndFieldName, out nextLine);
 
-                currentObjectDefinition.Add(new ObjectDefinitionField(
+                containingObject.AddField(new ObjectDefinitionField(
                     new ObjectTypeReference(objectDefinitionAndFieldName, fieldObjectDefinition, arrayType),
                     objectDefinitionAndFieldName));
                 return;
@@ -116,9 +117,37 @@ namespace More.Pdl
                 String serializerFieldName = fieldLine.fields[1];
                 PdlArrayType serializerLengthType = PdlArrayType.Parse(fieldLine, serializerLengthTypeString);
 
-                currentObjectDefinition.Add(new ObjectDefinitionField(new SerializerTypeReference(serializerLengthType, arrayType), serializerFieldName));
+                containingObject.AddField(new ObjectDefinitionField(new SerializerTypeReference(serializerLengthType, arrayType), serializerFieldName));
 
                 nextLine = reader.ReadLineIgnoreComments();
+                return;
+            }
+
+            //
+            // Check if it is an 'if' type
+            //
+            if (typeStringLowerInvariant.Equals("if"))
+            {
+                VerifyFieldCount(fieldLine, 1);
+
+                IfTypeReference ifType = ParseIf(pdlFile, reader, fieldLine,
+                    containingNamedObject, out nextLine);
+
+                containingObject.AddField(new ObjectDefinitionField(ifType, null));
+                return;
+            }
+
+            //
+            // Check if it is a switch type
+            //
+            if (typeStringLowerInvariant.Equals("switch"))
+            {
+                VerifyFieldCount(fieldLine, 1);
+
+                SwitchTypeReference switchType = ParseSwitch(pdlFile, reader, fieldLine,
+                    containingNamedObject, out nextLine);
+
+                containingObject.AddField(new ObjectDefinitionField(switchType, null));
                 return;
             }
 
@@ -129,17 +158,17 @@ namespace More.Pdl
 
 
 
-            EnumOrFlagsDefinition enumDefinition = pdlFile.TryGetEnumOrFlagsDefinition(currentObjectDefinition, typeStringLowerInvariant);
+            EnumOrFlagsDefinition enumDefinition = pdlFile.TryGetEnumOrFlagsDefinition(containingNamedObject, typeStringLowerInvariant);
             if (enumDefinition != null)
             {
                 VerifyFieldCount(fieldLine, 1);
-                currentObjectDefinition.Add(new ObjectDefinitionField(new EnumOrFlagsTypeReference(typeString, enumDefinition, arrayType),
+                containingObject.AddField(new ObjectDefinitionField(new EnumOrFlagsTypeReference(typeString, enumDefinition, arrayType),
                     fieldLine.fields[0]));
                 return;
             }
 
             // Check if it is an object type
-            ObjectDefinition objectDefinition = pdlFile.TryGetObjectDefinition(currentObjectDefinition, typeStringLowerInvariant);
+            NamedObjectDefinition objectDefinition = pdlFile.TryGetObjectDefinition(containingNamedObject, typeStringLowerInvariant);
             if (objectDefinition != null)
             {
                 if (fieldLine.fields == null || fieldLine.fields.Length <= 0)
@@ -151,12 +180,12 @@ namespace More.Pdl
                     for (int i = 0; i < objectDefinitionFields.Count; i++)
                     {
                         ObjectDefinitionField fieldDefinition = objectDefinitionFields[i];
-                        currentObjectDefinition.Add(fieldDefinition);
+                        containingObject.AddField(fieldDefinition);
                     }
                 }
                 else if(fieldLine.fields.Length == 1)
                 {
-                    currentObjectDefinition.Add(new ObjectDefinitionField(
+                    containingObject.AddField(new ObjectDefinitionField(
                         new ObjectTypeReference(typeString, objectDefinition, arrayType), fieldLine.fields[0]));
                 }
                 else
@@ -172,24 +201,29 @@ namespace More.Pdl
             if (typeStringLowerInvariant.Equals("ascii"))
             {
                 VerifyFieldCount(fieldLine, 1);
-                currentObjectDefinition.Add(new ObjectDefinitionField(
+                containingObject.AddField(new ObjectDefinitionField(
                     new AsciiTypeReference(typeString, arrayType), fieldLine.fields[0]));
                 return;
             }
+
 
             //
             // It must be an integer type
             //
             VerifyFieldCount(fieldLine, 1);
 
-            PdlType type = PdlTypeExtensions.ParseIntegerType(typeString);
-            currentObjectDefinition.Add(new ObjectDefinitionField(new IntegerTypeReference(type, arrayType), fieldLine.fields[0]));
+            PdlType type;
+            try { type = (PdlType)Enum.Parse(typeof(PdlType), typeString, true); }
+            catch (ArgumentException) { throw new FormatException(String.Format("Unknown Pdl Type '{0}'", typeString)); }
+            if (!type.IsIntegerType()) throw new InvalidOperationException(String.Format("Unhandled PDL type '{0}'", type));
+
+            containingObject.AddField(new ObjectDefinitionField(new IntegerTypeReference(type, arrayType), fieldLine.fields[0]));
         }
 
 
 
 
-        static void ParseEnumOrFlagsDefinition(PdlFile pdlFile, LfdReader reader, ObjectDefinition currentObjectDefinition, LfdLine enumDefinitionLine, out LfdLine nextLine, Boolean isFlagsDefinition)
+        static void ParseEnumOrFlagsDefinition(PdlFile pdlFile, LfdReader reader, NamedObjectDefinition currentObjectDefinition, LfdLine enumDefinitionLine, out LfdLine nextLine, Boolean isFlagsDefinition)
         {
             String enumOrFlagsString = isFlagsDefinition ? "Flags" : "Enum";
 
@@ -253,10 +287,76 @@ namespace More.Pdl
         }
 
 
-
-        static ObjectDefinition ParseObjectDefinition(PdlFile pdlFile, LfdReader reader, LfdLine objectDefinitionLine, ObjectDefinition currentObjectDefinition, String objectDefinitionName, out LfdLine nextLine)
+        static IfTypeReference ParseIf(PdlFile pdlFile, LfdReader reader, LfdLine ifLine, NamedObjectDefinition containingNamedObject, out LfdLine nextLine)
         {
-            ObjectDefinition objectDefinition = new ObjectDefinition(pdlFile, objectDefinitionName,
+            Case trueCase, falseCase = null;
+
+            String conditionString = ifLine.fields[0];
+            Debug("Entering If Definition '{0}'", conditionString);
+
+            ObjectDefinition trueCaseObjectDefinition = new ObjectDefinition(pdlFile);
+
+            nextLine = reader.ReadLineIgnoreComments();
+            while (nextLine != null && nextLine.parent == ifLine)
+            {
+                ParseObjectFieldLine(pdlFile, reader, containingNamedObject, trueCaseObjectDefinition, nextLine, out nextLine);
+            }
+            trueCaseObjectDefinition.CalculateFixedSerializationLength();
+            trueCase = new Case(conditionString, trueCaseObjectDefinition);
+
+            if (nextLine != null && nextLine.idLowerInvariantCase.Equals("else"))
+            {
+                LfdLine falseCaseLine = nextLine;
+                ObjectDefinition falseCaseObjectDefinition = new ObjectDefinition(pdlFile);
+
+                nextLine = reader.ReadLineIgnoreComments();
+                while (nextLine != null && nextLine.parent == falseCaseLine)
+                {
+                    ParseObjectFieldLine(pdlFile, reader, containingNamedObject, falseCaseObjectDefinition, nextLine, out nextLine);
+                }
+                falseCaseObjectDefinition.CalculateFixedSerializationLength();
+                falseCase = new Case(conditionString, falseCaseObjectDefinition);
+            }
+
+            return new IfTypeReference(conditionString, trueCase, falseCase);
+        }
+        static SwitchTypeReference ParseSwitch(PdlFile pdlFile, LfdReader reader, LfdLine switchLine, NamedObjectDefinition containingNamedObject, out LfdLine nextLine)
+        {
+            List<Case> cases = new List<Case>();
+
+            String switchFieldString = switchLine.fields[0];
+            Debug("Entering Switch Definition '{0}'", switchFieldString);
+
+            nextLine = reader.ReadLineIgnoreComments();
+            while (nextLine != null && nextLine.parent == switchLine)
+            {
+                Boolean isCase = nextLine.idLowerInvariantCase.Equals("case");
+                if(!isCase && !nextLine.idLowerInvariantCase.Equals("default"))
+                    throw new FormatException(String.Format("Expected 'Case' or 'Default' but got '{0}'", nextLine));
+
+                VerifyFieldCount(nextLine, isCase ? 1 : 0);
+
+                LfdLine currentCaseLine = nextLine;
+                String currentCaseValueString = isCase ? nextLine.fields[0] : null;
+                ObjectDefinition currentCaseObjectDefinition = new ObjectDefinition(pdlFile);
+                
+                nextLine = reader.ReadLineIgnoreComments();
+                while (nextLine != null && nextLine.parent == currentCaseLine)
+                {
+                    ParseObjectFieldLine(pdlFile, reader, containingNamedObject, currentCaseObjectDefinition, nextLine, out nextLine);
+                }
+
+                currentCaseObjectDefinition.CalculateFixedSerializationLength();
+                cases.Add(new Case(currentCaseValueString, currentCaseObjectDefinition));
+            }
+
+            return new SwitchTypeReference(switchFieldString, cases);
+        }
+
+        static NamedObjectDefinition ParseObjectDefinition(PdlFile pdlFile, LfdReader reader, LfdLine objectDefinitionLine,
+            NamedObjectDefinition currentObjectDefinition, String objectDefinitionName, out LfdLine nextLine)
+        {
+            NamedObjectDefinition objectDefinition = new NamedObjectDefinition(pdlFile, objectDefinitionName,
                 objectDefinitionName.ToLowerInvariant(), currentObjectDefinition);
 
             Debug("Entering Object Definition '{0}'", objectDefinition.name);
@@ -264,7 +364,7 @@ namespace More.Pdl
             nextLine = reader.ReadLineIgnoreComments();
             while (nextLine != null && nextLine.parent == objectDefinitionLine)
             {
-                ParseObjectFieldLine(pdlFile, reader, objectDefinition, nextLine, out nextLine);
+                ParseObjectFieldLine(pdlFile, reader, objectDefinition, objectDefinition, nextLine, out nextLine);
             }
 
             objectDefinition.CalculateFixedSerializationLength();
@@ -295,7 +395,7 @@ namespace More.Pdl
                     LfdLine currentCommandLine = nextLine;
 
                     VerifyFieldCount(currentCommandLine, 0);
-                    ObjectDefinition objectDefinition = ParseObjectDefinition(pdlFile, reader, currentCommandLine, null, currentCommandLine.idOriginalCase, out nextLine);
+                    NamedObjectDefinition objectDefinition = ParseObjectDefinition(pdlFile, reader, currentCommandLine, null, currentCommandLine.idOriginalCase, out nextLine);
                 }
             }
         }

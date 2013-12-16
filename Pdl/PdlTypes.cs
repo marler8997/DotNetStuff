@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace More.Pdl
@@ -31,8 +32,15 @@ namespace More.Pdl
         // The Object Type
         Object     = 13,
 
+        // The Packed Type
+        Packed     = 14,
+
         // The Serializer Type
-        Serializer = 14,
+        Serializer = 15,
+
+        // The Case Types
+        If         = 16,
+        Switch     = 17,
     }
     public enum PdlArraySizeTypeEnum
     {
@@ -42,7 +50,7 @@ namespace More.Pdl
         UInt24             = 3, // Array Size Length is 3
         UInt32             = 4, // Array Size Length is 4
         UInt64             = 5, // Array Size Length is 5
-        BasedOnCommand     = 6, // Array Size Length is 0
+        BasedOnCommand     = 7, // Array Size Length is 0
     }
     public static class PdlTypeExtensions
     {
@@ -50,7 +58,7 @@ namespace More.Pdl
         {
             return type <= PdlType.UInt64;
         }
-        static Boolean IsIntegerType(this PdlType type)
+        public static Boolean IsIntegerType(this PdlType type)
         {
             return type <= PdlType.Int64;
         }
@@ -528,9 +536,9 @@ namespace More.Pdl
     public class ObjectTypeReference : TypeReference
     {
         public readonly String relativeObjectReferenceTypeString;
-        public readonly ObjectDefinition definition;
+        public readonly NamedObjectDefinition definition;
 
-        public ObjectTypeReference(String relativeObjectReferenceTypeString, ObjectDefinition definition, PdlArrayType arrayType)
+        public ObjectTypeReference(String relativeObjectReferenceTypeString, NamedObjectDefinition definition, PdlArrayType arrayType)
             : base(relativeObjectReferenceTypeString, PdlType.Object, arrayType)
         {
             this.relativeObjectReferenceTypeString = relativeObjectReferenceTypeString;
@@ -660,6 +668,183 @@ namespace More.Pdl
             {
                 return "ISerializer";
             }
+        }
+    }
+
+
+    public class IfTypeReference : TypeReference
+    {
+        public readonly String conditionalString;
+        Case trueCase;
+        Case falseCase;
+
+        public IfTypeReference(String conditionalString, Case trueCase, Case falseCase)
+            : base("If", PdlType.If, null)
+        {
+            this.conditionalString = conditionalString;
+            this.trueCase = trueCase;
+            this.falseCase = falseCase;
+        }
+        public override UInt32 FixedElementSerializationLength
+        {
+            get { return UInt32.MaxValue; }
+        }
+        public override String ElementDynamicSerializationLengthExpression(String instanceString)
+        {
+            if (FixedElementSerializationLength != UInt32.MaxValue)
+                throw new InvalidOperationException(
+                    "CodeBug: this method should not be called on an object type reference with a fixed element serialization length");
+
+            return String.Format("throw new NotImplementedException()/*(0).Serializer.SerializationLength(1)*/");
+        }
+        public override String ElementSerializeExpression(String arrayString, String offsetString, String instanceString)
+        {
+            return String.Format("{0}.Serializer.Serialize({1}, {2}, {3})",
+                "IF", arrayString, offsetString, instanceString);
+        }
+        public override String ElementFixedLengthDeserializeExpression(String arrayString, String offsetString)
+        {
+            return String.Format("{0}.Serializer.FixedLengthDeserialize({1}, {2})",
+                "IF", arrayString, offsetString);
+        }
+        public override String ElementDeserializeArrayExpression(String arrayString, String offsetString, String countString)
+        {
+            if (FixedElementSerializationLength != UInt32.MaxValue)
+            {
+                return String.Format("{0}.Serializer.FixedLengthDeserializeArray({1}, {2}, {3})",
+                    "IF", arrayString, offsetString, countString);
+            }
+            throw new InvalidOperationException("This method only applies to fixed object types");
+        }
+        public override string ElementDataStringExpression(string builderString, string instanceString, bool small)
+        {
+            return String.Format("{0}.Serializer.Data{1}String({2}, {3})",
+                "IF", small ? "Small" : "", instanceString, builderString);
+        }
+        public override IntegerTypeReference AsIntegerTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override EnumOrFlagsTypeReference AsEnumOrFlagsTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override ObjectTypeReference AsObjectTypeReference
+        {
+            get { throw new InvalidOperationException("Not an ObjectTypeReference"); }
+        }
+        public override SerializerTypeReference AsSerializerTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override void WritePdl(TextWriter writer, String fieldName)
+        {
+            throw new NotImplementedException();
+            /*
+            writer.Write(relativeObjectReferenceTypeString);
+
+            if (arrayType != null) writer.Write(arrayType.GetPdlArraySizeString());
+
+            writer.Write(' ');
+            writer.WriteLine(fieldName);
+            */
+        }
+        public override string CodeBaseTypeString
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+    }
+
+
+    public class Case
+    {
+        public readonly String caseString;
+        public readonly ObjectDefinition objectDefinition;
+        public Case(String caseString, ObjectDefinition objectDefinition)
+        {
+            this.caseString = caseString;
+            this.objectDefinition = objectDefinition;
+        }
+    }
+    public class SwitchTypeReference : TypeReference
+    {
+        public readonly String fieldString;
+        List<Case> cases;
+
+        public SwitchTypeReference(String fieldString, List<Case> cases)
+            : base("Switch", PdlType.Switch, null)
+        {
+            this.fieldString = fieldString;
+            this.cases = cases;
+        }
+        public override UInt32 FixedElementSerializationLength
+        {
+            get { return UInt32.MaxValue; }
+        }
+        public override String ElementDynamicSerializationLengthExpression(String instanceString)
+        {
+            if (FixedElementSerializationLength != UInt32.MaxValue)
+                throw new InvalidOperationException(
+                    "CodeBug: this method should not be called on an object type reference with a fixed element serialization length");
+
+            return String.Format("throw new NotImplementedException()/*(0).Serializer.SerializationLength(1)*/");
+        }
+        public override String ElementSerializeExpression(String arrayString, String offsetString, String instanceString)
+        {
+            return String.Format("{0}.Serializer.Serialize({1}, {2}, {3})",
+                "SWITCH", arrayString, offsetString, instanceString);
+        }
+        public override String ElementFixedLengthDeserializeExpression(String arrayString, String offsetString)
+        {
+            return String.Format("{0}.Serializer.FixedLengthDeserialize({1}, {2})",
+                "SWITCH", arrayString, offsetString);
+        }
+        public override String ElementDeserializeArrayExpression(String arrayString, String offsetString, String countString)
+        {
+            if (FixedElementSerializationLength != UInt32.MaxValue)
+            {
+                return String.Format("{0}.Serializer.FixedLengthDeserializeArray({1}, {2}, {3})",
+                    "SWITCH", arrayString, offsetString, countString);
+            }
+            throw new InvalidOperationException("This method only applies to fixed object types");
+        }
+        public override string ElementDataStringExpression(string builderString, string instanceString, bool small)
+        {
+            return String.Format("{0}.Serializer.Data{1}String({2}, {3})",
+                "SWITCH", small ? "Small" : "", instanceString, builderString);
+        }
+        public override IntegerTypeReference AsIntegerTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override EnumOrFlagsTypeReference AsEnumOrFlagsTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override ObjectTypeReference AsObjectTypeReference
+        {
+            get { throw new InvalidOperationException("Not an ObjectTypeReference"); }
+        }
+        public override SerializerTypeReference AsSerializerTypeReference
+        {
+            get { throw new InvalidOperationException(); }
+        }
+        public override void WritePdl(TextWriter writer, String fieldName)
+        {
+            throw new NotImplementedException();
+            /*
+            writer.Write(relativeObjectReferenceTypeString);
+
+            if (arrayType != null) writer.Write(arrayType.GetPdlArraySizeString());
+
+            writer.Write(' ');
+            writer.WriteLine(fieldName);
+            */
+        }
+        public override string CodeBaseTypeString
+        {
+            get { throw new NotImplementedException(); }
         }
     }
 }

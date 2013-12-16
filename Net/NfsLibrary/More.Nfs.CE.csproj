@@ -67,9 +67,9 @@
       <Project>{708A8043-D2E8-4D13-BB64-3E40D2DD2956}</Project>
       <Name>More.Net.CE</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RpcLibrary\RpcLibraryCE.csproj">
+    <ProjectReference Include="..\RpcLibrary\More.Rpc.CE.csproj">
       <Project>{74AC803F-3645-4EC7-ABE1-83AC72BB9E0F}</Project>
-      <Name>RpcLibraryCE</Name>
+      <Name>More.Rpc.CE</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

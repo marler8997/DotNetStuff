@@ -53,7 +53,7 @@ namespace More.Net
                 CdpTransmitter transmitter = new CdpTransmitter(udpTransmitter);
 
 
-                Int32 offset;
+                UInt32 offset;
                 Byte[] myMessage;
                 Byte[] payloadBuffer;
 
@@ -65,24 +65,24 @@ namespace More.Net
 
                 myMessage = Encoding.UTF8.GetBytes("This should be a random payload");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
                 Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                transmitter.ControllerSendRandomPayload(offset + myMessage.Length);
+                transmitter.ControllerSendRandomPayload(offset + (UInt32)myMessage.Length);
 
 
 
 
                 myMessage = Encoding.UTF8.GetBytes("This should be the first payload with no immediate ack");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
-                Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                transmitter.ControllerSendPayloadNoAck(offset + myMessage.Length);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
+                Array.Copy(myMessage, 0, payloadBuffer, offset, (UInt32)myMessage.Length);
+                transmitter.ControllerSendPayloadNoAck(offset + (UInt32)myMessage.Length);
 
                 myMessage = Encoding.UTF8.GetBytes("This should be the second payload with no immediate ack");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
-                Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                transmitter.ControllerSendPayloadNoAck(offset + myMessage.Length);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
+                Array.Copy(myMessage, 0, payloadBuffer, offset, (UInt32)myMessage.Length);
+                transmitter.ControllerSendPayloadNoAck(offset + (UInt32)myMessage.Length);
 
 
                 //
@@ -90,9 +90,9 @@ namespace More.Net
                 //
                 myMessage = Encoding.UTF8.GetBytes("This should be a normal payload with an immediate ack");
 
-                payloadBuffer = transmitter.RequestSendBuffer(myMessage.Length, out offset);
+                payloadBuffer = transmitter.RequestSendBuffer((UInt32)myMessage.Length, out offset);
                 Array.Copy(myMessage, 0, payloadBuffer, offset, myMessage.Length);
-                offset += myMessage.Length;
+                offset += (UInt32)myMessage.Length;
                 transmitter.ControllerSendPayloadWithAck(offset, timeout);
 
 

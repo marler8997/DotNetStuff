@@ -59,8 +59,8 @@ namespace More
         {
             if (overloadMethodInfo.parametersLength == this.npcMethodInfo.parametersLength)
             {
-                throw new NotSupportedException(String.Format("Method {0}.{1}, adding overloads with the same parameter count is currently not supported",
-                    executionObject.type.Name, overloadMethodInfo.methodInfo.Name));
+                throw new NotSupportedException(String.Format("{0} Method {1}, adding overloads with the same parameter count is currently not supported",
+                    executionObject, overloadMethodInfo.methodInfo.Name));
             }
 
             if (overloads == null)

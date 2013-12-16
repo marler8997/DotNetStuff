@@ -7,14 +7,14 @@ namespace More.Net
 {
     public interface IBufferPool
     {
-        Int32 CountBuffers(out Int32 totalAllocatedBuffers);
-        Byte[] GetBuffer(Int32 size);
+        UInt32 CountBuffers(out UInt32 totalAllocatedBuffers);
+        Byte[] GetBuffer(UInt32 size);
         void FreeBuffer(Byte[] buffer);
     }
     public class BufferFactory : ObjectManager<Byte[]>.IObjectFactory
     {
-        public readonly Int32 length;
-        public BufferFactory(Int32 length)
+        public readonly UInt32 length;
+        public BufferFactory(UInt32 length)
         {
             this.length = length;
         }
@@ -43,14 +43,14 @@ namespace More.Net
     {
         public static TextWriter DebugLog = null;
 
-        public readonly Int32 maxBufferSize;
-        public readonly Int32 smallestBucketSize;
+        public readonly UInt32 maxBufferSize;
+        public readonly UInt32 smallestBucketSize;
 
         ObjectManager<Byte[]>[] buckets;
-        Int32 [] bucketBufferSizes;
+        UInt32[] bucketBufferSizes;
 
-        public LinearBucketSizeBufferPool(Int32 maxBufferSize, Int32 bucketCount, 
-            Int32 smallestInitialCapacity, Int32 initialCapacityDiffForLargerBuckets)
+        public LinearBucketSizeBufferPool(UInt32 maxBufferSize, UInt32 bucketCount,
+            UInt32 smallestInitialCapacity, UInt32 initialCapacityDiffForLargerBuckets)
         {
             this.maxBufferSize = maxBufferSize;
 
@@ -61,14 +61,14 @@ namespace More.Net
             );
 
             this.buckets = new ObjectManager<Byte[]>[bucketCount];
-            this.bucketBufferSizes = new Int32[bucketCount];
+            this.bucketBufferSizes = new UInt32[bucketCount];
 
             Int32 bucketIndex;
-            Int32 bucketBufferSize = 0;
-            Int32 initAndExtend = smallestInitialCapacity;
+            UInt32 bucketBufferSize = 0;
+            UInt32 initAndExtend = smallestInitialCapacity;
             for (bucketIndex = 0; bucketIndex < bucketCount - 1; bucketIndex++)
             {
-                Int32 nextBucketRange = (Int32)(smallestBucketSizeAsDouble * (Double)(bucketIndex + 1));
+                UInt32 nextBucketRange = (UInt32)(smallestBucketSizeAsDouble * (Double)(bucketIndex + 1));
                 bucketBufferSize += nextBucketRange;
 
                 if(DebugLog != null) Console.WriteLine("[BufferPoolDebug] Bucket '{0}' Size '{1}' Range '{2}' Bytes (init cap={3})",
@@ -80,7 +80,7 @@ namespace More.Net
                 if(initAndExtend < 1) initAndExtend = 1;
             }
 
-            Int32 lastBucketSize = maxBufferSize - bucketBufferSize;
+            UInt32 lastBucketSize = maxBufferSize - bucketBufferSize;
 
             if (DebugLog != null) Console.WriteLine("[BufferPoolDebug] Bucket '{0}' Size '{1}' Range '{2}' Bytes (init cap={3})",
                 bucketIndex, maxBufferSize, lastBucketSize, initAndExtend);
@@ -88,10 +88,10 @@ namespace More.Net
             this.bucketBufferSizes[bucketIndex] = maxBufferSize;
         }
         // returns buffers that are currently reserved
-        public Int32 CountBuffers(out Int32 totalAllocatedBuffers)
+        public UInt32 CountBuffers(out UInt32 totalAllocatedBuffers)
         {
             totalAllocatedBuffers = 0;
-            Int32 reservedBuffers = 0;
+            UInt32 reservedBuffers = 0;
             for (int i = 0; i < buckets.Length; i++)
             {
                 ObjectManager<Byte[]> bucket = buckets[i];
@@ -103,7 +103,7 @@ namespace More.Net
             }
             return reservedBuffers;
         }
-        public Byte[] GetBuffer(Int32 size)
+        public Byte[] GetBuffer(UInt32 size)
         {
             if (size > maxBufferSize)
             {
