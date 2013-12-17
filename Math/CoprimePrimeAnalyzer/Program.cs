@@ -9,14 +9,13 @@ namespace More
         public readonly CLSwitch DontPrintSequences;
         public readonly CLGenericArgument<UInt32> MaxCnCount;
 
+
         public Options()
         {
             DontPrintSequences = new CLSwitch('n', "noprint", "Do not print sequences");
             Add(DontPrintSequences);
 
-            MaxCnCount = new CLGenericArgument<UInt32>(UInt32.Parse, 'm',"max-cn-count",
-                "The maximum number of characters in the sequence");
-
+            MaxCnCount = new CLGenericArgument<UInt32>(UInt32.Parse, 'm', "max-cn-count", "The maximum number of characters in the sequence");
             Add(MaxCnCount);
         }
         public override void PrintUsageHeader()
@@ -26,6 +25,62 @@ namespace More
     }
     class CoprimeGeneratorProgram
     {
+        static void PrintFilterMap(UInt32 PnPlusOne, UInt32 Qn, UInt64[] bprimes, UInt32 smallMultiplierIndex)
+        {
+            UInt64 maxBPrime = bprimes[bprimes.Length - 1];
+
+            UInt32[] bprimeFilterMap = new UInt32[bprimes.Length];
+
+            UInt64 smallMultiplier = bprimes[smallMultiplierIndex];
+            UInt32 bigMultiplierIndex;
+            for (bigMultiplierIndex = smallMultiplierIndex; true; bigMultiplierIndex++)
+            {
+                UInt64 bigMultiplier = bprimes[bigMultiplierIndex];
+                UInt64 filterNumber = smallMultiplier * bigMultiplier;
+                if (filterNumber > maxBPrime) break;
+
+                // Mark filter number
+                for (UInt32 check = 0; true; check++)
+                {
+                    UInt64 checkBprime = bprimes[check];
+                    if (checkBprime == filterNumber)
+                    {
+                        if (bprimeFilterMap[check] == 0)
+                        {
+                            bprimeFilterMap[check] = smallMultiplierIndex;
+                        }
+                        break;
+                    }
+                }
+            }
+
+            UInt64 maxFilterDecimalDigits = DecimalDigitCount(bprimeFilterMap[bprimeFilterMap.Length - 1]);
+            String filterNumberFormat = String.Format("{{0,{0}}}", maxFilterDecimalDigits);
+            Console.WriteLine();
+            Console.WriteLine("FilterMap {0}", smallMultiplierIndex);
+            Console.WriteLine("-----------------------------------");
+            {
+                UInt32 filterIndex = 0;
+                for (UInt32 i = 1; i <= PnPlusOne; i++)
+                {
+                    Console.Write("[{0,4}]", i);
+
+                    for (UInt32 j = 0; j < Qn; j++)
+                    {
+                        Console.Write(' ');
+                        Console.Write(filterNumberFormat, bprimeFilterMap[filterIndex]);
+                        filterIndex++;
+                    }
+
+                    Console.WriteLine();
+                }
+            }
+
+
+
+        }
+
+
         static Int32 Main(string[] args)
         {
             //
@@ -48,15 +103,16 @@ namespace More
             UInt32 n = UInt32.Parse(nonOptionArgs[0]);
             if (n == 0) return options.ErrorAndUsage("n cannot be 0");
 
-            UInt32 Pn         = PrimeTable.Values[n - 1];
-            //UInt32 PnMinusOne = PrimeTable.Values[n - 2];
-            UInt32 PnPlusOne  = PrimeTable.Values[n    ];
+            UInt32 Pn = PrimeTable.Values[n - 1];
+            UInt32 PnMinusOne = PrimeTable.Values[n - 2];
+            UInt32 PnPlusOne = PrimeTable.Values[n];
+
 
             //
             // Find Qn
             //
             UInt32 cnCount;
-            UInt64 QnIfSmallEnough = 0; // 0 means a UInt64 is not big enough to hold Qn
+            UInt64 QnIfSmallEnough = 0; // 0 means a UInt64 is not small enough to hold Qn
             if (options.MaxCnCount.set)
             {
                 cnCount = options.MaxCnCount.ArgValue;
@@ -98,7 +154,6 @@ namespace More
             {
                 GnList = new DynamicSimpleList<UInt32>();
             }
-            
 
             //
             // Find Primorial
@@ -111,7 +166,7 @@ namespace More
             catch (ArgumentOutOfRangeException e)
             {
             }
-            
+
 
             Console.WriteLine("n = {0}, Pn = {1}, Qn = {2}, Primorial = {3}", n, Pn,
                 (QnIfSmallEnough == 0) ? "TooLargeForUInt64" : QnIfSmallEnough.ToString(),
@@ -125,6 +180,7 @@ namespace More
             }
 
 
+
             //
             // For now just use the slow Cn creator
             //
@@ -134,6 +190,9 @@ namespace More
             //
             // Print
             //
+            UInt64 maxCoprimeDecimalDigits = DecimalDigitCount(Cn[cnCount - 1]);
+            String coprimeNumberFormat = String.Format("{{0,{0}}}", maxCoprimeDecimalDigits);
+
             Console.WriteLine();
             if (options.DontPrintSequences.set)
             {
@@ -141,15 +200,11 @@ namespace More
             }
             else
             {
-                UInt32 maxDecimalDigits = DecimalDigitCount(Cn[cnCount - 1]);
-                String numberFormat = String.Format("{{0,{0}}}", maxDecimalDigits);
-
-
                 Console.Write("Gn:");
                 for (UInt32 i = 0; i < GnList.Count; i++)
                 {
                     Console.Write(' ');
-                    Console.Write(numberFormat, GnList[i]);
+                    Console.Write(coprimeNumberFormat, GnList[i]);
                 }
                 Console.WriteLine();
                 Console.WriteLine();
@@ -161,7 +216,7 @@ namespace More
                 for (UInt32 i = 1; i <= cnCount; i++)
                 {
                     Console.Write(' ');
-                    Console.Write(numberFormat, i);
+                    Console.Write(coprimeNumberFormat, i);
                 }
                 Console.WriteLine();
 
@@ -183,7 +238,7 @@ namespace More
                     {
                         Console.Write(' ');
                     }
-                    Console.Write(numberFormat, coprime);
+                    Console.Write(coprimeNumberFormat, coprime);
                 }
                 // Print the first coprime of the next sequence
                 Console.WriteLine(" ({0})", Cn[cnCount]);
@@ -191,31 +246,155 @@ namespace More
 
                 Console.Write("In:");
                 // Offset the interval numbers
-                for (UInt32 i = 0; i < maxDecimalDigits / 2; i++)
+                for (UInt32 i = 0; i < maxCoprimeDecimalDigits / 2; i++)
                 {
                     Console.Write(' ');
                 }
                 for (UInt32 i = 0; i < cnCount; i++)
                 {
                     Console.Write(' ');
-                    Console.Write(numberFormat, Cn[i + 1] - Cn[i]);
+                    Console.Write(coprimeNumberFormat, Cn[i + 1] - Cn[i]);
                 }
                 Console.WriteLine();
             }
 
-            
-            
-            
-            
-            
+
+            //
+            // Generate BPrimes
+            //
+            UInt64[] bprimes = new UInt64[QnIfSmallEnough * PnPlusOne];
+            {
+                UInt64 bprimeIndex = 0;
+                UInt64 bprimeValueOffset = 0;
+                for (UInt64 i = 0; i < PnPlusOne; i++)
+                {
+                    for (UInt64 j = 0; j < QnIfSmallEnough; j++)
+                    {
+                        bprimes[bprimeIndex++] = Cn[j] + bprimeValueOffset;
+                    }
+                    bprimeValueOffset += PrimorialIfSmallEnough;
+                }
+            }
+
+
+
+
+
             //
             // Analysis
             //
-            
+            UInt64 maxBprime = bprimes[bprimes.Length - 1];
+            UInt64 maxBprimeDecimalDigits = DecimalDigitCount(maxBprime);
+            String bprimeNumberFormat = String.Format("{{0,{0}}}", maxBprimeDecimalDigits);
+
             Console.WriteLine();
-            Console.WriteLine("Performing analysis...");
+            Console.WriteLine("Analyzing B_n+1 (B_{0})", n + 1);
             Console.WriteLine("-----------------------------------");
 
+
+            Console.WriteLine();
+            Console.WriteLine("B_{0}", n + 1);
+            Console.WriteLine("-----------------------------------");
+            {
+                UInt32 bprimeIndex = 0;
+                for (UInt32 i = 1; i <= PnPlusOne; i++)
+                {
+                    Console.Write("[{0}]", i);
+
+                    for (UInt32 j = 0; j < QnIfSmallEnough; j++)
+                    {
+                        Console.Write(' ');
+                        Console.Write(bprimeNumberFormat, bprimes[bprimeIndex]);
+                        bprimeIndex++;
+                    }
+
+                    Console.WriteLine();
+                }
+            }
+
+            {
+                UInt32 filterIndex = 1;
+                while (true)
+                {
+                    PrintFilterMap(PnPlusOne, (UInt32)QnIfSmallEnough, bprimes, filterIndex);
+                    filterIndex++;
+                    UInt64 bprimeChecker = bprimes[filterIndex];
+                    if (bprimeChecker * bprimeChecker > maxBprime) break;
+                }
+            }
+
+
+            //
+            // Print Combined Filter Map
+            //
+            UInt32[] bprimeFilterMap = new UInt32[bprimes.Length];
+            UInt32 maxFilter;
+            {
+                UInt32 bprimeIndex;
+                for(bprimeIndex = 1; true; bprimeIndex++)
+                {
+                    UInt64 bprime = bprimes[bprimeIndex];
+                    UInt32 multiplierIndex;
+                    for (multiplierIndex = bprimeIndex; true; multiplierIndex++)
+                    {
+                        UInt64 multipler = bprimes[multiplierIndex];
+                        UInt64 filterNumber = bprime * multipler;
+                        if (filterNumber > maxBprime)
+                        {
+                            break;
+                        }
+
+                        // Mark filter number
+                        for (UInt32 check = 0; true; check++)
+                        {
+                            UInt64 checkBprime = bprimes[check];
+                            if (checkBprime == filterNumber)
+                            {
+                                if (bprimeFilterMap[check] == 0)
+                                {
+                                    bprimeFilterMap[check] = bprimeIndex;
+                                    //Console.WriteLine("filter[{0}] = {1}", filterNumber, bprimeIndex);
+                                }
+                                break;
+                            }
+                        }
+
+
+                    }
+                    if (multiplierIndex == bprimeIndex) break;
+                }
+                maxFilter = bprimeIndex;
+            }
+
+            UInt64 maxFilterDecimalDigits = DecimalDigitCount(maxFilter);
+            String filterNumberFormat = String.Format("{{0,{0}}}", maxFilterDecimalDigits);
+            Console.WriteLine();
+            Console.WriteLine("FilterMap");
+            Console.WriteLine("-----------------------------------");
+            {
+                UInt32 filterIndex = 0;
+                for (UInt32 i = 1; i <= PnPlusOne; i++)
+                {
+                    Console.Write("[{0,4}]", i);
+
+                    for (UInt32 j = 0; j < QnIfSmallEnough; j++)
+                    {
+                        Console.Write(' ');
+                        Console.Write(filterNumberFormat, bprimeFilterMap[filterIndex]);
+                        filterIndex++;
+                    }
+
+                    Console.WriteLine();
+                }
+            }
+
+
+
+
+
+
+
+            /*
             //
             // Count the number of primes
             //
@@ -226,7 +405,7 @@ namespace More
             while (true)
             {
                 currentCoprimeIndex++;
-                if(currentCoprimeIndex >= cnCount) break;
+                if (currentCoprimeIndex >= cnCount) break;
                 UInt32 coprime = Cn[currentCoprimeIndex];
 
                 UInt32 nextPrime = PrimeTable.Values[nextPrimeIndex];
@@ -307,7 +486,7 @@ namespace More
                 UInt32 firstIntervalIndex = firstInterval / 2 - 1;
                 UInt32 secondIntervalIndex = secondInterval / 2 - 1;
 
-                if(secondIntervalIndex > maxIntervalRowIndex)
+                if (secondIntervalIndex > maxIntervalRowIndex)
                 {
                     maxIntervalRowIndex = secondIntervalIndex;
                 }
@@ -405,7 +584,7 @@ namespace More
             Console.WriteLine();
             Console.WriteLine("Twin Coprimes Between Filter Numbers:");
             UInt32 currentFilterNumberIndex = 1;
-            UInt32 previousFilterNumber = GnList[0]; 
+            UInt32 previousFilterNumber = GnList[0];
             UInt32 currentFilterNumber = GnList[1];
             UInt32 currentTwinCoprimeCount = 0;
             for (UInt32 i = 1; i < cnCount; i++)
@@ -491,11 +670,11 @@ namespace More
             //
 
             ISimpleList<UInt32> GnMinusOneList = new DynamicSimpleList<UInt32>();
-            UInt32[] CnMinusOne =Coprimes.BruteForceCreateCn((UInt32)(n - 1), (UInt32)(Coprimes.CalculateQn(n-1) * Pn), GnMinusOneList);
+            UInt32[] CnMinusOne = Coprimes.BruteForceCreateCn((UInt32)(n - 1), (UInt32)(Coprimes.CalculateQn(n - 1) * Pn), GnMinusOneList);
 
-                        
+
             Console.WriteLine();
-            UInt32 QnMinusOne = (UInt32)Coprimes.CalculateQn(n-1);
+            UInt32 QnMinusOne = (UInt32)Coprimes.CalculateQn(n - 1);
             Console.WriteLine("Qn-1 = {0}, Pn = {1}", QnMinusOne, Pn);
             Console.WriteLine();
             Console.WriteLine("The first {0} values", QnMinusOne);
@@ -545,12 +724,19 @@ namespace More
             }
 
 
+            //
+            //
+            //
+            */
+
+
+
             return 0;
         }
 
-        static UInt32 DecimalDigitCount(UInt32 number)
+        static UInt64 DecimalDigitCount(UInt64 number)
         {
-            UInt32 digitCount = 1;
+            UInt64 digitCount = 1;
             while (number > 9)
             {
                 number /= 10;

@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrimeTableCodeGenerator", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoprimeGenerator", "CoprimeGenerator\CoprimeGenerator.csproj", "{DD81FA68-5C24-41CE-8741-6BEF1B481809}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoprimePrimeAnalyzer", "CoprimePrimeAnalyzer\CoprimePrimeAnalyzer.csproj", "{C40073E3-AD61-4565-B8C6-D24798283637}"
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = More.Math.vsmdi
@@ -52,6 +54,10 @@ Global
 		{DD81FA68-5C24-41CE-8741-6BEF1B481809}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD81FA68-5C24-41CE-8741-6BEF1B481809}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD81FA68-5C24-41CE-8741-6BEF1B481809}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C40073E3-AD61-4565-B8C6-D24798283637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C40073E3-AD61-4565-B8C6-D24798283637}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C40073E3-AD61-4565-B8C6-D24798283637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C40073E3-AD61-4565-B8C6-D24798283637}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
