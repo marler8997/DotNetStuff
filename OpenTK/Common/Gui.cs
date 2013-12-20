@@ -6,10 +6,6 @@ using OpenTK.Graphics.OpenGL;
 
 namespace More.OpenTK
 {
-
-
-
-
     public enum AlignX { Left, Center, Right }
     public enum AlignY { Bottom, Middle, Top }
     /*
