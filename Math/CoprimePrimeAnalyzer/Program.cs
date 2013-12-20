@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 
 namespace More
 {
@@ -75,9 +76,71 @@ namespace More
                     Console.WriteLine();
                 }
             }
+        }
+
+        static void FilterMapToImage(Stream stream, UInt32[] filterMap, UInt32 PnPlusOne, UInt32 Qn)
+        {
+            UInt32 min = filterMap[0], max = filterMap[0];
+            for (int i = 1; i < filterMap.Length; i++)
+            {
+                UInt32 filterIndex = filterMap[i];
+                if (filterIndex < min)
+                {
+                    min = filterIndex;
+                }
+                else if (filterIndex > max)
+                {
+                    max = filterIndex;
+                }
+            }
+
+            UInt32 range = max - min;
+
+            Byte[] color = new Byte[3];
+            for (int i = 0; i < filterMap.Length; i++)
+            {
+                UInt32 filterIndex = filterMap[i];
+
+                if (filterIndex == 0)
+                {
+                    color[0] = 255;
+                    color[1] = 255;
+                    color[2] = 255;
+                }
+                else
+                {
+                    /*
+                    if (filterIndex == 1)
+                    {
+                        color[0] = 0;
+                        color[1] = 0;
+                        color[2] = 0;
+                    }
+                    else
+                    {
+                        color[0] = 255;
+                        color[1] = 255;
+                        color[2] = 255;
+                    }
+                    */
+
+                    //Byte shade = (Byte)((float)filterIndex / (float)range * 255.0);
+                    //Console.WriteLine("filterIndex {0} range {1} Shade {2}", filterIndex, range, shade);
+                    //color[0] = shade;
+                    //color[1] = shade;
+                    //color[2] = shade;
+
+                    UInt32 shade = (UInt32)((float)filterIndex / (float)range * (float)0xFFFFFF);
+                    color[0] = (Byte)(shade >> 16);
+                    color[1] = (Byte)(shade >>  8);
+                    color[2] = (Byte)(shade      );
+                }
+
+                
 
 
-
+                stream.Write(color, 0, color.Length);
+            }
         }
 
 
@@ -279,7 +342,6 @@ namespace More
 
 
 
-
             //
             // Analysis
             //
@@ -291,7 +353,7 @@ namespace More
             Console.WriteLine("Analyzing B_n+1 (B_{0})", n + 1);
             Console.WriteLine("-----------------------------------");
 
-
+            /*
             Console.WriteLine();
             Console.WriteLine("B_{0}", n + 1);
             Console.WriteLine("-----------------------------------");
@@ -311,7 +373,9 @@ namespace More
                     Console.WriteLine();
                 }
             }
-
+            */
+ 
+            /*
             {
                 UInt32 filterIndex = 1;
                 while (true)
@@ -322,7 +386,7 @@ namespace More
                     if (bprimeChecker * bprimeChecker > maxBprime) break;
                 }
             }
-
+            */
 
             //
             // Print Combined Filter Map
@@ -344,21 +408,39 @@ namespace More
                             break;
                         }
 
+                        //
                         // Mark filter number
-                        for (UInt32 check = 0; true; check++)
-                        {
-                            UInt64 checkBprime = bprimes[check];
-                            if (checkBprime == filterNumber)
-                            {
-                                if (bprimeFilterMap[check] == 0)
-                                {
-                                    bprimeFilterMap[check] = bprimeIndex;
-                                    //Console.WriteLine("filter[{0}] = {1}", filterNumber, bprimeIndex);
-                                }
-                                break;
-                            }
-                        }
+                        //
+                        UInt32 filterIndex = (UInt32)((float)filterNumber / (float)maxBprime * (float)bprimes.Length);
+                        if (filterIndex >= bprimes.Length) filterIndex = (UInt32)bprimes.Length - 1U;
 
+                        UInt64 guess = bprimes[filterIndex];
+                        if (guess == filterNumber)
+                        {
+                            //Console.WriteLine("FilterNumber {0} Guess {1} Correct", filterNumber, guess);
+                        }
+                        else if(guess > filterNumber)
+                        {
+                            do
+                            {
+                                filterIndex--;
+                            } while (bprimes[filterIndex] != filterNumber);
+                            //Console.WriteLine("FilterNumber {0} Guess {1} Over", filterNumber, guess);
+                        }
+                        else
+                        {
+                            do
+                            {
+                                filterIndex++;
+                            } while (bprimes[filterIndex] != filterNumber);
+                            //Console.WriteLine("FilterNumber {0} Guess {1} Under", filterNumber, guess);
+                        }
+                        
+                        if (bprimeFilterMap[filterIndex] == 0)
+                        {
+                            bprimeFilterMap[filterIndex] = bprimeIndex;
+                            //Console.WriteLine("filter[{0}] = {1}", filterNumber, bprimeIndex);
+                        }
 
                     }
                     if (multiplierIndex == bprimeIndex) break;
@@ -366,6 +448,40 @@ namespace More
                 maxFilter = bprimeIndex;
             }
 
+
+
+            //
+            // Search for Horizontal Prime Path
+            //
+            for (UInt32 i = 0; i < (UInt32)QnIfSmallEnough - 1; i++)
+            {
+                UInt32 clearPathIndex = i;
+                while (true)
+                {
+                    if (bprimeFilterMap[clearPathIndex] == 0 && bprimeFilterMap[clearPathIndex + 1] == 0)
+                    {
+                        if (clearPathIndex != i)
+                        {
+                            //Console.WriteLine("Column {0} had to use lower row", i);
+                        }
+                        break; // Found clear path
+                    }
+                    clearPathIndex += (UInt32)QnIfSmallEnough;
+                    if (clearPathIndex >= bprimeFilterMap.Length)
+                    {
+                        Console.WriteLine("Column {0} had no prime path", i);
+                        break;
+                    }
+                }
+            }
+
+
+
+
+
+
+
+            /*
             UInt64 maxFilterDecimalDigits = DecimalDigitCount(maxFilter);
             String filterNumberFormat = String.Format("{{0,{0}}}", maxFilterDecimalDigits);
             Console.WriteLine();
@@ -387,9 +503,17 @@ namespace More
                     Console.WriteLine();
                 }
             }
+            */
 
-
-
+            //
+            // Write Image File
+            //
+            /*
+            using(FileStream stream = new FileStream(String.Format(@"C:\temp\CoprimImage{0}.data", n), FileMode.Create, FileAccess.Write))
+            {
+                FilterMapToImage(stream, bprimeFilterMap, PnPlusOne, (UInt32)QnIfSmallEnough);
+            }
+            */
 
 
 

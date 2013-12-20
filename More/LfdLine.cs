@@ -158,6 +158,7 @@ namespace More
             this.idOriginalCase = comment;
             this.idLowerInvariantCase = null;
             this.fields = null;
+
             this.actualLineNumber = actualLineNumber;
         }
         public LfdLine(LfdLine parent, String id, String[] fields, UInt32 actualLineNumber)
@@ -169,6 +170,8 @@ namespace More
             this.idLowerInvariantCase = id.ToLowerInvariant();
 
             this.fields = fields;
+
+            this.actualLineNumber = actualLineNumber;
         }
         public Boolean IsComment()
         {
