@@ -122,27 +122,19 @@ namespace More.Net
             //
             // Choose which array to work with
             //
-            UInt32 processLength;
-            UInt32 processOffset;
-            Byte[] processArray;
-
             if (currentBufferLength <= 0)
             {
-                processLength = length;
-                processOffset = offset;
-                processArray = data;
+                CommonHandleData(handler, heartbeatCallback, data, offset, length);
             }
             else
             {
-                processLength = currentBufferLength + length;
+                UInt32 processLength = currentBufferLength + length;
                 buffer.EnsureCapacityCopyData(processLength);
                 Array.Copy(data, offset, buffer.array, currentBufferLength, length);
                 currentBufferLength = processLength;
-                processOffset = 0;
-                processArray = buffer.array;
+                CommonHandleData(handler, heartbeatCallback, buffer.array, 0, processLength);
             }
 
-            CommonHandleData(handler, heartbeatCallback, processArray, processOffset, processLength);
         }
         void CommonHandleData(DataHandler handler, Action heartbeatCallback,
             Byte[] processArray, UInt32 processOffset, UInt32 processLength)

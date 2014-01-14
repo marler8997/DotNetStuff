@@ -49,6 +49,7 @@ namespace More.Net
     {
         ServerInstruction DatagramPacket(EndPoint endPoint, Socket socket, Byte[] bytes, UInt32 bytesRead);
     }
+    delegate void SocketHandler(Socket socket);
     public class TcpSelectServer : IDisposable
     {
         readonly List<Socket> connectedSockets;
@@ -243,8 +244,211 @@ namespace More.Net
             this.callback = callback;
         }
     }
+    
+    public class MultipleTcpSelectServer
+    {
+        readonly Byte[] readBuffer;
+        readonly Dictionary<Socket, SocketHandler> socketHandlerMap;
+        Socket[] tcpListenSockets;
+        List<Socket> connectedTcpSockets;
+
+        Boolean keepRunning;
+
+        //
+        // Once this class is constructed, it is listening on each port, but connections will not be
+        // accepted until the Run method is called
+        //
+        public MultipleTcpSelectServer(Byte[] readBuffer, TcpSelectListener[] tcpListeners)
+        {
+            if (readBuffer == null) throw new ArgumentNullException("readBuffer");
+            if (tcpListeners == null || tcpListeners.Length <= 0) throw new ArgumentException("tcpListeners");
+
+            this.readBuffer = readBuffer;
+            this.socketHandlerMap = new Dictionary<Socket, SocketHandler>();
+
+            //
+            // Setup Tcp Sockets
+            //
+            this.tcpListenSockets = new Socket[tcpListeners.Length];
+            for (int i = 0; i < tcpListeners.Length; i++)
+            {
+                TcpSelectListener tcpListener = tcpListeners[i];
+
+                Socket tcpListenSocket = new Socket(tcpListener.endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                tcpListenSocket.Bind(tcpListener.endPoint);
+                tcpListenSocket.Listen(tcpListener.backlog);
+                tcpListener.callback.ServerListening(tcpListenSocket);
+
+                this.tcpListenSockets[i] = tcpListenSocket;
+                TcpPortHandlers tcpPortHandlers = new TcpPortHandlers(this, tcpListener.callback);
+                socketHandlerMap.Add(tcpListenSocket, tcpPortHandlers.HandleListenSocketPop);
+            }
+
+            this.connectedTcpSockets = new List<Socket>();
+            this.keepRunning = true;
+        }
+        public void Stop()
+        {
+            lock (socketHandlerMap)
+            {
+                if (keepRunning)
+                {
+                    this.keepRunning = false;
+
+                    socketHandlerMap.Clear();
+                    for (int i = 0; i < tcpListenSockets.Length; i++)
+                    {
+                        tcpListenSockets[i].Close();
+                    }
+                    foreach (Socket socket in connectedTcpSockets)
+                    {
+                        socket.ShutdownAndDispose();
+                    }
+                    connectedTcpSockets.Clear();
+                }
+            }
+        }
+        class TcpPortHandlers
+        {
+            MultipleTcpSelectServer server;
+            StreamSelectServerCallback callback;
+            public TcpPortHandlers(MultipleTcpSelectServer server, StreamSelectServerCallback callback)
+            {
+                this.server = server;
+                this.callback = callback;
+            }
+            public void HandleListenSocketPop(Socket socket)
+            {
+                Socket newConnectedSocket = socket.Accept();
+                server.connectedTcpSockets.Add(newConnectedSocket);
+                server.socketHandlerMap.Add(newConnectedSocket, HandleConnectedSocketPop);
+
+                ServerInstruction instruction = callback.ClientOpenCallback((UInt32)server.connectedTcpSockets.Count, newConnectedSocket);
+
+                if ((instruction & ServerInstruction.CloseClient) != 0)
+                {
+                    instruction |= server.CloseAndRemoveClient(newConnectedSocket, callback);
+                }
+
+                if ((instruction & ServerInstruction.StopServer) != 0)
+                {
+                    server.Stop();
+                }
+            }
+            public void HandleConnectedSocketPop(Socket socket)
+            {
+                // Read and process the data as appropriate
+                int bytesRead;
+                try
+                {
+                    bytesRead = socket.Receive(server.readBuffer);
+                }
+                catch (SocketException)
+                {
+                    bytesRead = -1;
+                }
+                if (bytesRead <= 0)
+                {
+                    ServerInstruction instruction = server.CloseAndRemoveClient(socket, callback);
+                    if ((instruction & ServerInstruction.StopServer) != 0)
+                    {
+                        server.Stop();
+                    }
+                }
+                else
+                {
+                    ServerInstruction instruction = callback.ClientDataCallback(socket, server.readBuffer, (UInt32)bytesRead);
+                    if ((instruction & ServerInstruction.CloseClient) != 0)
+                    {
+                        instruction |= server.CloseAndRemoveClient(socket, callback);
+                    }
+                    if ((instruction & ServerInstruction.StopServer) != 0)
+                    {
+                        server.Stop();
+                    }
+                }
+            }
+        }
+        ServerInstruction CloseAndRemoveClient(Socket socket, StreamSelectServerCallback tcpCallback)
+        {
+            connectedTcpSockets.Remove(socket);
+            socketHandlerMap.Remove(socket);
+            if (socket.Connected)
+            {
+                try { socket.Shutdown(SocketShutdown.Both); }
+                catch (SystemException) { }
+            }
+
+            ServerInstruction instruction = tcpCallback.ClientCloseCallback((UInt32)connectedTcpSockets.Count, socket);
+            socket.Close();
+
+            return instruction;
+        }
+        public void Run()
+        {
+            List<Socket> selectSockets = new List<Socket>();
+
+            try
+            {
+                while (keepRunning)
+                {
+                    selectSockets.Clear();
+
+                    selectSockets.AddRange(connectedTcpSockets);
+                    selectSockets.AddRange(tcpListenSockets);
+
+                    Int64 beforeSelect = Stopwatch.GetTimestamp();
+
+                    //Socket.Select(selectSockets, null, null, -1);
+                    Socket.Select(selectSockets, null, null, Int32.MaxValue);
+
+                    if (!keepRunning) break;
+
+                    Int64 selectTicks = Stopwatch.GetTimestamp() - beforeSelect;
+                    Int64 selectBlockMicroseconds = selectTicks.StopwatchTicksAsMicroseconds();
+                    if (selectSockets.Count <= 0)
+                    {
+                        // Allow the socket to pop every minute without any sockets ready
+                        if (selectBlockMicroseconds < (1000000 * 60))
+                        {
+                            throw new InvalidOperationException(String.Format("Select popped after only {0} microseconds without any sockets ready, maybe a popped socket was not handled correctly",
+                                selectBlockMicroseconds));
+                        }
+                    }
+
+                    for (int i = 0; i < selectSockets.Count; i++)
+                    {
+                        Socket socket = selectSockets[i];
+                        SocketHandler handler;
+                        if (socketHandlerMap.TryGetValue(socket, out handler))
+                        {
+                            handler(socket);
+                        }
+                        else
+                        {
+                            if (keepRunning)
+                            {
+                                throw new InvalidOperationException(String.Format(
+                                    "Socket '{0}' was not a connected socket or a listen socket?", socket));
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                Stop();
+            }
+        }
+    }
+
+
+
+
     public class MultipleListenersSelectServer
     {
+        Socket[] currentTcpListenSockets, currentUdpListenSockets;
+
         readonly List<Socket> connectedTcpSockets;
         readonly Dictionary<Socket, StreamSelectServerCallback> connectedTcpCallbackDictionary;
 
@@ -333,10 +537,10 @@ namespace More.Net
         {
             List<Socket> selectSockets = new List<Socket>();
 
-            Socket[] tcpListenSockets = null;
+            this.currentTcpListenSockets = null;
             Dictionary<Socket, TcpSelectListener> tcpListenerDictionary = null;
 
-            Socket[] udpListenSockets = null;
+            this.currentUdpListenSockets = null;
             Dictionary<Socket, UdpSelectListener> udpListenerDictionary = null;
 
             try
@@ -346,7 +550,7 @@ namespace More.Net
                 //
                 if (tcpListeners != null && tcpListeners.Length > 0)
                 {
-                    tcpListenSockets = new Socket[tcpListeners.Length];
+                    this.currentTcpListenSockets = new Socket[tcpListeners.Length];
                     tcpListenerDictionary = new Dictionary<Socket, TcpSelectListener>();
                     for (int i = 0; i < tcpListeners.Length; i++)
                     {
@@ -357,8 +561,8 @@ namespace More.Net
                         tcpSocket.Listen(tcpListener.backlog);
                         tcpListener.callback.ServerListening(tcpSocket);
 
-                        tcpListenSockets[i] = tcpSocket;
-                        tcpListenerDictionary.Add(tcpListenSockets[i], tcpListener);
+                        this.currentTcpListenSockets[i] = tcpSocket;
+                        tcpListenerDictionary.Add(tcpSocket, tcpListener);
                     }
                 }
 
@@ -367,7 +571,7 @@ namespace More.Net
                 //
                 if (udpListeners != null && udpListeners.Length > 0)
                 {
-                    udpListenSockets = new Socket[udpListeners.Length];
+                    this.currentUdpListenSockets = new Socket[udpListeners.Length];
                     udpListenerDictionary = new Dictionary<Socket, UdpSelectListener>();
                     for (int i = 0; i < udpListeners.Length; i++)
                     {
@@ -376,7 +580,7 @@ namespace More.Net
                         UdpSocket udpSocket = new UdpSocket(AddressFamily.InterNetwork);
                         udpSocket.Bind(udpListener.endPoint);
 
-                        udpListenSockets[i] = udpSocket;
+                        this.currentUdpListenSockets[i] = udpSocket;
                         udpListenerDictionary.Add(udpSocket, udpListener);
                     }
                 }
@@ -388,12 +592,11 @@ namespace More.Net
                     if (eventLog != null) eventLog.WriteLine("[SelectServer] Select...");
 
                     selectSockets.Clear();
-                    if (tcpListenSockets != null) selectSockets.AddRange(tcpListenSockets);
-                    if (udpListenSockets != null) selectSockets.AddRange(udpListenSockets);
+                    if (this.currentTcpListenSockets != null) selectSockets.AddRange(this.currentTcpListenSockets);
+                    if (this.currentUdpListenSockets != null) selectSockets.AddRange(this.currentUdpListenSockets);
 
                     selectSockets.AddRange(connectedTcpSockets);
                     selectSockets.AddRange(connectedUdpSockets);
-
 
                     Int64 beforeSelect = Stopwatch.GetTimestamp();
 
@@ -573,7 +776,6 @@ namespace More.Net
             }
         }
     }
-
 
 
     public class SocketHandlerMethods

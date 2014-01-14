@@ -55,8 +55,8 @@ namespace More.Net
                     }
                     else
                     {
-                        Console.WriteLine("{0} [{1}] Failed to connect", DateTime.Now, accessorConnection.accessorEndPoint);
-                        Console.WriteLine("{0} [{1}] Waiting {2} seconds for next reconnect", DateTime.Now, accessorConnection.accessorEndPoint, reconnectWaitMillis / 1000);
+                        Console.WriteLine("{0} [{1}] Failed to connect, waiting {2} seconds for reconnect",
+                            DateTime.Now, accessorConnection.accessorEndPoint, reconnectWaitMillis / 1000);
                         Thread.Sleep(reconnectWaitMillis);
                     }
                 }
