@@ -7,16 +7,18 @@ namespace More
 {
     public class NpcMethodInfo
     {
-        public readonly String npcMethodName;
-        public readonly String npcMethodNameLowerInvariant;
+        public readonly String npcShortMethodNameLowerInvariant;
+        public readonly String npcFullMethodName;
+        public readonly String npcFullMethodNameLowerInvariant;
         public readonly MethodInfo methodInfo;
         public readonly ParameterInfo[] parameters;
         public readonly UInt16 parametersLength;
 
         public NpcMethodInfo(NpcExecutionObject executionObject, MethodInfo methodInfo)
         {
-            this.npcMethodName = executionObject.objectName + "." + methodInfo.Name;
-            this.npcMethodNameLowerInvariant = executionObject.objectNameLowerInvariant + "." + methodInfo.Name.ToLowerInvariant();
+            this.npcShortMethodNameLowerInvariant = methodInfo.Name.ToLowerInvariant();
+            this.npcFullMethodName = executionObject.objectName + "." + methodInfo.Name;
+            this.npcFullMethodNameLowerInvariant = executionObject.objectNameLowerInvariant + "." + methodInfo.Name.ToLowerInvariant();
             this.methodInfo = methodInfo;
             this.parameters = methodInfo.GetParameters();
             this.parametersLength = (this.parameters == null) ? (UInt16)0 :

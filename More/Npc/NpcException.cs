@@ -38,9 +38,11 @@ namespace More
     /// </summary>
     public class NpcErrorException : NpcException
     {
-        public NpcErrorException(String npcError)
+        public readonly NpcErrorCode errorCode;
+        public NpcErrorException(NpcErrorCode errorCode, String npcError)
             : base(npcError)
         {
+            this.errorCode = errorCode;
         }
     }
 }

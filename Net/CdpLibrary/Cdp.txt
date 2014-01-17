@@ -1,6 +1,6 @@
 
 ---------------------------------------------------------------------
-CDP Controller Datagram Protocol
+CDP "Controller Datagram Protocol"
 ---------------------------------------------------------------------
 
 Definitions
@@ -20,7 +20,7 @@ CDP differs from other datagram based protocols by providing a half-duplex conne
 
 Going from a full-duplex connection to half-duplex will create new APIs for designers to create new protocols on top of CDP or update old ones.
 The API exposes more control to the application which is good for some protocols and unnecessary for others, however, it provides an interface for the application to give the underlying transport the right kind of information in order for the lower layer to optimize network traffic.
-For example, because the connection is half-duplex, the CDP layer will always know where the next payload is coming from allowing for many optimizations.
+For example, because the connection is half-duplex, the CDP layer will always know where the next payload is coming from, which allows for more optimization at this layer of the stack.
 
 Since CDP does not abstract datagram boundary information, this allows protocols to use boundaries knowing it will be the same before and after transmission.
 
@@ -53,7 +53,7 @@ Performance Note
 ----------------------
 Comparing CDP to TCP and UDP allows us to establish a limit on the perfornace of CDP.
 When CDP is implemented above UDP tt cannot perform faster than UDP.
-Furthermore, if no packets are lost or out of order, the performance of CDP should approach the performance of UDP minus the time it takes to transmit and process the extra 2 bytes of headers.
+Furthermore, if no packets are lost or out of order, the performance of CDP should approach the performance of UDP minus the time it takes to transmit and process the extra 2 bytes of header information.
 So, looking at the performance difference between TCP and UDP can provide an upper bound on the performance gains from TCP to CDP.
 
 
@@ -61,7 +61,7 @@ So, looking at the performance difference between TCP and UDP can provide an upp
 NOTE: Maybe a stream protocol on top of CDP would be beneficial?
 
 ****If a user protocol does not require a full-duplex connection or a stream interface, providing a half-duplex connection and a payload interface is much simpler for the user to use and also faster and less memory intensive for the underlying protocol.
-When the underlying protocol knows from which end point the next payload will come from, it allows for optimization of timeouts and knowing when to resend packets.
+When the underlying protocol knows from which end point the next payload will come from, it allows for optimization of timeouts, ack packets, and knowing when to resend packets.
 The following is a list of protocols that run over TCP that do not need full-duplex communication.
 	HTTP/HTTPS
 	RPC/NFS
@@ -105,28 +105,17 @@ CDP Rule 1: Every single payload in a cdp sequence occurs because
     2) an asynchronous event occurs on the controller side (unrelated to the cdp conversation).
 ==============================================================
 
-A cdp controller should never break up a large payload into smaller payloads to be sent as a packet.
+A CDP controller should never break up a large payload into smaller payloads to be sent as a packet.
 If this functionality is desired it should be done in a protocol below CDP.
 
 Examples:
 
 HTTP Cdp Conversation:
 
-
 Controller | Payload           | Reason            | Reason Details
 -------------------------------------------------------------------------------
 Client     | Http Request      | AsynchronousEvent | User requested a web page
 Server     | Http Response     | TransferControl   | Server must respond to request
-
-
-
-
-
-
-
-
-
-
 
 
 HTTP Example
@@ -164,9 +153,6 @@ Many of these new programming paradigms come from CDP being half-duplex.
 
 
 
-
-
-
 Full-Duplex Datagrams to Half-Duplex Payloads
 ---------------------------------------------------------------------
 
@@ -180,7 +166,6 @@ Unlike other datagram protocols, CDP is half-duplex which means that each end po
 
 The CDP Protocol
 ---------------------------------------------------------------------
-
 
                             CDP Header
 -------------------------------------------------------------------
@@ -202,31 +187,31 @@ Column C: Sent by Controller
 Column H: Sent by Handler
 
 |  X  |  D | C | H | Name                          | Flags
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 |  -  |  - | X | X | Heartbeat                     | (no header flags, determined by the datagram length)
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0x0 |  0 | X |   | Payload No Ack                | 0000 H:0 T:0 G:0 I:0
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0x1 |  1 | X |   | Payload With Ack              | 0001 H:0 T:0 G:0 I:1
----------------------------------------------=-----------------------
+--------------------------------------------------------------------------
 | 0x2 |  2 | X |   | Payload No Ack/Give Control   | 0010 H:0 T:0 G:1 I:0
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0x3 |  3 | X |   | Payload With Ack/Give Control | 0011 H:0 T:0 G:1 I:1
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0x4 |  4 | X |   | Halt With Payload             | 0100 H:0 T:1 G:0 I:0
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0x5 |  5 | X |   | Payload And Close             | 0101 H:0 T:1 G:0 I:1
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0x6 |  6 | X |   | Random Payload                | 0110 H:0 T:1 P:1 I:0
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0x8 |  8 |   | X | Ack                           | 1000 H:1
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0x9 |  9 |   | X | Resend                        | 1001 H:1
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0xD | 10 | X | X | CheckConnection               | 1101     T:1     I:1
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 | 0xF | 15 | X | X | Halt                          | 1111
----------------------------------------------------------------------
+--------------------------------------------------------------------------
 
 
 *Note: these payloads are roughly ordered by when an algorithm should process each one:
@@ -261,7 +246,7 @@ However, the client can ensure these entries do not expire by sending heartbeats
 ensure that the connection is still open.  To do this, the controller would have to send a payload.  The protocol on top of CDP
 could send an empty payload so that both the client and server could verify the connection is still open.)
 
-RandomPaylod (Sent by Controller only) FlagValue=6
+RandomPayload (Sent by Controller only) FlagValue=6
 ------------------------------------------------------
 A random payload is one that is not reordered on the receivers end and is never acknowledged.
 It has no payload id so the CDP header is only one byte instead of two.
@@ -298,11 +283,9 @@ III LongHalt: Use if the current handler has a long receive timeout, and the con
    2. Handler sends ACK (just a regular ack with the payload id of the Payload and Close packet)
    3. Controller sends Halt
 
-
 Note: When a client gives control to a server for a long time, and the client does not send any acks/payloads for longer than a minute, then
 the protocol should have the client send a heartbeat every so often (probably once a minute) so that NAT and Proxies keep the tables open in order
 for the server to send packets back to the client.
-
 
 -------------------------------------------------------------------------------------------
 Packet Loss Recovery
@@ -324,7 +307,7 @@ of order packets...otherwise, the controller will timeout either waiting for the
 
 
 -------------------------------------------------------------------------------------------
-Protocol types that should use CTP
+Protocol types that should use CDP
 -------------------------------------------------------------------------------------------
 
 One Way Transmitter
@@ -348,9 +331,7 @@ Concerns:
    - If the path from transmitter to receiver is temporary (a reverse mapping on a gateway/proxy), 
      then the protocol must make sure that the path is refreshed every so often to make sure the mappings are kept intact.
    - If the path becomes severed from transmitter to receiver, the receiver will never know unless the receiver sends a CheckConnection packet.
-     Because of this, the receiver should have a timeout defined that determines how long no data can come across before the receiver sends a CheckConnection.
-
-   
+     Because of this, the receiver should have a timeout defined that determines how long no data can come across before the receiver sends a CheckConnection.   
    
 One Request One Response
 ------------------------
@@ -372,10 +353,8 @@ Applicable Packets: (All)
     CheckConnection
     Halt
 
-
 Timeouts and Retries
 -------------------------------------------------------------------------------------------
-
 Note: study "http://www.pcvr.nl/tcpip/tcp_time.htm"
 
 It is up to the application to determine how long it will wait for data, however, the CDP layer
@@ -477,9 +456,6 @@ while (true)
 }
 
 datagramQueue.EmptyAndFree(); // free the queue because everything has been acked
-
-
-
 
 
 

@@ -16,7 +16,9 @@ namespace More
         UnhandledException    = 0,
         InvalidCallSyntax     = 1,
         InvalidCallParameters = 2,
-        RequestedUnknownType  = 3,
+        UnknownMethodName     = 3,
+        AmbiguousMethodName   = 4,
+        RequestedUnknownType  = 5,
     }
 
     public static class Npc
@@ -103,12 +105,10 @@ namespace More
             }
             return callStringBuilder.ToString().Replace("\n", "\\n") + "\n";
         }
-        public static List<String> ParseParameters(String parametersString)
+        public static void ParseParameters(String parametersString, List<String> parameterList)
         {
-            if (parametersString == null) return null;
-            if (parametersString.Length <= 0) return null;
-
-            List<String> parametersList = new List<String>();
+            if (parametersString == null) return;
+            if (parametersString.Length <= 0) return;
 
             Int32 offset = 0;
 
@@ -120,16 +120,16 @@ namespace More
                     if(Sos.IsValidStartOfSosString(c)) break;
                     if(!Char.IsWhiteSpace(c)) throw new FormatException(String.Format(
                         "Every parameter string must start with 0-9,a-z,A-Z,\",[,{{ or ', but parameter {0} started with '{1}' (charcode={2})",
-                        parametersList.Count, c, (UInt32)c));
+                        parameterList.Count, c, (UInt32)c));
                     offset++;
-                    if(offset >= parametersString.Length) return parametersList;
+                    if(offset >= parametersString.Length) return;
                 }
 
                 Int32 nextSpace = Sos.NextNonQuotedWhitespace(parametersString, offset);
-                parametersList.Add(parametersString.Substring(offset, nextSpace - offset));
+                parameterList.Add(parametersString.Substring(offset, nextSpace - offset));
 
                 offset = nextSpace + 1;
-                if (offset >= parametersString.Length) return parametersList;
+                if (offset >= parametersString.Length) return;
             }
         }
 

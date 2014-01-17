@@ -101,7 +101,10 @@ namespace More
 
             if (returnLine.StartsWith(NpcReturnObject.NpcReturnLineNpcErrorPrefix))
             {
-                throw new NpcErrorException(returnLine);
+                String errorCode;
+                returnLine.Peel(out errorCode);
+                errorCode = errorCode.Peel(out returnLine);
+                throw new NpcErrorException((NpcErrorCode)Enum.Parse(typeof(NpcErrorCode), errorCode), returnLine);
             }
 
             InvalidReturnLine(returnLine, String.Format("does not start with '{0}','{1}' or '{2}'",

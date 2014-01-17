@@ -39,6 +39,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HighLevelRegressionTests.cs" />
+    <Compile Include="ManualTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestArrayParameters.cs" />
     <Compile Include="TestCallsWithPrimitiveTypes.cs" />

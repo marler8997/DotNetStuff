@@ -56,6 +56,7 @@
     <Compile Include="BinaryStream.cs" />
     <Compile Include="Buffer.cs" />
     <Compile Include="IniParser.cs" />
+    <Compile Include="OneOrMoreEnumerator.cs" />
     <Compile Include="Pdl.cs" />
     <Compile Include="Ports.cs" />
     <Compile Include="ProgramSettings.cs" />

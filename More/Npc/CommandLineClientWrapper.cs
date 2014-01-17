@@ -171,7 +171,6 @@ namespace More
 
                 return true;
             }
-
         }
 
         // returns false if interactive mode should stop
@@ -230,7 +229,6 @@ namespace More
                         Console.WriteLine();
                     }
                 }
-
             }
             else if (command.Equals("exit", StringComparison.CurrentCultureIgnoreCase) ||
                 command.Equals("q", StringComparison.CurrentCultureIgnoreCase) ||
@@ -244,6 +242,5 @@ namespace More
             }
             return true;
         }
-
     }
 }

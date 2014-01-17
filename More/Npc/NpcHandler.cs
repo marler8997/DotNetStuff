@@ -322,31 +322,56 @@ namespace More
             String commandArguments;
             String command = line.Peel(out commandArguments);
 
-            if (command.Equals("call", StringComparison.InvariantCultureIgnoreCase))
-            {
-                response = CallCommandHandler(commandArguments);
-            }
-            else if (command.Equals("methods", StringComparison.InvariantCultureIgnoreCase))
-            {
-                response = MethodsCommandHandler();
-            }
-            else if (command.Equals("type", StringComparison.InvariantCultureIgnoreCase))
-            {
-                response = TypeCommandHandler(commandArguments);
-            }
-            else if (command.Equals("help", StringComparison.InvariantCultureIgnoreCase))
+            if (String.IsNullOrEmpty(command))
             {
                 response = GenerateHelpMessage(null);
             }
-            else if (command.Equals("exit", StringComparison.InvariantCultureIgnoreCase))
-            {
-                responseHandler.Dispose();
-                return;
-            }
             else
             {
-                callback.GotInvalidData(clientString, String.Format("Unknown Command from line '{0}'", line));
-                response = GenerateHelpMessage(String.Format("Unknown Command '{0}', expected 'help', 'exit', 'methods', 'type' or 'call'", command));
+                Boolean isColonCommand;
+                if (command[0] == ':')
+                {
+                    isColonCommand = true;
+                    command = command.Substring(1);
+                }
+                else
+                {
+                    isColonCommand = false;
+                }
+
+                if (command.Equals("call", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    response = CallCommandHandler(commandArguments);
+                }
+                else if (command.Equals("methods", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    response = MethodsCommandHandler();
+                }
+                else if (command.Equals("type", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    response = TypeCommandHandler(commandArguments);
+                }
+                else if (command.Equals("help", StringComparison.InvariantCultureIgnoreCase) || command.Equals("", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    response = GenerateHelpMessage(null);
+                }
+                else if (command.Equals("exit", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    responseHandler.Dispose();
+                    return;
+                }
+                else
+                {
+                    if (isColonCommand)
+                    {
+                        callback.GotInvalidData(clientString, String.Format("Unknown Command from line '{0}'", line));
+                        response = GenerateHelpMessage(String.Format("Unknown Command '{0}', expected 'help', 'exit', 'methods', 'type' or 'call'", command));
+                    }
+                    else
+                    {
+                        response = CallCommandHandler(command, commandArguments);
+                    }
+                }
             }
             if (response != null) responseHandler.HandleData(response, 0, (UInt32)response.Length);
         }
@@ -372,7 +397,7 @@ namespace More
             builder.Append("   help                       Show this help\n");
             return Encoding.UTF8.GetBytes(builder.ToString());
         }
-        private Byte[] CallCommandHandler(String callArguments)
+        Byte[] CallCommandHandler(String call)
         {
             //
             // This method call will always return a specifically formatted string.
@@ -380,7 +405,7 @@ namespace More
             //    3. On Exception "Exception <ExceptionMessage> <ExceptionType> <SerializedException>
             //    2. On NpcError  "NpcError <ErrorCode> <Error Message>
             //
-            if (callArguments == null || callArguments.Length <= 0)
+            if (String.IsNullOrEmpty(call))
                 return Encoding.ASCII.GetBytes(NpcError(NpcErrorCode.InvalidCallSyntax, "missing method name"));
 
             //
@@ -389,6 +414,7 @@ namespace More
             String methodName;
             String parametersString;
 
+            /*
             Int32 spaceIndex = callArguments.IndexOf(' ');
             if (spaceIndex <= 0 || spaceIndex >= callArguments.Length - 1)
             {
@@ -401,14 +427,21 @@ namespace More
                 methodName = callArguments.Remove(spaceIndex);
                 parametersString = callArguments.Substring(spaceIndex + 1);
             }
+            */
+            methodName = call.Peel(out parametersString);
 
+
+            return CallCommandHandler(methodName, parametersString);
+        }
+        Byte[] CallCommandHandler(String methodName, String arguments)
+        {
             //
             // Parse Parameters
             //
-            List<String> parametersList;
+            List<String> parametersList = new List<String>();
             try
             {
-                parametersList = Npc.ParseParameters(parametersString);
+                Npc.ParseParameters(arguments, parametersList);
             }
             catch (FormatException e)
             {
@@ -432,6 +465,11 @@ namespace More
 
                 return Encoding.ASCII.GetBytes(returnObject.ToNpcReturnLineString());
             }
+            catch (NpcErrorException ne)
+            {
+                callback.ExceptionDuringExecution(clientString, methodName, ne);
+                return Encoding.ASCII.GetBytes(NpcError(ne.errorCode, ne.Message));
+            }
             catch (Exception e)
             {
                 callback.ExceptionDuringExecution(clientString, methodName, e);
@@ -452,7 +490,7 @@ namespace More
                     listBuilder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
 #endif
                     listBuilder.Append(' ');
-                    listBuilder.Append(npcMethodInfo.npcMethodName);
+                    listBuilder.Append(npcMethodInfo.npcFullMethodName);
 
                     listBuilder.Append('(');
 
