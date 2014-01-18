@@ -374,23 +374,28 @@ namespace More
                 }
             }
             */
- 
+			
             /*
+            UInt32 maxFilterIndex;
             {
                 UInt32 filterIndex = 1;
                 while (true)
                 {
-                    PrintFilterMap(PnPlusOne, (UInt32)QnIfSmallEnough, bprimes, filterIndex);
+                    //PrintFilterMap(PnPlusOne, (UInt32)QnIfSmallEnough, bprimes, filterIndex);
                     filterIndex++;
                     UInt64 bprimeChecker = bprimes[filterIndex];
                     if (bprimeChecker * bprimeChecker > maxBprime) break;
                 }
+                maxFilterIndex = filterIndex - 1;
+                Console.WriteLine("MaxFilterIndex: {0}, PnPlusOne: {1}", maxFilterIndex, PnPlusOne);
             }
             */
 
             //
             // Print Combined Filter Map
             //
+            /*
+            UInt32[] bprimeFilterColumnCount = new UInt32[QnIfSmallEnough];
             UInt32[] bprimeFilterMap = new UInt32[bprimes.Length];
             UInt32 maxFilter;
             {
@@ -416,6 +421,8 @@ namespace More
 
                         UInt64 guess = bprimes[filterIndex];
                         if (guess == filterNumber)
+                        UInt32 modQn = 0;
+                        for (UInt32 check = 0; true; check++)
                         {
                             //Console.WriteLine("FilterNumber {0} Guess {1} Correct", filterNumber, guess);
                         }
@@ -440,6 +447,15 @@ namespace More
                         {
                             bprimeFilterMap[filterIndex] = bprimeIndex;
                             //Console.WriteLine("filter[{0}] = {1}", filterNumber, bprimeIndex);
+                            if (bprimeFilterMap[check] == 0)
+                            {
+                                bprimeFilterMap[check] = bprimeIndex;
+                                bprimeFilterColumnCount[modQn]++;
+                                //Console.WriteLine("filter[{0}] = {1}", filterNumber, bprimeIndex);
+                            }
+                            break;
+                            modQn++;
+                            if (modQn == QnIfSmallEnough) modQn = 0;
                         }
 
                     }
@@ -447,7 +463,6 @@ namespace More
                 }
                 maxFilter = bprimeIndex;
             }
-
 
 
             //
@@ -475,8 +490,8 @@ namespace More
                 }
             }
 
-
-
+            
+            */
 
 
 
@@ -571,289 +586,30 @@ namespace More
             }
 
             UInt32 maxInterval = (UInt32)intervalCounts.Count * 2;
+            }*/
 
-            Console.WriteLine();
-            Console.WriteLine("Maximum interval is {0}", maxInterval);
-            Console.WriteLine();
-
-            UInt32 maxIntervalDecimalDigits = DecimalDigitCount(maxInterval);
-            String intervalFormat = String.Format("{{0,{0}}}", maxIntervalDecimalDigits);
-
-            Console.WriteLine("Interval Counts");
-            Console.WriteLine("-------------------------");
-            UInt32 maxIntervalCount = 0;
-            for (UInt32 i = 0; i < intervalCounts.Count; i++)
-            {
-                UInt32 interval = (i + 1) * 2;
-                UInt32 intervalCount = intervalCounts[(Int32)i];
-
-                if (intervalCount > maxIntervalCount) maxIntervalCount = intervalCount;
-
-                Console.WriteLine("{0} : {1}", String.Format(intervalFormat, interval), intervalCount);
-            }
-
-
-            UInt32 maxIntervalCountDecimalDigits = DecimalDigitCount(maxIntervalCount);
-            String intervalCountFormat = String.Format("{{0,{0}}}", maxIntervalCountDecimalDigits);
-
-
-
-            //
-            // Count Intervals Pairs
-            //
-            List<List<UInt32>> intervalPairCountTable = new List<List<UInt32>>();
-            UInt32 maxIntervalRowIndex = 0;
-            for (int i = 0; i < cnCount - 1; i++)
-            {
-                UInt32 firstInterval = Cn[i + 1] - Cn[i];
-                UInt32 secondInterval = Cn[i + 2] - Cn[i + 1];
-                UInt32 firstIntervalIndex = firstInterval / 2 - 1;
-                UInt32 secondIntervalIndex = secondInterval / 2 - 1;
-
-                if (secondIntervalIndex > maxIntervalRowIndex)
-                {
-                    maxIntervalRowIndex = secondIntervalIndex;
-                }
-
-                //
-                // Add to the interval pair to the table
-                //
-                while (firstIntervalIndex >= intervalPairCountTable.Count)
-                {
-                    intervalPairCountTable.Add(new List<UInt32>());
-                }
-
-                List<UInt32> intervalRow = intervalPairCountTable[(Int32)firstIntervalIndex];
-                while (secondIntervalIndex >= intervalRow.Count)
-                {
-                    intervalRow.Add(0);
-                }
-                intervalRow[(Int32)secondIntervalIndex]++;
-            }
-            Console.WriteLine();
-            Console.WriteLine("Interval Pair Map:");
-            Console.Write("{0} :", String.Format(intervalFormat, ""));
-            for (UInt32 intervalIndex = 0; intervalIndex <= maxIntervalRowIndex; intervalIndex++)
-            {
-                UInt32 interval = (intervalIndex + 1) * 2;
-                Console.Write(" {0}", String.Format(intervalCountFormat, interval));
-            }
-            Console.WriteLine();
-            for (UInt32 i = 0; i < intervalPairCountTable.Count; i++)
-            {
-                UInt32 firstInterval = (i + 1) * 2;
-                Console.Write("{0} :", String.Format(intervalFormat, firstInterval));
-                List<UInt32> intervalRow = intervalPairCountTable[(Int32)i];
-                UInt32 j;
-                for (j = 0; j < intervalRow.Count; j++)
-                {
-                    UInt32 secondInterval = (j + 1) * 2;
-                    Console.Write(" {0}", String.Format(intervalCountFormat, intervalRow[(Int32)j]));
-                }
-                for (; j <= maxIntervalRowIndex; j++)
-                {
-                    Console.Write(" {0}", String.Format(intervalCountFormat, 0));
-                }
-                Console.WriteLine();
-            }
-
-
-
-            //
-            // Check distances between 2s
-            //
-            //Console.Write("Distances between 2s:");
-            Int32 last2Index = 0;
-            Int32 maxDistance = 0;
-            for (int i = 0; i < cnCount; i++)
+            /*
+            UInt32 max = 0;
+            for (int i = 0; i < bprimeFilterColumnCount.Length; i++)
             {
                 if (Cn[i + 1] - Cn[i] == 2)
                 {
-                    Int32 distance = i - last2Index;
-                    //Console.Write(" {0}", distance);
-                    if (distance > maxDistance)
-                    {
-                        maxDistance = distance;
-                    }
-                    last2Index = i;
+                    UInt32 count = bprimeFilterColumnCount[i];
+                    if (count > max) max = count;
+                    Console.Write(count);
+                }
+                else if(i > 0 && Cn[i] - Cn[i-1] == 2)
+                {
+                    UInt32 count = bprimeFilterColumnCount[i];
+                    if (count > max) max = count;
+                    Console.Write('-');
+                    Console.Write(count);
+                    Console.Write("  ");
                 }
             }
             Console.WriteLine();
-            Console.WriteLine("Max distance between 2s: {0}", maxDistance);
-
-            //
-            // Find intervals between Twin Coprimes
-            //
-            Int32 lastTwinCoprime = -1;
-            UInt32 maxTwinCoprimeDistance = 0;
-            for (UInt32 i = 0; i < cnCount - 1; i++)
-            {
-                UInt32 coprime = Cn[i];
-                if (Cn[i + 1] - coprime == 2)
-                {
-                    UInt32 distance = (UInt32)((Int32)coprime - lastTwinCoprime);
-                    //Console.WriteLine("Cn[{0}] = {1} is a twin coprime (distance = {2})", i, coprime, distance);
-                    if (distance > maxTwinCoprimeDistance)
-                    {
-                        maxTwinCoprimeDistance = distance;
-                    }
-                    lastTwinCoprime = (Int32)coprime;
-                }
-            }
-            Console.WriteLine("Max Twin Coprime Distance: {0}", maxTwinCoprimeDistance);
-
-            //
-            // Checks twin coprimes between filter numbers
-            //
-            Console.WriteLine();
-            Console.WriteLine("Twin Coprimes Between Filter Numbers:");
-            UInt32 currentFilterNumberIndex = 1;
-            UInt32 previousFilterNumber = GnList[0];
-            UInt32 currentFilterNumber = GnList[1];
-            UInt32 currentTwinCoprimeCount = 0;
-            for (UInt32 i = 1; i < cnCount; i++)
-            {
-                UInt32 coprime = Cn[i];
-                if (coprime > currentFilterNumber)
-                {
-                    //Console.WriteLine("There are {0} twin coprimes between {1} and {2}",
-                    //    currentTwinCoprimeCount, previousFilterNumber, currentFilterNumber);
-                    currentFilterNumberIndex++;
-                    if (currentFilterNumberIndex >= GnList.Count) break;
-                    previousFilterNumber = currentFilterNumber;
-                    currentFilterNumber = GnList[currentFilterNumberIndex];
-                    currentTwinCoprimeCount = 0;
-                }
-
-                if (Cn[i + 1] - coprime == 2)
-                {
-                    currentTwinCoprimeCount++;
-                }
-            }
-
-            //
-            // Check palindromic
-            //
-            Console.WriteLine();
-            if (cnCount == QnIfSmallEnough)
-            {
-                Int32 pandoromeMismatches = 0;
-                for (int i = 0; i < cnCount - 1; i++)
-                {
-                    if (Cn[i + 1] - Cn[i] != Cn[cnCount - i - 1] - Cn[cnCount - i - 2])
-                    {
-                        Console.WriteLine("Palindrome mismatch at {0}", i + 1);
-                        pandoromeMismatches++;
-                    }
-                }
-                if (pandoromeMismatches == 0)
-                {
-                    Console.WriteLine("In is a palindrome");
-                }
-                else
-                {
-                    Console.WriteLine("There were {0} palindrome mismatches", pandoromeMismatches);
-                }
-            }
-
-            //
-            // Count filter numbers between 1 and Pn-1#
-            //
-            UInt32 limitedFilterNumberCount = 0;
-            UInt32 filterNumberLimit = (UInt32)((double)PrimorialIfSmallEnough / (double)PnPlusOne);
-            for (UInt32 i = 0; i < QnIfSmallEnough; i++)
-            {
-                if (Cn[i] > filterNumberLimit) break;
-                limitedFilterNumberCount++;
-
-            }
-            Console.WriteLine();
-            Console.WriteLine("There are {0} coprimes between 1 and {1}",
-                limitedFilterNumberCount, filterNumberLimit);
-
-
-
-
-            //
-            // Check mods
-            //
-            for (UInt32 i = 0; i < cnCount; i++)
-            {
-                //Console.WriteLine("Cn[{0}] mod {1} = {2}", i + 1, Pn, Cn[i] % Pn);
-            }
-
-            Console.WriteLine("Pn = {0}", Pn);
-            for (UInt32 i = 0; i < GnList.Count; i++)
-            {
-                //Console.WriteLine("Gn[{0}] = {1} mod {2} = {3}", i + 1, GnBuffer[i], Pn, GnBuffer[i] % Pn);
-            }
-
-
-            //
-            // Generate CnMinusOne
-            //
-
-            ISimpleList<UInt32> GnMinusOneList = new DynamicSimpleList<UInt32>();
-            UInt32[] CnMinusOne = Coprimes.BruteForceCreateCn((UInt32)(n - 1), (UInt32)(Coprimes.CalculateQn(n - 1) * Pn), GnMinusOneList);
-
-
-            Console.WriteLine();
-            UInt32 QnMinusOne = (UInt32)Coprimes.CalculateQn(n - 1);
-            Console.WriteLine("Qn-1 = {0}, Pn = {1}", QnMinusOne, Pn);
-            Console.WriteLine();
-            Console.WriteLine("The first {0} values", QnMinusOne);
-            for (UInt32 i = 0; i < QnMinusOne; i++)
-            {
-                //Console.WriteLine("Cn-1[{0,3}] = {1,3} mod {2} = {3} (k mod {4} = {5})",
-                //    i + 1, CnMinusOne[i], Pn, CnMinusOne[i] % Pn, QnMinusOne, (i % QnMinusOne) + 1);
-            }
-            Console.WriteLine();
-            UInt32 modZeroCount = 0;
-
-            UInt32 lastImportantMod = 0;
-            UInt32 lastImportantModCount = 0;
-
-            List<UInt32> importantMods = new List<UInt32>();
-            List<UInt32> importantModCounts = new List<UInt32>();
-
-            for (UInt32 i = 0; i < CnMinusOne.Length; i++)
-            {
-                if (CnMinusOne[i] % Pn == 0)
-                {
-                    modZeroCount++;
-
-                    UInt32 importantMod = CnMinusOne[(i % QnMinusOne)] % Pn;
-                    if (importantMod == lastImportantMod)
-                    {
-                        lastImportantModCount++;
-                    }
-                    else
-                    {
-                        Console.WriteLine("{0} Entries with mod {1}", lastImportantModCount, lastImportantMod);
-                        importantMods.Add(lastImportantMod);
-                        importantModCounts.Add(lastImportantModCount);
-                        lastImportantMod = importantMod;
-                        lastImportantModCount = 0;
-                    }
-
-                    //Console.WriteLine("Fn[{0,3}] = Cn-1[{1,3}] = {2,4} mod {3} = {4} (k mod {5} = {6,3}) (Cn-1[{6,3}] = {7,3} mod {3,3} = {8})",
-                    //    modZeroCount,i + 1, CnMinusOne[i], Pn, CnMinusOne[i] % Pn, QnMinusOne, (i % QnMinusOne) + 1, CnMinusOne[(i % QnMinusOne)], CnMinusOne[(i % QnMinusOne)] % Pn);
-
-                }
-            }
-
-            for (int i = 0; i < importantMods.Count; i++)
-            {
-                Console.WriteLine("Count {0,4} Mod {1}", importantModCounts[i], importantMods[i]);
-            }
-
-
-            //
-            //
-            //
+            Console.WriteLine("Max: {0}", max);
             */
-
-
 
             return 0;
         }
