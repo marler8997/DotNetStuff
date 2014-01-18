@@ -400,7 +400,8 @@ namespace More.Net
         readonly Socket socket;
         public readonly IDataHandler dataSender;
         readonly IDataFilter receiveDataFilter;
-        readonly FrameAndHeartbeatReceiverHandler frameAndHeartbeatReceiveHandler;
+        //readonly FrameAndHeartbeatReceiverHandler frameAndHeartbeatReceiveHandler;
+        readonly FrameProtocolReceiverHandler frameProtocolReceiveHandler;
 
         ServerInfo serverInfo;
         String serverInfoName;
@@ -416,7 +417,8 @@ namespace More.Net
 
             this.dataSender = dataSender;
             this.receiveDataFilter = receiveDataFilter;
-            this.frameAndHeartbeatReceiveHandler = new FrameAndHeartbeatReceiverHandler(HandleCommand, HandleHeartbeat, null);
+            //this.frameAndHeartbeatReceiveHandler = new FrameAndHeartbeatReceiverHandler(HandleCommand, HandleHeartbeat, null);
+            this.frameProtocolReceiveHandler = new FrameProtocolReceiverHandler(HandleCommand, null);
         }
         public void SocketClosedHandler(Socket socket)
         {
@@ -437,10 +439,12 @@ namespace More.Net
             dataSender.HandleData(packet, 0, packet.Length);
         }
         */
+        /*
         void HandleHeartbeat()
         {
             Console.WriteLine("{0} [{1}] [TmpControl] Got heartbeat", DateTime.Now, remoteEndPoint);
         }
+        */
         public void SocketReceiverHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
             Int32 bytesRead = socket.Receive(safeBuffer.array);
@@ -454,16 +458,22 @@ namespace More.Net
 
             if (receiveDataFilter == null)
             {
-                frameAndHeartbeatReceiveHandler.HandleData(safeBuffer.array, 0, (UInt32)bytesRead);
+                frameProtocolReceiveHandler.HandleData(safeBuffer.array, 0, (UInt32)bytesRead);
             }
             else
             {
-                receiveDataFilter.FilterTo(frameAndHeartbeatReceiveHandler.HandleData,
+                receiveDataFilter.FilterTo(frameProtocolReceiveHandler.HandleData,
                     safeBuffer.array, 0, (UInt32)bytesRead);
             }
         }
         void HandleCommand(Byte[] data, UInt32 offset, UInt32 length)
         {
+            if (length == 0)
+            {
+                Console.WriteLine("{0} [{1}] [TmpControl] Got heartbeat", DateTime.Now, remoteEndPoint);
+                return;
+            }
+
             Byte commandID = data[offset];
 
             switch (commandID)

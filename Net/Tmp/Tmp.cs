@@ -214,7 +214,7 @@ namespace More.Net
         public static UInt32 SerializeCommand<T>(IInstanceSerializer<T> serializer, Byte commandID, T command, ByteBuffer buffer, UInt32 offset)
         {
             UInt32 commandLength = 1 + serializer.SerializationLength(command);
-            offset = FrameAndHeartbeatProtocol.SetupFrame(buffer, offset, commandLength);
+            offset = FrameProtocol.SetupFrame(buffer, offset, commandLength);
             buffer.array[offset++] = commandID;
             return serializer.Serialize(buffer.array, offset, command);
         }

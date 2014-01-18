@@ -23,14 +23,13 @@ namespace More.Net
                 return accessorSocket != null && accessorSocket.Connected;
             }
         }
-
         public void SendHeartbeat()
         {
             if (accessorSocket != null)
             {
                 try
                 {
-                    accessorSocket.Send(FrameAndHeartbeatProtocol.HeartBeatPacket);
+                    accessorSocket.Send(FrameProtocol.HeartbeatSendPacket);
                 }
                 catch (Exception e)
                 {
@@ -117,7 +116,7 @@ namespace More.Net
 
 
                 DataHandler accessorSendHandler = new SocketSendDataHandler(socket).HandleData;
-                this.accessorReceiveHandler = new DataFilterHandler(new FrameAndHeartbeatReceiverFilter(),
+                this.accessorReceiveHandler = new DataFilterHandler(new FrameProtocolFilter(),
                         new TmpServerHandler(this, tlsSettings, tunnelsThread));
 
                 //

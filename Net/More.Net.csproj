@@ -46,7 +46,7 @@
     <Compile Include="DataLogger.cs" />
     <Compile Include="Dns2.cs" />
     <Compile Include="DomainName.cs" />
-    <Compile Include="FrameAndHeartbeatHandler.cs" />
+    <Compile Include="FrameProtocols.cs" />
     <Compile Include="Ftp.cs" />
     <Compile Include="HttpRequest.cs" />
     <Compile Include="HttpResponse.cs" />
