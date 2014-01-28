@@ -7,7 +7,8 @@ namespace More
 {
     public abstract class NpcExecutor
     {
-        public abstract IEnumerable<NpcExecutionObject> ExecutionObjects { get; }
+        public abstract ICollection<NpcInterfaceInfo> Interfaces { get; }
+        public abstract ICollection<NpcExecutionObject> ExecutionObjects { get; }
         public abstract IDictionary<String, Type> EnumAndObjectTypes { get; }
 
         public abstract NpcMethodInfo GetNpcMethodInfo(String methodName, UInt16 parameterCount, out NpcExecutionObject executionObject);

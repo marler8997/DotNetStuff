@@ -4,11 +4,11 @@ namespace More
 {
     public class NpcClientNamespaceCaller : INpcClientCaller
     {
-        public readonly NpcClient client;
+        public readonly INpcClientCaller client;
         public readonly String @namespace;
         private readonly String namespacePrefix;
 
-        public NpcClientNamespaceCaller(NpcClient client, String @namespace)
+        public NpcClientNamespaceCaller(INpcClientCaller client, String @namespace)
         {
             this.client = client;
             this.@namespace = @namespace;
@@ -18,17 +18,29 @@ namespace More
         {
             client.UpdateAndVerifyEnumAndObjectTypes();
         }
-        public void VerifyMethodDefinitions(bool forceMethodUpdateFromServer, SosMethodDefinition[] expectedMethods)
+        public void VerifyInterfaces(Boolean forceMethodUpdateFromServer, RemoteNpcInterface[] expectedInterfaces)
         {
-            client.VerifyMethodDefinitions(forceMethodUpdateFromServer, expectedMethods);
+            client.VerifyInterfaces(forceMethodUpdateFromServer, expectedInterfaces);
         }
-        public object Call(string methodName, params object[] parameters)
+        public void VerifyObjects(Boolean forceMethodUpdateFromServer, RemoteNpcObject[] expectedObjects)
+        {
+            client.VerifyObjects(forceMethodUpdateFromServer, expectedObjects);
+        }
+        public Object Call(String methodName, params Object[] parameters)
         {
             return client.Call(namespacePrefix + methodName, parameters);
         }
-        public object Call(Type returnType, string methodName, params object[] parameters)
+        public Object Call(String objectName, String methodName, params Object[] parameters)
         {
-            return client.Call(returnType, namespacePrefix + methodName, parameters);
+            return client.Call(namespacePrefix + objectName, methodName, parameters);
+        }
+        public Object Call(Type expectedReturnType, String methodName, params Object[] parameters)
+        {
+            return client.Call(expectedReturnType, namespacePrefix + methodName, parameters);
+        }
+        public Object Call(Type expectedReturnType, String objectName, String methodName, params Object[] parameters)
+        {
+            return client.Call(expectedReturnType, namespacePrefix + objectName, methodName, parameters);
         }
         public void Dispose()
         {

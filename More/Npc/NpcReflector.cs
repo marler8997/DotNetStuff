@@ -12,11 +12,18 @@ namespace More
         /// <summary> List of execution objects </summary>
         readonly NpcExecutionObject[] npcExecutionObjects;
 
-        public override IEnumerable<NpcExecutionObject> ExecutionObjects
+        public override ICollection<NpcInterfaceInfo> Interfaces
         {
             get
             {
-                return ((IEnumerable<NpcExecutionObject>)npcExecutionObjects);
+                return interfaceMap.Values;
+            }
+        }
+        public override ICollection<NpcExecutionObject> ExecutionObjects
+        {
+            get
+            {
+                return npcExecutionObjects;
             }
         }
         public override IDictionary<String,Type> EnumAndObjectTypes
@@ -27,10 +34,15 @@ namespace More
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        //readonly Dictionary<Type, NpcInterfaceInfo> interfaceList;
+        readonly Dictionary<Type, NpcInterfaceInfo> interfaceMap;
         readonly List<NpcMethodOverloadable> methodList;
         /// <summary>Mapping from method names (either lowercase or normal case) to remote methods </summary>
-        readonly Dictionary<String,NpcMethodOverloadable> fullLowerInvariantMethodDictionary;
-        readonly Dictionary<String, List<NpcMethodOverloadable>> shortNameMethodDictionary;
+        readonly Dictionary<String,NpcMethodOverloadable> withObjectLowerInvariantMethodDictionary;
+        readonly Dictionary<String, List<NpcMethodOverloadable>> noObjectLowerInvariantMethodDictionary;
 
         // An ObjectType is a collection of other types
         // A type is either a primitive, array, enum, or object type
@@ -43,11 +55,13 @@ namespace More
 
             this.npcExecutionObjects = new NpcExecutionObject[executionObjects.Length];
 
-            this.methodList                         = new List<NpcMethodOverloadable>();
-            this.fullLowerInvariantMethodDictionary = new Dictionary<String, NpcMethodOverloadable>();
-            this.shortNameMethodDictionary          = new Dictionary<String, List<NpcMethodOverloadable>>();
+            //this.interfaceList                         = new Dictionary<Type,NpcInterfaceInfo>();
+            this.interfaceMap                             = new Dictionary<Type,NpcInterfaceInfo>();
+            this.methodList                               = new List<NpcMethodOverloadable>();
+            this.withObjectLowerInvariantMethodDictionary = new Dictionary<String, NpcMethodOverloadable>();
+            this.noObjectLowerInvariantMethodDictionary   = new Dictionary<String, List<NpcMethodOverloadable>>();
 
-            this.enumAndObjectTypesDictionary       = new Dictionary<String, Type>();
+            this.enumAndObjectTypesDictionary             = new Dictionary<String, Type>();
 
             //
             // Find all methods that are apart of an [NpcInterface]
@@ -55,69 +69,79 @@ namespace More
             SosTypeSerializationVerifier verifier = new SosTypeSerializationVerifier();
             HashSet<Type> hashSetToCheckInterfaces = new HashSet<Type>();
 
-            for (int i = 0; i < executionObjects.Length; i++)
+            for (int objectIndex = 0; objectIndex < executionObjects.Length; objectIndex++)
             {
-                Object executionObject = executionObjects[i];
+                Object executionObject = executionObjects[objectIndex];
                 NpcExecutionObject npcExecutionObject = executionObject as NpcExecutionObject;
                 if (npcExecutionObject == null)
                 {
                     npcExecutionObject = new NpcExecutionObject(executionObject);
-                    npcExecutionObject.FindNpcMethods(hashSetToCheckInterfaces);
                 }
-                else
+                //Console.WriteLine("[NpcDebug] Adding NpcExecutionObject '{0}'", npcExecutionObject.objectName);
+
+                npcExecutionObjects[objectIndex] = npcExecutionObject;
+
+                for (int interfaceIndex = 0; interfaceIndex < npcExecutionObject.npcInterfaces.Count; interfaceIndex++)
                 {
-                    if (npcExecutionObject.npcMethods == null)
-                    {
-                        npcExecutionObject.FindNpcMethods(hashSetToCheckInterfaces);
-                    }
-                }
-
-                npcExecutionObjects[i] = npcExecutionObject;
-
-                List<NpcMethodInfo> npcMethodInfos = npcExecutionObject.npcMethods;
-                for (int methodIndex = 0; methodIndex < npcMethodInfos.Count; methodIndex++)
-                {
-                    NpcMethodInfo npcMethodInfo = npcMethodInfos[methodIndex];
-                    //Console.WriteLine("   Registering types for method '{0}'", npcMethodInfo.npcMethodName);
+                    NpcInterfaceInfo npcInterfaceInfo = npcExecutionObject.npcInterfaces[interfaceIndex];
 
                     //
-                    // Check that all parameter types can be parsed
+                    // Add Interface to map if not already in it
                     //
-                    for (UInt16 k = 0; k < npcMethodInfo.parametersLength; k++)
+                    if (!interfaceMap.ContainsKey(npcInterfaceInfo.interfaceType))
                     {
-                        RegisterType(verifier, npcMethodInfo.parameters[k].ParameterType);
+                        interfaceMap.Add(npcInterfaceInfo.interfaceType, npcInterfaceInfo);
+                        //interfaceList.Add(npcInterfaceInfo);
                     }
 
                     //
-                    // Find the appropriate ToString method for the return type
+                    // Add all the methods
                     //
-                    RegisterType(verifier, npcMethodInfo.methodInfo.ReturnType);
- 
-                    //
-                    // Add method info to dictionary
-                    //
-                    NpcMethodOverloadable overloadableMethod;
-                    if (fullLowerInvariantMethodDictionary.TryGetValue(npcMethodInfo.npcFullMethodNameLowerInvariant, out overloadableMethod))
+                    NpcMethodInfo[] npcMethodInfos = npcInterfaceInfo.npcMethods;
+                    for (int methodIndex = 0; methodIndex < npcMethodInfos.Length; methodIndex++)
                     {
-                        overloadableMethod.AddOverload(npcMethodInfo);
-                    }
-                    else
-                    {
-                        overloadableMethod = new NpcMethodOverloadable(npcExecutionObject, npcMethodInfo);
+                        NpcMethodInfo npcMethodInfo = npcMethodInfos[methodIndex];
+                        //Console.WriteLine("   [NpcDebug] Registering types for method '{0}'", npcMethodInfo.methodName);
 
-                        methodList.Add(overloadableMethod);
+                        //
+                        // Check that all parameter types can be parsed
+                        //
+                        for (UInt16 k = 0; k < npcMethodInfo.parametersLength; k++)
+                        {
+                            RegisterType(verifier, npcMethodInfo.parameters[k].ParameterType);
+                        }
 
-                        //fullNamespaceMethodDictionary.Add(npcMethodInfo.npcMethodName, newMethod);
-                        fullLowerInvariantMethodDictionary.Add(npcMethodInfo.npcFullMethodNameLowerInvariant, overloadableMethod);
-                    }
+                        //
+                        // Find the appropriate ToString method for the return type
+                        //
+                        RegisterType(verifier, npcMethodInfo.methodInfo.ReturnType);
 
-                    List<NpcMethodOverloadable> methodsWithSameShortName;
-                    if (!shortNameMethodDictionary.TryGetValue(npcMethodInfo.npcShortMethodNameLowerInvariant, out methodsWithSameShortName))
-                    {
-                        methodsWithSameShortName = new List<NpcMethodOverloadable>();
-                        shortNameMethodDictionary.Add(npcMethodInfo.npcShortMethodNameLowerInvariant, methodsWithSameShortName);
+                        //
+                        // Add method info to dictionary
+                        //
+                        String objectMethodNameLowerInvariant = npcExecutionObject.objectNameLowerInvariant + "." + npcMethodInfo.methodNameLowerInvariant;
+                        NpcMethodOverloadable overloadableMethod;
+                        if (withObjectLowerInvariantMethodDictionary.TryGetValue(objectMethodNameLowerInvariant, out overloadableMethod))
+                        {
+                            overloadableMethod.AddOverload(npcMethodInfo);
+                        }
+                        else
+                        {
+                            overloadableMethod = new NpcMethodOverloadable(npcExecutionObject, npcMethodInfo);
+
+                            methodList.Add(overloadableMethod);
+
+                            withObjectLowerInvariantMethodDictionary.Add(objectMethodNameLowerInvariant, overloadableMethod);
+                        }
+
+                        List<NpcMethodOverloadable> methodsWithSameShortName;
+                        if (!noObjectLowerInvariantMethodDictionary.TryGetValue(npcMethodInfo.methodNameLowerInvariant, out methodsWithSameShortName))
+                        {
+                            methodsWithSameShortName = new List<NpcMethodOverloadable>();
+                            noObjectLowerInvariantMethodDictionary.Add(npcMethodInfo.methodNameLowerInvariant, methodsWithSameShortName);
+                        }
+                        methodsWithSameShortName.Add(overloadableMethod);
                     }
-                    methodsWithSameShortName.Add(overloadableMethod);
                 }
             }
         }
@@ -170,25 +194,31 @@ namespace More
             // Find method with matching name
             //
             NpcMethodOverloadable overloadableMethod;
-            if (!fullLowerInvariantMethodDictionary.TryGetValue(methodNameLowerInvariant, out overloadableMethod))
+            if (methodName.Contains("."))
             {
-                List<NpcMethodOverloadable> overloadableMethodsWithSameName;
-                if(shortNameMethodDictionary.TryGetValue(methodNameLowerInvariant, out overloadableMethodsWithSameName))
-                {
-                    if (overloadableMethodsWithSameName.Count == 1)
-                    {
-                        overloadableMethod = overloadableMethodsWithSameName[0];
-                    }
-                    else
-                    {
-                        throw new NpcErrorException(NpcErrorCode.AmbiguousMethodName, String.Format(
-                            "Method '{0}' exists but there are multiple objects that have a method matching that name, use the full namespace to select one method", methodName));
-                    }
-                }
-                else
+                if (!withObjectLowerInvariantMethodDictionary.TryGetValue(methodNameLowerInvariant, out overloadableMethod))
                 {
                     throw new NpcErrorException(NpcErrorCode.UnknownMethodName,
                         String.Format("Method '{0}' was not found", methodName));
+                }
+            }
+            else
+            {
+                List<NpcMethodOverloadable> overloadableMethodsWithSameName;
+                if (!noObjectLowerInvariantMethodDictionary.TryGetValue(methodNameLowerInvariant, out overloadableMethodsWithSameName))
+                {
+                    throw new NpcErrorException(NpcErrorCode.UnknownMethodName,
+                        String.Format("Method '{0}' was not found", methodName));
+                }
+
+                if (overloadableMethodsWithSameName.Count == 1)
+                {
+                    overloadableMethod = overloadableMethodsWithSameName[0];
+                }
+                else
+                {
+                    throw new NpcErrorException(NpcErrorCode.AmbiguousMethodName, String.Format(
+                        "Method '{0}' exists but there are multiple objects that have a method matching that name, use the full namespace to select one method", methodName));
                 }
             }
 
@@ -267,7 +297,7 @@ namespace More
             {
                 foreach (NpcMethodInfo npcMethodInfo in overloadableMethod)
                 {
-                    Console.WriteLine("   Name='{0}' {1}", npcMethodInfo.npcFullMethodName, npcMethodInfo.methodInfo);
+                    Console.WriteLine("   Name='{0}' {1}", npcMethodInfo.methodName, npcMethodInfo.methodInfo);
                 }
             }
 

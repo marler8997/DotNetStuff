@@ -347,6 +347,14 @@ namespace More
                 {
                     response = MethodsCommandHandler();
                 }
+                else if (command.Equals("interfaces", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    response = InterfacesCommandHandler();
+                }
+                else if (command.Equals("objects", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    response = ObjectsCommandHandler();
+                }
                 else if (command.Equals("type", StringComparison.InvariantCultureIgnoreCase))
                 {
                     response = TypeCommandHandler(commandArguments);
@@ -482,15 +490,57 @@ namespace More
 
             foreach(NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
             {
-                foreach (NpcMethodInfo npcMethodInfo in executionObject.npcMethods)
+                for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
                 {
+                    NpcInterfaceInfo npcInterfaceInfo = executionObject.npcInterfaces[interfaceIndex];
+                    for(int methodIndex = 0; methodIndex < npcInterfaceInfo.npcMethods.Length; methodIndex++)
+                    {
+                        NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
+#if WindowsCE
+                        listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
+#else
+                        listBuilder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
+#endif
+                        listBuilder.Append(' ');
+                        listBuilder.Append(npcMethodInfo.methodName);
+
+                        listBuilder.Append('(');
+
+                        ParameterInfo[] parameters = npcMethodInfo.parameters;
+                        for (UInt16 j = 0; j < npcMethodInfo.parametersLength; j++)
+                        {
+                            ParameterInfo parameterInfo = parameters[j];
+                            if (j > 0) listBuilder.Append(',');
+                            listBuilder.Append(parameterInfo.ParameterType.SosTypeName());
+                            listBuilder.Append(' ');
+                            listBuilder.Append(parameterInfo.Name);
+                        }
+                        listBuilder.Append(")\n");
+                    }
+                }
+            }
+            listBuilder.Append('\n'); // Add blank line to end (to mark end of data)
+            return Encoding.UTF8.GetBytes(listBuilder.ToString());
+        }
+        private Byte[] InterfacesCommandHandler()
+        {
+            StringBuilder listBuilder = new StringBuilder();
+
+            foreach (NpcInterfaceInfo interfaceInfo in npcExecutor.Interfaces)
+            {
+                listBuilder.Append(interfaceInfo.name);
+                listBuilder.Append('\n');
+
+                for (int i = 0; i < interfaceInfo.npcMethods.Length; i++)
+                {
+                    NpcMethodInfo npcMethodInfo = interfaceInfo.npcMethods[i];
 #if WindowsCE
                     listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
 #else
                     listBuilder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
 #endif
                     listBuilder.Append(' ');
-                    listBuilder.Append(npcMethodInfo.npcFullMethodName);
+                    listBuilder.Append(npcMethodInfo.methodName);
 
                     listBuilder.Append('(');
 
@@ -505,6 +555,26 @@ namespace More
                     }
                     listBuilder.Append(")\n");
                 }
+                listBuilder.Append('\n');
+            }
+            listBuilder.Append('\n'); // Add blank line to end (to mark end of data)
+            return Encoding.UTF8.GetBytes(listBuilder.ToString());
+        }
+        private Byte[] ObjectsCommandHandler()
+        {
+            StringBuilder listBuilder = new StringBuilder();
+
+            foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
+            {
+                listBuilder.Append(executionObject.objectName);
+
+                for (int i = 0; i < executionObject.npcInterfaces.Count; i++)
+                {
+                    NpcInterfaceInfo interfaceInfo = executionObject.npcInterfaces[i];
+                    listBuilder.Append(' ');
+                    listBuilder.Append(interfaceInfo.name);
+                }
+                listBuilder.Append('\n');
             }
             listBuilder.Append('\n'); // Add blank line to end (to mark end of data)
             return Encoding.UTF8.GetBytes(listBuilder.ToString());

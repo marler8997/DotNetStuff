@@ -93,9 +93,26 @@ namespace More
         public static String CreateCallString(String methodName, Object[] args)
         {
             if (args == null || args.Length == 0)
-                return String.Format("call {0}\n", methodName);
+                return String.Format("{0}\n", methodName);
 
-            StringBuilder callStringBuilder = new StringBuilder("call ");
+            StringBuilder callStringBuilder = new StringBuilder();
+            callStringBuilder.Append(methodName);
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                callStringBuilder.Append(' ');
+                args[i].SerializeObject(callStringBuilder);
+            }
+            return callStringBuilder.ToString().Replace("\n", "\\n") + "\n";
+        }
+        public static String CreateCallString(String objectName, String methodName, Object[] args)
+        {
+            if (args == null || args.Length == 0)
+                return String.Format("{0}.{1}\n", objectName, methodName);
+
+            StringBuilder callStringBuilder = new StringBuilder();
+            callStringBuilder.Append(objectName);
+            callStringBuilder.Append('.');
             callStringBuilder.Append(methodName);
 
             for (int i = 0; i < args.Length; i++)

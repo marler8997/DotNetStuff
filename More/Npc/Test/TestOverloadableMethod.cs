@@ -10,7 +10,15 @@ namespace More
     [TestClass]
     public class TestOverloadableMethod
     {
-        class ClassWithTestMethods
+        [NpcInterface]
+        interface ITestMethods
+        {
+            void NoArgument();
+            void OneArgument(Boolean b);
+            void TwoArguments(Boolean b, Int32 i);
+            void ThreeArguments(UInt32 u, Int32 i, String str);
+        }
+        class ClassWithTestMethods : ITestMethods
         {
             public void NoArgument() { }
             public void OneArgument(Boolean b) { }
@@ -27,16 +35,16 @@ namespace More
 
             NpcMethodInfo[] methodArray = new NpcMethodInfo[4];
 
-            methodArray[0] = new NpcMethodInfo(executionObject, executionObject.type.GetMethod("NoArgument"));
+            methodArray[0] = new NpcMethodInfo(executionObject.type.GetMethod("NoArgument"));
             NpcMethodOverloadable methods = new NpcMethodOverloadable(executionObject, methodArray[0]);
 
-            methodArray[1] = new NpcMethodInfo(executionObject, executionObject.type.GetMethod("OneArgument"));
+            methodArray[1] = new NpcMethodInfo(executionObject.type.GetMethod("OneArgument"));
             methods.AddOverload(methodArray[1]);
 
-            methodArray[2] = new NpcMethodInfo(executionObject, executionObject.type.GetMethod("TwoArguments"));
+            methodArray[2] = new NpcMethodInfo(executionObject.type.GetMethod("TwoArguments"));
             methods.AddOverload(methodArray[2]);
 
-            methodArray[3] = new NpcMethodInfo(executionObject, executionObject.type.GetMethod("ThreeArguments"));
+            methodArray[3] = new NpcMethodInfo(executionObject.type.GetMethod("ThreeArguments"));
             methods.AddOverload(methodArray[3]);
 
             Int32 index = 0;
@@ -47,14 +55,16 @@ namespace More
             }
         }
 
-        class ClassWithTwoMethodsSameParameterCount
+        [NpcInterface]
+        interface ITwoMethodsSameParameterCount
         {
-            public void Method(Boolean b)
-            {
-            }
-            public void Method(Char c)
-            {
-            }
+            void Method(Boolean b);
+            void Method(Char c);
+        }
+        class ClassWithTwoMethodsSameParameterCount : ITwoMethodsSameParameterCount
+        {
+            public void Method(Boolean b) { }
+            public void Method(Char c) { }
         }
 
         [TestMethod]
@@ -64,11 +74,11 @@ namespace More
             NpcExecutionObject executionObject = new NpcExecutionObject(testClass);
 
             NpcMethodOverloadable methods = new NpcMethodOverloadable(executionObject,
-                new NpcMethodInfo(executionObject, executionObject.type.GetMethod("Method", new Type[] { typeof(Boolean) })));
+                new NpcMethodInfo(executionObject.type.GetMethod("Method", new Type[] { typeof(Boolean) })));
 
             try
             {
-                methods.AddOverload(new NpcMethodInfo(executionObject, executionObject.type.GetMethod("Method", new Type[] { typeof(Char) })));
+                methods.AddOverload(new NpcMethodInfo(executionObject.type.GetMethod("Method", new Type[] { typeof(Char) })));
                 Assert.Fail("Expected NotSupportedException");
             }
             catch (NotSupportedException e)

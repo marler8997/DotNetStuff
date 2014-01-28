@@ -38,6 +38,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FunkyInterfaceInheritance.cs" />
     <Compile Include="HighLevelRegressionTests.cs" />
     <Compile Include="ManualTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

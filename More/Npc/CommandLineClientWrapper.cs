@@ -183,21 +183,29 @@ namespace More
                 //
                 Dictionary<String, List<SosMethodDefinition>> methodsGroupedByInterface = new Dictionary<string, List<SosMethodDefinition>>();
 
-                List<SosMethodDefinition> methods = client.GetRemoteMethods(false);
-                for (int i = 0; i < methods.Count; i++)
+                List<RemoteNpcObject> objects = client.GetRemoteMethods(false);
+                for (int objectIndex = 0; objectIndex < objects.Count; objectIndex++)
                 {
-                    SosMethodDefinition method = methods[i];
-
-                    //
-                    // Add to interface group
-                    //
-                    List<SosMethodDefinition> methodsByPrefix;
-                    if (!methodsGroupedByInterface.TryGetValue(method.methodPrefix, out methodsByPrefix))
+                    RemoteNpcObject npcObject = objects[objectIndex];
+                    for (int interfaceIndex = 0; interfaceIndex < npcObject.interfaces.Length; interfaceIndex++)
                     {
-                        methodsByPrefix = new List<SosMethodDefinition>();
-                        methodsGroupedByInterface.Add(method.methodPrefix, methodsByPrefix);
+                        RemoteNpcInterface npcInterface = npcObject.interfaces[interfaceIndex];
+                        for (int i = 0; i < npcInterface.methods.Length; i++)
+                        {
+                            SosMethodDefinition method = npcInterface.methods[i];
+
+                            //
+                            // Add to interface group
+                            //
+                            List<SosMethodDefinition> methodsByPrefix;
+                            if (!methodsGroupedByInterface.TryGetValue(method.methodPrefix, out methodsByPrefix))
+                            {
+                                methodsByPrefix = new List<SosMethodDefinition>();
+                                methodsGroupedByInterface.Add(method.methodPrefix, methodsByPrefix);
+                            }
+                            methodsByPrefix.Add(method);
+                        }
                     }
-                    methodsByPrefix.Add(method);
                 }
 
                 //

@@ -78,12 +78,12 @@ namespace More
         {
             TestRemoteDevice remoteDevice = new TestRemoteDevice();
 
-            NpcReflector npcReflector = new NpcReflector(new Object[] { remoteDevice });
+            NpcReflector npcReflector = new NpcReflector(remoteDevice);
 
-            Assert.AreEqual(null, npcReflector.ExecuteWithStrings("More.TestRemoteDevice.GetDeviceStatus").value);
+            Assert.AreEqual(null, npcReflector.ExecuteWithStrings("TestRemoteDevice.GetDeviceStatus").value);
             DeviceStatus deviceStatus = new DeviceStatus(false, DateTime.MinValue, 38849);
-            npcReflector.ExecuteWithStrings("More.TestRemoteDevice.SetDeviceStatus", deviceStatus.SerializeObject());
-            Assert.AreEqual(deviceStatus, (DeviceStatus)npcReflector.ExecuteWithStrings("More.TestRemoteDevice.GetDeviceStatus").value);
+            npcReflector.ExecuteWithStrings("TestRemoteDevice.SetDeviceStatus", deviceStatus.SerializeObject());
+            Assert.AreEqual(deviceStatus, (DeviceStatus)npcReflector.ExecuteWithStrings("TestRemoteDevice.GetDeviceStatus").value);
         }
     }
 }

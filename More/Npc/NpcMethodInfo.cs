@@ -7,13 +7,22 @@ namespace More
 {
     public class NpcMethodInfo
     {
-        public readonly String npcShortMethodNameLowerInvariant;
-        public readonly String npcFullMethodName;
-        public readonly String npcFullMethodNameLowerInvariant;
+        public readonly String methodName;
+        public readonly String methodNameLowerInvariant;
         public readonly MethodInfo methodInfo;
         public readonly ParameterInfo[] parameters;
         public readonly UInt16 parametersLength;
 
+        public NpcMethodInfo(MethodInfo methodInfo)
+        {
+            this.methodName = methodInfo.Name;
+            this.methodNameLowerInvariant = this.methodName.ToLowerInvariant();
+            this.methodInfo = methodInfo;
+            this.parameters = methodInfo.GetParameters();
+            this.parametersLength = (this.parameters == null) ? (UInt16)0 :
+                (UInt16)this.parameters.Length;
+        }
+        /*
         public NpcMethodInfo(NpcExecutionObject executionObject, MethodInfo methodInfo)
         {
             this.npcShortMethodNameLowerInvariant = methodInfo.Name.ToLowerInvariant();
@@ -24,7 +33,6 @@ namespace More
             this.parametersLength = (this.parameters == null) ? (UInt16)0 :
                 (UInt16)this.parameters.Length;
         }
-        /*
         public void ToParsableString(StringBuilder builder)
         {
             builder.Append(methodInfo.ReturnParameter.ParameterType.FullName);

@@ -176,32 +176,38 @@ namespace More
                 htmlBuilder.Append(executionObject.objectName);
                 htmlBuilder.Append("</h2><hr/>");
 
-                foreach (NpcMethodInfo npcMethodInfo in executionObject.npcMethods)
+                for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
                 {
-                    ParameterInfo[] parameters = npcMethodInfo.parameters;
-                    Int32 parameterCount = (parameters == null) ? 0 : parameters.Length;
+                    NpcInterfaceInfo interfaceInfo = executionObject.npcInterfaces[interfaceIndex];
+                    for(int methodIndex = 0; methodIndex < interfaceInfo.npcMethods.Length; methodIndex++)
+                    {
+                        NpcMethodInfo npcMethodInfo = interfaceInfo.npcMethods[methodIndex];
 
-                    htmlBuilder.Append(String.Format("<form class=\"methodform\" action=\"call/{0}\" method=\"get\">", npcMethodInfo.npcFullMethodName));
-                    htmlBuilder.Append(String.Format("<input class=\"executebutton\" type=\"submit\" value=\"Execute\" tabindex=\"{0}\"/>", tabIndex + parameterCount));
+                        ParameterInfo[] parameters = npcMethodInfo.parameters;
+                        Int32 parameterCount = (parameters == null) ? 0 : parameters.Length;
+
+                        htmlBuilder.Append(String.Format("<form class=\"methodform\" action=\"call/{0}\" method=\"get\">", npcMethodInfo.methodName));
+                        htmlBuilder.Append(String.Format("<input class=\"executebutton\" type=\"submit\" value=\"Execute\" tabindex=\"{0}\"/>", tabIndex + parameterCount));
 #if WindowsCE
                     htmlBuilder.Append(TypeAsHtml(npcMethodInfo.methodInfo.ReturnType));
 #else
-                    htmlBuilder.Append(TypeAsHtml(npcMethodInfo.methodInfo.ReturnParameter.ParameterType));
+                        htmlBuilder.Append(TypeAsHtml(npcMethodInfo.methodInfo.ReturnParameter.ParameterType));
 #endif
 
-                    htmlBuilder.Append(String.Format("&nbsp;<font class=\"bold\">{0}</font>(", npcMethodInfo.methodInfo.Name));
-                    if (parameterCount > 0)
-                    {
-                        htmlBuilder.Append("<div style=\"padding-left:50px;\"><table class=\"methodtable\">");
-                        for (UInt16 j = 0; j < parameterCount; j++)
+                        htmlBuilder.Append(String.Format("&nbsp;<font class=\"bold\">{0}</font>(", npcMethodInfo.methodInfo.Name));
+                        if (parameterCount > 0)
                         {
-                            ParameterInfo parameterInfo = parameters[j];
-                            htmlBuilder.Append(String.Format("<tr><td>{0}</td><td>&nbsp;{1}</td><td>&nbsp;=&nbsp;</td><td width=\"100%\"><input style=\"width:100%;\" tabindex=\"{3}\" name=\"{2}\"/></td></tr>",
-                                TypeAsHtml(parameterInfo.ParameterType), parameterInfo.Name, j, tabIndex++));
+                            htmlBuilder.Append("<div style=\"padding-left:50px;\"><table class=\"methodtable\">");
+                            for (UInt16 j = 0; j < parameterCount; j++)
+                            {
+                                ParameterInfo parameterInfo = parameters[j];
+                                htmlBuilder.Append(String.Format("<tr><td>{0}</td><td>&nbsp;{1}</td><td>&nbsp;=&nbsp;</td><td width=\"100%\"><input style=\"width:100%;\" tabindex=\"{3}\" name=\"{2}\"/></td></tr>",
+                                    TypeAsHtml(parameterInfo.ParameterType), parameterInfo.Name, j, tabIndex++));
+                            }
+                            htmlBuilder.Append("</table></div>");
                         }
-                        htmlBuilder.Append("</table></div>");
+                        htmlBuilder.Append(")</form>");
                     }
-                    htmlBuilder.Append(")</form>");
                 }
                 tabIndex++;
                 htmlBuilder.Append("</div>");
