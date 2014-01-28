@@ -338,6 +338,7 @@ namespace More
                 {
                     isColonCommand = false;
                 }
+                if (commandArguments != null) commandArguments = commandArguments.Trim();
 
                 if (command.Equals("call", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -345,19 +346,15 @@ namespace More
                 }
                 else if (command.Equals("methods", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    response = MethodsCommandHandler();
-                }
-                else if (command.Equals("interfaces", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    response = InterfacesCommandHandler();
-                }
-                else if (command.Equals("objects", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    response = ObjectsCommandHandler();
+                    response = MethodsCommandHandler(commandArguments);
                 }
                 else if (command.Equals("type", StringComparison.InvariantCultureIgnoreCase))
                 {
                     response = TypeCommandHandler(commandArguments);
+                }
+                else if (command.Equals("interface", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    response = InterfaceCommandHandler();
                 }
                 else if (command.Equals("help", StringComparison.InvariantCultureIgnoreCase) || command.Equals("", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -397,12 +394,13 @@ namespace More
                 builder.Append(prefixMessage);
                 builder.Append('\n');
             }
-            builder.Append("Commands:\n");
-            builder.Append("   call method-name [args...] Call given method with given arguments\n");
-            builder.Append("   methods                    Print available methods (use 'parsable' for more detailed)\n");
-            builder.Append("   type [type]                No argument: print all types, 1 argument: print given type information\n");
-            builder.Append("   exit                       Exit\n");
-            builder.Append("   help                       Show this help\n");
+            builder.Append("Npc Protocol:\n");
+            builder.Append("   method-name [args...]      Call method-name with the given arguments\n");
+            builder.Append("   :methods [object]          Print all objects and their methods or just the given objects methods\n");
+            builder.Append("   :type [type]               No argument: print all types, 1 argument: print given type information\n");
+            builder.Append("   :interface                 Print all interfaces then the objects\n");
+            builder.Append("   :exit                      Exit\n");
+            builder.Append("   :help                      Show this help\n");
             return Encoding.UTF8.GetBytes(builder.ToString());
         }
         Byte[] CallCommandHandler(String call)
@@ -421,23 +419,7 @@ namespace More
             //
             String methodName;
             String parametersString;
-
-            /*
-            Int32 spaceIndex = callArguments.IndexOf(' ');
-            if (spaceIndex <= 0 || spaceIndex >= callArguments.Length - 1)
-            {
-                if (spaceIndex == 0) return Encoding.ASCII.GetBytes(NpcError(NpcErrorCode.InvalidCallSyntax, "found 2 spaces after 'call'"));
-                methodName = callArguments.Trim();
-                parametersString = null;
-            }
-            else
-            {
-                methodName = callArguments.Remove(spaceIndex);
-                parametersString = callArguments.Substring(spaceIndex + 1);
-            }
-            */
             methodName = call.Peel(out parametersString);
-
 
             return CallCommandHandler(methodName, parametersString);
         }
@@ -484,12 +466,37 @@ namespace More
                 return Encoding.ASCII.GetBytes(NpcError(NpcErrorCode.UnhandledException, e.GetType().Name + ": " + e.Message));
             }
         }
-        private Byte[] MethodsCommandHandler()
+        private Byte[] MethodsCommandHandler(String args)
         {
-            StringBuilder listBuilder = new StringBuilder();
+            String objectName;
+            String objectNameLowerInvariant;
+            if (args == null)
+            {
+                objectName = null;
+                objectNameLowerInvariant = null;
+            }
+            else
+            {
+                objectName = args.Peel(out args);
+                if(args != null) return Encoding.ASCII.GetBytes(
+                    "The :methods command can have at most 1 argument\n");
+                objectNameLowerInvariant = objectName.ToLowerInvariant();
+            }
 
+            StringBuilder listBuilder = new StringBuilder();
+                        
             foreach(NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
             {
+                if (objectNameLowerInvariant == null)
+                {
+                    listBuilder.Append(executionObject.objectName);
+                    listBuilder.Append('\n');
+                }
+                else if(!executionObject.objectNameLowerInvariant.Equals(objectNameLowerInvariant))
+                {
+                    continue;
+                }
+
                 for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
                 {
                     NpcInterfaceInfo npcInterfaceInfo = executionObject.npcInterfaces[interfaceIndex];
@@ -518,14 +525,32 @@ namespace More
                         listBuilder.Append(")\n");
                     }
                 }
+
+                if (objectNameLowerInvariant != null)
+                {
+                    objectNameLowerInvariant = null;
+                    break;
+                }
+                listBuilder.Append("\n");
             }
+
+            if (objectNameLowerInvariant != null)
+            {
+                listBuilder.Append("Error: Could not find object '");
+                listBuilder.Append(objectName);
+                listBuilder.Append('\'');
+            }
+
             listBuilder.Append('\n'); // Add blank line to end (to mark end of data)
-            return Encoding.UTF8.GetBytes(listBuilder.ToString());
+            return Encoding.ASCII.GetBytes(listBuilder.ToString());
         }
-        private Byte[] InterfacesCommandHandler()
+        private Byte[] InterfaceCommandHandler()
         {
             StringBuilder listBuilder = new StringBuilder();
 
+            //
+            // Add Interface Definitions
+            //
             foreach (NpcInterfaceInfo interfaceInfo in npcExecutor.Interfaces)
             {
                 listBuilder.Append(interfaceInfo.name);
@@ -557,26 +582,24 @@ namespace More
                 }
                 listBuilder.Append('\n');
             }
-            listBuilder.Append('\n'); // Add blank line to end (to mark end of data)
-            return Encoding.UTF8.GetBytes(listBuilder.ToString());
-        }
-        private Byte[] ObjectsCommandHandler()
-        {
-            StringBuilder listBuilder = new StringBuilder();
+            listBuilder.Append('\n'); // Add blank line to end (to mark end of interfaces)
 
+            //
+            // Add Object Names and their Interfaces
+            //
             foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
             {
                 listBuilder.Append(executionObject.objectName);
-
                 for (int i = 0; i < executionObject.npcInterfaces.Count; i++)
                 {
-                    NpcInterfaceInfo interfaceInfo = executionObject.npcInterfaces[i];
+                    NpcInterfaceInfo npcInterface = executionObject.npcInterfaces[i];
                     listBuilder.Append(' ');
-                    listBuilder.Append(interfaceInfo.name);
+                    listBuilder.Append(npcInterface.name);
                 }
                 listBuilder.Append('\n');
             }
-            listBuilder.Append('\n'); // Add blank line to end (to mark end of data)
+            listBuilder.Append('\n'); // Add blank line to end (to mark end of objects
+
             return Encoding.UTF8.GetBytes(listBuilder.ToString());
         }
         private Byte[] TypeCommandHandler(String arguments)

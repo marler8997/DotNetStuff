@@ -32,7 +32,9 @@ namespace More.Npc.Test
             NpcReflector reflector = new NpcReflector(
                 new TestRemoteDevice(),
                 npcServerControl,
-                new NpcExecutionObject(new TestRemoteDevice(), "Other", null, null));
+                new NpcExecutionObject(new TestRemoteDevice(), "Other", null, null),
+                new NpcExecutionObject(new NpcMethodsForTest(), "Test", null, null),
+                new InheritBothRoots());
 
             NpcServerSingleThreaded server = new NpcServerSingleThreaded(
                 new NpcServerLoggerCallback(Console.Out),

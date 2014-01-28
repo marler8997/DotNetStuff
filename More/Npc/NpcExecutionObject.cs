@@ -115,6 +115,10 @@ namespace More
             : this(invokeObject, null, null, null)
         {
         }
+        public NpcExecutionObject(Object invokeObject, String objectName)
+            : this(invokeObject, objectName, null, null)
+        {
+        }
         public NpcExecutionObject(Object invokeObject, String objectName, Object executionLock, INpcPreAndPostCalls preAndPostCall)
         {
             this.type = invokeObject.GetType();
@@ -130,6 +134,7 @@ namespace More
             if (interfaces == null || interfaces.Length <= 0) throw new InvalidOperationException(String.Format(
                 "Class '{0}' does not inherit any interfaces", type.Name));
 
+            //Console.WriteLine("[NpcDebug] '{0}' has {1} interfaces:", type.Name, interfaces.Length);
             for(int i = 0; i < interfaces.Length; i++)
             {
                 Type @interface = interfaces[i];
@@ -199,7 +204,8 @@ namespace More
                 NpcInterfaceInfo existingLeafInterface = npcInterfaces[i];
                 if (newInterfaceType == existingLeafInterface.interfaceType)
                 {
-                    //Console.WriteLine("[NpcDebug] NpcInterface '{0}' has already been added", newInterfaceType.Name);
+                    //Console.WriteLine("[NpcDebug] NpcInterface '{0}' has already been added to '{1}'",
+                    //    newInterfaceType.Name, objectName);
                     return;
                 }
                 /*
@@ -220,12 +226,9 @@ namespace More
                 }
                 */
             }
-            /*
-            Console.WriteLine("[NpcDebug] NpcInterface '{0}' is a parent interface of '{1}'",
-                existingLeafInterface.name, newInterfaceType.Name);
-            */
 
-
+            //Console.WriteLine("[NpcDebug] Adding NpcInterface '{0}' to '{1}'",
+            //    newInterfaceType.Name, objectName);
             //staticNpcInterfaceMap.Add(newInterfaceType, newNpcInterface);
             npcInterfaces.Add(NpcInterfaceInfo.Create(newInterfaceType));
         }

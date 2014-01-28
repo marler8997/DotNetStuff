@@ -156,7 +156,7 @@ namespace More
                     try
                     {
                         Connect();
-                        socketLineReader.socket.Send(Encoding.ASCII.GetBytes(":interfaces\n:objects\n"));
+                        socketLineReader.socket.Send(Encoding.ASCII.GetBytes(":interface\n"));
 
                         cachedServerInterfaces = new Dictionary<String, RemoteNpcInterface>();
                         List<SosMethodDefinition> methodDefinitionList = new List<SosMethodDefinition>();
