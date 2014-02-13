@@ -41,6 +41,15 @@ namespace More
             ArrayCopier.Copy(data, offset, buffer.array, this.dataOffsetLimit, length);
             this.dataOffsetLimit += length;
         }
+        public String Flush()
+        {
+            if (dataOffsetLimit <= 0) return null;
+            String rest = encoding.GetString(buffer.array, 0, (Int32)dataOffsetLimit);
+            this.nextStartOfLineOffset = 0;
+            this.nextIndexToCheck = 0;
+            this.dataOffsetLimit = 0;
+            return rest;
+        }
         public String GetLine()
         {
             while (this.nextIndexToCheck < this.dataOffsetLimit)

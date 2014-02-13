@@ -174,7 +174,16 @@ namespace More
             return this.array;
         }
     }
-
+    public static class ByteExtensions
+    {
+        public static Int32 HexValue(this Byte b)
+        {
+            if (b >= '0' && b <= '9') return (b - '0');
+            if (b >= 'A' && b <= 'F') return (b - 'A') + 10;
+            if (b >= 'a' && b <= 'f') return (b - 'a') + 10;
+            throw new FormatException(String.Format("Expected 0-9, A-F, or a-f but got '{0}' (charcode={1})", b, (UInt32)b));
+        }
+    }
     public static class CharExtensions
     {
         /*

@@ -89,6 +89,15 @@ namespace More
             this.array = new Byte[initialCapacity];
         }
         public Byte[] Array { get { return array; } }
+        public void EnsureCapacityNoCopy(UInt32 capacity)
+        {
+            if ((UInt32)array.Length < capacity)
+            {
+                UInt32 diff = capacity - (UInt32)array.Length;
+                UInt32 newSizeDiff = (diff > expandLength) ? diff : expandLength;
+                this.array = new Byte[array.Length + newSizeDiff];
+            }
+        }
         public void EnsureCapacityCopyData(Int32 capacity)
         {
             if (array.Length < capacity)

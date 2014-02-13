@@ -72,6 +72,10 @@ namespace More
         {
             this.hash = new UInt32[HashUInt32Length];
             this.block = new Byte[BlockByteLength];
+            Reset();
+        }
+        public void Reset()
+        {
             this.blockIndex = 0;
             this.messageBitLength = 0;
             hash[0] = InitialHash[0];
@@ -79,8 +83,8 @@ namespace More
             hash[2] = InitialHash[2];
             hash[3] = InitialHash[3];
             hash[4] = InitialHash[4];
+            this.finishedHash = null;
         }
-
         public void Add(String str, Int32 offset, Int32 length)
         {
             if (finishedHash != null) throw new InvalidOperationException("This hash has already been finished");
@@ -120,14 +124,6 @@ namespace More
             block.BigEndianSetUInt64(56, messageBitLength);
             HashBlock();
 
-            /*
-            finishedHash = new Byte[HashByteLength];
-            finishedHash.BigEndianSetUInt32( 0, hash[0]);
-            finishedHash.BigEndianSetUInt32( 4, hash[1]);
-            finishedHash.BigEndianSetUInt32( 8, hash[2]);
-            finishedHash.BigEndianSetUInt32(12, hash[3]);
-            finishedHash.BigEndianSetUInt32(16, hash[4]);
-            */
             finishedHash = new UInt32[HashUInt32Length];
             finishedHash[0] = hash[0];
             finishedHash[1] = hash[1];
