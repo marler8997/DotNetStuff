@@ -72,12 +72,9 @@ class NpcMethodsForTest : INpcMethodsForTest
 }
 namespace More
 {
-
     [TestClass]
     public class HighLevelRegressionTests
     {
-
-
         const Int32 TestTcpPort = 65508;
 
         [TestMethod]
@@ -93,7 +90,7 @@ namespace More
             serverThread.Start();
             Thread.Sleep(100);
 
-            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort), false);
+            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort), null, false);
 
             client.Call("NpcMethodsForTest.EmptyCall");
             client.Call("NpcMethodsForTest.EmptyCall");
@@ -117,7 +114,6 @@ namespace More
             server.Dispose();
             serverThread.Join();
         }
-
         [TestMethod]
         public void ServerRestartTest()
         {
@@ -131,7 +127,7 @@ namespace More
 
             Thread.Sleep(100);
 
-            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort), false);
+            NpcClient client = new NpcClient(new IPEndPoint(IPAddress.Loopback, TestTcpPort), null, false);
 
             client.Call("NpcMethodsForTest.EmptyCall");
             client.Call("NpcMethodsForTest.EmptyCall");

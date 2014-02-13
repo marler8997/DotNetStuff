@@ -9,44 +9,31 @@ namespace More
 {
     public class NpcReflector : NpcExecutor
     {
-        /// <summary> List of execution objects </summary>
         readonly NpcExecutionObject[] npcExecutionObjects;
 
         public override ICollection<NpcInterfaceInfo> Interfaces
         {
-            get
-            {
-                return interfaceMap.Values;
-            }
+            get { return interfaceMap.Values; }
         }
         public override ICollection<NpcExecutionObject> ExecutionObjects
         {
-            get
-            {
-                return npcExecutionObjects;
-            }
+            get { return npcExecutionObjects; }
         }
         public override IDictionary<String,Type> EnumAndObjectTypes
         {
-            get
-            {
-                return enumAndObjectTypesDictionary;
-            }
+            get { return enumAndObjectTypesDictionary; }
+        }
+        public override IDictionary<String, OneOrMoreTypes> EnumAndObjectShortNameTypes
+        {
+            get { return enumAndObjectTypesWithUniqueShortNamesDictionary; }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        //readonly Dictionary<Type, NpcInterfaceInfo> interfaceList;
         readonly Dictionary<Type, NpcInterfaceInfo> interfaceMap;
         readonly List<NpcMethodOverloadable> methodList;
-        /// <summary>Mapping from method names (either lowercase or normal case) to remote methods </summary>
         readonly Dictionary<String,NpcMethodOverloadable> withObjectLowerInvariantMethodDictionary;
         readonly Dictionary<String, List<NpcMethodOverloadable>> noObjectLowerInvariantMethodDictionary;
-
-        // An ObjectType is a collection of other types
-        // A type is either a primitive, array, enum, or object type
         readonly Dictionary<String, Type> enumAndObjectTypesDictionary;
+        readonly Dictionary<String, OneOrMoreTypes> enumAndObjectTypesWithUniqueShortNamesDictionary;
 
         public NpcReflector(params Object [] executionObjects)
         {
@@ -55,13 +42,12 @@ namespace More
 
             this.npcExecutionObjects = new NpcExecutionObject[executionObjects.Length];
 
-            //this.interfaceList                         = new Dictionary<Type,NpcInterfaceInfo>();
             this.interfaceMap                             = new Dictionary<Type,NpcInterfaceInfo>();
             this.methodList                               = new List<NpcMethodOverloadable>();
             this.withObjectLowerInvariantMethodDictionary = new Dictionary<String, NpcMethodOverloadable>();
             this.noObjectLowerInvariantMethodDictionary   = new Dictionary<String, List<NpcMethodOverloadable>>();
-
             this.enumAndObjectTypesDictionary             = new Dictionary<String, Type>();
+            this.enumAndObjectTypesWithUniqueShortNamesDictionary = new Dictionary<String, OneOrMoreTypes>();
 
             //
             // Find all methods that are apart of an [NpcInterface]
@@ -91,7 +77,6 @@ namespace More
                     if (!interfaceMap.ContainsKey(npcInterfaceInfo.interfaceType))
                     {
                         interfaceMap.Add(npcInterfaceInfo.interfaceType, npcInterfaceInfo);
-                        //interfaceList.Add(npcInterfaceInfo);
                     }
 
                     //
@@ -173,6 +158,18 @@ namespace More
                  "The type '{0}' cannot be serialized because {1}", type.FullName, because));
 
             enumAndObjectTypesDictionary.Add(type.FullName, type);
+
+            OneOrMoreTypes shortNameTypeGroup;
+            if (enumAndObjectTypesWithUniqueShortNamesDictionary.TryGetValue(type.Name, out shortNameTypeGroup))
+            {
+                if (shortNameTypeGroup.otherTypes == null) shortNameTypeGroup.otherTypes = new List<Type>();
+                shortNameTypeGroup.otherTypes.Add(type);
+            }
+            else
+            {
+                enumAndObjectTypesWithUniqueShortNamesDictionary.Add(type.Name, new OneOrMoreTypes(type));
+            }
+
             if(!type.IsEnum)
             {
                 //
@@ -218,7 +215,7 @@ namespace More
                 else
                 {
                     throw new NpcErrorException(NpcErrorCode.AmbiguousMethodName, String.Format(
-                        "Method '{0}' exists but there are multiple objects that have a method matching that name, use the full namespace to select one method", methodName));
+                        "Method '{0}' exists but there are multiple objects that have a method matching that name, use <object-name>.{0} to indicate which object you would like to call the method on", methodName));
                 }
             }
 

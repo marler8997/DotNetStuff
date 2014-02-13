@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace More
 {
@@ -18,19 +19,23 @@ namespace More
         {
             client.UpdateAndVerifyEnumAndObjectTypes();
         }
-        public void VerifyInterfaces(Boolean forceMethodUpdateFromServer, RemoteNpcInterface[] expectedInterfaces)
+        //public void VerifyInterfaceMethods(Boolean forceUpdateMethodsFromServer, ICollection<RemoteNpcInterface> expectedInterfaces)
+        //{
+        //    client.VerifyInterfaceMethods(forceUpdateMethodsFromServer, expectedInterfaces);
+        //}
+        public void VerifyObject(Boolean forceInterfaceUpdateFromServer, RemoteNpcObject expectedObject)
         {
-            client.VerifyInterfaces(forceMethodUpdateFromServer, expectedInterfaces);
+            client.VerifyObject(forceInterfaceUpdateFromServer, expectedObject);
         }
-        public void VerifyObjects(Boolean forceMethodUpdateFromServer, RemoteNpcObject[] expectedObjects)
-        {
-            client.VerifyObjects(forceMethodUpdateFromServer, expectedObjects);
-        }
+        //public void VerifyObjectsAndInterfaceMethods(Boolean forceInterfaceUpdateFromServer, ICollection<RemoteNpcObject> expectedObjects, ICollection<RemoteNpcInterface> expectedInterfaces)
+        //{
+        //    client.VerifyObjectsAndInterfaceMethods(forceInterfaceUpdateFromServer, expectedObjects, expectedInterfaces);
+        //}
         public Object Call(String methodName, params Object[] parameters)
         {
             return client.Call(namespacePrefix + methodName, parameters);
         }
-        public Object Call(String objectName, String methodName, params Object[] parameters)
+        public Object CallOnObject(String objectName, String methodName, params Object[] parameters)
         {
             return client.Call(namespacePrefix + objectName, methodName, parameters);
         }
@@ -38,7 +43,7 @@ namespace More
         {
             return client.Call(expectedReturnType, namespacePrefix + methodName, parameters);
         }
-        public Object Call(Type expectedReturnType, String objectName, String methodName, params Object[] parameters)
+        public Object CallOnObject(Type expectedReturnType, String objectName, String methodName, params Object[] parameters)
         {
             return client.Call(expectedReturnType, namespacePrefix + objectName, methodName, parameters);
         }

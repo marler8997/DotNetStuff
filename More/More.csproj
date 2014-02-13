@@ -39,17 +39,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ApacheStyleConfig.cs" />
     <Compile Include="BetterBitArray.cs" />
     <Compile Include="BigEndianSerialization.cs" />
     <Compile Include="ContextTypeFinder.cs" />
     <Compile Include="ArrayReflectors.cs" />
+    <Compile Include="DataSync.cs" />
     <Compile Include="Enumerators.cs" />
     <Compile Include="Http.cs" />
     <Compile Include="IDataHandler.cs" />
     <Compile Include="FixedInterfaces.cs" />
     <Compile Include="IRandomGenerator.cs" />
-    <Compile Include="LfdFormatException.cs" />
-    <Compile Include="LfdLine.cs" />
+    <Compile Include="Lfd.cs" />
     <Compile Include="OffsetLineParser.cs" />
     <Compile Include="LfdReader.cs" />
     <Compile Include="LineParser.cs" />
@@ -58,6 +59,7 @@
     <Compile Include="IniParser.cs" />
     <Compile Include="OneOrMoreEnumerator.cs" />
     <Compile Include="Pdl.cs" />
+    <Compile Include="PlatformPath.cs" />
     <Compile Include="Ports.cs" />
     <Compile Include="ProgramSettings.cs" />
     <Compile Include="EndPoints.cs" />

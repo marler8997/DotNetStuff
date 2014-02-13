@@ -149,7 +149,6 @@ namespace More
                 if (offset >= parametersString.Length) return;
             }
         }
-
         public static Boolean IsValidNpcObjectName(String objectName)
         {
             for (int i = 0; i < objectName.Length; i++)

@@ -64,14 +64,14 @@ namespace More.Net
         }
         void SetShareLeafName(String shareLeafName)
         {
-            if (NfsPath.IsValidUnixFileName(shareLeafName))
+            if (PlatformPath.IsValidUnixFileName(shareLeafName))
             {
                 this.shareLeafName = shareLeafName;
             }
             else
             {
                 String newShareLeafName = NfsPath.LeafName(shareLeafName);
-                if (!NfsPath.IsValidUnixFileName(newShareLeafName))
+                if (!PlatformPath.IsValidUnixFileName(newShareLeafName))
                     throw new InvalidOperationException(String.Format("The file you supplied '{0}' is not a valid unix file name", shareLeafName));
                 this.shareLeafName = newShareLeafName;
             }

@@ -22,7 +22,6 @@ namespace More
             executor.PrintInformation(Console.Out);
         }
     }
-
     namespace DirectNpcAttribute
     {
         [NpcInterface]

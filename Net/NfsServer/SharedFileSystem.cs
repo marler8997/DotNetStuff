@@ -19,7 +19,7 @@ namespace More.Net
 
         public RootShareDirectory(String localShareDirectory, String shareName)
         {
-            if (!NfsPath.IsValidUnixFileName(shareName))
+            if (!PlatformPath.IsValidUnixFileName(shareName))
                 throw new ArgumentException(String.Format("The share name you provided '{0}' is not valid (cannot have '/')", shareName));
 
             this.directoryInfo = new DirectoryInfo(localShareDirectory);
@@ -148,7 +148,7 @@ namespace More.Net
 
         public Nfs3Procedure.Status RemoveFileOrDirectory(String parentDirectory, String name)
         {
-            String localPathAndName = NfsPath.LocalCombine(parentDirectory, name);
+            String localPathAndName = PlatformPath.LocalCombine(parentDirectory, name);
 
             ShareObject shareObject;
             if (shareObjectsByLocalPath.TryGetValue(localPathAndName, out shareObject))
@@ -193,7 +193,7 @@ namespace More.Net
             //
             // Get Old Share Object
             //
-            String oldLocalPathAndName = NfsPath.LocalCombine(oldParentShareObject.localPathAndName, oldName);
+            String oldLocalPathAndName = PlatformPath.LocalCombine(oldParentShareObject.localPathAndName, oldName);
 
             ShareObject oldShareObject;
             if (!shareObjectsByLocalPath.TryGetValue(oldLocalPathAndName, out oldShareObject))
@@ -209,7 +209,7 @@ namespace More.Net
             //
             // Move
             //
-            String newLocalPathAndName = NfsPath.LocalCombine(newParentShareObject.localPathAndName, newName);
+            String newLocalPathAndName = PlatformPath.LocalCombine(newParentShareObject.localPathAndName, newName);
             FileType fileType = oldShareObject.fileType;
 
             if(Directory.Exists(newLocalPathAndName))
@@ -304,7 +304,7 @@ namespace More.Net
             }
             else
             {
-                String localPathAndName = NfsPath.LocalCombine(rootShareDirectory.localShareDirectory, subPath);
+                String localPathAndName = PlatformPath.LocalCombine(rootShareDirectory.localShareDirectory, subPath);
 
                 status = TryGetSharedObject(localPathAndName, subPath, out shareDirectoryObject);
                 if (status != Nfs3Procedure.Status.Ok) return status;
@@ -418,8 +418,8 @@ namespace More.Net
                 DisposeShareObject(shareObject);
             }
 
-            String shareName = NfsPath.LocalPathDiff(localParentDirectory, localPathAndName);
-            if (!NfsPath.IsValidUnixFileName(shareName))
+            String shareName = PlatformPath.LocalPathDiff(localParentDirectory, localPathAndName);
+            if (!PlatformPath.IsValidUnixFileName(shareName))
                 throw new InvalidOperationException(String.Format("The file you supplied '{0}' is not a valid unix file name", shareName));
 
             return CreateNewShareObject(expectedFileType, localPathAndName, shareName);

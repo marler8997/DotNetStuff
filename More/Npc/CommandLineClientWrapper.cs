@@ -105,7 +105,7 @@ namespace More
         readonly InterfaceMapping interfaceMapping;
         public CommandLineClient(EndPoint serverEndPoint, InterfaceMapping interfaceMapping)
         {
-            this.client = new NpcClient(serverEndPoint, false);
+            this.client = new NpcClient(serverEndPoint, null, false);
             client.UpdateAndVerifyEnumAndObjectTypes();
             this.interfaceMapping = interfaceMapping;
         }
@@ -181,12 +181,14 @@ namespace More
                 //
                 // Request methods from server
                 //
-                Dictionary<String, List<SosMethodDefinition>> methodsGroupedByInterface = new Dictionary<string, List<SosMethodDefinition>>();
+                Console.WriteLine("Format: <Interface> <Method> [<Parameters>...]");
 
-                List<RemoteNpcObject> objects = client.GetRemoteMethods(false);
+                List<RemoteNpcObject> objects = client.GetServerInterface(false);
                 for (int objectIndex = 0; objectIndex < objects.Count; objectIndex++)
                 {
                     RemoteNpcObject npcObject = objects[objectIndex];
+                    Console.WriteLine(interfaceMapping.NpcToUserInterface(npcObject.name));
+
                     for (int interfaceIndex = 0; interfaceIndex < npcObject.interfaces.Length; interfaceIndex++)
                     {
                         RemoteNpcInterface npcInterface = npcObject.interfaces[interfaceIndex];
@@ -194,47 +196,16 @@ namespace More
                         {
                             SosMethodDefinition method = npcInterface.methods[i];
 
-                            //
-                            // Add to interface group
-                            //
-                            List<SosMethodDefinition> methodsByPrefix;
-                            if (!methodsGroupedByInterface.TryGetValue(method.methodPrefix, out methodsByPrefix))
+                            Console.Write("   {0}", method.methodName);
+                            if (method.parameters != null)
                             {
-                                methodsByPrefix = new List<SosMethodDefinition>();
-                                methodsGroupedByInterface.Add(method.methodPrefix, methodsByPrefix);
+                                foreach (SosMethodDefinition.Parameter parameter in method.parameters)
+                                {
+                                    Console.Write(" {0}", parameter.name);
+                                }
                             }
-                            methodsByPrefix.Add(method);
+                            Console.WriteLine();
                         }
-                    }
-                }
-
-                //
-                // Print methods to user
-                //
-                Console.WriteLine("Format: <Interface> <Method> [<Parameters>...]");
-                foreach (KeyValuePair<String, List<SosMethodDefinition>> pair in methodsGroupedByInterface)
-                {
-                    String prefix = pair.Key;
-                    List<SosMethodDefinition> methodsByPrefix = pair.Value;
-
-                    String newPrefix = interfaceMapping.NpcToUserInterface(prefix);
-                    if (newPrefix != null)
-                    {
-                        prefix = newPrefix;
-                    }
-                    Console.WriteLine(prefix);
-
-                    foreach (SosMethodDefinition method in methodsByPrefix)
-                    {
-                        Console.Write("   {0}", method.fullMethodName.Substring(method.fullMethodName.LastIndexOf('.') + 1));
-                        if (method.parameters != null)
-                        {
-                            foreach (SosMethodDefinition.Parameter parameter in method.parameters)
-                            {
-                                Console.Write(" {0}", parameter.name);
-                            }
-                        }
-                        Console.WriteLine();
                     }
                 }
             }

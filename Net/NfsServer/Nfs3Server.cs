@@ -410,7 +410,7 @@ JediTimer.JediTimerPrefix() +
             //
             // Get File
             //
-            String localPathAndName = NfsPath.LocalCombine(directoryShareObject.localPathAndName, lookupCall.fileName);
+            String localPathAndName = PlatformPath.LocalCombine(directoryShareObject.localPathAndName, lookupCall.fileName);
             ShareObject fileShareObject;
             sharedFileSystem.TryGetSharedObject(localPathAndName, lookupCall.fileName, out fileShareObject);
 
@@ -506,7 +506,7 @@ JediTimer.JediTimerPrefix() +
             FileStream fileStream = null;
             try
             {
-                String localPathAndName = NfsPath.LocalCombine(directoryShareObject.localPathAndName, createCall.newFileName);
+                String localPathAndName = PlatformPath.LocalCombine(directoryShareObject.localPathAndName, createCall.newFileName);
 
                 ShareObject fileShareObject;
                 status = sharedFileSystem.TryGetSharedObject(localPathAndName, createCall.newFileName, out fileShareObject);
@@ -553,7 +553,7 @@ JediTimer.JediTimerPrefix() +
             Status status = sharedFileSystem.TryGetSharedObject(mkdirCall.directoryHandle, out parentDirectoryShareObject);
             if (status != Status.Ok) return new MkdirReply(status, BeforeAndAfterAttributes.None);
 
-            String localPathAndName = NfsPath.LocalCombine(parentDirectoryShareObject.localPathAndName, mkdirCall.newDirectoryName);
+            String localPathAndName = PlatformPath.LocalCombine(parentDirectoryShareObject.localPathAndName, mkdirCall.newDirectoryName);
 
             ShareObject mkdirDirectoryShareObject;
             status = sharedFileSystem.TryGetSharedObject(localPathAndName, mkdirCall.newDirectoryName, out mkdirDirectoryShareObject);

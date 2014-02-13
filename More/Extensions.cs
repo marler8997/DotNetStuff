@@ -19,13 +19,14 @@ using ArrayCopier = System.Array;
 
 namespace More
 {
+    public delegate T Parser<T>(String str);
     /*
     public static class GenericExtensions
     {
-        public static void DataString<T>(this T value, StringBuilder builder)
-        {
-            builder.Append(value.ToString());
-        }
+            public static void DataString<T>(this T value, StringBuilder builder)
+            {
+                builder.Append(value.ToString());
+            }
     }
     */
 #if !WindowsCE

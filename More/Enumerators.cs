@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace More
 {
@@ -48,6 +49,12 @@ namespace More
         {
             if (array == null) return EmptyEnumerator<T>.Instance;
             return new ArrayEnumerator<T>(array);
+        }
+        public static IEnumerator<T> GetArrayEnumerator<T>(this T[] array, UInt32 offset)
+        {
+            if (offset == 0) return GetArrayEnumerator(array);
+            if (array == null) return EmptyEnumerator<T>.Instance;
+            return new ArrayOffsetEnumerator<T>(array, offset);
         }
     }
     public class EmptyEnumerator<T> : IEnumerator<T>
@@ -269,6 +276,38 @@ namespace More
         public void Reset()
         {
             state = -1;
+        }
+    }
+    public class ArrayOffsetEnumerator<T> : IEnumerator<T>
+    {
+        readonly T[] array;
+        readonly UInt32 offset;
+        Int32 state;
+        public ArrayOffsetEnumerator(T[] array, UInt32 offset)
+        {
+            this.array = (array == null) ? new T[0] : array;
+            this.offset = offset;
+            this.state = ((Int32)offset) - 1;
+        }
+        public T Current
+        {
+            get { Debug.Assert(state >= offset); return array[state]; }
+        }
+        object IEnumerator.Current
+        {
+            get { Debug.Assert(state >= offset); return array[state]; }
+        }
+        public Boolean MoveNext()
+        {
+            state++;
+            return state < array.Length;
+        }
+        public void Dispose()
+        {
+        }
+        public void Reset()
+        {
+            this.state = ((Int32)offset) - 1;
         }
     }
     public class RollingArray<T> : IEnumerable<T>

@@ -252,28 +252,27 @@ namespace More
     }
     public class CLGenericArgument<T> : CLOption
     {
-        public delegate T ParseMethod(String str);
-        readonly ParseMethod parseMethod;
+        readonly Parser<T> parser;
 
         Boolean hasDefault;
         T defaultValue;
 
         T value;
         
-        public CLGenericArgument(ParseMethod parseMethod, Char letter, String description)
+        public CLGenericArgument(Parser<T> parser, Char letter, String description)
             : base(letter, true, description)
         {
-            this.parseMethod = parseMethod;
+            this.parser = parser;
         }
-        public CLGenericArgument(ParseMethod parseMethod, String name, String description)
+        public CLGenericArgument(Parser<T> parser, String name, String description)
             : base(name, true, description)
         {
-            this.parseMethod = parseMethod;
+            this.parser = parser;
         }
-        public CLGenericArgument(ParseMethod parseMethod, Char letter, String name, String description)
+        public CLGenericArgument(Parser<T> parser, Char letter, String name, String description)
             : base(letter, name, true, description)
         {
-            this.parseMethod = parseMethod;
+            this.parser = parser;
         }
         public void SetDefault(T defaultValue)
         {
@@ -292,7 +291,7 @@ namespace More
         }
         public override void ParseArg(String arg)
         {
-            this.value = parseMethod(arg);
+            this.value = parser(arg);
         }
     }
     public class CLParser

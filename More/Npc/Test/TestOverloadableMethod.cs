@@ -25,7 +25,6 @@ namespace More
             public void TwoArguments(Boolean b, Int32 i) { }
             public void ThreeArguments(UInt32 u, Int32 i, String str) { }
         }
-
         [TestMethod]
         public void RegressionTest()
         {
@@ -54,7 +53,6 @@ namespace More
                 index++;
             }
         }
-
         [NpcInterface]
         interface ITwoMethodsSameParameterCount
         {
@@ -66,7 +64,6 @@ namespace More
             public void Method(Boolean b) { }
             public void Method(Char c) { }
         }
-
         [TestMethod]
         public void TestOverloadsWithSameParameterCount()
         {

@@ -5,11 +5,21 @@ using System.Text;
 
 namespace More
 {
+    public class OneOrMoreTypes
+    {
+        public readonly Type firstType;
+        public List<Type> otherTypes;
+        public OneOrMoreTypes(Type firstType)
+        {
+            this.firstType = firstType;
+        }
+    }
     public abstract class NpcExecutor
     {
         public abstract ICollection<NpcInterfaceInfo> Interfaces { get; }
         public abstract ICollection<NpcExecutionObject> ExecutionObjects { get; }
         public abstract IDictionary<String, Type> EnumAndObjectTypes { get; }
+        public abstract IDictionary<String, OneOrMoreTypes> EnumAndObjectShortNameTypes { get; }
 
         public abstract NpcMethodInfo GetNpcMethodInfo(String methodName, UInt16 parameterCount, out NpcExecutionObject executionObject);
 

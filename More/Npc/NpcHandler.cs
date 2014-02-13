@@ -24,7 +24,6 @@ namespace More
 
         void UnhandledException(String clientString, Exception e);
     }
-
     public class NpcDataHandler : NpcHandler
     {
         readonly LineParser lineParser;
@@ -72,7 +71,6 @@ namespace More
             } while(line != null);
         }
     }
-
     public class NpcBlockingThreadHander : NpcHandler
     {
         protected SocketLineReader socketLineReader;
@@ -380,7 +378,6 @@ namespace More
             }
             if (response != null) responseHandler.HandleData(response, 0, (UInt32)response.Length);
         }
-
         private String NpcError(NpcErrorCode errorCode, String errorMessage)
         {
             return String.Format("{0}{1} {2}: {3}\n", NpcReturnObject.NpcReturnLineNpcErrorPrefix,
@@ -395,12 +392,12 @@ namespace More
                 builder.Append('\n');
             }
             builder.Append("Npc Protocol:\n");
-            builder.Append("   method-name [args...]      Call method-name with the given arguments\n");
-            builder.Append("   :methods [object]          Print all objects and their methods or just the given objects methods\n");
-            builder.Append("   :type [type]               No argument: print all types, 1 argument: print given type information\n");
-            builder.Append("   :interface                 Print all interfaces then the objects\n");
-            builder.Append("   :exit                      Exit\n");
-            builder.Append("   :help                      Show this help\n");
+            builder.Append("   method-name [args...]       Call method-name with the given arguments\n");
+            builder.Append("   :methods [object] [verbose] Print all objects and their methods or just the given objects methods\n");
+            builder.Append("   :type [type]                No argument: print all types, 1 argument: print given type information\n");
+            builder.Append("   :interface                  Print all interfaces then the objects\n");
+            builder.Append("   :exit                       Exit\n");
+            builder.Append("   :help                       Show this help\n");
             return Encoding.UTF8.GetBytes(builder.ToString());
         }
         Byte[] CallCommandHandler(String call)
@@ -466,82 +463,157 @@ namespace More
                 return Encoding.ASCII.GetBytes(NpcError(NpcErrorCode.UnhandledException, e.GetType().Name + ": " + e.Message));
             }
         }
-        private Byte[] MethodsCommandHandler(String args)
+        void AddVerboseObjectMethods(StringBuilder builder, NpcExecutionObject executionObject)
         {
-            String objectName;
-            String objectNameLowerInvariant;
-            if (args == null)
+            for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
             {
-                objectName = null;
-                objectNameLowerInvariant = null;
-            }
-            else
-            {
-                objectName = args.Peel(out args);
-                if(args != null) return Encoding.ASCII.GetBytes(
-                    "The :methods command can have at most 1 argument\n");
-                objectNameLowerInvariant = objectName.ToLowerInvariant();
-            }
-
-            StringBuilder listBuilder = new StringBuilder();
-                        
-            foreach(NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
-            {
-                if (objectNameLowerInvariant == null)
+                NpcInterfaceInfo npcInterfaceInfo = executionObject.npcInterfaces[interfaceIndex];
+                for (int methodIndex = 0; methodIndex < npcInterfaceInfo.npcMethods.Length; methodIndex++)
                 {
-                    listBuilder.Append(executionObject.objectName);
-                    listBuilder.Append('\n');
-                }
-                else if(!executionObject.objectNameLowerInvariant.Equals(objectNameLowerInvariant))
-                {
-                    continue;
-                }
-
-                for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
-                {
-                    NpcInterfaceInfo npcInterfaceInfo = executionObject.npcInterfaces[interfaceIndex];
-                    for(int methodIndex = 0; methodIndex < npcInterfaceInfo.npcMethods.Length; methodIndex++)
-                    {
-                        NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
+                    NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
 #if WindowsCE
                         listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
 #else
-                        listBuilder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
+                    builder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
 #endif
-                        listBuilder.Append(' ');
-                        listBuilder.Append(npcMethodInfo.methodName);
+                    builder.Append(' ');
+                    builder.Append(npcMethodInfo.methodName);
 
-                        listBuilder.Append('(');
+                    builder.Append('(');
 
-                        ParameterInfo[] parameters = npcMethodInfo.parameters;
-                        for (UInt16 j = 0; j < npcMethodInfo.parametersLength; j++)
+                    ParameterInfo[] parameters = npcMethodInfo.parameters;
+                    for (UInt16 j = 0; j < npcMethodInfo.parametersLength; j++)
+                    {
+                        ParameterInfo parameterInfo = parameters[j];
+                        if (j > 0) builder.Append(',');
+                        builder.Append(parameterInfo.ParameterType.SosTypeName());
+                        builder.Append(' ');
+                        builder.Append(parameterInfo.Name);
+                    }
+                    builder.Append(")\n");
+                }
+            }
+        }
+        void AddShortObjectMethods(StringBuilder builder, NpcExecutionObject executionObject)
+        {
+            for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
+            {
+                NpcInterfaceInfo npcInterfaceInfo = executionObject.npcInterfaces[interfaceIndex];
+                for (int methodIndex = 0; methodIndex < npcInterfaceInfo.npcMethods.Length; methodIndex++)
+                {
+                    NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
+                    builder.Append(npcMethodInfo.methodName);
+
+                    ParameterInfo[] parameters = npcMethodInfo.parameters;
+                    for (UInt16 argIndex = 0; argIndex < npcMethodInfo.parametersLength; argIndex++)
+                    {
+                        ParameterInfo parameterInfo = parameters[argIndex];
+                        builder.Append(' ');
+                        builder.Append(parameterInfo.ParameterType.SosShortTypeName());
+                        builder.Append(':');
+                        builder.Append(parameterInfo.Name);
+                    }
+
+                    builder.Append(" returns ");
+#if WindowsCE
+                    listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
+#else
+                    builder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosShortTypeName());
+#endif
+                    builder.Append("\n");
+                }
+            }
+        }
+        private Byte[] MethodsCommandHandler(String args)
+        {
+            String originalArgs = args;
+            if(String.IsNullOrEmpty(args))
+            {
+                args = null;
+            }
+
+            //
+            // Parse Arguments
+            //
+            Boolean verbose = false;
+            String objectName = null;
+            String objectNameLowerInvariant = null;
+            while (args != null)
+            {
+                String arg = args.Peel(out args);
+                String argLowerInvariant = arg.ToLowerInvariant();
+                if (argLowerInvariant.Equals("verbose".ToLowerInvariant()))
+                {
+                    verbose = true;
+                }
+                else
+                {
+                    if (objectName != null)
+                    {
+                        return Encoding.ASCII.GetBytes(String.Format("Invalid arguments '{0}'\n", originalArgs));
+                    }
+                    objectName = arg;
+                    objectNameLowerInvariant = argLowerInvariant;
+                }
+            }
+
+            //
+            // Build Response
+            //
+            StringBuilder listBuilder = new StringBuilder();
+
+            if (objectName == null)
+            {
+                if (verbose)
+                {
+                    foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
+                    {
+                        listBuilder.Append(executionObject.objectName);
+                        listBuilder.Append('\n');
+                        AddVerboseObjectMethods(listBuilder, executionObject);
+                        listBuilder.Append("\n"); // Indicates end of object methods
+                    }
+                    listBuilder.Append("\n"); // Indicates end of all objects
+                }
+                else
+                {
+                    foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
+                    {
+                        listBuilder.Append(executionObject.objectName);
+                        listBuilder.Append('\n');
+                        AddShortObjectMethods(listBuilder, executionObject);
+                        listBuilder.Append("\n"); // Indicates end of object methods
+                    }
+                    listBuilder.Append("\n"); // Indicates end of all objects
+                }
+            }
+            else
+            {
+                Boolean foundObject = false;
+                foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
+                {
+                    if(executionObject.objectNameLowerInvariant.Equals(objectNameLowerInvariant))
+                    {
+                        if(verbose)
                         {
-                            ParameterInfo parameterInfo = parameters[j];
-                            if (j > 0) listBuilder.Append(',');
-                            listBuilder.Append(parameterInfo.ParameterType.SosTypeName());
-                            listBuilder.Append(' ');
-                            listBuilder.Append(parameterInfo.Name);
+                            AddVerboseObjectMethods(listBuilder, executionObject);
                         }
-                        listBuilder.Append(")\n");
+                        else
+                        {
+                            AddShortObjectMethods(listBuilder, executionObject);
+                        }
+                        listBuilder.Append("\n"); // Indicates end of object methods
+                        foundObject = true;
+                        break;
                     }
                 }
-
-                if (objectNameLowerInvariant != null)
+                if(!foundObject)
                 {
-                    objectNameLowerInvariant = null;
-                    break;
+                    listBuilder.Append("Error: Could not find object '");
+                    listBuilder.Append(objectName);
+                    listBuilder.Append("'\n");
                 }
-                listBuilder.Append("\n");
             }
-
-            if (objectNameLowerInvariant != null)
-            {
-                listBuilder.Append("Error: Could not find object '");
-                listBuilder.Append(objectName);
-                listBuilder.Append('\'');
-            }
-
-            listBuilder.Append('\n'); // Add blank line to end (to mark end of data)
             return Encoding.ASCII.GetBytes(listBuilder.ToString());
         }
         private Byte[] InterfaceCommandHandler()
@@ -622,15 +694,28 @@ namespace More
 
             String requestedTypeString = arguments.Trim();
 
+            if (requestedTypeString.IsSosPrimitive())
+            {
+                return Encoding.UTF8.GetBytes(requestedTypeString + " primitive type\n");
+            }
+
             Type enumOrObjectType;
             if(npcExecutor.EnumAndObjectTypes.TryGetValue(requestedTypeString, out enumOrObjectType))
             {
                 return Encoding.UTF8.GetBytes(enumOrObjectType.SosTypeName() + " " + enumOrObjectType.SosTypeDefinition() + "\n");
             }
-
-            if(requestedTypeString.IsSosPrimitive())
+            OneOrMoreTypes oneOrMoreEnumOrObjectType;
+            if (npcExecutor.EnumAndObjectShortNameTypes.TryGetValue(requestedTypeString, out oneOrMoreEnumOrObjectType))
             {
-                return Encoding.UTF8.GetBytes(requestedTypeString + " primitive type\n");
+                enumOrObjectType = oneOrMoreEnumOrObjectType.firstType;
+                if (oneOrMoreEnumOrObjectType.otherTypes == null)
+                {
+                    return Encoding.UTF8.GetBytes(enumOrObjectType.SosTypeName() + " " + enumOrObjectType.SosTypeDefinition() + "\n");
+                }
+                else
+                {
+                    return Encoding.UTF8.GetBytes(String.Format("Error: '{0}' is ambiguous, include namespace to find the correct type", requestedTypeString));
+                }
             }
 
             return Encoding.UTF8.GetBytes(requestedTypeString + " unknown type\n");

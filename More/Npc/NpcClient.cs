@@ -12,23 +12,23 @@ namespace More
 {
     public interface INpcClient : IDisposable
     {
-        void UpdateAndVerifyEnumAndObjectTypes();
-        void VerifyMethodDefinitions(Boolean forceMethodUpdateFromServer);
+        void VerifyObject(Boolean forceInterfaceUpdateFromServer);
+    }
+    public interface INpcDynamicClient : IDisposable
+    {
+        void VerifyObject(Boolean forceInterfaceUpdateFromServer, String objectName);
     }
     public interface INpcClientCaller : IDisposable
     {
         void UpdateAndVerifyEnumAndObjectTypes();
-        void VerifyInterfaces(Boolean forceMethodUpdateFromServer, RemoteNpcInterface[] expectedInterfaces);
-        void VerifyObjects(Boolean forceMethodUpdateFromServer, RemoteNpcObject[] expectedObjects);
+        void VerifyObject(Boolean forceInterfaceUpdateFromServer, RemoteNpcObject expectedObject);
 
         Object Call(String methodName, params Object[] parameters);
-        Object Call(String objectName, String methodName, params Object[] parameters);
+        Object CallOnObject(String objectName, String methodName, params Object[] parameters);
 
         Object Call(Type expectedReturnType, String methodName, params Object[] parameters);
-        Object Call(Type expectedReturnType, String objectName, String methodName, params Object[] parameters);
+        Object CallOnObject(Type expectedReturnType, String objectName, String methodName, params Object[] parameters);
     }
-
-
     public class RemoteNpcInterface
     {
         public readonly String name;
@@ -58,6 +58,59 @@ namespace More
     //
     public class NpcClient : INpcClientCaller
     {
+        public static List<RemoteNpcObject> GetServerInterface(SocketLineReader socketLineReader,
+            out Dictionary<String, RemoteNpcInterface> serverInterfaces)
+        {
+            socketLineReader.socket.Send(Encoding.ASCII.GetBytes(":interface\n"));
+
+            serverInterfaces = new Dictionary<String, RemoteNpcInterface>();
+            List<SosMethodDefinition> methodDefinitionList = new List<SosMethodDefinition>();
+
+            while (true)
+            {
+                String interfaceName = socketLineReader.ReadLine();
+                if (interfaceName == null) throw UnexpectedClose(socketLineReader);
+                if (interfaceName.Length <= 0) break;
+
+                while (true)
+                {
+                    String methodDefinitionLine = socketLineReader.ReadLine();
+                    if (methodDefinitionLine == null) throw UnexpectedClose(socketLineReader);
+                    if (methodDefinitionLine.Length <= 0) break;
+
+                    SosMethodDefinition methodDefinition = SosTypes.ParseMethodDefinition(methodDefinitionLine, 0);
+                    methodDefinitionList.Add(methodDefinition);
+                }
+                serverInterfaces.Add(interfaceName, new RemoteNpcInterface(interfaceName, methodDefinitionList.ToArray()));
+                methodDefinitionList.Clear();
+            }
+
+            List<RemoteNpcObject> serverObjects = new List<RemoteNpcObject>();
+            while (true)
+            {
+                String objectLine = socketLineReader.ReadLine();
+                if (objectLine == null) throw UnexpectedClose(socketLineReader);
+                if (objectLine.Length <= 0) break;
+
+                String objectName = objectLine.Peel(out objectLine);
+                String[] interfaceNames = objectLine.Split(RemoteNpcObject.SplitChars, StringSplitOptions.RemoveEmptyEntries);
+                RemoteNpcInterface[] interfaces = new RemoteNpcInterface[interfaceNames.Length];
+                for (int i = 0; i < interfaceNames.Length; i++)
+                {
+                    String interfaceName = interfaceNames[i];
+                    RemoteNpcInterface npcInterface;
+                    if (!serverInterfaces.TryGetValue(interfaceName, out npcInterface))
+                        throw new FormatException(String.Format("The NPC server returned interface '{0}' in the :objects command but not in the :interfaces command",
+                            interfaceName));
+                    interfaces[i] = npcInterface;
+                }
+                serverObjects.Add(new RemoteNpcObject(objectName, interfaces));
+            }
+
+            return serverObjects;
+        }
+
+
         //
         // Static Type Finder
         //
@@ -77,25 +130,36 @@ namespace More
         }
 
         public readonly EndPoint serverEndPoint;
+        public readonly RemoteNpcInterface[] expectedInterfaces;
         public readonly Boolean threadSafe;
         private SocketLineReader socketLineReader;
+        public SocketLineReader UnderlyingLineReader
+        {
+            get { return socketLineReader; }
+        }
 
         readonly List<Type> enumAndObjectTypes;
         Dictionary<String,RemoteNpcInterface> cachedServerInterfaces;
+        public Dictionary<String, RemoteNpcInterface> CachedServerInterfaces
+        {
+            get { return cachedServerInterfaces; }
+        }
         List<RemoteNpcObject> cachedServerObjects;
 
-        public NpcClient(EndPoint serverEndPoint, Boolean threadSafe)
+        public NpcClient(EndPoint serverEndPoint, RemoteNpcInterface[] expectedInterfaces, Boolean threadSafe)
         {
             this.serverEndPoint = serverEndPoint;
+            this.expectedInterfaces = expectedInterfaces;
             this.threadSafe = threadSafe;
             this.socketLineReader = null;
 
             this.enumAndObjectTypes = new List<Type>();
             InitializeStaticClientTypeFinder();
         }
-        public NpcClient(Socket socket, Boolean threadSafe)
+        public NpcClient(Socket socket, RemoteNpcInterface[] expectedInterfaces, Boolean threadSafe)
         {
             this.serverEndPoint = socket.RemoteEndPoint;
+            this.expectedInterfaces = expectedInterfaces;
             this.threadSafe = threadSafe;
 
             this.socketLineReader = (socket == null || !socket.Connected) ? null :
@@ -107,6 +171,11 @@ namespace More
         InvalidOperationException UnexpectedClose()
         {
             Dispose();
+            return new InvalidOperationException("Server closed unexpectedly");
+        }
+        static InvalidOperationException UnexpectedClose(SocketLineReader socketLineReader)
+        {
+            socketLineReader.Dispose();
             return new InvalidOperationException("Server closed unexpectedly");
         }
         public void ConnectNow()
@@ -134,12 +203,10 @@ namespace More
             if (cachedSocketLineReader != null) cachedSocketLineReader.Dispose();
         }
 
-
-
         //
         // Methods Definitions
-        //
-        public List<RemoteNpcObject> GetRemoteMethods(Boolean forceUpdateFromServer)
+        // If the interface is updated and expectedInterfaces is not null, then the interfaces will be checked.
+        public List<RemoteNpcObject> GetServerInterface(Boolean forceUpdateFromServer)
         {
             if (threadSafe) Monitor.Enter(serverEndPoint);
             try
@@ -156,50 +223,13 @@ namespace More
                     try
                     {
                         Connect();
-                        socketLineReader.socket.Send(Encoding.ASCII.GetBytes(":interface\n"));
 
-                        cachedServerInterfaces = new Dictionary<String, RemoteNpcInterface>();
-                        List<SosMethodDefinition> methodDefinitionList = new List<SosMethodDefinition>();
+                        cachedServerObjects = GetServerInterface(socketLineReader, out cachedServerInterfaces);
 
-                        while (true)
+                        if (expectedInterfaces != null)
                         {
-                            String interfaceName = socketLineReader.ReadLine();
-                            if (interfaceName == null) UnexpectedClose();
-                            if (interfaceName.Length <= 0) break;
-
-                            while (true)
-                            {
-                                String methodDefinitionLine = socketLineReader.ReadLine();
-                                if (methodDefinitionLine == null) UnexpectedClose();
-                                if (methodDefinitionLine.Length <= 0) break;
-
-                                SosMethodDefinition methodDefinition = SosTypes.ParseMethodDefinition(methodDefinitionLine, 0);
-                                methodDefinitionList.Add(methodDefinition);
-                            }
-                            cachedServerInterfaces.Add(interfaceName, new RemoteNpcInterface(interfaceName, methodDefinitionList.ToArray()));
-                            methodDefinitionList.Clear();
-                        }
-
-                        cachedServerObjects = new List<RemoteNpcObject>();
-                        while (true)
-                        {
-                            String objectLine = socketLineReader.ReadLine();
-                            if (objectLine == null) UnexpectedClose();
-                            if (objectLine.Length <= 0) break;
-                            
-                            String objectName = objectLine.Peel(out objectLine);
-                            String[] interfaceNames = objectLine.Split(RemoteNpcObject.SplitChars, StringSplitOptions.RemoveEmptyEntries);
-                            RemoteNpcInterface[] interfaces = new RemoteNpcInterface[interfaceNames.Length];
-                            for (int i = 0; i < interfaceNames.Length; i++)
-                            {
-                                String interfaceName = interfaceNames[i];
-                                RemoteNpcInterface npcInterface;
-                                if (!cachedServerInterfaces.TryGetValue(interfaceName, out npcInterface))
-                                    throw new FormatException(String.Format("The NPC server returned interface '{0}' in the :objects command but not in the :interfaces command",
-                                        interfaceName));
-                                interfaces[i] = npcInterface;
-                            }
-                            cachedServerObjects.Add(new RemoteNpcObject(objectName, interfaces));
+                            String serverInterfaceDiff = ServerInterfaceMethodsDiff(cachedServerInterfaces, expectedInterfaces);
+                            if (serverInterfaceDiff != null) throw new NpcInterfaceMismatch(serverInterfaceDiff);
                         }
                     }
                     catch (SocketException)
@@ -230,92 +260,144 @@ namespace More
                 if (threadSafe) Monitor.Exit(serverEndPoint);
             }
         }
-        public void VerifyInterfaces(Boolean forceMethodUpdateFromServer, RemoteNpcInterface[] expectedInterfaces)
+        public void VerifyObject(Boolean forceInterfaceUpdateFromServer, RemoteNpcObject expectedObject)
         {
-            throw new NotImplementedException();
-            //VerifyMethodDefinitions(...,...);
-        }
-        public void VerifyObjects(Boolean forceMethodUpdateFromServer, RemoteNpcObject[] expectedObjects)
-        {
-            throw new NotImplementedException();
-            //VerifyMethodDefinitions(...,...);
-        }
-        /*
-        public void VerifyMethodDefinitions(Boolean forceUpdateMethodsFromServer, List<RemoteNpcObject> expectedObjects)
-        {
-            throw new NotImplementedException();
-            //List<RemoteNpcObject> serverObjects = GetRemoteMethods(forceUpdateMethodsFromServer);
-            //VerifyMethodDefinitions(serverObjects, expectedMethods);
-        }
-        public static void VerifyMethodDefinitions(List<RemoteNpcObject> actualObjects, RemoteNpcObject[] expectedMethods)
-        {
-            
-            if (actualMethods.Count < expectedMethods.Length)
-                throw new InvalidOperationException(String.Format(
-                    "Server has {0} methods but you expected at least {1} methods", actualMethods.Count, expectedMethods.Length));
-            
- 
-            //
-            // Count how many types are expected
-            //
-            List<String> expectedRemoteTypes = new List<String>();
-            for (int i = 0; i < expectedMethods.Length; i++)
+            if (expectedInterfaces == null) throw new InvalidOperationException(String.Format(
+                 "Cannot call VerifyObject because there were no expectedInterfaces passed to the constructor"));
+
+            GetServerInterface(forceInterfaceUpdateFromServer);
+
+            Boolean foundObject = false;
+            for (int serverObjectIndex = 0; serverObjectIndex < cachedServerObjects.Count; serverObjectIndex++)
             {
-                SosMethodDefinition expectedMethod = expectedMethods[i];
-                if (!expectedRemoteTypes.Contains(expectedMethod.methodPrefix))
+                RemoteNpcObject serverObject = cachedServerObjects[serverObjectIndex];
+
+                if (expectedObject.name.Equals(serverObject.name))
                 {
-                    expectedRemoteTypes.Add(expectedMethod.methodPrefix);
+                    foundObject = true;
+
+                    // Check that the interfaces are the same
+                    for (int expectedInterfaceIndex = 0; expectedInterfaceIndex < expectedObject.interfaces.Length; expectedInterfaceIndex++)
+                    {
+                        RemoteNpcInterface expectedInterface = expectedObject.interfaces[expectedInterfaceIndex];
+                        Boolean foundInterface = false;
+
+                        for (int serverInterfaceIndex = 0; serverInterfaceIndex < serverObject.interfaces.Length; serverInterfaceIndex++)
+                        {
+                            RemoteNpcInterface serverInterface = serverObject.interfaces[serverInterfaceIndex];
+
+                            if (expectedInterface.name.Equals(serverInterface.name))
+                            {
+                                foundInterface = true;
+                                // Note: the interface definition does not need to be checked because it was already checked
+                                break;
+                            }
+                        }
+
+                        if (!foundInterface) throw new InvalidOperationException(String.Format("Server object '{0}' is missing the '{1}' interface", serverObject.name, expectedInterface.name));
+                    }
+
+                    break;
                 }
             }
+            if (!foundObject) throw new InvalidOperationException(String.Format("Server missing '{0}' object", expectedObject.name));
+        }
+        /*
+        public void VerifyObjectsAndInterfaceMethods(Boolean forceInterfaceUpdateFromServer, ICollection<RemoteNpcObject> expectedObjects, ICollection<RemoteNpcInterface> expectedInterfaces)
+        {
+            GetServerInterface(forceInterfaceUpdateFromServer);
+            String interfaceDiff = ServerInterfaceMethodsDiff(cachedServerInterfaces.Values, expectedInterfaces);
+            if (interfaceDiff != null) throw new InvalidOperationException(interfaceDiff);
 
-            //
-            // Check that all expected methods are present in the actual methods
-            //
-            for (int i = 0; i < expectedMethods.Length; i++)
+            foreach (RemoteNpcObject expectedObject in expectedObjects)
             {
-                SosMethodDefinition expectedMethod = expectedMethods[i];
-
-                for (int j = 0; j < actualMethods.Count; j++)
+                Boolean foundObject = false;
+                for (int serverObjectIndex = 0; serverObjectIndex < cachedServerObjects.Count; serverObjectIndex++)
                 {
-                    SosMethodDefinition actualMethod = actualMethods[j];
-                    if (expectedMethod.fullMethodName.Equals(actualMethod.fullMethodName))
+                    RemoteNpcObject serverObject = cachedServerObjects[serverObjectIndex];
+
+                    if (expectedObject.name.Equals(serverObject.name))
                     {
-                        if (!expectedMethod.Equals(actualMethod))
-                            throw new InvalidOperationException(String.Format(
-                                "Expected Method '{0}' differs from actual Method '{1}'", expectedMethod.Definition(), actualMethod.Definition()));
+                        foundObject = true;
+
+                        // Check that the interfaces are the same
+                        for (int expectedInterfaceIndex = 0; expectedInterfaceIndex < expectedObject.interfaces.Length; expectedInterfaceIndex++)
+                        {
+                            RemoteNpcInterface expectedInterface = expectedObject.interfaces[expectedInterfaceIndex];
+                            Boolean foundInterface = false;
+
+                            for(int serverInterfaceIndex = 0; serverInterfaceIndex < serverObject.interfaces.Length; serverInterfaceIndex++)
+                            {
+                                RemoteNpcInterface serverInterface = serverObject.interfaces[serverInterfaceIndex];
+
+                                if(expectedInterface.name.Equals(serverInterface.name))
+                                {
+                                    foundInterface = true;
+                                    // Note: the interface definition does not need to be checked because it was already checked
+                                    break;
+                                }
+
+                            }
+                            
+                            if(!foundInterface) throw new InvalidOperationException(String.Format("Server object '{0}' is missing the '{1}' interface", serverObject.name, expectedInterface.name));
+                        }
+
                         break;
                     }
                 }
-            }
-
-            //
-            // Check if the any actual methods from the server are not expected for each expected type
-            //
-            for (int i = 0; i < actualMethods.Count; i++)
-            {
-                SosMethodDefinition actualMethod = actualMethods[i];
-
-                if (expectedRemoteTypes.Contains(actualMethod.methodPrefix))
-                {
-                    Boolean actualMethodIsExpected = false;
-                    for (int j = 0; j < expectedMethods.Length; j++)
-                    {
-                        SosMethodDefinition expectedMethod = expectedMethods[j];
-                        if (actualMethod.Equals(expectedMethod))
-                        {
-                            actualMethodIsExpected = true;
-                            break;
-                        }
-                    }
-                    if (!actualMethodIsExpected)
-                    {
-                        throw new InvalidOperationException(String.Format("For remote type '{0}' the server reported a method that was not expected '{1}'", actualMethod.methodPrefix, actualMethod.Definition()));
-                    }
-                }
+                if(!foundObject) throw new InvalidOperationException(String.Format("Server missing '{0}' object", expectedObject.name));
             }
         }
         */
+        /*
+        public void VerifyInterfaceMethods(Boolean forceInterfaceUpdateFromServer, ICollection<RemoteNpcInterface> expectedInterfaces)
+        {
+            GetServerInterface(forceInterfaceUpdateFromServer);
+            String interfaceDiff = ServerInterfaceMethodsDiff(cachedServerInterfaces.Values, expectedInterfaces);
+            if (interfaceDiff != null) throw new InvalidOperationException(interfaceDiff);
+        }
+        */
+ 
+        // Returns null if the client interfaces are contained in the server interfaces, otherwise,
+        // returns a message indicating what client interface is missing or out of sync.
+        public static String ServerInterfaceMethodsDiff(IDictionary<String, RemoteNpcInterface> serverInterfaces, ICollection<RemoteNpcInterface> expectedInterfaces)
+        {
+            if (expectedInterfaces.Count > serverInterfaces.Count)
+                return String.Format("Expected server to have at least {0} interfaces but server only has {1}", expectedInterfaces.Count, serverInterfaces.Count);
 
+            foreach (RemoteNpcInterface expectedInterface in expectedInterfaces)
+            {
+                RemoteNpcInterface serverInterface;
+                if(!serverInterfaces.TryGetValue(expectedInterface.name, out serverInterface))
+                    return String.Format("Server does not have the '{0}' interface", expectedInterface.name);
+
+                if (serverInterface.methods.Length != expectedInterface.methods.Length)
+                    return String.Format("Expected server interface '{0}' to have {1} methods but it has {2}",
+                        serverInterface.name, expectedInterface.methods.Length, serverInterface.methods.Length);
+
+                //
+                // Check that the interfaces are the same
+                //
+                for (int clientMethodIndex = 0; clientMethodIndex < expectedInterface.methods.Length; clientMethodIndex++)
+                {
+                    SosMethodDefinition clientMethodDefinition = expectedInterface.methods[clientMethodIndex];
+                    Boolean foundMethod = false;
+                    for (int serverMethodIndex = 0; serverMethodIndex < serverInterface.methods.Length; serverMethodIndex++)
+                    {
+                        SosMethodDefinition serverMethodDefinition = serverInterface.methods[serverMethodIndex];
+                        if (clientMethodDefinition.Equals(serverMethodDefinition))
+                        {
+                            foundMethod = true;
+                            break;
+                        }
+                    }
+                    if (!foundMethod) return String.Format("Server Interface '{0}' does not have method '{1}'",
+                         serverInterface.name, clientMethodDefinition.Definition());
+                }
+            }
+
+            return null; // The server has all the expected interfaces
+        }
 
         public void UpdateAndVerifyEnumAndObjectTypes()
         {
@@ -332,14 +414,14 @@ namespace More
                 try
                 {
                     Connect();
-                    socketLineReader.socket.Send(Encoding.UTF8.GetBytes("type\n"));
+                    socketLineReader.socket.Send(Encoding.UTF8.GetBytes(":type\n"));
 
                     enumAndObjectTypes.Clear();
 
                     while (true)
                     {
                         String typeDefinitionLine = socketLineReader.ReadLine();
-                        if (typeDefinitionLine == null) UnexpectedClose();
+                        if (typeDefinitionLine == null) throw UnexpectedClose();
                         if (typeDefinitionLine.Length == 0) break; // empty line
 
                         Int32 spaceIndex = typeDefinitionLine.IndexOf(' ');
@@ -445,7 +527,7 @@ namespace More
         {
             return Call((Type)null, methodName, parameters);
         }
-        public Object Call(String objectName, String methodName, params Object[] parameters)
+        public Object CallOnObject(String objectName, String methodName, params Object[] parameters)
         {
             return Call(null, objectName, methodName, parameters);
         }
@@ -454,7 +536,7 @@ namespace More
             String callString = Npc.CreateCallString(methodName, parameters);
             return PerformCall(expectedReturnType, methodName, callString);
         }
-        public Object Call(Type expectedReturnType, String objectName, String methodName, params Object[] parameters)
+        public Object CallOnObject(Type expectedReturnType, String objectName, String methodName, params Object[] parameters)
         {
             String callString = Npc.CreateCallString(objectName, methodName, parameters);
             return PerformCall(expectedReturnType, methodName, callString);
@@ -474,7 +556,7 @@ namespace More
             String rawNpcLine;
             if (String.IsNullOrEmpty(rawParameters))
             {
-                rawNpcLine = String.Format("{0}", methodName);
+                rawNpcLine = String.Format("{0}\n", methodName);
             }
             else
             {
@@ -492,7 +574,7 @@ namespace More
             String rawNpcLine;
             if (String.IsNullOrEmpty(rawParameters))
             {
-                rawNpcLine = String.Format("{0}.{1}", objectName, methodName);
+                rawNpcLine = String.Format("{0}.{1}\n", objectName, methodName);
             }
             else
             {
@@ -523,7 +605,7 @@ namespace More
                     socketLineReader.socket.Send(Encoding.UTF8.GetBytes(rawNpcLine.ToString()));
 
                     String returnLineString = socketLineReader.ReadLine();
-                    if (returnLineString == null) UnexpectedClose();
+                    if (returnLineString == null) throw UnexpectedClose();
 
                     NpcReturnLine returnLine = new NpcReturnLine(returnLineString);
 

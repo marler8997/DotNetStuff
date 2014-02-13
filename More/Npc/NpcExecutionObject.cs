@@ -29,7 +29,6 @@ namespace More
             }
         }
 
-
         public readonly String name;
         public readonly String nameLowerInvariant;
 
@@ -61,7 +60,6 @@ namespace More
         void PreCall(NpcExecutionObject executionObject, NpcMethodInfo npcMethodInfo, params Object[] args);
         void PostCall(NpcExecutionObject executionObject, NpcMethodInfo npcMethodInfo, params Object[] args);
     }
-
     public class NpcStaticExecutionObject
     {
         public readonly Type type;
@@ -80,6 +78,8 @@ namespace More
             this.objectNameLowerInvariant = this.objectName.ToLowerInvariant();
             this.executionLock = executionLock;
             this.preAndPostCall = preAndPostCall;
+
+            throw new NotImplementedException();
             //
             // On static types, just get the methods
             //
@@ -97,7 +97,6 @@ namespace More
             */
         }
     }
-
     public class NpcExecutionObject
     {
         public readonly Type type;
@@ -147,9 +146,7 @@ namespace More
 
             if (npcInterfaces.Count <= 0) throw new InvalidOperationException(String.Format(
                 "Class {0} did not implement any NpcInterfaces (An NpcInterface is an interface with the [NpcInterface] attribute)", this.type.Name));
-        }
-
-        
+        }        
         // Note: staticNpcInterfaceMap must be locked on before this method is called
         void AddInterfaces(Type[] interfaces)
         {
@@ -169,31 +166,8 @@ namespace More
                     Attribute npcInterfaceAttribute = Attribute.GetCustomAttribute(@interface, typeof(NpcInterface));
                     if (npcInterfaceAttribute != null)
                     {
-                        //
-                        // Check if this interface is a leaf or if it makes another interface a leaf
-                        //
-
-
                         AddInterface(@interface);
-
-                        //npcInterface = new NpcInterfaceInfo(@interface);
-                        //staticNpcInterfaceMap.Add(@interface, npcInterface);
-                        //leafNpcInterfaces.Add(npcInterface);
                     }
-                    else
-                    {
-                        /*
-                        //
-                        // Check parent interfaces
-                        //
-                        Type[] parentInterfaces = @interface.GetInterfaces();
-                        if (parentInterfaces != null && parentInterfaces.Length > 0)
-                        {
-                            AddInterfaces(parentInterfaces);
-                        }
-                        */
-                    }
-                    //}
                 }
             }
         }

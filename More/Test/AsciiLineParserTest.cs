@@ -13,7 +13,6 @@ namespace More
             Encoding encoding = Encoding.ASCII;
             LineParser lineParser = new LineParser(encoding, 3, 3);
 
-
             lineParser.Add(encoding.GetBytes("abcd\n"));
             Assert.AreEqual("abcd", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
@@ -33,7 +32,6 @@ namespace More
             lineParser.Add(encoding.GetBytes("\n"));
             Assert.AreEqual("efghijkl", lineParser.GetLine());
             Assert.IsNull(lineParser.GetLine());
-
 
             lineParser.Add(encoding.GetBytes("abcd\n"));
             lineParser.Add(encoding.GetBytes("abcd\r\n"));

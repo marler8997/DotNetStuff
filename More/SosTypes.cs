@@ -245,33 +245,32 @@ namespace More
                 this.name = name;
             }
         }
-        public readonly String fullMethodName;
-        public readonly String methodPrefix;
+        public readonly String methodName;
         public readonly String returnSosTypeName;
         public readonly Parameter[] parameters;
-        public SosMethodDefinition(String fullMethodName, String returnSosTypeName, Parameter[] parameters)
+        public SosMethodDefinition(String methodName, String returnSosTypeName, Parameter[] parameters)
         {
-            this.fullMethodName = fullMethodName;
-
+            this.methodName = methodName;
+            /*
             Int32 lastPeriodIndex = fullMethodName.LastIndexOf('.');
             if (lastPeriodIndex > 0)
             {
                 this.methodPrefix = fullMethodName.Remove(lastPeriodIndex);
             }
-
+            */
             this.returnSosTypeName = returnSosTypeName;
             this.parameters = parameters;
         }
-        public SosMethodDefinition(String fullMethodName, String returnSosTypeName, params String[] parameterTypesAndNames)
+        public SosMethodDefinition(String methodName, String returnSosTypeName, params String[] parameterTypesAndNames)
         {
-            this.fullMethodName = fullMethodName;
-
+            this.methodName = methodName;
+            /*
             Int32 lastPeriodIndex = fullMethodName.LastIndexOf('.');
             if (lastPeriodIndex > 0)
             {
                 this.methodPrefix = fullMethodName.Remove(lastPeriodIndex);
             }
-
+            */
             this.returnSosTypeName = returnSosTypeName;
 
             if (parameterTypesAndNames == null)
@@ -298,7 +297,7 @@ namespace More
             builder.Append(returnSosTypeName);
             builder.Append(' ');
 
-            builder.Append(fullMethodName);
+            builder.Append(methodName);
             builder.Append("(");
 
             if (parameters != null)
@@ -330,7 +329,7 @@ namespace More
         }
         public Boolean Equals(SosMethodDefinition other)
         {
-            if (!fullMethodName.Equals(other.fullMethodName)) return false;
+            if (!methodName.Equals(other.methodName)) return false;
             if (!returnSosTypeName.Equals(other.returnSosTypeName)) return false;
 
             if (parameters == null) return other.parameters == null || other.parameters.Length <= 0;
@@ -349,8 +348,8 @@ namespace More
         }
         public String Diff(SosMethodDefinition other)
         {
-            if (!fullMethodName.Equals(other.fullMethodName))
-                return String.Format("MethodName '{0}' differs from '{1}", fullMethodName, other.fullMethodName);
+            if (!methodName.Equals(other.methodName))
+                return String.Format("MethodName '{0}' differs from '{1}", methodName, other.methodName);
             if (!returnSosTypeName.Equals(other.returnSosTypeName))
                 return String.Format("ReturnType '{0}' differs from '{1}", returnSosTypeName, other.returnSosTypeName);
 
@@ -461,6 +460,16 @@ namespace More
             if (type.IsArray) return type.GetElementType().SosTypeName() + "[]";
 
             return type.FullName.Replace('+', '.');
+        }
+        public static String SosShortTypeName(this Type type)
+        {
+            if (type == typeof(void)) return "Void";
+
+            // These types are primitve to Sos so their type names are used instead of their FullName
+            if (type.IsPrimitive || type == typeof(String) || type == typeof(Enum)) return type.Name;
+            if (type.IsArray) return type.GetElementType().SosShortTypeName() + "[]";
+
+            return type.Name.Replace('+', '.');
         }
         public static FieldInfo[] GetSerializedFields(this Type type)
         {

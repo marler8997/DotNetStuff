@@ -19,7 +19,6 @@ class NpcServerControl : INpcServerControl
         server.Dispose();
     }
 }
-
 namespace More.Npc.Test
 {
     [TestClass]

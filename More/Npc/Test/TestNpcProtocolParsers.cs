@@ -19,7 +19,6 @@ namespace More
             Assert.AreEqual(expectedReturnLine.sosSerializationString, actualReturnLine.sosSerializationString);
         }
 
-
         [TestMethod]
         public void TestNpcReturnLines()
         {

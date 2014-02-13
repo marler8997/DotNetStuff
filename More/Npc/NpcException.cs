@@ -45,4 +45,15 @@ namespace More
             this.errorCode = errorCode;
         }
     }
+
+    /// <summary>
+    /// Thrown when the server interface is not the expected interface
+    /// </summary>
+    public class NpcInterfaceMismatch : NpcException
+    {
+        public NpcInterfaceMismatch(String message)
+            : base(message)
+        {
+        }
+    }
 }

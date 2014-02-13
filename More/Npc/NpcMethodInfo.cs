@@ -23,16 +23,6 @@ namespace More
                 (UInt16)this.parameters.Length;
         }
         /*
-        public NpcMethodInfo(NpcExecutionObject executionObject, MethodInfo methodInfo)
-        {
-            this.npcShortMethodNameLowerInvariant = methodInfo.Name.ToLowerInvariant();
-            this.npcFullMethodName = executionObject.objectName + "." + methodInfo.Name;
-            this.npcFullMethodNameLowerInvariant = executionObject.objectNameLowerInvariant + "." + methodInfo.Name.ToLowerInvariant();
-            this.methodInfo = methodInfo;
-            this.parameters = methodInfo.GetParameters();
-            this.parametersLength = (this.parameters == null) ? (UInt16)0 :
-                (UInt16)this.parameters.Length;
-        }
         public void ToParsableString(StringBuilder builder)
         {
             builder.Append(methodInfo.ReturnParameter.ParameterType.FullName);
@@ -51,7 +41,6 @@ namespace More
         }
         */
     }
-
     public class NpcMethodOverloadable : IEnumerable<NpcMethodInfo>
     {
         public readonly NpcExecutionObject executionObject;

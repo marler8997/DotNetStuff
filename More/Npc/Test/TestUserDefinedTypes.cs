@@ -45,7 +45,6 @@ namespace More
             return new DeviceStatus(Boolean.Parse(fields[0]), DateTime.Parse(fields[1]), UInt32.Parse(fields[2]));
         }
     }
-
     [NpcInterface]
     public interface RemoteDeviceNpcInterface
     {
@@ -69,7 +68,6 @@ namespace More
             this.deviceStatus = deviceStatus;
         }
     }
-
     [TestClass]
     public class TestUserDefinedTypes
     {

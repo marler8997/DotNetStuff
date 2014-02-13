@@ -112,8 +112,8 @@ namespace More
 
                     if (!alreadyChecked.Contains(referencedAssemblyName.FullName))
                     {
-                        Assembly referencedAssembly = Assembly.Load(referencedAssemblyName);
                         alreadyChecked.Add(referencedAssemblyName.FullName);
+                        Assembly referencedAssembly = Assembly.Load(referencedAssemblyName);
 
                         Type[] types = referencedAssembly.GetTypes();
                         for (int j = 0; j < types.Length; j++)

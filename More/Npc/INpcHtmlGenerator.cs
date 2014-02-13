@@ -186,7 +186,7 @@ namespace More
                         ParameterInfo[] parameters = npcMethodInfo.parameters;
                         Int32 parameterCount = (parameters == null) ? 0 : parameters.Length;
 
-                        htmlBuilder.Append(String.Format("<form class=\"methodform\" action=\"call/{0}\" method=\"get\">", npcMethodInfo.methodName));
+                        htmlBuilder.Append(String.Format("<form class=\"methodform\" action=\"call/{0}.{1}\" method=\"get\">", executionObject.objectName, npcMethodInfo.methodName));
                         htmlBuilder.Append(String.Format("<input class=\"executebutton\" type=\"submit\" value=\"Execute\" tabindex=\"{0}\"/>", tabIndex + parameterCount));
 #if WindowsCE
                     htmlBuilder.Append(TypeAsHtml(npcMethodInfo.methodInfo.ReturnType));
