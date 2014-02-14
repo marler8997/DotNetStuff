@@ -9,41 +9,6 @@ namespace HackCastleDoctrine
 {
     class Program
     {
-        static void PrintMap(String[] tiles)
-        {
-            // Print in reverse order (map is from bottom to top)
-            for (int i = 31; true; i--)
-            {
-                Console.WriteLine();
-                int rowOffset = i * 32;
-                for (int j = 0; j < 32; j++)
-                {
-                    Console.Write(" {0,4}", tiles[rowOffset + j]);
-                }
-                if (i == 0) break;
-            }
-
-        }
-
-
-        static readonly HouseObjectDefinition[] HouseObjectDefinitions = new HouseObjectDefinition[] {
-            new HouseObjectDefinition(0, "Empty Floor"),
-            new HouseObjectDefinition(1, "Wooden Wall"),
-            new HouseObjectDefinition(20, "Window"),
-            new HouseObjectDefinition(71, "Chihuahua"),
-            //new HouseObjectDefinition(
-        };
-        static readonly Dictionary<UInt16, HouseObjectDefinition> houseObjectIdMap;
-        static Program()
-        {
-            houseObjectIdMap = new Dictionary<UInt16, HouseObjectDefinition>();
-            for (int i = 0; i < HouseObjectDefinitions.Length; i++)
-            {
-                HouseObjectDefinition houseObjectDefinition = HouseObjectDefinitions[i];
-                houseObjectIdMap.Add(houseObjectDefinition.id, houseObjectDefinition);
-            }
-        }
-
 
         const String serverHostname = "server.thecastledoctrine.net";
 

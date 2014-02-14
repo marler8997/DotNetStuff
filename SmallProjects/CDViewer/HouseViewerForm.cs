@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -19,23 +20,35 @@ namespace CDViewer
     //    This is a 40 character hex string representing a sha1 hash
     // 2. In the response, the first token (tokens separated by whitespace) is the owner name, the second token is the encrypted map
     // 3. Decrypt the map using the SHA1 
-
+    //
     public partial class HouseViewerForm : Form
     {
         static readonly byte[] secret = Encoding.ASCII.GetBytes("@Please do not use this secret string to connect unfairly modded clients to the main server.  Keep in mind that this is an indie, open-source game made entirely by one person.  I am trusting you to do the right thing.  --Jason");
 
 
-        public static void HandleEncryptedMap(Byte[] shaKey, Byte[] encryptedData)
+        public static void HandleEncryptedMap(Byte[] mapKey, Byte[] encryptedData)
         {
             //
             // Decrypt the map
             //
-            Console.WriteLine("SHA: {0}", BitConverter.ToString(shaKey));
-            Console.WriteLine("DAT: {0}", BitConverter.ToString(encryptedData));
-            Console.WriteLine("Map: {0}", CDSha.Decrypt(shaKey, encryptedData));
+            //Console.WriteLine("SHA: {0}", BitConverter.ToString(mapKey));
+            //Console.WriteLine("DAT: {0}", BitConverter.ToString(encryptedData));
 
+            String map = CDSha.Decrypt(mapKey, encryptedData);
+
+            String[] objectIds = map.Split('#');
+            if (objectIds.Length != 1024) throw new FormatException(String.Format(
+                 "Expected map.Split('#') to be 1024 but was {0}", objectIds.Length));
+
+            //CDLoader.PrintMap(objectIds);
+
+            HouseObjectDefinition[] mapObjects = CDLoader.ParseMap(objectIds);
+            houseViewerForm.Invoke((Action)(() => { houseViewerForm.LoadMap(mapObjects); }));
         }
 
+
+
+        static HouseViewerForm houseViewerForm;
 
         /// <summary>
         /// The main entry point for the application.
@@ -43,7 +56,13 @@ namespace CDViewer
         [STAThread]
         static void Main()
         {
-            CDLoader.Load(@"C:\Users\Jonathan Marler\Desktop\CastleDoctrine_v31");
+            //
+            // Initialize Static Variables
+            //
+            CDLoader.Load(CDLoader.DefaultInstallPath);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            houseViewerForm = new HouseViewerForm();
 
             //
             // Start the listen thread
@@ -58,14 +77,286 @@ namespace CDViewer
             listenThread.Name = "ListenThread";
             listenThread.Start();
 
-
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new HouseViewerForm());
+            Application.Run(houseViewerForm);
         }
+
+        public class TileBoxSet : Control
+        {
+            //public const Int32 TileSize = 32;
+
+            public readonly HouseViewerForm house;
+            public readonly Int32 x, y, size;
+            public TileBoxSet(HouseViewerForm house, Int32 x, Int32 y, Int32 size)
+            {
+                DoubleBuffered = true;
+                this.house = house;
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                MouseMove += MouseMoveHandler;
+            }
+            void MouseMoveHandler(Object sender, MouseEventArgs e)
+            {
+                Int32 boxX = e.X / house.tileSize;
+                Int32 boxY = e.Y / house.tileSize;
+                if (boxX < 0 || boxX > size || boxY < 0 || boxY > size) return;
+
+                Int32 houseObjectOffset = (31 - (y + boxY)) * 32 + (x + boxX);
+                house.MouseOverHouseObject(houseObjectOffset);
+            }
+            static readonly SolidBrush SemiTransparentBrush =
+                new SolidBrush(Color.FromArgb(0x88, 1, 1, 1));
+            protected override void OnPaint(PaintEventArgs pe)
+            {
+                for (int boxY = 0; boxY < size; boxY++)
+                {
+                    Int32 houseObjectOffset = (31 - (y + boxY)) * 32;
+                    Int32 controlRowOffset = boxY * house.tileSize;
+                    Int32 controlColOffset = 0;
+                    for (int boxX = 0; boxX < size; boxX++)
+                    {
+                        pe.Graphics.DrawRectangle(Pens.Black, new Rectangle(controlColOffset, controlRowOffset, house.tileSize, house.tileSize));
+                        //pe.Graphics.DrawString(String.Format("Box {0} {1}", x, y), this.Font, Brushes.Black, new PointF(0, 0));
+                        HouseObjectDefinition houseObject =
+                            house.houseObjects[houseObjectOffset + (x + boxX)];
+                        pe.Graphics.DrawImage(houseObject.Bitmap, controlColOffset, controlRowOffset, house.tileSize, house.tileSize);
+                            //new Point(controlColOffset, controlRowOffset));
+
+                        String extra = houseObject.Extra;
+                        if (extra != null)
+                        {
+                            pe.Graphics.FillRectangle(SemiTransparentBrush, 0, 0, extra.Length * Font.Size, Font.GetHeight());
+                            pe.Graphics.DrawString(extra, Font, Brushes.Black, new PointF(0, 0));
+                        }
+
+
+                        controlColOffset += house.tileSize;
+                    }
+
+                }
+            }
+        }
+        readonly Label label;
+        HouseObjectDefinition currentMouseOverObject;
+
+        readonly HouseObjectDefinition[] houseObjects = new HouseObjectDefinition[1024];
+        readonly TileBoxSet[] tileBoxSets = new TileBoxSet[16];
+        Int32 tileSize;
+
         public HouseViewerForm()
         {
+
             InitializeComponent();
+            //Width = 1024;
+            //Height = 1024;
+            AutoSize = true;
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            Location = new Point(Location.X, 10);
+
+
+            label = new Label();
+            Controls.Add(label);
+            label.Location = new Point(3, 3);
+            label.BackColor = Color.FromArgb(0x88, 0xFF, 0xFF, 0xFF);
+
+            Button zoomOutButton = new Button();
+            zoomOutButton.Text = "-";
+            zoomOutButton.Width = 25;
+            zoomOutButton.Location = new Point(150, 3);
+            zoomOutButton.MouseClick += (s, e) =>
+            {
+                if (tileSize > 0)
+                {
+                    SetTileSize(tileSize - 1);
+                }
+            };
+            Controls.Add(zoomOutButton);
+            Button zoomInButton = new Button();
+            zoomInButton.Text = "+";
+            zoomInButton.Width = 25;
+            zoomInButton.Location = new Point(180, 3);
+            zoomInButton.MouseClick += (s, e) =>
+            {
+                SetTileSize(tileSize + 1);
+            };
+            Controls.Add(zoomInButton);
+
+
+
+            tileBoxSets[0]  = new TileBoxSet(this,  0,  0, 8);
+            tileBoxSets[1]  = new TileBoxSet(this,  8,  0, 8);
+            tileBoxSets[2]  = new TileBoxSet(this, 16,  0, 8);
+            tileBoxSets[3]  = new TileBoxSet(this, 24,  0, 8);
+            tileBoxSets[4]  = new TileBoxSet(this,  0,  8, 8);
+            tileBoxSets[5]  = new TileBoxSet(this,  8,  8, 8);
+            tileBoxSets[6]  = new TileBoxSet(this, 16,  8, 8);
+            tileBoxSets[7]  = new TileBoxSet(this, 24,  8, 8);
+            tileBoxSets[8]  = new TileBoxSet(this,  0, 16, 8);
+            tileBoxSets[9]  = new TileBoxSet(this,  8, 16, 8);
+            tileBoxSets[10] = new TileBoxSet(this, 16, 16, 8);
+            tileBoxSets[11] = new TileBoxSet(this, 24, 16, 8);
+            tileBoxSets[12] = new TileBoxSet(this,  0, 24, 8);
+            tileBoxSets[13] = new TileBoxSet(this,  8, 24, 8);
+            tileBoxSets[14] = new TileBoxSet(this, 16, 24, 8);
+            tileBoxSets[15] = new TileBoxSet(this, 24, 24, 8);
+            for (int i = 0; i < tileBoxSets.Length; i++)
+            {
+                TileBoxSet tileBoxSet = tileBoxSets[i];
+                //tileBoxSet.Location = new Point(tileBoxSet.x * TileBoxSet.TileSize,
+                //    tileBoxSet.y * TileBoxSet.TileSize);
+                //tileBoxSet.Size = new Size(tileBoxSet.size * TileBoxSet.TileSize,
+                //    tileBoxSet.size * TileBoxSet.TileSize);
+                Controls.Add(tileBoxSet);
+            }
+
+            Rectangle screen = Screen.FromControl(this).Bounds;
+            Int32 screenSize = (screen.Width > screen.Height) ? screen.Height : screen.Width;
+
+            SetTileSize(screenSize / 36);
+
+            HouseObjectDefinition floor = CDLoader.HouseObjectDefinitionMap[0];
+            for (int i = 0; i < houseObjects.Length; i++)
+            {
+                houseObjects[i] = floor;
+            }
+
+            //
+            // Tests
+            //
+            /*
+            UInt32 index = (UInt32)houseObjects.Length - 33;
+            foreach (HouseObjectDefinition h in CDLoader.HouseObjectDefinitions)
+            {
+                foreach(HouseObjectStateDefinition state in h.states.Values)
+                {
+                    houseObjects[index--] = new TestHouseObject(h, state.bitmap, state.id.ToString());
+                }
+                houseObjects[index--] = floor;
+                /*
+                HouseObjectStateDefinition state0, state100;
+                if(h.states.TryGetValue(100, out state100))
+                {
+                    state0 = h.states[0];
+                    for (int i = 0; i < 32; i++)
+                    {
+                        for (int j = 0; j < 32; j++)
+                        {
+                            Color color1 = state0.bitmap.GetPixel(j, i);
+                            Color color2 = state100.bitmap.GetPixel(j, i);
+                            Int32 newRed = color1.R + color2.R;
+                            Int32 newGreen = color1.G + color2.G;
+                            Int32 newBlue = color1.B + color2.B;
+                            if (newRed > 255) newRed = 255;
+                            if (newGreen > 255) newGreen = 255;
+                            if (newBlue > 255) newBlue = 255;
+                            state0.bitmap.SetPixel(j, i, Color.FromArgb(0xFF,
+                                newRed, newGreen, newBlue));
+                        }
+                    }
+                    houseObjects[index--] = new TestHouseObject(h, state0.bitmap);
+                }
+                //
+            }
+        */
+
+        }
+
+
+
+
+
+        /*
+        class TestHouseObject : HouseObjectDefinition
+        {
+            public readonly Bitmap bitmap;
+            public readonly String extra;
+            public TestHouseObject(HouseObjectDefinition other, Bitmap bitmap, String extra)
+                : base(other.id, other.pathName, other.states)
+            {
+                this.bitmap = bitmap;
+                this.extra = extra;
+            }
+            public override Bitmap Bitmap
+            {
+                get
+                {
+                    return bitmap;
+                }
+            }
+            public override string Extra
+            {
+                get
+                {
+                    return extra;
+                }
+            }
+        }
+        */
+
+
+        public void SetTileSize(Int32 tileSize)
+        {
+            this.tileSize = tileSize;
+            for (int i = 0; i < tileBoxSets.Length; i++)
+            {
+                TileBoxSet tileBoxSet = tileBoxSets[i];
+                tileBoxSet.Location = new Point(tileBoxSet.x * tileSize,
+                    tileBoxSet.y * tileSize);
+                tileBoxSet.Size = new Size(tileBoxSet.size * tileSize,
+                    tileBoxSet.size * tileSize);
+                tileBoxSet.Invalidate();
+            }
+            Invalidate();
+        }
+
+
+        internal void MouseOverHouseObject(int houseObjectOffset)
+        {
+            HouseObjectDefinition houseObjectDefinition = houseObjects[houseObjectOffset];
+            if (houseObjectDefinition != this.currentMouseOverObject)
+            {
+                this.currentMouseOverObject = houseObjectDefinition;
+                this.label.Text = houseObjectDefinition.pathName;
+                this.label.Invalidate();
+            }
+        }
+        public void LoadMap(HouseObjectDefinition[] houseObjects)
+        {
+            Array.Copy(houseObjects, this.houseObjects, houseObjects.Length);
+            for (int i = 0; i < tileBoxSets.Length; i++)
+            {
+                tileBoxSets[i].Invalidate();
+            }
+            //Invalidate();
+            /*
+
+            Controls.Clear();
+            Label label = new Label();
+            label.Text = "Object";
+            Controls.Add(label);
+            label.Location = new Point(0, 0);
+            label.BackColor = Color.White;
+            for (int y = 0; y < 32; y++)
+            {
+                Int32 houseObjectOffset = (31 - y) * 32;
+                for (int x = 0; x < 32; x++)
+                {
+                    HouseObjectDefinition houseObject = houseObjects[houseObjectOffset + x];
+
+                    PictureBox pictureBox = new PictureBox();
+                    pictureBox.BorderStyle = BorderStyle.Fixed3D;
+                    pictureBox.Location = new Point(x * 32, y * 32);
+                    pictureBox.Size = new Size(32, 32);
+                    pictureBox.Image = houseObject.states[0].bitmap;
+                    pictureBox.MouseEnter += (s, e) =>
+                    {
+                        label.Text = houseObject.pathName;
+                    };
+                    Controls.Add(pictureBox);
+                }
+            }
+            Invalidate();
+             */
         }
     }
 
@@ -91,54 +382,11 @@ namespace CDViewer
             return dataHandler.DataFromClient;
         }
     }
-    public static class CDSha
-    {
-        public const String sharedServerSecretString =
-            "Please do not use this secret string to connect unfairly modded clients to the main server.  Keep in mind that this is an indie, open-source game made entirely by one person.  I am trusting you to do the right thing.  --Jason";
-        public static readonly Byte[] sharedServerSecret = Encoding.ASCII.GetBytes(sharedServerSecretString);
-
-        public static String Decrypt(Byte[] key, Byte[] encrypted)
-        {
-            Sha1 sha1 = new Sha1();
-
-            Byte[] baseChars = new Byte[encrypted.Length + 19];
-            UInt32 baseCharsLength = 0;
-
-            int counter = 0;
-            while (baseCharsLength < encrypted.Length)
-            {
-                Byte[] counterStringBytes = Encoding.ASCII.GetBytes(counter.ToString());
-                sha1.Add(counterStringBytes, 0, counterStringBytes.Length);
-                sha1.Add(key, 0, key.Length);
-                sha1.Add(sharedServerSecret, 0, sharedServerSecret.Length);
-                sha1.Add(counterStringBytes, 0, counterStringBytes.Length);
-
-                UInt32[] hash = sha1.Finish();
-
-                baseChars.BigEndianSetUInt32(baseCharsLength + 0, hash[0]);
-                baseChars.BigEndianSetUInt32(baseCharsLength + 4, hash[1]);
-                baseChars.BigEndianSetUInt32(baseCharsLength + 8, hash[2]);
-                baseChars.BigEndianSetUInt32(baseCharsLength + 12, hash[3]);
-                baseChars.BigEndianSetUInt32(baseCharsLength + 16, hash[4]);
-                baseCharsLength += 20;
-
-                sha1.Reset();
-                counter++;
-            }
-
-            Char[] decrypted = new Char[encrypted.Length];
-            for (int i = 0; i < decrypted.Length; i++)
-            {
-                decrypted[i] = (Char)(baseChars[i] ^ encrypted[i]);
-            }
-
-            return new String(decrypted);
-        }
-    }
-
 
     public class GameClientDataHandler
     {
+        static Boolean printTraffic = false;
+
         public const String RobAction = "action=start_rob_house";
         public const String MapEncryption = "map_encryption_key=";
 
@@ -171,13 +419,12 @@ namespace CDViewer
             if (length == 0)
             {
                 String rest = serverLineParser.Flush();
-                //if (rest != null) Console.WriteLine("[SERVER {0}] {1}", id, rest);
+                if (printTraffic) if (rest != null) Console.WriteLine("[SERVER {0}] {1}", id, rest);
 
-                Console.WriteLine("[SERVER {0}] [Closed]", id);
+                if(printTraffic) Console.WriteLine("[SERVER {0}] [Closed]", id);
                 if(clientSocket.Connected) clientSocket.Shutdown(SocketShutdown.Both);
                 return null;
             }
-
 
             clientSocket.Send(data, 0, (Int32)length, SocketFlags.None);
 
@@ -187,7 +434,7 @@ namespace CDViewer
             {
                 line = serverLineParser.GetLine();
                 if (line == null) break;
-                Console.WriteLine("[SERVER {0}] {1}", id, line);
+                if (printTraffic) Console.WriteLine("[SERVER {0}] {1}", id, line);
 
                 //
                 // Check for encrypted map
@@ -222,9 +469,9 @@ namespace CDViewer
             if (length == 0)
             {
                 String rest = clientLineParser.Flush();
-                if (rest != null) Console.WriteLine("[CLIENT {0}] {1}", id, rest);
+                if (printTraffic) if (rest != null) Console.WriteLine("[CLIENT {0}] {1}", id, rest);
 
-                Console.WriteLine("[CLIENT {0}] [Closed]", id);
+                if (printTraffic) Console.WriteLine("[CLIENT {0}] [Closed]", id);
                 if (serverSocket.Connected) serverSocket.Shutdown(SocketShutdown.Both);
                 return null;
             }
@@ -237,7 +484,7 @@ namespace CDViewer
             {
                 line = clientLineParser.GetLine();
                 if (line == null) break;
-                Console.WriteLine("[CLIENT {0}] {1}", id, line);
+                if (printTraffic) Console.WriteLine("[CLIENT {0}] {1}", id, line);
 
                 // Search for 'action=start_rob_house'
                 if (serverParseState == ServerParseState.Idle)
@@ -247,11 +494,16 @@ namespace CDViewer
                         Int32 encryptionKeyIndex = line.IndexOf(MapEncryption);
                         if (encryptionKeyIndex < 0) throw new FormatException(String.Format("Client Request had '{0}' but not '{1}'", RobAction, MapEncryption));
 
-                        String encryptionKeyString = line.Substring(encryptionKeyIndex + MapEncryption.Length, 40);
-                        nextMapEncryptionKey = new Byte[20];
-                        nextMapEncryptionKey.ParseHex(0, encryptionKeyString, 0, 40);
+                        nextMapEncryptionKey = new Byte[40];
+                        Encoding.ASCII.GetBytes(line, (Int32)(encryptionKeyIndex + MapEncryption.Length), 40,
+                            nextMapEncryptionKey, 0);
 
-                        Console.WriteLine("[INFO] Rob House key={0}", BitConverter.ToString(nextMapEncryptionKey));
+                        Console.Write("[INFO] Rob House key= (Byte array of characters) '");
+                        for (int i = 0; i < nextMapEncryptionKey.Length; i++)
+                        {
+                            Console.Write((Char)nextMapEncryptionKey[i]);
+                        }
+                        Console.WriteLine("'");
                         serverParseState = ServerParseState.BlankLine;
                     }
                 }

@@ -29,9 +29,18 @@ namespace CDViewer
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
+            this.SuspendLayout();
+            // 
+            // HouseViewerForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.ControlDark;
+            this.ClientSize = new System.Drawing.Size(284, 262);
+            this.Name = "HouseViewerForm";
             this.Text = "Form1";
+            this.ResumeLayout(false);
+
         }
 
         #endregion
