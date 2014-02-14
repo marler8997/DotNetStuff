@@ -15,6 +15,7 @@ namespace HackCastleDoctrineTest
     [TestClass]
     public class UnitTest1
     {
+        /*
         [TestMethod]
         public void TestMethod1()
         {
@@ -59,5 +60,6 @@ namespace HackCastleDoctrineTest
             Console.WriteLine("imageDescriptor : {0}", tgaHeader.imageDescriptor);
 
         }
+        */
     }
 }

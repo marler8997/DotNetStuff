@@ -7,22 +7,40 @@ Definitions
 ---------------------------------------------------------------------
 A "payload" is block of data. (Note: A block of no data can still be a payload)
 A "transmission" is a payload that has been sent from one end point to another.
-A "datagram" is a payload coupled with routing information to transmit the payload. (Note: A datagram can be a payload)
+A "datagram" is a payload embeded information to transmit itself.
 A transmission is "verifiable" if it has a mechanism for the sender to know it was received.
 A "full-duplex" connection is one where either end point can trasmit data simultaneously.
 A "half-duplex" connection is one where only one end point can transmit data at a time.
    
-Introduction
+What is CDP
 ---------------------------------------------------------------------
 CDP is a protocol to facilitate verifiable transmission of ordered payloads.
-The purpose of CDP is to provide new programming paradigms to be used in future protocols to outperform their counterparts based on other datagram based protocols like TCP or UDP.
+The purpose of CDP is to provide a faster network protocol that minimizes traffic and requires less processing than TCP but still provides the advantages of verifiable and ordered data.
 CDP differs from other datagram based protocols by providing a half-duplex connection and, like UDP, does not abstract datagram boundary information from the application (unlike TCP).
+Many existing network protocols use TCP but only use half-duplex communcation such as,
+	HTTP/HTTPS
+	RPC/NFS
+	FTP
+	DNS
+	SNMP
+	DHCP (and many more)
+In a half-duplex connection, the underlying protocol always knows where the next payload will be coming from.
+With this information the lower transport layer can make better decisions in knowing when to send ack packets, when to timeout, when to resend/request resends and
+ultimately in less packets needing to be sent, minimizing network traffic and the number of RTTs (round trip times) to wait for.
 
-Going from a full-duplex connection to half-duplex will create new APIs for designers to create new protocols on top of CDP or update old ones.
-The API exposes more control to the application which is good for some protocols and unnecessary for others, however, it provides an interface for the application to give the underlying transport the right kind of information in order for the lower layer to optimize network traffic.
-For example, because the connection is half-duplex, the CDP layer will always know where the next payload is coming from, which allows for more optimization at this layer of the stack.
+Unlike TCP, CDP is a payload protocol. Since TCP is a stream protocol, it does not provide payload boundaries, so TCP protocols
+that use payloads (many of them) must embed the payload information in their protocol.  With CDP this is no longer necessary.
 
-Since CDP does not abstract datagram boundary information, this allows protocols to use boundaries knowing it will be the same before and after transmission.
+Example TCP Protocols that use payloads:
+	HTTP uses the Content-Length header
+	RPC uses a frames that are reconstructed at the receiving end
+	...
+
+Note: Knowing the size of the payload before receiving it makes the receiving code both simpler and faster.
+      The other method of parsing payloads from a stream is to use special sequences to denote the separation of payloads.
+      The disadvantage of this method is that most of the time the data needs to be escaped in case these special sequences occur.
+      If there is no MAX_PAYLOAD size (which higher level protocols never have), the code that receives the payload may need
+      to resize the receive buffer while it's being received creating an unnecessary copy and making the receive loop more complex.	
 
 Underlying Protocol
 ---------------------------------------------------------------------
@@ -30,74 +48,41 @@ The CDP protocol requires an underlying protocol to handle the transmission of u
 CDP handles the re-ordering of payloads, transmission verification, and FullDuplex to HalfDuplex negotiation.
 UDP (User Datagram Protocol) is a compatible protocol to use underneath CDP.
 
-What Makes CDP Different
+Comparison
 ---------------------------------------------------------------------
 CDP does less than TCP but more than UDP.
 Unlike TCP which is stream based, CDP is a datagram protocol like UDP.
 TCP provides a full-duplex stream interface whereas CDP provides a half-duplex payload interface.
 UDP is a full-duplex payload interface but does not provide verifiable transmission or re-ordering.
 
-    | Interface | Duplex | Verifiable | Reorders   | HeaderSize  |
-------------------------------------------------------------------
-TCP |  Stream   |  Full  |    Yes     |   Yes      | 20          |
-------------------------------------------------------------------
-CDP | Payload   |  Half  |    Yes     |   Yes      | 10  (2+UDP) |
-------------------------------------------------------------------
-UDP | Payload   |  Full  |    No      |   No       |  8          |
-------------------------------------------------------------------
+    | Interface | Duplex | Verifiable | Reorders   |  HeaderSize  |
+-------------------------------------------------------------------
+TCP |  Stream   |  Full  |    Yes     |   Yes      |  20          |
+-------------------------------------------------------------------
+CDP | Payload   |  Half  |    Yes     |   Yes      | *10  (2+UDP) |
+-------------------------------------------------------------------
+UDP | Payload   |  Full  |    No      |   No       |   8          |
+-------------------------------------------------------------------
 
 *The actual CDP header is 2 bytes, however, CDP requires another protocol underneath it and 
  the comparable version of CDP to TCP and UDP is CDP on top of UDP.
 
 Performance Note
 ----------------------
-Comparing CDP to TCP and UDP allows us to establish a limit on the perfornace of CDP.
-When CDP is implemented above UDP tt cannot perform faster than UDP.
+Comparing CDP to TCP and UDP allows us to establish a limit on the performance of CDP.
+When CDP is implemented above UDP it cannot perform faster than UDP.
 Furthermore, if no packets are lost or out of order, the performance of CDP should approach the performance of UDP minus the time it takes to transmit and process the extra 2 bytes of header information.
 So, looking at the performance difference between TCP and UDP can provide an upper bound on the performance gains from TCP to CDP.
 
 
-
 NOTE: Maybe a stream protocol on top of CDP would be beneficial?
-
-****If a user protocol does not require a full-duplex connection or a stream interface, providing a half-duplex connection and a payload interface is much simpler for the user to use and also faster and less memory intensive for the underlying protocol.
-When the underlying protocol knows from which end point the next payload will come from, it allows for optimization of timeouts, ack packets, and knowing when to resend packets.
-The following is a list of protocols that run over TCP that do not need full-duplex communication.
-	HTTP/HTTPS
-	RPC/NFS
-	FTP
-	DNS
-	DHCP
-Here's a list of protocols that do use the full-duplex capabilities:
-	Telnet/SSH
-	VNC/RDP
-
-If the user protocol only needs half-duplex communication, it takes extra datagrams and more local memory to facilitate it as a full-duplex communication.
-A full-duplex api is much different than a half-duplex api.
-Current protocols that only use half-duplex communication can optimize and simplify their implementation if the underlying protocol provided a half-duplex api.
-
-To demonstrate the differences, let's take a look at an example.
-
-interface FullDuplex {
-   void Send(Payload payload);
-   Payload Receive();
-}
-
-interface HalfDuplexSender {
-   void Send(Payload payload);
-}
-interface HalfDuplexTransmitter : HalfDuplexSender {
-   void SendAndGiveUpTransmissionControl(Payload payload, HalfDuplexReceiver receiver);
-}
-interface HalfDuplexReceiver {
-   void GotPayload(Payload);
-   void GotTransmissionControl(HalfDuplexSender receiver);
-}
-
 
 -------------------------------------------------------------------------------------------
 Cdp Concepts
 -------------------------------------------------------------------------------------------
+
+The "Controller" is the name of the endpoint that can send payloads and the "Handler" can only
+receive payloads.
 
 ==============================================================
 CDP Rule 1: Every single payload in a cdp sequence occurs because
@@ -110,58 +95,38 @@ If this functionality is desired it should be done in a protocol below CDP.
 
 Examples:
 
-HTTP Cdp Conversation:
+  HTTP Cdp Conversation:
 
-Controller | Payload           | Reason            | Reason Details
--------------------------------------------------------------------------------
-Client     | Http Request      | AsynchronousEvent | User requested a web page
-Server     | Http Response     | TransferControl   | Server must respond to request
-
-
-HTTP Example
-----------------------
-
-Full Duplex:
-Server: Payload payload = fullDuplex.Receive();
-Client: fullDuplex.Send("GET / HTTP/1.1...");
-        payload = fullDuplex.Receive();
-Server: fullDuplex.Send("HTTP/1.1 200 OK...");
-
-Half Duplex:		
-Server: Receive(halfDuplexReceiver);
-Client: SendAndGiveUpTransmissionControl("GET / HTTP/1.1...", halfDuplexReceiver);
+  Controller | Payload           | Reason            | Reason Details
+  -------------------------------------------------------------------------------
+  Client     | Http Request1     | AsynchronousEvent | User requested a web page
+  Server     | Http Response1    | TransferControl   | Server must respond to request
+  Client     | Http Request2     | AsynchronousEvent | User requested a resource required for the initial requested page
+  Server     | Http Response2    | TransferControl   | Server must respond to request
+  
+  ...        
+  
+  Client     | Http RequestN     | AsynchronousEvent | User requesting the last resource for the initial requested page
+  Server     | Http ResponseN    | TransferControl   | Server must respond to request
+  
 
 
-
-FullDuplex vs HalfDuplex (This section needs work)
+FullDuplex vs HalfDuplex at a glance (needs work)
 --------------------------------------
-A full duplex implementation takes more memory because the protocol must always buffer incoming and outgoing data. (???)
-With a full duplex API the user is given more control than it needs. (???)
-Providing full duplex communication requires more traffic from the underlying protocol. (???)
-Also, the api for a full duplex system is much different than for a half-duplex system.
-This document contains a suggested api for calling into CDP and since it is half-duplex it 
-	
-
-Many of our current protocols which sit on top of existing datagram protocols 
-Many of these new programming paradigms come from CDP being half-duplex.
-
-
-
-
-
-
-
-
-
-Full-Duplex Datagrams to Half-Duplex Payloads
----------------------------------------------------------------------
-
-CDP differs from other datagram protocols because payload transmission is half duplex.
-This means that only one end point of a connection can send payloads at a time.
-
-However
-Unlike other datagram protocols, CDP is half-duplex which means that each end point
-
+ * A half duplex connection doesn't require separate buffers for outgoing and incoming data.
+   TCP requires more packet management to accomodate saving both incoming and outgoing packets for resends and buffering the stream.
+   CDP would only require one buffer which would switch modes (incoming vs outgoing) whenever Control was transferred.
+* A half duplex connection can reduce ACK packets
+   When TCP receives a packet, it can either send the ACK immediately in its own packet, or it can wait for the application
+   to send a response and include the ack in that packet.  Since TCP doesn't know whether the application is going
+   to send the response in a resonable time it will timeout waiting for data from the application and then send the ACK.
+   With CDP this timeout is unnecessary because the CDP protocol indicates whether or an an immediate ACK should be sent.
+   It can do this because since it is half duplex, there will either be 1) no response 2) an immediate response or 3) an asynchronous response.
+   The client always indicates which response it will be expecting in the payloads it sends so the receiver knows exactly what it is waiting for.
+* Better Timeouts and disconnect detection
+   With TCP the underlying protocol never knows if the application above is waiting for data from the connected end point or if the application
+   is just waiting for some event before it sends any data.
+   CDP always knows where the next data will be coming from.  This reduces the number of timeouts.
 
 
 The CDP Protocol
@@ -352,6 +317,10 @@ Applicable Packets: (All)
     Resend
     CheckConnection
     Halt
+    
+    
+More To Come
+------------------------
 
 Timeouts and Retries
 -------------------------------------------------------------------------------------------
@@ -382,8 +351,81 @@ RTO = Rb
 where b is a delay variance factor with a recommended value of 2.
 
 
+Sliding Window
+-------------------------------------------------------------------------------------------
+In order for CDP to be useful in the real world, it will probably need a sliding window.
+
+
 Algorithms
 -------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Protocols on top of CDP
+-------------------------------------------------------------------------------------------
+If a higher layer protocol does not require a full-duplex connection or a stream interface, providing a half-duplex connection and a payload interface allows for a tighter interface that doesn't allow misbehavior. 
+The user of a CDP client socket has no reason to be multithreaded as it will always know whether or not it is waiting for data from the other end point or if the other endpoint is waiting.
+Since CDP is half duplex it allows the implementation to make smarter decisions allowing it to be faster and less memory intensive.
+When the underlying protocol knows from which end point the next payload will come from, it allows for optimization of timeouts, ack packets, and knowing when to resend packets.
+The following is a list of protocols that run over TCP that do not need full-duplex communication.
+	HTTP/HTTPS
+	RPC/NFS
+	FTP
+	DNS
+	DHCP
+Here's a list of protocols that do use the full-duplex capabilities:
+	Telnet/SSH
+	VNC/RDP
+
+If the user protocol only needs half-duplex communication, it takes extra datagrams and more local memory to facilitate it as a full-duplex communication.
+A full-duplex api is much different than a half-duplex api.
+Current protocols that only use half-duplex communication can optimize and simplify their implementation if the underlying protocol provided a half-duplex api.
+
+To demonstrate the differences, let's take a look at an example.
+
+// Example Full Duplex Design
+interface FullDuplex {
+   void Send(Payload payload); // Can be called asynchronously anytime
+   Payload Receive();          // Can be called asynchronously anytime
+}
+
+fullDuplex.Send(payload);
+Payload payload = fullDuplex.Receive();
+
+new Thread(()=> { print(fullDuplex.Receive()); }).Start();
+
+while((String line = Console.ReadLine()) != null) {
+	fullDuplex.Send(new Payload(line));
+}
+
+
+
+// Example 1: Callback Design
+
+interface HalfDuplexCallbackSender {
+   void Send(Payload payload);
+   void SendAndGiveUpTransmissionControl(Payload payload, void (*GotPayload)(Payload payload) callback);
+}
+
+
+
+
+
+
+
+
+
 
 
 "Payload With Ack"

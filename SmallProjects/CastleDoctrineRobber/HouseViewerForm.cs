@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
@@ -49,6 +50,7 @@ namespace CDViewer
 
 
         static HouseViewerForm houseViewerForm;
+        static Thread listenThread;
 
         /// <summary>
         /// The main entry point for the application.
@@ -56,28 +58,87 @@ namespace CDViewer
         [STAThread]
         static void Main()
         {
-            //
-            // Initialize Static Variables
-            //
-            CDLoader.Load(CDLoader.DefaultInstallPath);
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            houseViewerForm = new HouseViewerForm();
+            try
+            {
 
-            //
-            // Start the listen thread
-            //
-            GameClientAcceptor acceptor = new GameClientAcceptor(EndPoints.EndPointFromIPOrHost("thecastledoctrine.net", 80));
-            TcpSelectServer2 selectServer = new TcpSelectServer2(new Byte[2048], new TcpSelectListener2[] {
-                new TcpSelectListener2(new IPEndPoint(IPAddress.Any, 80), 32, acceptor.Accept),
-            });
-            acceptor.selectServer = selectServer;
+                //String gameDirectory = @"C:\Users\Jonathan Marler\Desktop\CastleDoctrine_v31";
+                //String gameDirectory = @"D:\Tools\CastleDoctrine_v32";
+                String gameDirectory = Environment.CurrentDirectory;
 
-            Thread listenThread = new Thread(selectServer.Run);
-            listenThread.Name = "ListenThread";
-            listenThread.Start();
+                String cdServerHostname = "thecastledoctrine.net";
+                //String cdServerConnectorString = "gateway:proxy.houston.hp.com:8080%thecastledoctrine.net";
 
-            Application.Run(houseViewerForm);
+
+                //
+                // Initialize Static Variables
+                //
+                CDLoader.Load(gameDirectory);
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                houseViewerForm = new HouseViewerForm();
+
+                //
+                // Setup WebProxy
+                //
+                ISocketConnector cdConnector = null;
+
+                String gameSettingsPath = Path.Combine(gameDirectory, "settings");
+                String proxyFile = Path.Combine(gameSettingsPath, "webProxy.ini");
+                String proxyBackupFile = Path.Combine(gameSettingsPath, "webProxy.ini.backup");
+                if (!File.Exists(proxyFile))
+                {
+                    throw new InvalidOperationException(String.Format("WebProxy file '{0}' does not exist, maybe this version is incompatible", proxyFile));
+                }
+
+                // Backup the file (and get proxy settings)
+                if (File.Exists(proxyBackupFile))
+                {
+                    using (TextReader reader = new StreamReader(new FileStream(proxyBackupFile, FileMode.Open, FileAccess.Read, FileShare.Read)))
+                    {
+                        while (true)
+                        {
+                            String proxyString = reader.ReadLine();
+                            if (proxyString == null) break;
+                            if (proxyString.Length > 0)
+                            {
+                                cdConnector = ConnectorParser.ParseProxy("gateway:" + proxyString);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    File.Copy(proxyFile, proxyBackupFile);
+                }
+
+                using (TextWriter writer = new StreamWriter(new FileStream(proxyFile, FileMode.Create, FileAccess.Write)))
+                {
+                    writer.Write("localhost");
+                }
+
+
+                //
+                // Start the listen thread
+                //
+                EndPoint cdServerEndPoint = EndPoints.EndPointFromIPOrHost(cdServerHostname, 80);
+                GameClientAcceptor acceptor = new GameClientAcceptor(cdServerEndPoint, cdConnector);
+                TcpSelectServer2 selectServer = new TcpSelectServer2(new Byte[2048], new TcpSelectListener2[] {
+                    new TcpSelectListener2(new IPEndPoint(IPAddress.Any, 80), 32, acceptor.Accept),
+                });
+
+                acceptor.selectServer = selectServer;
+
+                listenThread = new Thread(selectServer.Run);
+                listenThread.Name = "ListenThread";
+                listenThread.Start();
+
+                Application.Run(houseViewerForm);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
         }
 
         public class TileBoxSet : Control
@@ -145,8 +206,10 @@ namespace CDViewer
 
         public HouseViewerForm()
         {
-
             InitializeComponent();
+
+
+            Text = "Castle Doctine Robber";
             //Width = 1024;
             //Height = 1024;
             AutoSize = true;
@@ -262,7 +325,11 @@ namespace CDViewer
         }
 
 
-
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            listenThread.Interrupt();
+            Environment.Exit(0);
+        }
 
 
         /*
@@ -327,57 +394,38 @@ namespace CDViewer
             {
                 tileBoxSets[i].Invalidate();
             }
-            //Invalidate();
-            /*
-
-            Controls.Clear();
-            Label label = new Label();
-            label.Text = "Object";
-            Controls.Add(label);
-            label.Location = new Point(0, 0);
-            label.BackColor = Color.White;
-            for (int y = 0; y < 32; y++)
-            {
-                Int32 houseObjectOffset = (31 - y) * 32;
-                for (int x = 0; x < 32; x++)
-                {
-                    HouseObjectDefinition houseObject = houseObjects[houseObjectOffset + x];
-
-                    PictureBox pictureBox = new PictureBox();
-                    pictureBox.BorderStyle = BorderStyle.Fixed3D;
-                    pictureBox.Location = new Point(x * 32, y * 32);
-                    pictureBox.Size = new Size(32, 32);
-                    pictureBox.Image = houseObject.states[0].bitmap;
-                    pictureBox.MouseEnter += (s, e) =>
-                    {
-                        label.Text = houseObject.pathName;
-                    };
-                    Controls.Add(pictureBox);
-                }
-            }
-            Invalidate();
-             */
         }
     }
 
     public class GameClientAcceptor
     {
         readonly EndPoint cdServerEndPoint;
+        readonly ISocketConnector connector;
+
         public TcpSelectServer2 selectServer;
         UInt32 nextID;
-        public GameClientAcceptor(EndPoint cdServerEndPoint)
+        public GameClientAcceptor(EndPoint cdServerEndPoint, ISocketConnector connector)
         {
             this.cdServerEndPoint = cdServerEndPoint;
+            this.connector = connector;
         }
         public SocketDataHandler Accept(Socket clientSocket)
         {
             Socket serverSocket = new Socket(cdServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            serverSocket.Connect(cdServerEndPoint);
+
+            if (connector == null)
+            {
+                serverSocket.Connect(cdServerEndPoint);
+            }
+            else
+            {
+                connector.Connect(serverSocket, cdServerEndPoint);
+            }
 
             GameClientDataHandler dataHandler = new GameClientDataHandler(nextID, clientSocket, serverSocket);
             selectServer.AddDataSocket(serverSocket, dataHandler.DataFromServer);
 
-            Console.WriteLine("[INFO] New Client/Server {0}", nextID);
+            //Console.WriteLine("[INFO] New Client/Server {0}", nextID);
             nextID++;
             return dataHandler.DataFromClient;
         }
@@ -498,12 +546,14 @@ namespace CDViewer
                         Encoding.ASCII.GetBytes(line, (Int32)(encryptionKeyIndex + MapEncryption.Length), 40,
                             nextMapEncryptionKey, 0);
 
+                        /*
                         Console.Write("[INFO] Rob House key= (Byte array of characters) '");
                         for (int i = 0; i < nextMapEncryptionKey.Length; i++)
                         {
                             Console.Write((Char)nextMapEncryptionKey[i]);
                         }
                         Console.WriteLine("'");
+                        */
                         serverParseState = ServerParseState.BlankLine;
                     }
                 }

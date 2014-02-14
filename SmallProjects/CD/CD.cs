@@ -160,8 +160,6 @@ public class HouseObjectDefinitionWithExtra : HouseObjectDefinition
 
 public static class CDLoader
 {
-    public const String DefaultInstallPath = @"C:\Users\Jonathan Marler\Desktop\CastleDoctrine_v31";
-
     static String gameInstallPath;
     static String houseObjectsPath;
     static readonly List<HouseObjectDefinition> houseObjectDefinitions = new List<HouseObjectDefinition>();
