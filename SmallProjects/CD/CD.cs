@@ -6,7 +6,72 @@ using System.IO;
 using System.Text;
 
 using More;
+using More.Net;
 
+public static class CDProxy
+{
+    static String proxyIniFile, proxyIniBackupFile;
+
+    public static ISocketConnector SetupProxyInterceptor(String gameInstallPath)
+    {
+        if (proxyIniFile != null) throw new InvalidOperationException("Proxy Interceptor has already been setup");
+
+        String gameSettingsPath = Path.Combine(gameInstallPath, "settings");
+        proxyIniFile = Path.Combine(gameSettingsPath, "webProxy.ini");
+        proxyIniBackupFile = Path.Combine(gameSettingsPath, "webProxy.ini.backup");
+
+        if (!File.Exists(proxyIniFile))
+        {
+            throw new InvalidOperationException(String.Format("WebProxy file '{0}' does not exist, maybe this version is incompatible", proxyIniFile));
+        }
+
+        ISocketConnector cdConnector;
+        if (File.Exists(proxyIniBackupFile))
+        {
+            cdConnector = GetProxy(proxyIniBackupFile);
+        }
+        else
+        {
+            cdConnector = GetProxy(proxyIniFile);
+            File.Move(proxyIniFile, proxyIniBackupFile);
+        }
+
+        using (TextWriter writer = new StreamWriter(new FileStream(proxyIniFile, FileMode.Create, FileAccess.Write)))
+        {
+            writer.Write("localhost");
+        }
+
+        return cdConnector;
+    }
+    public static void RestoreProxy()
+    {
+        if (proxyIniBackupFile != null && File.Exists(proxyIniBackupFile))
+        {
+            // Restore Proxy File
+            File.Delete(proxyIniFile);
+            File.Move(proxyIniBackupFile, proxyIniFile);
+            proxyIniFile = null;
+            proxyIniBackupFile = null;
+        }
+    }
+    static ISocketConnector GetProxy(String file)
+    {
+        using (TextReader reader = new StreamReader(new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read)))
+        {
+            while (true)
+            {
+                String proxyString = reader.ReadLine();
+                if (proxyString == null) break;
+                if (proxyString.Length > 0)
+                {
+                    proxyString = proxyString.Trim();
+                    return ConnectorParser.ParseProxy("gateway:" + proxyString);
+                }
+            }
+        }
+        return null;
+    }
+}
 public static class CDSha
 {
     public const String sharedServerSecretString =
@@ -225,16 +290,15 @@ public static class CDLoader
     {
         try
         {
-            if (CDLoader.gameInstallPath != null) throw new InvalidOperationException("CLLoader.Load has already been called");
+            if (CDLoader.gameInstallPath != null) throw new InvalidOperationException("CDLoader.Load has already been called");
             CDLoader.gameInstallPath = gameInstallPath;
 
             if (!Directory.Exists(gameInstallPath))
-                throw new InvalidOperationException(String.Format("Directory '{0}' does not exist", gameInstallPath));
-
+                throw new InvalidOperationException(String.Format("Game Directory '{0}' does not exist", gameInstallPath));
 
             houseObjectsPath = Path.Combine(gameInstallPath, Path.Combine("gameElements", "houseObjects"));
             if (!Directory.Exists(houseObjectsPath))
-                throw new InvalidOperationException(String.Format("Directory '{0}' does not exist", houseObjectsPath));
+                throw new InvalidOperationException(String.Format("Game Elements Directory '{0}' does not exist", houseObjectsPath));
 
             ByteBuffer imageLoadBuffer = new ByteBuffer(4096, 2048);
 

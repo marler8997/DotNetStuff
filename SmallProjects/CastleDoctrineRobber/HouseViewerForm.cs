@@ -47,10 +47,8 @@ namespace CDViewer
             houseViewerForm.Invoke((Action)(() => { houseViewerForm.LoadMap(mapObjects); }));
         }
 
-
-
         static HouseViewerForm houseViewerForm;
-        static Thread listenThread;
+        static TcpSelectServer2 selectServer;
 
         /// <summary>
         /// The main entry point for the application.
@@ -80,42 +78,7 @@ namespace CDViewer
                 //
                 // Setup WebProxy
                 //
-                ISocketConnector cdConnector = null;
-
-                String gameSettingsPath = Path.Combine(gameDirectory, "settings");
-                String proxyFile = Path.Combine(gameSettingsPath, "webProxy.ini");
-                String proxyBackupFile = Path.Combine(gameSettingsPath, "webProxy.ini.backup");
-                if (!File.Exists(proxyFile))
-                {
-                    throw new InvalidOperationException(String.Format("WebProxy file '{0}' does not exist, maybe this version is incompatible", proxyFile));
-                }
-
-                // Backup the file (and get proxy settings)
-                if (File.Exists(proxyBackupFile))
-                {
-                    using (TextReader reader = new StreamReader(new FileStream(proxyBackupFile, FileMode.Open, FileAccess.Read, FileShare.Read)))
-                    {
-                        while (true)
-                        {
-                            String proxyString = reader.ReadLine();
-                            if (proxyString == null) break;
-                            if (proxyString.Length > 0)
-                            {
-                                cdConnector = ConnectorParser.ParseProxy("gateway:" + proxyString);
-                                break;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    File.Copy(proxyFile, proxyBackupFile);
-                }
-
-                using (TextWriter writer = new StreamWriter(new FileStream(proxyFile, FileMode.Create, FileAccess.Write)))
-                {
-                    writer.Write("localhost");
-                }
+                ISocketConnector cdConnector = CDProxy.SetupProxyInterceptor(gameDirectory);
 
 
                 //
@@ -123,13 +86,13 @@ namespace CDViewer
                 //
                 EndPoint cdServerEndPoint = EndPoints.EndPointFromIPOrHost(cdServerHostname, 80);
                 GameClientAcceptor acceptor = new GameClientAcceptor(cdServerEndPoint, cdConnector);
-                TcpSelectServer2 selectServer = new TcpSelectServer2(new Byte[2048], new TcpSelectListener2[] {
+                selectServer = new TcpSelectServer2(new Byte[2048], new TcpSelectListener2[] {
                     new TcpSelectListener2(new IPEndPoint(IPAddress.Any, 80), 32, acceptor.Accept),
                 });
 
                 acceptor.selectServer = selectServer;
 
-                listenThread = new Thread(selectServer.Run);
+                Thread listenThread = new Thread(selectServer.Run);
                 listenThread.Name = "ListenThread";
                 listenThread.Start();
 
@@ -138,6 +101,10 @@ namespace CDViewer
             catch (Exception e)
             {
                 MessageBox.Show(e.ToString());
+            }
+            finally
+            {
+                CDProxy.RestoreProxy();
             }
         }
 
@@ -327,8 +294,7 @@ namespace CDViewer
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            listenThread.Interrupt();
-            Environment.Exit(0);
+            selectServer.Stop();
         }
 
 
