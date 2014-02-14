@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PacketCat", "TcpCap\TcpCap.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CastleDoctrineRobber", "CastleDoctrineRobber\CastleDoctrineRobber.csproj", "{677D11E4-92EA-4241-9778-3FB218A730D4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CastleDoctrineRobberILMerge", "CastleDoctrineRobber\CastleDoctrineRobberILMerge.csproj", "{B1370E63-9F7D-4925-90E5-A297C5330E3B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +79,16 @@ Global
 		{677D11E4-92EA-4241-9778-3FB218A730D4}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{677D11E4-92EA-4241-9778-3FB218A730D4}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{677D11E4-92EA-4241-9778-3FB218A730D4}.Release|Win32.ActiveCfg = Release|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{B1370E63-9F7D-4925-90E5-A297C5330E3B}.Release|Win32.ActiveCfg = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

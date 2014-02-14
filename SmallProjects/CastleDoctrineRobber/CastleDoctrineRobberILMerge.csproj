@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <BuildToolsPath>$(MSBuildProjectDirectory)\..\..\Build</BuildToolsPath>
+    <ProjectGuid>{B1370E63-9F7D-4925-90E5-A297C5330E3B}</ProjectGuid>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyTarget>Exe</AssemblyTarget>
+    <AssemblyName>CasleDoctrineRobber</AssemblyName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="CastleDoctrineRobber.csproj">
+      <Project>{677D11E4-92EA-4241-9778-3FB218A730D4}</Project>
+      <Name>CastleDoctrineRobber</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\More\More.csproj">
+      <Project>{9AF5441B-8208-44E6-9686-A29D8019FBD5}</Project>
+      <Name>More</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Net\More.Net.csproj">
+      <Project>{DA99C4F0-3EF4-4D75-8A28-A8789B19B96F}</Project>
+      <Name>More.Net</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CD\CD.csproj">
+      <Project>{DCF0F733-4D3B-4144-B162-54B4FF204A18}</Project>
+      <Name>CD</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(BuildToolsPath)\ILMergeProject2.include" />  
+</Project>
