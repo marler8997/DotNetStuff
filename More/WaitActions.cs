@@ -8,6 +8,12 @@ namespace More
     public delegate void WaitAction(WaitTimeAndAction waitTimeAndAction);
     public class WaitTimeAndAction
     {
+        public static Int32 DecreasingComparison(WaitTimeAndAction x, WaitTimeAndAction y)
+        {
+            return (x.stopwatchTicksToHandleAction > y.stopwatchTicksToHandleAction) ? -1 :
+                ((x.stopwatchTicksToHandleAction < y.stopwatchTicksToHandleAction) ? 1 : 0);
+        }
+
         Int64 stopwatchTicksToHandleAction;
         WaitAction waitAction;
 
@@ -36,6 +42,10 @@ namespace More
         public void SetNextWaitTime(Int64 now, Int32 millisFromNow)
         {
             this.stopwatchTicksToHandleAction = now + millisFromNow.MillisToStopwatchTicks();
+        }
+        public void SetNextWaitTimeFromNow(UInt32 millisFromNow)
+        {
+            this.stopwatchTicksToHandleAction = Stopwatch.GetTimestamp() + millisFromNow.MillisToStopwatchTicks();
         }
         public void SetNextAction(WaitAction newAction)
         {
@@ -68,28 +78,6 @@ namespace More
         {
             return (stopwatchTicksToHandleAction - now).StopwatchTicksAsInt32Milliseconds();
         }
-
-
-        static DecreasingComparerClass decreasingComparerInstance = null;
-        public static IComparer<WaitTimeAndAction> DecreasingComparer
-        {
-            get
-            {
-                if (decreasingComparerInstance == null)
-                {
-                    decreasingComparerInstance = new DecreasingComparerClass();
-                }
-                return decreasingComparerInstance;
-            }
-        }
-        class DecreasingComparerClass : IComparer<WaitTimeAndAction>
-        {
-            public Int32 Compare(WaitTimeAndAction x, WaitTimeAndAction y)
-            {
-                return (x.stopwatchTicksToHandleAction > y.stopwatchTicksToHandleAction) ? -1 :
-                    ((x.stopwatchTicksToHandleAction < y.stopwatchTicksToHandleAction) ? 1 : 0);
-            }
-        }
     }
 
 
@@ -120,7 +108,7 @@ namespace More
         {
             if (millisecondTolerance < 0) throw new ArgumentOutOfRangeException(String.Format("The millisecond tolerance must be a non-negative value but it is {0}", millisecondTolerance));
             this.millisecondTolerance = millisecondTolerance;
-            this.waitActions = new SortedList<WaitTimeAndAction>(128, 128, WaitTimeAndAction.DecreasingComparer);
+            this.waitActions = new SortedList<WaitTimeAndAction>(128, 128, WaitTimeAndAction.DecreasingComparison);
         }
 
         /// <summary>

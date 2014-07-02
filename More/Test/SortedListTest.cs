@@ -48,7 +48,7 @@ namespace More
 
 
 
-            SortedList<Int32> increasingList = new SortedList<Int32>(0, 1, Int32IncreasingComparer.Instance);
+            SortedList<Int32> increasingList = new SortedList<Int32>(0, 1, CommonComparisons.IncreasingInt32);
 
             for (int i = 0; i < 100; i++)
             {
@@ -86,7 +86,7 @@ namespace More
         {
             Random generator = new Random();
 
-            SortedList<Int32> decreasingList = new SortedList<Int32>(0, 1, Int32DecreasingComparer.Instance);
+            SortedList<Int32> decreasingList = new SortedList<Int32>(0, 1, CommonComparisons.DecreasingInt32);
 
             for (int i = 0; i < 100; i++)
             {
@@ -122,7 +122,7 @@ namespace More
         [TestMethod]
         public void TestRemoveFromStart()
         {
-            SortedList<Int32> list = new SortedList<Int32>(0, 1, Int32IncreasingComparer.Instance);
+            SortedList<Int32> list = new SortedList<Int32>(0, 1, CommonComparisons.IncreasingInt32);
 
             list.Add(1);
             list.Add(2);
@@ -147,7 +147,7 @@ namespace More
         [TestMethod]
         public void TestRemoveWithStrings()
         {
-            SortedList<String> list = new SortedList<String>(0, 1, StringComparer.InvariantCulture);
+            SortedList<String> list = new SortedList<String>(0, 1, StringComparer.InvariantCulture.Compare);
 
             list.Add("c");
             list.Add("a");
@@ -187,15 +187,12 @@ namespace More
 
             Assert.AreEqual("y", list.GetAndRemoveLastElement());
             AssertList(new String[] { "d" }, list);
-
-
-
         }
 
         [TestMethod]
         public void TestAddStrings()
         {
-            SortedList<String> list = new SortedList<String>(0, 100, StringComparer.InvariantCulture);
+            SortedList<String> list = new SortedList<String>(0, 100, StringComparer.InvariantCulture.Compare);
 
             AssertList(new String[] { }, list);
 

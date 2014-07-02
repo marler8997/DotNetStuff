@@ -7,10 +7,10 @@ Definitions
 ---------------------------------------------------------------------
 A "payload" is block of data. (Note: A block of no data can still be a payload)
 A "transmission" is a payload that has been sent from one end point to another.
-A "datagram" is a payload embeded information to transmit itself.
+A "datagram" is a payload embeded with the information to transmit itself.
 A transmission is "verifiable" if it has a mechanism for the sender to know it was received.
-A "full-duplex" connection is one where either end point can trasmit data simultaneously.
-A "half-duplex" connection is one where only one end point can transmit data at a time.
+A connection is "full-duplex" if each end point can trasmit payloads simultaneously.
+A connection is "half-duplex" if only one end point can transmit payloads at any given time.
    
 What is CDP
 ---------------------------------------------------------------------
@@ -26,7 +26,7 @@ Many existing network protocols use TCP but only use half-duplex communcation su
 	DHCP (and many more)
 In a half-duplex connection, the underlying protocol always knows where the next payload will be coming from.
 With this information the lower transport layer can make better decisions in knowing when to send ack packets, when to timeout, when to resend/request resends and
-ultimately in less packets needing to be sent, minimizing network traffic and the number of RTTs (round trip times) to wait for.
+ultimately results in less packets needing to be sent, minimizing network traffic and the number of RTTs (round trip times) to wait for.
 
 Unlike TCP, CDP is a payload protocol. Since TCP is a stream protocol, it does not provide payload boundaries, so TCP protocols
 that use payloads (many of them) must embed the payload information in their protocol.  With CDP this is no longer necessary.
@@ -120,7 +120,7 @@ FullDuplex vs HalfDuplex at a glance (needs work)
    When TCP receives a packet, it can either send the ACK immediately in its own packet, or it can wait for the application
    to send a response and include the ack in that packet.  Since TCP doesn't know whether the application is going
    to send the response in a resonable time it will timeout waiting for data from the application and then send the ACK.
-   With CDP this timeout is unnecessary because the CDP protocol indicates whether or an an immediate ACK should be sent.
+   With CDP this timeout is unnecessary because the CDP protocol indicates if an immediate ACK should be sent.
    It can do this because since it is half duplex, there will either be 1) no response 2) an immediate response or 3) an asynchronous response.
    The client always indicates which response it will be expecting in the payloads it sends so the receiver knows exactly what it is waiting for.
 * Better Timeouts and disconnect detection
@@ -203,7 +203,7 @@ One reason to send a heartbeat is to make sure that a connection stays open.
 Another is to respond to a CheckConnection request.
 
 Consider the following scenario: A client behind a NAT or PROXY connects to a public server, and gives control to the
-server.  If the client does not receive any datagrams for too long, lookup tables entries in the NAT or PROXY that route
+server.  If the client does not receive any datagrams for too long, lookup table entries in the NAT or PROXY that route
 datagrams from the server to the client will expire.  The server will no longer be able to send datagrams back to the client.
 However, the client can ensure these entries do not expire by sending heartbeats before the entries expire.
 
@@ -232,9 +232,9 @@ Closing the connection
 At any point in time, anyone can send a HALT datagram, which means the sender will no longer send or receive any datagrams.
 A Close datagram means that the sender wants to halt communications but will wait for the receiver to become ready or it will timeout.
    
-There are a few types of close sequences so the protocol on top of Cdp must determine which one to use.
+CDP supports three ways to close a connection:
 
-I   QuickHalt: Use if all payloads have been acknowledged and the current handler has a small receive timeout
+I   QuickHalt: Use if all payloads have been acknowledged and the current handler has a short receive timeout
 
    1. Controller sends Halt
    
@@ -257,9 +257,9 @@ Packet Loss Recovery
 -------------------------------------------------------------------------------------------
 Packet loss can be categorized by a complete loss of connection or the intermittent loss of packets.
 
-It is the responsibility of the application to determine when the cdp layer should request an ack for a payload.
+It is the responsibility of the application to determine when the CDP layer should request an ack for a payload.
 If the controller sends a payload and gives control to the handler, they can decide not to request an immediate ack for the payload
-they just sent if they know the maximum amount of time it will take for the endpoint to respond.
+they just sent if they know that the handler will respond or give control back in a reasonable amount of time.
 
 
 If there is intermittent loss of packets, and the controller is trying to send a sequence of packets, the handler will request resends for out
@@ -267,12 +267,8 @@ of order packets...otherwise, the controller will timeout either waiting for the
 
 
 
-
-
-
-
 -------------------------------------------------------------------------------------------
-Protocol types that should use CDP
+Protocol types that could use CDP
 -------------------------------------------------------------------------------------------
 
 One Way Transmitter
@@ -353,7 +349,8 @@ where b is a delay variance factor with a recommended value of 2.
 
 Sliding Window
 -------------------------------------------------------------------------------------------
-In order for CDP to be useful in the real world, it will probably need a sliding window.
+In order for CDP to be useful in the real world, it may need a sliding window or be on top of another protocol that
+facilitates a sliding window.
 
 
 Algorithms

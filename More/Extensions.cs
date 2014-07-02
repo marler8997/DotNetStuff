@@ -275,7 +275,7 @@ namespace More
             }
             return str.Substring(startOffset, peelLimit - startOffset);
         }
-        public static Boolean SubstringEquals(String str, Int32 offset, String compare)
+        public static Boolean SubstringEquals(this String str, Int32 offset, String compare)
         {
             if (offset + compare.Length > str.Length)
             {
@@ -576,9 +576,7 @@ namespace More
         }
         public static EnumType BigEndianReadUInt16Enum<EnumType>(this Byte[] bytes, UInt32 offset)
         {
-            return (EnumType)Enum.ToObject(typeof(EnumType), (UInt16)(
-                (0xFF00U & (bytes[offset    ] << 8)) |
-                (0x00FFU & (bytes[offset + 1]))));
+            return (EnumType)Enum.ToObject(typeof(EnumType), (UInt16)(bytes[offset] << 8 | bytes[offset + 1]));
         }
         //
         // Set 3-byte types
@@ -608,24 +606,24 @@ namespace More
         public static UInt32 BigEndianReadUInt24(this Byte[] bytes, UInt32 offset)
         {
             return (UInt32)(
-                (0x00FF0000U & (bytes[offset    ] << 16)) |
-                (0x0000FF00U & (bytes[offset + 1] <<  8)) |
-                (0x000000FFU & (bytes[offset + 2]      )) );
+                bytes[offset    ] << 16 |
+                bytes[offset + 1] <<  8 |
+                bytes[offset + 2]       );
         }
         public static EnumType BigEndianReadUInt24Enum<EnumType>(this Byte[] bytes, UInt32 offset)
         {
             return (EnumType)Enum.ToObject(typeof(EnumType), (UInt32)(
-                (0x00FF0000U & (bytes[offset    ] << 16)) |
-                (0x0000FF00U & (bytes[offset + 1] <<  8)) |
-                (0x000000FFU & (bytes[offset + 2]      )) ));
+                bytes[offset    ] << 16 |
+                bytes[offset + 1] <<  8 |
+                bytes[offset + 2]       ));
         }
         public static Int32 BigEndianReadInt24(this Byte[] bytes, UInt32 offset)
         {
             return (Int32)(
-                ( ((bytes[offset] & 0x80) == 0x80) ? 0xFF000000 : 0) | // Sign Extend
-                (0x00FF0000U & (bytes[offset    ] << 16)) |
-                (0x0000FF00U & (bytes[offset + 1] <<  8)) |
-                (0x000000FFU & (bytes[offset + 2]      )) );
+                ( ((bytes[offset] & 0x80) == 0x80) ? unchecked((Int32)0xFF000000) : 0) | // Sign Extend
+                bytes[offset    ] << 16 |
+                bytes[offset + 1] <<  8 |
+                bytes[offset + 2]       );
         }
         //
         // Set 4-byte types
@@ -674,10 +672,10 @@ namespace More
         public static Int32 BigEndianReadInt32(this Byte[] bytes, UInt32 offset)
         {
             return (Int32)(
-                (0xFF000000U & (bytes[offset    ] << 24)) |
-                (0x00FF0000U & (bytes[offset + 1] << 16)) |
-                (0x0000FF00U & (bytes[offset + 2] <<  8)) |
-                (0x000000FFU & (bytes[offset + 3]      )) );
+                bytes[offset    ] << 24 |
+                bytes[offset + 1] << 16 |
+                bytes[offset + 2] <<  8 |
+                bytes[offset + 3]       );
         }
         //
         // Set 8-byte types

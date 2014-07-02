@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Sockets;
 
 namespace More
@@ -52,13 +53,31 @@ namespace More
         {
             this.socket = socket;
         }
+        public void Dispose()
+        {
+            socket.ShutdownAndDispose();
+        }
         public void HandleData(Byte[] data, UInt32 offset, UInt32 length)
         {
             socket.Send(data, (Int32)offset, (Int32)length, SocketFlags.None);
         }
+    }
+    public class SocketSendToDataHandler : IDataHandler
+    {
+        public readonly Socket socket;
+        public readonly EndPoint to;
+        public SocketSendToDataHandler(Socket socket, EndPoint to)
+        {
+            this.socket = socket;
+            this.to = to;
+        }
         public void Dispose()
         {
             socket.ShutdownAndDispose();
+        }
+        public void HandleData(Byte[] data, UInt32 offset, UInt32 length)
+        {
+            socket.SendTo(data, (Int32)offset, (Int32)length, SocketFlags.None, to);
         }
     }
 }

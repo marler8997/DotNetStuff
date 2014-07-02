@@ -15,6 +15,36 @@ namespace More
     [TestClass]
     public class PerformanceChecks
     {
+        /*
+        [TestMethod]
+        public void PerformanceTestSortVsOrderby()
+        {
+            PerformanceTestArrayBuilderInt32(500);
+        }
+        public static void PerformanceTestSortVsOrderby(List<Object> l)
+        {
+            long before;
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000; i++)
+            {
+                l.Sort();
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 10000; i++)
+            {
+                l.Ord
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+        }
+        */
         [TestMethod]
         public void PerformanceTestArrayBuilder()
         {

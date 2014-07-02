@@ -29,7 +29,7 @@ namespace More
             this.objects = new ObjectType[initialCapacity];
             nextIndex = 0;
 
-            this.sortedFreeIndices = new SortedList<UInt32>(initialCapacity, extendLength, UInt32IncreasingComparer.Instance);
+            this.sortedFreeIndices = new SortedList<UInt32>(initialCapacity, extendLength, CommonComparisons.IncreasingUInt32);
             this.objectToIndexDictionary = new Dictionary<ObjectType, UInt32>();
         }
         public Boolean ThereExistsAllocatedObjectsThatAreFree()

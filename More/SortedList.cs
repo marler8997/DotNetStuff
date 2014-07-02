@@ -4,69 +4,25 @@ using System.Text;
 
 namespace More
 {
-    public class Int32IncreasingComparer : IComparer<Int32>
+    public static class CommonComparisons
     {
-        private static Int32IncreasingComparer instance = null;
-        public static Int32IncreasingComparer Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new Int32IncreasingComparer();
-                }
-                return instance;
-            }
-        }
-        private Int32IncreasingComparer() { }
-        public Int32 Compare(Int32 x, Int32 y)
+        public static Int32 IncreasingInt32(Int32 x, Int32 y)
         {
             return (x > y) ? 1 : ((x < y) ? -1 : 0);
         }
-    }
-    public class UInt32IncreasingComparer : IComparer<UInt32>
-    {
-        private static UInt32IncreasingComparer instance = null;
-        public static UInt32IncreasingComparer Instance
+        public static Int32 DecreasingInt32(Int32 x, Int32 y)
         {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new UInt32IncreasingComparer();
-                }
-                return instance;
-            }
+            return (x > y) ? -1 : ((x < y) ? 1 : 0);
         }
-        private UInt32IncreasingComparer() { }
-        public Int32 Compare(UInt32 x, UInt32 y)
+        public static Int32 IncreasingUInt32(UInt32 x, UInt32 y)
         {
             return (x > y) ? 1 : ((x < y) ? -1 : 0);
         }
-    }
-    public class Int32DecreasingComparer : IComparer<Int32>
-    {
-        private static Int32DecreasingComparer instance = null;
-        public static Int32DecreasingComparer Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new Int32DecreasingComparer();
-                }
-                return instance;
-            }
-        }
-        private Int32DecreasingComparer() { }
-        public Int32 Compare(Int32 x, Int32 y)
+        public static Int32 DecreasingUInt32(UInt32 x, UInt32 y)
         {
             return (x > y) ? -1 : ((x < y) ? 1 : 0);
         }
     }
-
-
-
     public class SortedList<T>
     {
         public T[] elements;
@@ -74,16 +30,18 @@ namespace More
 
         private readonly UInt32 extendLength;
 
-        private readonly IComparer<T> comparer;
+        private readonly Comparison<T> comparison;
 
-        public SortedList(UInt32 initialCapacity, UInt32 extendLength, IComparer<T> comparer)
+        public SortedList(UInt32 initialCapacity, UInt32 extendLength, Comparison<T> comparison)
         {
+            if (comparison == null) throw new ArgumentNullException("comparison");
+
             this.elements = new T[initialCapacity];
             this.count = 0;
 
             this.extendLength = extendLength;
 
-            this.comparer = comparer;
+            this.comparison = comparison;
         }
 
         public void Add(T newElement)
@@ -99,7 +57,7 @@ namespace More
             for (position = 0; position < count; position++)
             {
                 T element = elements[position];
-                if (comparer.Compare(newElement, element) <= 0)
+                if (comparison(newElement, element) <= 0)
                 {
                     // Move remaining elements
                     for (UInt32 copyPosition = count; copyPosition > position; copyPosition--)
@@ -126,7 +84,6 @@ namespace More
             }
             this.count = 0;
         }
-
         public T GetAndRemoveLastElement()
         {
             count--;
@@ -136,7 +93,6 @@ namespace More
 
             return element;
         }
-
         public void Remove(T element)
         {
             for (int i = 0; i < count; i++)
@@ -155,7 +111,6 @@ namespace More
             }
             throw new InvalidOperationException(String.Format("Element {0} was not in the list", element));
         }
-
         public void RemoveFromStart(UInt32 count)
         {
             if (count <= 0) return;

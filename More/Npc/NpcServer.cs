@@ -85,9 +85,9 @@ namespace More
         public static Int32 Backlog = 32;
         public static Int32 SingleThreadedReceiveBufferLength = 1024;
 
-        internal readonly INpcServerCallback callback;
-        internal readonly NpcExecutor npcExecutor;
-        internal readonly INpcHtmlGenerator htmlGenerator;
+        public readonly INpcServerCallback callback;
+        public readonly NpcExecutor npcExecutor;
+        public readonly INpcHtmlGenerator htmlGenerator;
         public readonly UInt16 port;
 
         TcpSelectServer selectServer;

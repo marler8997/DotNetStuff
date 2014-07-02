@@ -20,8 +20,6 @@ namespace More
         public UInt32 offset;
         public UInt32 length;
     }
-
-
     public class Allocater<T>
     {
         public const UInt32 DefaultExpandLength = 128;
@@ -57,15 +55,11 @@ namespace More
         }
     }
 
-
-
-
     public interface IBuffer
     {
         Byte[] Array { get; }
         void EnsureCapacityCopyData(Int32 capacity);
     }
-
 
     //
     // This class wraps a byte array that can be passed to and from functions

@@ -39,7 +39,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Ansi.cs" />
     <Compile Include="ApacheStyleConfig.cs" />
+    <Compile Include="Asn1.cs" />
     <Compile Include="BetterBitArray.cs" />
     <Compile Include="BigEndianSerialization.cs" />
     <Compile Include="ContextTypeFinder.cs" />
@@ -70,6 +72,8 @@
     <Compile Include="SelectSocketTunnels.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Snmp.cs" />
+    <Compile Include="StarExpression.cs" />
     <Compile Include="SymExp.cs" />
     <Compile Include="Sha1.cs" />
     <Compile Include="Sos.cs" />

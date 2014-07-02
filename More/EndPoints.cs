@@ -90,6 +90,18 @@ namespace More
                 throw new NoAddresForDomainNameException(ipOrHostName);
             return hostEntry.AddressList[0];
         }
+        public static IPEndPoint ToIPEndPoint(this EndPoint endPoint)
+        {
+            IPEndPoint ipEndPoint = endPoint as IPEndPoint;
+            if (ipEndPoint != null) return ipEndPoint;
+
+            DnsEndPoint dnsEndPoint = endPoint as DnsEndPoint;
+            if (dnsEndPoint != null) return dnsEndPoint.IPEndPoint;
+
+            // TODO: maybe try converting the end point to a string and perform a dns resolve
+
+            throw new InvalidOperationException("Could not convert end point to an IP address");
+        }
     }
     public class NoAddresForDomainNameException : Exception
     {

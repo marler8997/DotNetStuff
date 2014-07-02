@@ -81,6 +81,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteData.Test", "RemoteDa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteDataServer", "RemoteDataServer\RemoteDataServer.csproj", "{A2E44959-5693-4807-9FD3-BF2F5E8F6749}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UdpCat", "UdpCat\UdpCat.csproj", "{34BBFD31-D714-4663-9C4F-5FE23918F6C8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snmp", "Snmp\Snmp.csproj", "{BC778CEF-8EC5-4EBA-B0C4-0BE13B40FD79}"
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = Marler.Net.vsmdi
@@ -238,6 +242,14 @@ Global
 		{A2E44959-5693-4807-9FD3-BF2F5E8F6749}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2E44959-5693-4807-9FD3-BF2F5E8F6749}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2E44959-5693-4807-9FD3-BF2F5E8F6749}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34BBFD31-D714-4663-9C4F-5FE23918F6C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34BBFD31-D714-4663-9C4F-5FE23918F6C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34BBFD31-D714-4663-9C4F-5FE23918F6C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34BBFD31-D714-4663-9C4F-5FE23918F6C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC778CEF-8EC5-4EBA-B0C4-0BE13B40FD79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC778CEF-8EC5-4EBA-B0C4-0BE13B40FD79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC778CEF-8EC5-4EBA-B0C4-0BE13B40FD79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC778CEF-8EC5-4EBA-B0C4-0BE13B40FD79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

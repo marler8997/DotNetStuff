@@ -26,7 +26,7 @@ namespace More
 
             this.extendLength = extendLength;
 
-            this.sortedFreeIndices = new SortedList<UInt32>(initialFreeStackCapacity, freeStackExtendLength, UInt32IncreasingComparer.Instance);
+            this.sortedFreeIndices = new SortedList<UInt32>(initialFreeStackCapacity, freeStackExtendLength, CommonComparisons.IncreasingUInt32);
             this.objectToIndexDictionary = new Dictionary<ObjectType, UInt32>(objectComparer);
         }
         public UniqueIndexObjectDictionary(UInt32 initialFreeStackCapacity, UInt32 freeStackExtendLength,
@@ -37,7 +37,7 @@ namespace More
 
             this.extendLength = extendLength;
 
-            this.sortedFreeIndices = new SortedList<UInt32>(initialFreeStackCapacity, freeStackExtendLength, UInt32IncreasingComparer.Instance);
+            this.sortedFreeIndices = new SortedList<UInt32>(initialFreeStackCapacity, freeStackExtendLength, CommonComparisons.IncreasingUInt32);
             this.objectToIndexDictionary = new Dictionary<ObjectType, UInt32>();
         }
         private UInt32 GetFreeUniqueIndex()

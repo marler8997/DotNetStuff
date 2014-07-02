@@ -6,7 +6,7 @@ using System.Text;
 //
 // TODO: Finish implementing table syntax
 // TODO: Allow subclasses to be passed as parameters (means extra fields should be ignored)
-
+//
 namespace More
 {
     public class NpcInterface : Attribute { }

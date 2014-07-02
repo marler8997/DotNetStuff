@@ -43,6 +43,7 @@ namespace More.Net
         public readonly CLGenericArgument<UInt16> port;
         public readonly CLGenericArgument<TelnetWindowSize> windowSize;
         public readonly CLSwitch wantServerEcho;
+        public readonly CLSwitch disableColorDecoding;
 
         public TelnetOptions()
         {
@@ -56,6 +57,9 @@ namespace More.Net
 
             wantServerEcho = new CLSwitch('e', "Want Server To Echo", "Tries to negotiate with the server to make the server echo");
             Add(wantServerEcho);
+
+            disableColorDecoding = new CLSwitch('c', "nocolor", "Disables color decoding");
+            Add(disableColorDecoding);
         }
 
         public override void PrintUsageHeader()
@@ -66,6 +70,9 @@ namespace More.Net
 
     public class TelnetProgram
     {
+        public static readonly ConsoleColor DefaultConsoleForegroundColor = Console.ForegroundColor;
+        public static readonly ConsoleColor DefaultConsoleBackgroundColor = Console.BackgroundColor;
+
         static Int32 Main(string[] args)
         {
             TelnetOptions optionsParser = new TelnetOptions();
@@ -86,7 +93,7 @@ namespace More.Net
                 serverEndPoint = EndPoints.EndPointFromIPOrHostAndOptionalPort(serverIPOrHostAndOptionalPort, 23);
             }
 
-            TelnetClient client = new TelnetClient(optionsParser.wantServerEcho.set);
+            TelnetClient client = new TelnetClient(optionsParser.wantServerEcho.set, !optionsParser.disableColorDecoding.set);
 
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             if (serverEndPoint != null)

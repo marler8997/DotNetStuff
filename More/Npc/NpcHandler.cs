@@ -123,7 +123,7 @@ namespace More
             }
         }
     }
-    public abstract class NpcHandler : IDisposable
+    public class NpcHandler : IDisposable
     {
         protected readonly String clientString;
         protected readonly INpcServerCallback callback;
@@ -131,7 +131,7 @@ namespace More
         protected readonly NpcExecutor npcExecutor;
         protected readonly INpcHtmlGenerator npcHtmlGenerator;
 
-        protected NpcHandler(String clientString, INpcServerCallback callback, IDataHandler responseHandler, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
+        public NpcHandler(String clientString, INpcServerCallback callback, IDataHandler responseHandler, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
         {
             if (callback == null) throw new ArgumentNullException("callback");
             if (responseHandler == null) throw new ArgumentNullException("responseHandler");
@@ -312,8 +312,7 @@ namespace More
 
             return;
         }
-
-        protected void HandleLine(String line)
+        public void HandleLine(String line)
         {
             Byte[] response = null;
 
@@ -403,10 +402,10 @@ namespace More
         Byte[] CallCommandHandler(String call)
         {
             //
-            // This method call will always return a specifically formatted string.
+            // This method always returns a specifically formatted string.
             //    1. On Success   "Success <ReturnType> [<ReturnValue>]"
             //    3. On Exception "Exception <ExceptionMessage> <ExceptionType> <SerializedException>
-            //    2. On NpcError  "NpcError <ErrorCode> <Error Message>
+            //    2. On NpcError  "NpcError <ErrorCode> <ErrorMessage>
             //
             if (String.IsNullOrEmpty(call))
                 return Encoding.ASCII.GetBytes(NpcError(NpcErrorCode.InvalidCallSyntax, "missing method name"));
@@ -472,7 +471,7 @@ namespace More
                 {
                     NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
 #if WindowsCE
-                        listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
+                    listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
 #else
                     builder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
 #endif
