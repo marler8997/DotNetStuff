@@ -150,6 +150,15 @@ namespace CDViewer
                         pe.Graphics.DrawImage(houseObject.Bitmap, controlColOffset, controlRowOffset, house.tileSize, house.tileSize);
                             //new Point(controlColOffset, controlRowOffset));
 
+                        if (houseObject.id == 999)
+                        {
+                            pe.Graphics.DrawRectangle(house.goalPen,
+                                controlColOffset + house.quarterTileSize / 2,
+                                controlRowOffset + house.quarterTileSize / 2,
+                                house.tileSize - house.quarterTileSize,
+                                house.tileSize - house.quarterTileSize);
+                        }
+
                         String extra = houseObject.Extra;
                         if (extra != null)
                         {
@@ -169,7 +178,12 @@ namespace CDViewer
 
         readonly HouseObjectDefinition[] houseObjects = new HouseObjectDefinition[1024];
         readonly TileBoxSet[] tileBoxSets = new TileBoxSet[16];
+
+
         Int32 tileSize;
+        Int32 quarterTileSize;
+        Pen goalPen;
+
 
         public HouseViewerForm()
         {
@@ -211,8 +225,6 @@ namespace CDViewer
             };
             Controls.Add(zoomInButton);
 
-
-
             tileBoxSets[0]  = new TileBoxSet(this,  0,  0, 8);
             tileBoxSets[1]  = new TileBoxSet(this,  8,  0, 8);
             tileBoxSets[2]  = new TileBoxSet(this, 16,  0, 8);
@@ -232,10 +244,6 @@ namespace CDViewer
             for (int i = 0; i < tileBoxSets.Length; i++)
             {
                 TileBoxSet tileBoxSet = tileBoxSets[i];
-                //tileBoxSet.Location = new Point(tileBoxSet.x * TileBoxSet.TileSize,
-                //    tileBoxSet.y * TileBoxSet.TileSize);
-                //tileBoxSet.Size = new Size(tileBoxSet.size * TileBoxSet.TileSize,
-                //    tileBoxSet.size * TileBoxSet.TileSize);
                 Controls.Add(tileBoxSet);
             }
 
@@ -330,6 +338,10 @@ namespace CDViewer
         public void SetTileSize(Int32 tileSize)
         {
             this.tileSize = tileSize;
+            this.quarterTileSize = tileSize / 4;
+            this.goalPen = new Pen(Color.GreenYellow, quarterTileSize);
+
+
             for (int i = 0; i < tileBoxSets.Length; i++)
             {
                 TileBoxSet tileBoxSet = tileBoxSets[i];
