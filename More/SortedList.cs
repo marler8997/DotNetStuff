@@ -23,8 +23,39 @@ namespace More
             return (x > y) ? -1 : ((x < y) ? 1 : 0);
         }
     }
-    public class SortedList<T>
+    public class SortedList<T> : IList<T>
     {
+        public class Enumerator : IEnumerator<T>
+        {
+            public readonly SortedList<T> list;
+            public UInt32 state;
+            public Enumerator(SortedList<T> list)
+            {
+                this.list = list;
+                this.state = UInt32.MaxValue;
+            }
+            public void Reset()
+            {
+                this.state = UInt32.MaxValue;
+            }
+            public void Dispose()
+            {
+            }
+            public T Current
+            {
+                get { return list.elements[this.state]; }
+            }
+            object System.Collections.IEnumerator.Current
+            {
+                get { return list.elements[this.state]; }
+            }
+            public Boolean MoveNext()
+            {
+                state++;
+                return state < list.count;
+            }
+        }
+
         public T[] elements;
         public UInt32 count;
 
@@ -43,7 +74,47 @@ namespace More
 
             this.comparison = comparison;
         }
-
+        public T this[int i]
+        {
+            get { return elements[i]; }
+            set { throw new InvalidOperationException("Cannot set an element to a specific index on a SortedList"); }
+        }
+        public Boolean IsReadOnly
+        {
+            get { return false; }
+        }
+        public Int32 Count { get { return (Int32)this.count; } }
+        public Boolean Contains(T item)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (item.Equals(elements[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public Int32 IndexOf(T item)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                T listItem = elements[i];
+                if (listItem.Equals(item)) return i;
+            }
+            return -1;
+        }
+        public void CopyTo(T[] array, Int32 arrayIndex)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                array[arrayIndex++] = elements[i];
+            }
+        }
+        public void Insert(int index, T item)
+        {
+            throw new InvalidOperationException("Cannot insert an element at a specific index on a SortedList");
+        }
         public void Add(T newElement)
         {
             if (count >= elements.Length)
@@ -93,23 +164,27 @@ namespace More
 
             return element;
         }
-        public void Remove(T element)
+        public Boolean Remove(T element)
         {
             for (int i = 0; i < count; i++)
             {
                 if (element.Equals(elements[i]))
                 {
-                    while (i < count - 1)
-                    {
-                        elements[i] = elements[i + 1];
-                        i++;
-                    }
-                    elements[i] = default(T); // Delete reference to this object
-                    count--;
-                    return;
+                    RemoveAt(i);
+                    return true;
                 }
             }
-            throw new InvalidOperationException(String.Format("Element {0} was not in the list", element));
+            return false;
+        }
+        public void RemoveAt(int index)
+        {
+            while (index < count - 1)
+            {
+                elements[index] = elements[index + 1];
+                index++;
+            }
+            elements[index] = default(T); // Delete reference to this object
+            count--;
         }
         public void RemoveFromStart(UInt32 count)
         {
@@ -133,6 +208,14 @@ namespace More
                     this.elements[this.count + i] = default(T);
                 }
             }
+        }
+        public IEnumerator<T> GetEnumerator()
+        {
+            return new Enumerator(this);
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return new Enumerator(this);
         }
     }
 }

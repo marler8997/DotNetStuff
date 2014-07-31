@@ -15,6 +15,324 @@ namespace More
     [TestClass]
     public class PerformanceChecks
     {
+        public static String JsonEncodeSlower(String str)
+        {
+            if (str == null) return "null";
+            str = str.Trim();
+            if (str.Length <= 0) return "\"\"";
+            return String.Format("\"{0}\"", str.Replace(@"\", @"\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t"));
+        }
+        [TestMethod]
+        public void PerformanceTestJsonEncode()
+        {
+            //PerformanceTestJsonEncode(3, null);
+            //PerformanceTestJsonEncode(3, "");
+            //PerformanceTestJsonEncode(3, 10000, "Hello\n\twhat\"hey");
+            PerformanceTestJsonEncode(3, 10000, "This string shouldn't need any encoding");
+        }
+        public void PerformanceTestJsonEncode(UInt32 runCount, UInt32 loopCount, String str)
+        {
+            long before;
+
+            //
+            // Run once to jit the code
+            //
+            StringExtensions.JsonEncode(str);
+            JsonEncodeSlower(str);
+
+            for (UInt32 run = 0; run < runCount; run++)
+            {
+                Console.WriteLine("Run {0}", run);
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < loopCount; i++)
+                {
+                    String a = str.JsonEncode();
+                }
+                Console.WriteLine("Fast: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Fast: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < loopCount; i++)
+                {
+                    String a = JsonEncodeSlower(str);
+                }
+                Console.WriteLine("Slow: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Slow: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        struct XYStruct
+        {
+            public readonly Int32 a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z;
+            public void TestMe()
+            {
+                Int32 x = a;
+                Int32 y = b;
+            }
+        }
+        XYStruct ReturnMe(XYStruct s) { return s; }
+        void ReadVariables(XYStruct s)
+        {
+            Int32 x = s.a;
+            Int32 y = s.b;
+        }
+        void ReadVariables(ref XYStruct s)
+        {
+            Int32 x = s.a;
+            Int32 y = s.b;
+        }
+        class XYClass
+        {
+            public readonly Int32 a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z;
+            public void TestMe()
+            {
+                Int32 x = a;
+                Int32 y = b;
+            }
+        }
+        XYClass ReturnMe(XYClass c) { return c; }
+        void ReadVariables(XYClass c)
+        {
+            Int32 x = c.a;
+            Int32 y = c.b;
+        }
+
+
+        [TestMethod]
+        public void PerformanceTestReturnStructVsClass()
+        {
+            PerformanceTestReturnStructVsClass(3);
+        }
+        public void PerformanceTestReturnStructVsClass(UInt32 runCount)
+        {
+            long before;
+
+            XYClass c = new XYClass();
+            XYStruct s = new XYStruct();
+
+            //
+            // Run once to jit the code
+            //
+            c = ReturnMe(c);
+            s = ReturnMe(s);
+
+            for (UInt32 run = 0; run < runCount; run++)
+            {
+                Console.WriteLine("Run {0}", run);
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                    c = ReturnMe(c);
+                }
+                Console.WriteLine("Class: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Class: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                    s = ReturnMe(s);
+                }
+                Console.WriteLine("Struct: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Struct: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            }
+        }
+        [TestMethod]
+        public void PerformanceTestStructVsClassMethod()
+        {
+            PerformanceTestStructVsClassMethod(3);
+        }
+        public void PerformanceTestStructVsClassMethod(UInt32 runCount)
+        {
+            long before;
+
+            XYClass c = new XYClass();
+            XYStruct s = new XYStruct();
+
+            //
+            // Run once to jit the code
+            //
+            c.TestMe();
+            s.TestMe();
+
+            for (UInt32 run = 0; run < runCount; run++)
+            {
+                Console.WriteLine("Run {0}", run);
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                    c.TestMe();
+                }
+                Console.WriteLine("Class: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Class: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                    s.TestMe();
+                }
+                Console.WriteLine("Struct: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Struct: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            }
+        }
+        [TestMethod]
+        public void PerformanceTestStructRefVsClass()
+        {
+            PerformanceTestStructRefVsClass(3);
+        }
+        public void PerformanceTestStructRefVsClass(UInt32 runCount)
+        {
+            long before;
+            
+            XYClass c = new XYClass();
+            XYStruct s = new XYStruct();
+
+            //
+            // Run once to jit the code
+            //
+            ReadVariables(c);
+            ReadVariables(s);
+            ReadVariables(ref s);
+
+            for (UInt32 run = 0; run < runCount; run++)
+            {
+                Console.WriteLine("Run {0}", run);
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                    ReadVariables(c);
+                }
+                Console.WriteLine("Class: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Class: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                    ReadVariables(s);
+                }
+                Console.WriteLine("Struct: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Struct: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                    ReadVariables(ref s);
+                }
+                Console.WriteLine("RefStruct: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("RefStruct: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            }
+        }
+
+        [TestMethod]
+        public void PerformanceTestSubstringCompare()
+        {
+            //PerformanceTestSubstringCompare("Hello there, this is an example string", "string", 31);
+            //PerformanceTestSubstringCompare(3, "string", "string", 0);
+            PerformanceTestSubstringCompare(6, "is this working string", "string", 17);
+        }
+        public void PerformanceTestSubstringCompare(UInt32 runCount, String haystack, String needle, Int32 offset)
+        {
+            long before;
+
+            //
+            // Run once to jit the code
+            //
+            haystack.Substring(offset).Equals(needle);
+            haystack.SubstringEquals(offset, needle);
+
+            for (UInt32 run = 0; run < runCount; run++)
+            {
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000; i++)
+                {
+                    haystack.Substring(offset).Equals(needle);
+                }
+                Console.WriteLine("Framework: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMicroseconds());
+                Console.WriteLine("Framework: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000; i++)
+                {
+                    haystack.SubstringEquals(offset, needle);
+                }
+                Console.WriteLine("Custom: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMicroseconds());
+                Console.WriteLine("Custom: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            }
+        }
+        [TestMethod]
+        public void PerformanceTestCaseVersusReturn()
+        {
+            long before;
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                Double a = StopwatchExtensions.StopwatchTicksAsDoubleMilliseconds(0);
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                Double a = (Double)StopwatchExtensions.StopwatchTicksAsInt64Milliseconds(10);
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+        }
+
+        [TestMethod]
+        public void PerformanceTestCharToUpperVsIsUpper()
+        {
+            long before;
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                Char.ToUpper('c');
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+            before = Stopwatch.GetTimestamp();
+            for (int i = 0; i < 1000000; i++)
+            {
+                Char.IsUpper('c');
+            }
+            Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
+
+            Console.WriteLine("GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+        }
         /*
         [TestMethod]
         public void PerformanceTestSortVsOrderby()

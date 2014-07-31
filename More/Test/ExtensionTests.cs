@@ -11,6 +11,82 @@ namespace More
     [TestClass]
     public class ExtensionTests
     {
+        /*
+        [TestMethod]
+        public void SubstringMethods()
+        {
+            try { Assert.AreEqual(0, StringExtensions.Match("", 0, "")); Assert.Fail(); }
+            catch (ArgumentOutOfRangeException) { }
+            try { Assert.AreEqual(0, StringExtensions.Match("A", 1, "")); Assert.Fail(); }
+            catch (ArgumentOutOfRangeException) { }
+            try { Assert.AreEqual(0, StringExtensions.Match("AB", 2, "")); Assert.Fail(); }
+            catch (ArgumentOutOfRangeException) { }
+
+            Assert.AreEqual(0, StringExtensions.Match("A", 0, ""));
+            Assert.AreEqual(0, StringExtensions.Match("A", 0, "X"));
+            Assert.AreEqual(1, StringExtensions.Match("A", 0, "A"));
+            Assert.AreEqual(1, StringExtensions.Match("A", 0, "ABCDEFG"));
+
+            Assert.AreEqual(0, StringExtensions.Match("AB", 0, ""));
+            Assert.AreEqual(0, StringExtensions.Match("AB", 0, "X"));
+            Assert.AreEqual(0, StringExtensions.Match("AB", 0, "XX"));
+            Assert.AreEqual(0, StringExtensions.Match("AB", 0, "XXX"));
+            Assert.AreEqual(0, StringExtensions.Match("AB", 0, "XXXXXXXXXXX"));
+            Assert.AreEqual(1, StringExtensions.Match("AB", 0, "A"));
+            Assert.AreEqual(1, StringExtensions.Match("AB", 0, "AX"));
+            Assert.AreEqual(1, StringExtensions.Match("AB", 0, "AXX"));
+            Assert.AreEqual(2, StringExtensions.Match("AB", 0, "AB"));
+            Assert.AreEqual(2, StringExtensions.Match("AB", 0, "ABX"));
+            Assert.AreEqual(2, StringExtensions.Match("AB", 0, "ABXX"));
+
+            Assert.AreEqual(0, StringExtensions.Match("ABC", 0, ""));
+            Assert.AreEqual(0, StringExtensions.Match("ABC", 0, "X"));
+            Assert.AreEqual(0, StringExtensions.Match("ABC", 0, "XX"));
+            Assert.AreEqual(0, StringExtensions.Match("ABC", 0, "XXX"));
+            Assert.AreEqual(0, StringExtensions.Match("ABC", 0, "XXXXXXXXXXX"));
+            Assert.AreEqual(1, StringExtensions.Match("ABC", 0, "A"));
+            Assert.AreEqual(1, StringExtensions.Match("ABC", 0, "AX"));
+            Assert.AreEqual(1, StringExtensions.Match("ABC", 0, "AXX"));
+            Assert.AreEqual(2, StringExtensions.Match("ABC", 0, "AB"));
+            Assert.AreEqual(2, StringExtensions.Match("ABC", 0, "ABX"));
+            Assert.AreEqual(2, StringExtensions.Match("ABC", 0, "ABXX"));
+            Assert.AreEqual(3, StringExtensions.Match("ABC", 0, "ABC"));
+            Assert.AreEqual(3, StringExtensions.Match("ABC", 0, "ABCX"));
+            Assert.AreEqual(3, StringExtensions.Match("ABC", 0, "ABCXX"));
+
+
+            Assert.AreEqual(0, StringExtensions.Match(" ABC", 1, ""));
+            Assert.AreEqual(0, StringExtensions.Match(" ABC", 1, "X"));
+            Assert.AreEqual(0, StringExtensions.Match(" ABC", 1, "XX"));
+            Assert.AreEqual(0, StringExtensions.Match(" ABC", 1, "XXX"));
+            Assert.AreEqual(0, StringExtensions.Match(" ABC", 1, "XXXXXXXXXXX"));
+            Assert.AreEqual(1, StringExtensions.Match(" ABC", 1, "A"));
+            Assert.AreEqual(1, StringExtensions.Match(" ABC", 1, "AX"));
+            Assert.AreEqual(1, StringExtensions.Match(" ABC", 1, "AXX"));
+            Assert.AreEqual(2, StringExtensions.Match(" ABC", 1, "AB"));
+            Assert.AreEqual(2, StringExtensions.Match(" ABC", 1, "ABX"));
+            Assert.AreEqual(2, StringExtensions.Match(" ABC", 1, "ABXX"));
+            Assert.AreEqual(3, StringExtensions.Match(" ABC", 1, "ABC"));
+            Assert.AreEqual(3, StringExtensions.Match(" ABC", 1, "ABCX"));
+            Assert.AreEqual(3, StringExtensions.Match(" ABC", 1, "ABCXX"));
+
+
+            Assert.AreEqual(0, StringExtensions.Match("  ABC", 2, ""));
+            Assert.AreEqual(0, StringExtensions.Match("  ABC", 2, "X"));
+            Assert.AreEqual(0, StringExtensions.Match("  ABC", 2, "XX"));
+            Assert.AreEqual(0, StringExtensions.Match("  ABC", 2, "XXX"));
+            Assert.AreEqual(0, StringExtensions.Match("  ABC", 2, "XXXXXXXXXXX"));
+            Assert.AreEqual(1, StringExtensions.Match("  ABC", 2, "A"));
+            Assert.AreEqual(1, StringExtensions.Match("  ABC", 2, "AX"));
+            Assert.AreEqual(1, StringExtensions.Match("  ABC", 2, "AXX"));
+            Assert.AreEqual(2, StringExtensions.Match("  ABC", 2, "AB"));
+            Assert.AreEqual(2, StringExtensions.Match("  ABC", 2, "ABX"));
+            Assert.AreEqual(2, StringExtensions.Match("  ABC", 2, "ABXX"));
+            Assert.AreEqual(3, StringExtensions.Match("  ABC", 2, "ABC"));
+            Assert.AreEqual(3, StringExtensions.Match("  ABC", 2, "ABCX"));
+            Assert.AreEqual(3, StringExtensions.Match("  ABC", 2, "ABCXX"));
+        }
+        */
         [TestMethod]
         public void UnderscoreToCamelCaseTest()
         {

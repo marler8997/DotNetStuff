@@ -65,6 +65,18 @@ namespace More
                 return diff;
             }
         }
+        public static void SaveCountsUpToGeneration(Int32 generation)
+        {
+            lock (typeof(GCExtensions))
+            {
+                VerifyLastGenCountSize(generation);
+
+                for (int i = 0; i <= generation; i++)
+                {
+                    lastGenCount[i] = GC.CollectionCount(i);
+                }
+            }
+        }
     }
 #endif
 
@@ -207,6 +219,66 @@ namespace More
     }
     public static class StringExtensions
     {
+        public static String JsonEncode(this String str)
+        {
+            if (str == null) return "null";
+
+            Boolean changed = false;
+            Int32 encodeLength = 2;
+            for (int i = 0; i < str.Length; i++)
+            {
+                Char c = str[i];
+                if (c == '\\' || c == '"' || c == '\r' || c == '\n' || c == '\t')
+                {
+                    changed = true;
+                    encodeLength += 2;
+                }
+                else
+                {
+                    encodeLength++;
+                }
+            }
+
+            if (!changed) return '"' + str + '"';
+
+            Char[] newString = new Char[encodeLength];
+            newString[0] = '"';
+            Int32 index = 1;
+            for (int i = 0; i < str.Length; i++)
+            {
+                Char c = str[i];
+                switch(c)
+                {
+                    case '\\':
+                        newString[index++] = '\\';
+                        newString[index++] = '\\';
+                        break;
+                    case '"':
+                        newString[index++] = '\\';
+                        newString[index++] = '"';
+                        break;
+                    case '\r':
+                        newString[index++] = '\\';
+                        newString[index++] = 'r';
+                        break;
+                    case '\n':
+                        newString[index++] = '\\';
+                        newString[index++] = 'n';
+                        break;
+                    case '\t':
+                        newString[index++] = '\\';
+                        newString[index++] = 't';
+                        break;
+                    default:
+                        newString[index++] = c;
+                    break;
+                }
+            }
+            newString[index++] = '"';
+
+            Debug.Assert(index == encodeLength);
+            return new String(newString);
+        }
         public static String Peel(this String str, out String rest)
         {
             return Peel(str, 0, out rest);
@@ -301,6 +373,54 @@ namespace More
             }
             return true;
         }
+        /*
+        public static Boolean SubstringEquals(this String str, Int32 offset, String compare)
+        {
+            if (offset + compare.Length > str.Length)
+            {
+                return false;
+            }
+            return str.Match(offset, compare) == compare.Length;
+        }
+        [System.Runtime.ConstrainedExecution.ReliabilityContract(
+            System.Runtime.ConstrainedExecution.Consistency.WillNotCorruptState,
+            System.Runtime.ConstrainedExecution.Cer.MayFail)]
+        public static unsafe Int32 Match(this String haystack, Int32 offset, String needle)
+        {
+            if (haystack == null || needle == null) throw new ArgumentNullException();
+
+            int originalLength = haystack.Length - offset;
+            if (originalLength <= 0) throw new ArgumentOutOfRangeException("offset");
+            if (needle.Length < originalLength)
+            {
+                originalLength = needle.Length;
+            }
+
+
+            fixed (char* fixedHaystackPtr = haystack)
+            {
+                fixed (char* fixedNeedlePtr = needle)
+                {
+                    char* haystackPtr = fixedHaystackPtr + offset;
+                    char* needlePtr = fixedNeedlePtr;
+
+                    //Console.WriteLine("Match('{0}', {1}, '{2}') haystackPtr = {3}, needlePtr = {4}",
+                    //    haystack, offset, needle, (long)haystackPtr, (long)needlePtr);
+
+                    for(int i = 0; i < originalLength; i++)
+                    {
+                        if(*haystackPtr != *needlePtr) return i;
+                        haystackPtr++;
+                        needlePtr++;
+                        //Console.WriteLine("Match('{0}', {1}, '{2}') haystackPtr = {3}, needlePtr = {4}",
+                        //    haystack, offset, needle, (long)haystackPtr, (long)needlePtr);
+                    }
+
+                    return originalLength;
+                }
+            }
+        }
+        */
         public static String[] SplitCorrectly(this String str, Char seperator)
         {
             if (str == null || str.Length == 0) return null;
@@ -854,6 +974,17 @@ namespace More
             array[offset + 1] = (Byte)(value >>  8);
             array[offset    ] = (Byte)(value      );
         }
+        public static void LittleEndianSetUInt64(this Byte[] array, UInt32 offset, UInt64 value)
+        {
+            array[offset + 7] = (Byte)(value >> 56);
+            array[offset + 6] = (Byte)(value >> 48);
+            array[offset + 5] = (Byte)(value >> 40);
+            array[offset + 4] = (Byte)(value >> 32);
+            array[offset + 3] = (Byte)(value >> 24);
+            array[offset + 2] = (Byte)(value >> 16);
+            array[offset + 1] = (Byte)(value >>  8);
+            array[offset    ] = (Byte)(value      );
+        }
         public static UInt32 LittleEndianReadUInt32(this Byte[] bytes, UInt32 offset)
         {
             return (UInt32)(
@@ -1091,6 +1222,8 @@ namespace More
         {
             return (UInt32)(stopwatchTicks * 1000 / Stopwatch.Frequency);
         }
+
+                
         public static Int64 StopwatchTicksAsInt64Milliseconds(this Int64 stopwatchTicks)
         {
             return (Int64)(stopwatchTicks * 1000 / Stopwatch.Frequency);
