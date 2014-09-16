@@ -76,7 +76,7 @@ namespace More
             //
             // This must be checked before IsPrimitive because IntPtr and UIntPtr are primitive types
             //
-            if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return "it is a pointer";
+            //if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return "it is a pointer";
 
             if (type.IsPrimitive || type == typeof(String) || type == typeof(Enum)) return null;
 
@@ -1059,6 +1059,14 @@ namespace More
                 else if (type == typeof(Double))
                 {
                     obj = Double.Parse(numberString);
+                }
+                else if (type == typeof(IntPtr))
+                {
+                    obj = new IntPtr(Int64.Parse(numberString));
+                }
+                else if (type == typeof(UIntPtr))
+                {
+                    obj = new UIntPtr(UInt64.Parse(numberString));
                 }
                 else
                 {

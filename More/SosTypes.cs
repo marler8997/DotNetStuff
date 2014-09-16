@@ -25,10 +25,11 @@ namespace More
         UInt32 = 6,
         Int64 = 7,
         UInt64 = 8,
-        Single = 9,
-        Double = 10,
-        Char = 11,
-        String = 12,
+        Pointer = 9,
+        Single = 10,
+        Double = 11,
+        Char = 12,
+        String = 13,
     }
     */
 
@@ -406,6 +407,8 @@ namespace More
             "Int64",
             "UInt64",
 
+            "Pointer",
+
             "Single",
             "Double",
 
@@ -432,6 +435,8 @@ namespace More
             SosPrimitiveDictionary.Add("Int64", typeof(Int64));
             SosPrimitiveDictionary.Add("UInt64", typeof(UInt64));
 
+            SosPrimitiveDictionary.Add("Pointer", typeof(UIntPtr));
+
             SosPrimitiveDictionary.Add("Single", typeof(Single));
             SosPrimitiveDictionary.Add("Double", typeof(Double));
 
@@ -451,6 +456,7 @@ namespace More
         public static String SosTypeName(this Type type)
         {
             if (type == typeof(void)) return "Void";
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return "Pointer";
 
             // These types are primitve to Sos so their type names are used instead of their FullName
             if (type.IsPrimitive || type == typeof(String)) return type.Name;
@@ -464,6 +470,7 @@ namespace More
         public static String SosShortTypeName(this Type type)
         {
             if (type == typeof(void)) return "Void";
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr)) return "Pointer";
 
             // These types are primitve to Sos so their type names are used instead of their FullName
             if (type.IsPrimitive || type == typeof(String) || type == typeof(Enum)) return type.Name;
@@ -480,7 +487,11 @@ namespace More
             //
             // Handle primitive types
             //
-            if ((type.IsPrimitive || type == typeof(String)) && type != typeof(IntPtr))
+            if (type == typeof(IntPtr) || type == typeof(UIntPtr))
+            {
+                return "Pointer";
+            }
+            if ((type.IsPrimitive || type == typeof(String)))
             {
                 return type.Name;
             }

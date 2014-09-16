@@ -80,6 +80,30 @@ namespace More
     }
 #endif
 
+    public static class ArrayExtensions
+    {
+        // Returns the index of the first element that is not equal, if they match,returns -1
+        public static Int32 DiffIndex<T>(this T[] a, T[] b)
+        {
+            if (a == null)
+            {
+                if (b != null && b.Length != 0) return 0;
+            }
+            
+            if (b == null)
+            {
+                return (a.Length == 0) ? -1 : 0;
+            }
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (i >= b.Length || !a[i].Equals(b[i])) return i;
+            }
+
+            return -1;
+        }
+    }
+
 
     public enum EncodingType
     {
@@ -593,50 +617,86 @@ namespace More
             DONE:
             return new String(buffer, 0, bufferIndex);
         }
-        /*
         public static String CamelToUpperUnderscoreCase(this String camelString)
         {
-            if (String.IsNullOrEmpty(camelString)) return camelString;
+            if (camelString.Length <= 0) return camelString;
+            Char c = camelString[0];
 
-            Char[] buffer = new Char[underscoreString.Length];
-            Int32 bufferIndex = 0;
-
-            Int32 offset = 0;
+            Boolean atUpper = Char.IsUpper(c);
+            Int32 nextIndex = 1;
+            UInt32 underscoreCount = 0;
 
             while (true)
             {
-                if (underscoreString[offset] != '_') break;
-                offset++;
-                if (offset >= underscoreString.Length) return "";
-            }
-
-            buffer[bufferIndex++] = Char.ToUpper(underscoreString[offset]);
-            offset++;
-
-            while (offset < underscoreString.Length)
-            {
-                Char c = underscoreString[offset];
-                if (c != '_')
+                if (nextIndex >= camelString.Length) break;
+                c = camelString[nextIndex++];
+                if (atUpper)
                 {
-                    buffer[bufferIndex++] = Char.ToLower(c);
+                    atUpper = Char.IsUpper(c);
                 }
                 else
                 {
-                    while (true)
+                    atUpper = Char.IsUpper(c);
+                    if(atUpper)
                     {
-                        offset++;
-                        if (offset >= underscoreString.Length) goto DONE;
-                        c = underscoreString[offset];
-                        if (c != '_') break;
+                        underscoreCount++;
                     }
-                    buffer[bufferIndex++] = Char.ToUpper(c);
                 }
-                offset++;
             }
-        DONE:
-            return new String(buffer, 0, bufferIndex);
+            
+            Char[] underscoreString = new Char[camelString.Length + underscoreCount];
+
+            c = camelString[0];
+            atUpper = Char.IsUpper(c);
+            nextIndex = 1;
+
+            if (atUpper)
+            {
+                underscoreString[0] = c;
+            }
+            else
+            {
+                underscoreString[0] = Char.ToUpper(c);
+            }
+            Int32 underscoreIndex = 1;
+
+            while (true)
+            {
+                if (nextIndex >= camelString.Length) break;
+                c = camelString[nextIndex++];
+                if (atUpper)
+                {
+                    atUpper = Char.IsUpper(c);
+                    if (atUpper)
+                    {
+                        underscoreString[underscoreIndex++] = c;
+                    }
+                    else
+                    {
+                        underscoreString[underscoreIndex++] = Char.ToUpper(c);
+                    }
+                }
+                else
+                {
+                    atUpper = Char.IsUpper(c);
+                    if (atUpper)
+                    {
+                        underscoreString[underscoreIndex++] = '_';
+                        underscoreString[underscoreIndex++] = c;
+                    }
+                    else
+                    {
+                        underscoreString[underscoreIndex++] = Char.ToUpper(c);
+                    }
+                }
+            }
+
+
+            if (underscoreIndex != underscoreString.Length) throw new InvalidOperationException(String.Format(
+                "CodeBug: CamelToUpperUnderscoreCase function has a bug, expected string to be {0} but was {1}", underscoreString.Length, underscoreIndex));
+
+            return new String(underscoreString);
         }
-        */
     }
     public static class Int24
     {

@@ -162,4 +162,44 @@ namespace More
             }
         }
     }
+    public class BitFieldBuilder
+    {
+        public readonly List<Byte> bytes;
+
+        public BitFieldBuilder()
+        {
+            this.bytes = new List<Byte>();
+        }
+        public Byte[] ToBitField()
+        {
+            return bytes.ToArray();
+        }
+        public void Zero()
+        {
+            for (int i = 0; i < bytes.Count; i++)
+            {
+                bytes[i] = 0;
+            }
+        }
+        public void SetBit(Int32 bitFieldIndex, Boolean on)
+        {
+            int byteIndex = bitFieldIndex / 8;
+            byte bitFlag = (byte)(1 << (bitFieldIndex % 8));
+
+            // Extend the list to fit the byte flag
+            while (bytes.Count <= byteIndex)
+            {
+                bytes.Add(0);
+            }
+
+            if (on)
+            {
+                bytes[byteIndex] |= bitFlag;
+            }
+            else
+            {
+                bytes[byteIndex] &= ((byte)~bitFlag);
+            }
+        }
+    }
 }

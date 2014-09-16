@@ -176,9 +176,9 @@ namespace More
                 htmlBuilder.Append(executionObject.objectName);
                 htmlBuilder.Append("</h2><hr/>");
 
-                for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
+                for (int interfaceIndex = 0; interfaceIndex < executionObject.ancestorNpcInterfaces.Count; interfaceIndex++)
                 {
-                    NpcInterfaceInfo interfaceInfo = executionObject.npcInterfaces[interfaceIndex];
+                    NpcInterfaceInfo interfaceInfo = executionObject.ancestorNpcInterfaces[interfaceIndex];
                     for(int methodIndex = 0; methodIndex < interfaceInfo.npcMethods.Length; methodIndex++)
                     {
                         NpcMethodInfo npcMethodInfo = interfaceInfo.npcMethods[methodIndex];

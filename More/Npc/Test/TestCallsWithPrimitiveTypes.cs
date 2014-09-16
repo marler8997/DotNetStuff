@@ -26,6 +26,8 @@ namespace More
         Single EchoSingle(Single s);
         Double EchoDouble(Double d);
         String EchoString(String s);
+        IntPtr EchoIntPtr(IntPtr i);
+        UIntPtr EchoUIntPtr(UIntPtr u);
     }
     class TestClass : TestClassNpcInterface
     {
@@ -45,6 +47,8 @@ namespace More
         public Single EchoSingle(Single s) { return s; }
         public Double EchoDouble(Double d) { return d; }
         public String EchoString(String s) { return s; }
+        public IntPtr EchoIntPtr(IntPtr i) { return i; }
+        public UIntPtr EchoUIntPtr(UIntPtr u) { return u; }
     }
 
     [TestClass]
@@ -215,6 +219,31 @@ namespace More
             Assert.AreEqual(typeof(String), returnObject.type);
             Assert.AreEqual("\"hello\"", (String)returnObject.value);
             Assert.AreEqual("\"\\\"hello\\\"\"", returnObject.valueSosSerializationString);
+
+
+            IntPtr intPtr = IntPtr.Zero;
+            returnObject = npcReflector.ExecuteWithObjects("TestClass.EchoIntPtr", intPtr);
+            Assert.AreEqual(typeof(IntPtr), returnObject.type);
+            Assert.AreEqual(intPtr, (IntPtr)returnObject.value);
+            Assert.AreEqual("0", returnObject.valueSosSerializationString);
+
+            intPtr = new IntPtr(1);
+            returnObject = npcReflector.ExecuteWithObjects("TestClass.EchoIntPtr", intPtr);
+            Assert.AreEqual(typeof(IntPtr), returnObject.type);
+            Assert.AreEqual(intPtr, (IntPtr)returnObject.value);
+            Assert.AreEqual("1", returnObject.valueSosSerializationString);
+
+            intPtr = new IntPtr(65535);
+            returnObject = npcReflector.ExecuteWithObjects("TestClass.EchoIntPtr", intPtr);
+            Assert.AreEqual(typeof(IntPtr), returnObject.type);
+            Assert.AreEqual(intPtr, (IntPtr)returnObject.value);
+            Assert.AreEqual("65535", returnObject.valueSosSerializationString);
+
+            intPtr = new IntPtr(-65535);
+            returnObject = npcReflector.ExecuteWithObjects("TestClass.EchoIntPtr", intPtr);
+            Assert.AreEqual(typeof(IntPtr), returnObject.type);
+            Assert.AreEqual(intPtr, (IntPtr)returnObject.value);
+            Assert.AreEqual("-65535", returnObject.valueSosSerializationString);
         }
         [TestMethod]
         public void CallsWithPrimitiveTypeStrings()
@@ -351,6 +380,16 @@ namespace More
             Assert.AreEqual(typeof(String), returnObject.type);
             Assert.AreEqual("hello", (String)returnObject.value);
             Assert.AreEqual("hello", returnObject.valueSosSerializationString);
+
+            returnObject = npcReflector.ExecuteWithStrings("TestClass.EchoIntPtr", "0");
+            Assert.AreEqual(typeof(IntPtr), returnObject.type);
+            Assert.AreEqual(IntPtr.Zero, (IntPtr)returnObject.value);
+            Assert.AreEqual("0", returnObject.valueSosSerializationString);
+
+            returnObject = npcReflector.ExecuteWithStrings("TestClass.EchoIntPtr", "9987");
+            Assert.AreEqual(typeof(IntPtr), returnObject.type);
+            Assert.AreEqual(new IntPtr(9987), (IntPtr)returnObject.value);
+            Assert.AreEqual("9987", returnObject.valueSosSerializationString);
         }
     }
 }

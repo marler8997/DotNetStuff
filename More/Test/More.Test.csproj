@@ -46,6 +46,7 @@
     <Compile Include="HttpTests.cs" />
     <Compile Include="RollingLogTest.cs" />
     <Compile Include="SnmpTest.cs" />
+    <Compile Include="SortedSetTests.cs" />
     <Compile Include="SymExpTest.cs" />
     <Compile Include="TestByteArraySerialization.cs" />
     <Compile Include="CommandLineParserTest.cs" />

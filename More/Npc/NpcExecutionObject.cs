@@ -6,41 +6,70 @@ namespace More
 {
     public class NpcInterfaceInfo
     {
-        static readonly Dictionary<Type, NpcInterfaceInfo> staticNpcInterfaceMap = new Dictionary<Type, NpcInterfaceInfo>();
-
-        internal static NpcInterfaceInfo Create(Type newInterfaceType)
+        public struct Set
         {
-            lock (staticNpcInterfaceMap)
+            public readonly Dictionary<Type, NpcInterfaceInfo> typeMap;
+            public Set(Dictionary<Type, NpcInterfaceInfo> typeMap)
             {
-                NpcInterfaceInfo info = TryLookup(newInterfaceType);
-                if (info != null) return info;
-                info = new NpcInterfaceInfo(newInterfaceType);
-                staticNpcInterfaceMap.Add(newInterfaceType, info);
-                return info;
+                this.typeMap = typeMap;
             }
-        }
-        public static NpcInterfaceInfo TryLookup(Type @interface)
-        {
-            lock (staticNpcInterfaceMap)
+            public NpcInterfaceInfo LookupOrCreate(Type interfaceType)
             {
                 NpcInterfaceInfo info;
-                if (staticNpcInterfaceMap.TryGetValue(@interface, out info)) return info;
-                return null;
+                if (typeMap.TryGetValue(interfaceType, out info)) return info;
+
+                info = new NpcInterfaceInfo(interfaceType);
+                typeMap.Add(interfaceType, info);
+
+                info.InitializeInterfaces(this);
+                return info;
+            }
+            public void GetParentInterfaces(Type type, List<NpcInterfaceInfo> parentNpcInterfaces, List<NpcInterfaceInfo> ancestorNpcInterfaces)
+            {
+                Type[] parentInterfaces = type.GetInterfaces();
+                if (parentInterfaces != null)
+                {
+                    for (int i = 0; i < parentInterfaces.Length; i++)
+                    {
+                        Type parentInterface = parentInterfaces[i];
+                        Attribute npcInterfaceAttribute = Attribute.GetCustomAttribute(parentInterface, typeof(NpcInterface));
+                        if (npcInterfaceAttribute == null)
+                        {
+                            GetParentInterfaces(parentInterface, parentNpcInterfaces, ancestorNpcInterfaces);
+                        }
+                        else
+                        {
+                            NpcInterfaceInfo parentNpcInterface = LookupOrCreate(parentInterface);
+                            if (parentNpcInterfaces != null && !parentNpcInterfaces.Contains(parentNpcInterface))
+                            {
+                                parentNpcInterfaces.Add(parentNpcInterface);
+                            }
+                            if (!ancestorNpcInterfaces.Contains(parentNpcInterface))
+                            {
+                                ancestorNpcInterfaces.Add(parentNpcInterface);
+                            }
+                            // Any more parent interfaces shouldn't be added so null is passed
+                            GetParentInterfaces(parentInterface, null, ancestorNpcInterfaces);
+                        }
+
+                    }
+                }
             }
         }
-
+        public readonly Type interfaceType;
         public readonly String name;
         public readonly String nameLowerInvariant;
 
-        public readonly Type interfaceType;
+        public List<NpcInterfaceInfo> parentNpcInterfaces;
+        public List<NpcInterfaceInfo> ancestorNpcInterfaces;
 
         public readonly NpcMethodInfo[] npcMethods;
 
         private NpcInterfaceInfo(Type interfaceType)
         {
+            this.interfaceType = interfaceType;
             this.name = interfaceType.Name;
             this.nameLowerInvariant = interfaceType.Name.ToLowerInvariant();
-            this.interfaceType = interfaceType;
 
             // Get Methods
             MethodInfo[] methods = interfaceType.GetMethods();
@@ -53,6 +82,14 @@ namespace More
                 MethodInfo methodInfo = methods[i];
                 npcMethods[i] = new NpcMethodInfo(methodInfo);
             }
+        }
+        public void InitializeInterfaces(NpcInterfaceInfo.Set interfaceSet)
+        {
+            if (parentNpcInterfaces != null) throw new InvalidOperationException("Interfaces already initialized");
+
+            this.parentNpcInterfaces = new List<NpcInterfaceInfo>();
+            this.ancestorNpcInterfaces = new List<NpcInterfaceInfo>();
+            interfaceSet.GetParentInterfaces(interfaceType, parentNpcInterfaces, ancestorNpcInterfaces);
         }
     }
     public interface INpcPreAndPostCalls
@@ -97,6 +134,9 @@ namespace More
             */
         }
     }
+
+
+
     public class NpcExecutionObject
     {
         public readonly Type type;
@@ -108,7 +148,8 @@ namespace More
         public Object executionLock;
         internal readonly INpcPreAndPostCalls preAndPostCall;
 
-        public readonly List<NpcInterfaceInfo> npcInterfaces;
+        public List<NpcInterfaceInfo> parentNpcInterfaces;
+        public List<NpcInterfaceInfo> ancestorNpcInterfaces;
 
         public NpcExecutionObject(Object invokeObject)
             : this(invokeObject, null, null, null)
@@ -126,85 +167,18 @@ namespace More
             this.objectNameLowerInvariant = this.objectName.ToLowerInvariant();
             this.executionLock = executionLock;
             this.preAndPostCall = preAndPostCall;
-
-            this.npcInterfaces = new List<NpcInterfaceInfo>();
-
-            Type[] interfaces = type.GetInterfaces();
-            if (interfaces == null || interfaces.Length <= 0) throw new InvalidOperationException(String.Format(
-                "Class '{0}' does not inherit any interfaces", type.Name));
-
-            //Console.WriteLine("[NpcDebug] '{0}' has {1} interfaces:", type.Name, interfaces.Length);
-            for(int i = 0; i < interfaces.Length; i++)
-            {
-                Type @interface = interfaces[i];
-                Attribute npcInterfaceAttribute = Attribute.GetCustomAttribute(@interface, typeof(NpcInterface));
-                if (npcInterfaceAttribute != null)
-                {
-                    AddInterface(@interface);
-                }
-            }
-
-            if (npcInterfaces.Count <= 0) throw new InvalidOperationException(String.Format(
-                "Class {0} did not implement any NpcInterfaces (An NpcInterface is an interface with the [NpcInterface] attribute)", this.type.Name));
-        }        
-        // Note: staticNpcInterfaceMap must be locked on before this method is called
-        void AddInterfaces(Type[] interfaces)
-        {
-            for (int i = 0; i < interfaces.Length; i++)
-            {
-                Type @interface = interfaces[i];
-                NpcInterfaceInfo npcInterface = NpcInterfaceInfo.TryLookup(@interface);
-                if(npcInterface != null)
-                {
-                    npcInterfaces.Add(npcInterface);
-                }
-                else
-                {
-                    //
-                    // Check if this interface is an Npc interface
-                    //
-                    Attribute npcInterfaceAttribute = Attribute.GetCustomAttribute(@interface, typeof(NpcInterface));
-                    if (npcInterfaceAttribute != null)
-                    {
-                        AddInterface(@interface);
-                    }
-                }
-            }
         }
-        void AddInterface(Type newInterfaceType)
+        public void InitializeInterfaces(NpcInterfaceInfo.Set interfaceSet)
         {
-            for (int i = 0; i < npcInterfaces.Count; i++)
+            if (parentNpcInterfaces == null)
             {
-                NpcInterfaceInfo existingLeafInterface = npcInterfaces[i];
-                if (newInterfaceType == existingLeafInterface.interfaceType)
-                {
-                    //Console.WriteLine("[NpcDebug] NpcInterface '{0}' has already been added to '{1}'",
-                    //    newInterfaceType.Name, objectName);
-                    return;
-                }
-                /*
-                if (newInterfaceType.IsAssignableFrom(existingLeafInterface.interfaceType))
-                {
-                    Console.WriteLine("[NpcDebug] NpcInterface '{0}' is a parent interface of '{1}'",
-                        newInterfaceType.Name, existingLeafInterface.name);
-                    return;
-                }
-                if (existingLeafInterface.interfaceType.IsAssignableFrom(newInterfaceType))
-                {
-                    Console.WriteLine("[NpcDebug] NpcInterface '{0}' is a parent interface of '{1}'",
-                        existingLeafInterface.name, newInterfaceType.Name);
-                    newNpcInterface = new NpcInterfaceInfo(newInterfaceType);
-                    //staticNpcInterfaceMap.Add(newInterfaceType, newNpcInterface);
-                    leafNpcInterfaces[i] = newNpcInterface;
-                    return;
-                }
-                */
-            }
+                this.parentNpcInterfaces = new List<NpcInterfaceInfo>();
+                this.ancestorNpcInterfaces = new List<NpcInterfaceInfo>();
+                interfaceSet.GetParentInterfaces(type, parentNpcInterfaces, ancestorNpcInterfaces);
 
-            //Console.WriteLine("[NpcDebug] Adding NpcInterface '{0}' to '{1}'",
-            //    newInterfaceType.Name, objectName);
-            //staticNpcInterfaceMap.Add(newInterfaceType, newNpcInterface);
-            npcInterfaces.Add(NpcInterfaceInfo.Create(newInterfaceType));
+                if (parentNpcInterfaces.Count <= 0) throw new InvalidOperationException(String.Format(
+                    "Class {0} did not implement any NpcInterfaces (An NpcInterface is an interface with the [NpcInterface] attribute)", type.Name));
+            }
         }
         public override string ToString()
         {

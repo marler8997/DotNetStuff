@@ -60,7 +60,7 @@ namespace More.Net
 
             parserState = RequestParserState.Method;
 
-            StringBuilder stringBuilder = new StringBuilder(InitialCapacityForMethod); ;
+            StringBuilder stringBuilder = new StringBuilder(InitialCapacityForMethod);
             String hValue = String.Empty;
             String hKey = String.Empty;
             String temp;

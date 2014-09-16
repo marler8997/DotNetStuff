@@ -15,6 +15,83 @@ namespace More
     [TestClass]
     public class PerformanceChecks
     {
+        public static Boolean BruteForceContains<T>(T[] array, T value) where T : IComparable<T>
+        {
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (array[i].Equals(value))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        [TestMethod]
+        public void PerformanceTestSortedContains()
+        {
+            //PerformanceTestSortedContains(2, 1000000, new Int32[] { 0 });
+            //PerformanceTestSortedContains(2, 1000000, new Int32[] { 0, 1 });
+            //PerformanceTestSortedContains(2, 1000000, new Int32[] { 0, 1, 2 });
+            //PerformanceTestSortedContains(2, 1000000, new Int32[] { 0, 1, 2, 3 });
+            //PerformanceTestSortedContains(2, 1000000, new Int32[] { 0, 1, 2, 3, 4, 5, 6, 7 });
+
+            //PerformanceTestSortedContains(2, 1000000, new Int32[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 });
+            
+            Int32[] array = new Int32[300];
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = i;
+            }
+            PerformanceTestSortedContains(2, 1000, array);
+            
+        }
+        public void PerformanceTestSortedContains(UInt32 runCount, UInt32 loopCount, Int32[] sorted)
+        {
+            long before;
+
+            //
+            // Run once to jit the code
+            //
+            Boolean contains;
+            contains = sorted.OrderedContains(0);
+            contains = BruteForceContains(sorted, 0);
+
+            for (UInt32 run = 0; run < runCount; run++)
+            {
+                Console.WriteLine("Run {0}", run);
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < loopCount; i++)
+                {
+                    contains = BruteForceContains(sorted, sorted[0] - 1);
+                    contains = BruteForceContains(sorted, sorted[sorted.Length - 1] + 1);
+                    for (int sortedIndex = 0; sortedIndex < sorted.Length; sortedIndex++)
+                    {
+                        contains = BruteForceContains(sorted, sorted[sortedIndex]);
+                    }
+                }
+                Console.WriteLine("NonSortedContains: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("NonSortedContains: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < loopCount; i++)
+                {
+                    contains = sorted.OrderedContains(sorted[0] - 1);
+                    contains = sorted.OrderedContains(sorted[sorted.Length - 1] + 1);
+                    for (int sortedIndex = 0; sortedIndex < sorted.Length; sortedIndex++)
+                    {
+                        contains = sorted.OrderedContains(sorted[sortedIndex]);
+                    }
+                }
+                Console.WriteLine("SortedContains: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("SortedContains: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            }
+        }
+
+
+
+
         public static String JsonEncodeSlower(String str)
         {
             if (str == null) return "null";

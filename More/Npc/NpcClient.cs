@@ -32,10 +32,12 @@ namespace More
     public class RemoteNpcInterface
     {
         public readonly String name;
+        public readonly String[] parentInterfaceNames;
         public readonly SosMethodDefinition[] methods;
-        public RemoteNpcInterface(String name, SosMethodDefinition[] methods)
+        public RemoteNpcInterface(String name, String[] parentInterfaceNames, SosMethodDefinition[] methods)
         {
             this.name = name;
+            this.parentInterfaceNames = parentInterfaceNames;
             this.methods = methods;
         }
     }
@@ -72,6 +74,15 @@ namespace More
                 if (interfaceName == null) throw UnexpectedClose(socketLineReader);
                 if (interfaceName.Length <= 0) break;
 
+                // Get parent interfaces
+                String[] parentInterfaceNames = null;
+                Int32 spaceIndex = interfaceName.IndexOf(' ');
+                if (spaceIndex >= 0)
+                {
+                    parentInterfaceNames = interfaceName.Substring(spaceIndex + 1).Split(' ');
+                    interfaceName = interfaceName.Remove(spaceIndex);
+                }
+
                 while (true)
                 {
                     String methodDefinitionLine = socketLineReader.ReadLine();
@@ -81,7 +92,7 @@ namespace More
                     SosMethodDefinition methodDefinition = SosTypes.ParseMethodDefinition(methodDefinitionLine, 0);
                     methodDefinitionList.Add(methodDefinition);
                 }
-                serverInterfaces.Add(interfaceName, new RemoteNpcInterface(interfaceName, methodDefinitionList.ToArray()));
+                serverInterfaces.Add(interfaceName, new RemoteNpcInterface(interfaceName, parentInterfaceNames, methodDefinitionList.ToArray()));
                 methodDefinitionList.Clear();
             }
 

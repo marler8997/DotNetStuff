@@ -13,7 +13,7 @@ namespace More
 
         public override ICollection<NpcInterfaceInfo> Interfaces
         {
-            get { return interfaceMap.Values; }
+            get { return interfaceSet.typeMap.Values; }
         }
         public override ICollection<NpcExecutionObject> ExecutionObjects
         {
@@ -28,7 +28,7 @@ namespace More
             get { return enumAndObjectTypesWithUniqueShortNamesDictionary; }
         }
 
-        readonly Dictionary<Type, NpcInterfaceInfo> interfaceMap;
+        readonly NpcInterfaceInfo.Set interfaceSet;
         readonly List<NpcMethodOverloadable> methodList;
         readonly Dictionary<String,NpcMethodOverloadable> withObjectLowerInvariantMethodDictionary;
         readonly Dictionary<String, List<NpcMethodOverloadable>> noObjectLowerInvariantMethodDictionary;
@@ -42,7 +42,7 @@ namespace More
 
             this.npcExecutionObjects = new NpcExecutionObject[executionObjects.Length];
 
-            this.interfaceMap                             = new Dictionary<Type,NpcInterfaceInfo>();
+            this.interfaceSet                             = new NpcInterfaceInfo.Set(new Dictionary<Type, NpcInterfaceInfo>());
             this.methodList                               = new List<NpcMethodOverloadable>();
             this.withObjectLowerInvariantMethodDictionary = new Dictionary<String, NpcMethodOverloadable>();
             this.noObjectLowerInvariantMethodDictionary   = new Dictionary<String, List<NpcMethodOverloadable>>();
@@ -53,8 +53,6 @@ namespace More
             // Find all methods that are apart of an [NpcInterface]
             //
             SosTypeSerializationVerifier verifier = new SosTypeSerializationVerifier();
-            HashSet<Type> hashSetToCheckInterfaces = new HashSet<Type>();
-
             for (int objectIndex = 0; objectIndex < executionObjects.Length; objectIndex++)
             {
                 Object executionObject = executionObjects[objectIndex];
@@ -63,26 +61,15 @@ namespace More
                 {
                     npcExecutionObject = new NpcExecutionObject(executionObject);
                 }
-                //Console.WriteLine("[NpcDebug] Adding NpcExecutionObject '{0}'", npcExecutionObject.objectName);
-
+                npcExecutionObject.InitializeInterfaces(this.interfaceSet);
                 npcExecutionObjects[objectIndex] = npcExecutionObject;
 
-                for (int interfaceIndex = 0; interfaceIndex < npcExecutionObject.npcInterfaces.Count; interfaceIndex++)
+                foreach (NpcInterfaceInfo interfaceInfo in npcExecutionObject.ancestorNpcInterfaces)
                 {
-                    NpcInterfaceInfo npcInterfaceInfo = npcExecutionObject.npcInterfaces[interfaceIndex];
-
-                    //
-                    // Add Interface to map if not already in it
-                    //
-                    if (!interfaceMap.ContainsKey(npcInterfaceInfo.interfaceType))
-                    {
-                        interfaceMap.Add(npcInterfaceInfo.interfaceType, npcInterfaceInfo);
-                    }
-
                     //
                     // Add all the methods
                     //
-                    NpcMethodInfo[] npcMethodInfos = npcInterfaceInfo.npcMethods;
+                    NpcMethodInfo[] npcMethodInfos = interfaceInfo.npcMethods;
                     for (int methodIndex = 0; methodIndex < npcMethodInfos.Length; methodIndex++)
                     {
                         NpcMethodInfo npcMethodInfo = npcMethodInfos[methodIndex];

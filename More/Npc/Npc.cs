@@ -81,7 +81,7 @@ namespace More
                 catch (Exception e)
                 {
                     throw new InvalidOperationException(String.Format("Failed to deserialize argument {0} ({1}) of type {2}: {3}",
-                        i + 1, parameterInfo.Name, parameterType.SosTypeName(), e.Message));
+                        i + 1, parameterInfo.Name, parameterType.SosTypeName(), e.Message), e);
                 }
                 if (deserialationIndex != parameterString.Length) throw new InvalidOperationException(String.Format(
                      "Argument {0} (type={1}) has {2} characters but deserializtion only used {3} characters",

@@ -47,28 +47,18 @@ namespace More
     {
         public static IEnumerator<T> GetArrayEnumerator<T>(this T[] array)
         {
-            if (array == null) return EmptyEnumerator<T>.Instance;
+            if (array == null) return default(EmptyEnumerator<T>);
             return new ArrayEnumerator<T>(array);
         }
         public static IEnumerator<T> GetArrayEnumerator<T>(this T[] array, UInt32 offset)
         {
             if (offset == 0) return GetArrayEnumerator(array);
-            if (array == null) return EmptyEnumerator<T>.Instance;
+            if (array == null) return default(EmptyEnumerator<T>);
             return new ArrayOffsetEnumerator<T>(array, offset);
         }
     }
-    public class EmptyEnumerator<T> : IEnumerator<T>
+    public struct EmptyEnumerator<T> : IEnumerator<T>
     {
-        private static EmptyEnumerator<T> instance = null;
-        public static EmptyEnumerator<T> Instance
-        {
-            get
-            {
-                if (instance == null) instance = new EmptyEnumerator<T>();
-                return instance;
-            }
-        }
-        private EmptyEnumerator() { }
         public T Current { get { throw new InvalidOperationException(); } }
         public void Dispose() { throw new NotImplementedException(); }
         Object IEnumerator.Current { get { throw new InvalidOperationException(); } }
@@ -90,12 +80,73 @@ namespace More
         public void Reset() { this.done = false; }
         public void Dispose() { }
     }
-    public class SingleObjectList<T> : IList<T> where T : class
+    public struct One<T> : IEnumerable<T>, IList<T>
+    {
+        public T value;
+        public One(T obj)
+        {
+            this.value = obj;
+        }
+        public IEnumerator<T> GetEnumerator()
+        {
+            return new SingleObjectEnumerator<T>(value);
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return new SingleObjectEnumerator<T>(value);
+        }
+        public Int32 IndexOf(T item)
+        {
+            return (item.Equals(value)) ? 0 : -1;
+        }
+        public void Insert(Int32 index, T item)
+        {
+            throw new NotSupportedException(String.Format("Cannot call Insert on One<{0}>", typeof(T).Name));
+        }
+        public void RemoveAt(Int32 index)
+        {
+            throw new NotSupportedException(String.Format("Cannot call RemoveAt on One<{0}>", typeof(T).Name));
+        }
+        public T this[int index]
+        {
+            get
+            {
+                if (index != 0) throw new ArgumentOutOfRangeException("index");
+                return value;
+            }
+            set
+            {
+                if (index != 0) throw new ArgumentOutOfRangeException("index");
+                this.value = value;
+            }
+        }
+        public void Add(T item)
+        {
+            throw new NotSupportedException(String.Format("Cannot call Add on One<{0}>", typeof(T).Name));
+        }
+        public void Clear()
+        {
+            throw new NotSupportedException(String.Format("Cannot call Clear on One<{0}>", typeof(T).Name));
+        }
+        public Boolean Contains(T item)
+        {
+            return this.value.Equals(item);
+        }
+        public void CopyTo(T[] array, Int32 arrayIndex)
+        {
+            array[arrayIndex] = this.value;
+        }
+        public Int32 Count { get { return 1; } }
+        public Boolean IsReadOnly { get { return false; } }
+        public bool Remove(T item)
+        {
+            throw new NotSupportedException(String.Format("Cannot call Remove on One<{0}>", typeof(T).Name));
+        }
+    }
+    /*
+    public struct SingleObjectList<T> : IList<T> where T : class
     {
         public T obj;
-        public SingleObjectList()
-        {
-        }
         public SingleObjectList(T obj)
         {
             this.obj = obj;
@@ -104,74 +155,8 @@ namespace More
         {
             this.obj = obj;
         }
-        public Int32 IndexOf(T item)
-        {
-            return (item == obj) ? 0 : -1;
-        }
-        public void Insert(Int32 index, T item)
-        {
-            if (index != 0) throw new ArgumentOutOfRangeException("index");
-            obj = item;
-        }
-        public void RemoveAt(Int32 index)
-        {
-            if (index != 0) throw new ArgumentOutOfRangeException("index");
-            this.obj = null;
-        }
-        public T this[int index]
-        {
-            get
-            {
-                if (index != 0) throw new ArgumentOutOfRangeException("index");
-                return obj;
-            }
-            set
-            {
-                if (index != 0) throw new ArgumentOutOfRangeException("index");
-                this.obj = value;
-            }
-        }
-        public void Add(T item)
-        {
-            if (this.obj != null) throw new InvalidOperationException("This list only holds one object");
-            this.obj = item;
-        }
-        public void Clear()
-        {
-            this.obj = null;
-        }
-        public Boolean Contains(T item)
-        {
-            return this.obj != null && this.obj == item;
-        }
-        public void CopyTo(T[] array, Int32 arrayIndex)
-        {
-            if (this.obj == null) return;
-            array[arrayIndex] = this.obj;
-        }
-        public Int32 Count { get { return (this.obj == null) ? 0 : 1; } }
-        public Boolean IsReadOnly { get { return false; } }
-
-        public bool Remove(T item)
-        {
-            if (this.obj == item)
-            {
-                this.obj = null;
-                return true;
-            }
-            return false;
-        }
-        public IEnumerator<T> GetEnumerator()
-        {
-            if (obj == null) return EmptyEnumerator<T>.Instance;
-            return new SingleObjectEnumerator<T>(this.obj);
-        }
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            if (obj == null) return EmptyEnumerator<T>.Instance;
-            return new SingleObjectEnumerator<T>(this.obj);
-        }
     }
+    */
     public class SingleObjectList : IList
     {
         public Object obj;
@@ -244,7 +229,7 @@ namespace More
         }
         public IEnumerator GetEnumerator()
         {
-            if (obj == null) return EmptyEnumerator<Object>.Instance;
+            if (obj == null) return default(EmptyEnumerator<Object>);
             return new SingleObjectEnumerator<Object>(this.obj);
         }
     }

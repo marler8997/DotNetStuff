@@ -100,7 +100,21 @@ namespace More
 
             Assert.AreEqual("TheString", "__THE_STRING".UnderscoreToCamelCase());
             Assert.AreEqual("TheString", "_tHe_sTrInG__".UnderscoreToCamelCase());
+        }
 
+        [TestMethod]
+        public void CamelToUnderscoreCaseTest()
+        {
+            Assert.AreEqual("THE_STRING", "TheString".CamelToUpperUnderscoreCase());
+            Assert.AreEqual("THE_STRING", "THeString".CamelToUpperUnderscoreCase());
+
+            Assert.AreEqual("THE_STRING", "TheSTring".CamelToUpperUnderscoreCase());
+            Assert.AreEqual("THE_STRING", "TheSTRing".CamelToUpperUnderscoreCase());
+            Assert.AreEqual("THE_STRING", "TheSTRIng".CamelToUpperUnderscoreCase());
+            Assert.AreEqual("THE_STRING", "TheSTRINg".CamelToUpperUnderscoreCase());
+            Assert.AreEqual("THE_STRING", "TheSTRING".CamelToUpperUnderscoreCase());
+
+            Assert.AreEqual("THE_STRING_AGAIN", "TheStringAgain".CamelToUpperUnderscoreCase());
         }
 
         public void ValidateLiteralString(String literal, String actual)

@@ -152,6 +152,13 @@ namespace More
         public readonly ConfigSwitch xmlCommments;
         public readonly ConfigStrings extraUsings;
 
+        public readonly ConfigString objectNamespace;
+
+        //
+        // Interface Generation Options
+        //
+        public readonly ConfigSwitch generateInterfaces;
+
         //
         // Type Generation Options
         //
@@ -162,7 +169,6 @@ namespace More
         //
         // Method Object Generation Options
         //
-        public readonly ConfigString objectNamespace;
 
         public readonly ConfigSwitch omitDefaultObjects;
         public readonly ConfigString defaultObjectFilterType;
@@ -195,12 +201,18 @@ namespace More
             extraUsings = new ConfigStrings("ExtraUsings", "Adds extra using statements", "namespace1 namespace2...");
             Add(extraUsings);
 
-            //
-            // Type Generation Options
-            //
             objectNamespace = new ConfigString("ObjectNamespace", "Put the generated client objects in the given namespace", "namespace");
             Add(objectNamespace);
 
+            //
+            // Interface Generation Options
+            //
+            generateInterfaces = new ConfigSwitch("GenerateInterfaces", "Enables interface generation", false);
+            Add(generateInterfaces);
+
+            //
+            // Type Generation Options
+            //
             generateTypes = new ConfigSwitch("GenerateTypes", "Enables type generation", true);
             Add(generateTypes);
 
@@ -272,11 +284,14 @@ namespace More
                 {
                     throw new FormatException("Missing the 'end' to mark the end of the configuration");
                 }
+                line = line.Trim();
+                if (String.IsNullOrEmpty(line)) continue;
+
                 if (line.StartsWith("//"))
                 {
-                    line = line.Substring(2);
+                    line = line.Substring(2).Trim();
                 }
-                line = line.Trim();
+                if (String.IsNullOrEmpty(line)) continue;
 
                 // Check if this is the end
                 if (line.StartsWith("end", StringComparison.CurrentCultureIgnoreCase)) return null;
@@ -420,6 +435,7 @@ namespace More
             }
             return new Filter(filterTypeIsInclusive, typeFilterRegexes);
         }
+
         public static Int32 Main(String[] args)
         {
             //
@@ -609,7 +625,8 @@ namespace More
                 }
                 output.WriteLine();
             }
-
+            output.WriteLine("using Pointer = System.Int64;");
+            output.WriteLine();
 
             String currentNamespace = null;
 
@@ -710,9 +727,10 @@ namespace More
 
             Dictionary<String,RemoteNpcInterface> serverInterfaces;
             List<RemoteNpcObject> remoteNpcObjects = NpcClient.GetServerInterface(socketLineReader, out serverInterfaces);
+            
 
             //
-            // Generate Interfaces
+            // Generate Interfaces Definitions
             //
             if (xmlComments)
             {
@@ -728,7 +746,22 @@ namespace More
                 {
                     output.WriteLine("        /// <summary>Saved Interface Defintion for '{0}'</summary>", interfaceName);
                 }
-                output.WriteLine("        public static readonly RemoteNpcInterface {0} = new RemoteNpcInterface(\"{0}\", new SosMethodDefinition[] {{", interfaceName);
+                output.Write("        public static readonly RemoteNpcInterface {0} = new RemoteNpcInterface(\"{0}\", ", interfaceName);
+                if (npcInterface.parentInterfaceNames == null || npcInterface.parentInterfaceNames.Length <= 0)
+                {
+                    output.Write("null");
+                }
+                else
+                {
+                    output.Write("new String[]{");
+                    for (int i = 0; i < npcInterface.parentInterfaceNames.Length; i++)
+                    {
+                        if (i > 0) output.Write(",");
+                        output.Write("\"{0}\"", npcInterface.parentInterfaceNames[i]);
+                    }
+                    output.Write("}");
+                }
+                output.WriteLine(", new SosMethodDefinition[] {");
                 for (int i = 0; i < npcInterface.methods.Length; i++)
                 {
                     SosMethodDefinition methodDefinition = npcInterface.methods[i];
@@ -758,6 +791,58 @@ namespace More
             output.WriteLine("    }");
 
             //
+            // Generate C# Interfaces
+            //
+            if (configuration.generateInterfaces.value)
+            {
+                foreach (KeyValuePair<String, RemoteNpcInterface> pair in serverInterfaces)
+                {
+                    String interfaceName = pair.Key;
+                    RemoteNpcInterface npcInterface = pair.Value;
+                    if (xmlComments)
+                    {
+                        output.WriteLine("    /// <summary>Interface Defintion for '{0}'</summary>", interfaceName);
+                    }
+                    output.Write("    public interface {0}", interfaceName);
+                    if (npcInterface.parentInterfaceNames != null)
+                    {
+                        Boolean atFirstInterface = true;
+                        foreach(String parentInterfaceName in npcInterface.parentInterfaceNames)
+                        {
+                            PrintInterface(output, ref atFirstInterface, parentInterfaceName);
+                        }
+                    }
+                    output.WriteLine();
+                    output.WriteLine("    {");
+                    for (int i = 0; i < npcInterface.methods.Length; i++)
+                    {
+                        SosMethodDefinition methodDefinition = npcInterface.methods[i];
+                        String clientMethodName = methodDefinition.methodName;
+                        if (clientMethodName.Equals("Dispose"))
+                        {
+                            clientMethodName = "RemoteDispose";
+                        }
+
+                        Boolean returnTypeIsVoid = methodDefinition.returnSosTypeName.Equals("Void");
+                        output.Write("        {0} {1}(", returnTypeIsVoid ? "void" : methodDefinition.returnSosTypeName, clientMethodName);
+
+                        if (methodDefinition.parameters != null)
+                        {
+                            Boolean atFirst = true;
+                            foreach (SosMethodDefinition.Parameter parameter in methodDefinition.parameters)
+                            {
+                                if (atFirst) { atFirst = false; } else { output.Write(", "); }
+                                output.Write("{0} {1}", parameter.sosTypeName, parameter.name);
+                            }
+                        }
+                        output.WriteLine(");");
+                    }
+                    output.WriteLine("    }");
+                }
+            }
+
+
+            //
             // Generate Default Objects
             //
             if (!configuration.omitDefaultObjects.value)
@@ -777,7 +862,8 @@ namespace More
                     String @namespace;
                     String objectShortName = SplitName(objectFullName, out @namespace);
 
-                    GenerateObject(output, xmlComments, objectShortName, objectFullName, remoteNpcObject.interfaces, false);
+                    GenerateObject(output, xmlComments, objectShortName, objectFullName,
+                        remoteNpcObject.interfaces, false, configuration.generateInterfaces.value);
                 }
             }
 
@@ -842,7 +928,8 @@ namespace More
                     }
                 }
 
-                GenerateObject(output, xmlComments, objectShortName, objectFullName, interfaces, customObjectConfig.useObjectName.value);
+                GenerateObject(output, xmlComments, objectShortName, objectFullName,
+                    interfaces, customObjectConfig.useObjectName.value, configuration.generateInterfaces.value);
             }
 
             // End all namespaces
@@ -851,14 +938,51 @@ namespace More
             return 0;
         }
 
+        static void PrintInterface(TextWriter output, ref Boolean atFirstInterface, String @interface)
+        {
+            if (atFirstInterface)
+            {
+                output.Write(" : ");
+                atFirstInterface = false;
+            }
+            else
+            {
+                output.Write(", ");
+            }
+            output.Write(@interface);
+        }
+
+
         static void GenerateObject(TextWriter output, Boolean xmlComments, String className, String npcObjectName,
-            RemoteNpcInterface[] interfaces, Boolean addObjectNameToMethods)
+            RemoteNpcInterface[] interfaces, Boolean addObjectNameToMethods, Boolean generateInterfaces)
         {
             if (xmlComments)
             {
                 output.WriteLine("    /// <summary>An NpcClient wrapper</summary>");
             }
-            output.WriteLine("    public class {0} {1}", className, (npcObjectName == null) ? "" : (addObjectNameToMethods ? ": INpcDynamicClient" : ": INpcClient"));
+            output.Write("    public class {0}", className);
+            
+            Boolean atFirstInterface = true;
+            if (npcObjectName != null)
+            {
+                if (addObjectNameToMethods)
+                {
+                    PrintInterface(output, ref atFirstInterface, "INpcDynamicClient");
+                }
+                else
+                {
+                    PrintInterface(output, ref atFirstInterface, "INpcClient");
+                }
+            }
+            if (generateInterfaces)
+            {
+                for (int i = 0; i < interfaces.Length; i++)
+                {
+                    PrintInterface(output, ref atFirstInterface, interfaces[i].name);
+                }
+            }
+
+            output.WriteLine();
             output.WriteLine("    {");
             if (xmlComments)
             {
@@ -1001,10 +1125,20 @@ namespace More
                 {
                     SosMethodDefinition methodDefinition = npcInterface.methods[methodIndex];
 
+                    String clientMethodName = methodDefinition.methodName;
+                    
+                    Boolean methodNameChanged = false;
+                    if (methodDefinition.methodName.Equals("Dispose"))
+                    {
+                        clientMethodName = "RemoteDispose";
+                        methodNameChanged = true;
+                    }
+
                     Boolean returnTypeIsVoid = methodDefinition.returnSosTypeName.Equals("Void");
                     if (xmlComments)
                     {
-                        output.WriteLine("        /// <summary>The {0} method</summary>", methodDefinition.methodName);
+                        output.WriteLine("        /// <summary>The {0} method.{1}</summary>", methodDefinition.methodName,
+                            methodNameChanged ? " The method name was changed to prevent conflicts." : "");
                         if (methodDefinition.parameters != null)
                         {
                             foreach (SosMethodDefinition.Parameter parameter in methodDefinition.parameters)
@@ -1018,7 +1152,7 @@ namespace More
                         }
                     }
 
-                    output.Write("        public {0} {1}(", returnTypeIsVoid ? "void" : methodDefinition.returnSosTypeName, methodDefinition.methodName);
+                    output.Write("        public {0} {1}(", returnTypeIsVoid ? "void" : methodDefinition.returnSosTypeName, clientMethodName);
 
                     Boolean atFirstParameter = true;
                     if (addObjectNameToMethods)

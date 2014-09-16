@@ -464,9 +464,9 @@ namespace More
         }
         void AddVerboseObjectMethods(StringBuilder builder, NpcExecutionObject executionObject)
         {
-            for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
+            for (int interfaceIndex = 0; interfaceIndex < executionObject.ancestorNpcInterfaces.Count; interfaceIndex++)
             {
-                NpcInterfaceInfo npcInterfaceInfo = executionObject.npcInterfaces[interfaceIndex];
+                NpcInterfaceInfo npcInterfaceInfo = executionObject.ancestorNpcInterfaces[interfaceIndex];
                 for (int methodIndex = 0; methodIndex < npcInterfaceInfo.npcMethods.Length; methodIndex++)
                 {
                     NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
@@ -495,9 +495,9 @@ namespace More
         }
         void AddShortObjectMethods(StringBuilder builder, NpcExecutionObject executionObject)
         {
-            for (int interfaceIndex = 0; interfaceIndex < executionObject.npcInterfaces.Count; interfaceIndex++)
+            for (int interfaceIndex = 0; interfaceIndex < executionObject.ancestorNpcInterfaces.Count; interfaceIndex++)
             {
-                NpcInterfaceInfo npcInterfaceInfo = executionObject.npcInterfaces[interfaceIndex];
+                NpcInterfaceInfo npcInterfaceInfo = executionObject.ancestorNpcInterfaces[interfaceIndex];
                 for (int methodIndex = 0; methodIndex < npcInterfaceInfo.npcMethods.Length; methodIndex++)
                 {
                     NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
@@ -625,6 +625,12 @@ namespace More
             foreach (NpcInterfaceInfo interfaceInfo in npcExecutor.Interfaces)
             {
                 listBuilder.Append(interfaceInfo.name);
+                for (int i = 0; i < interfaceInfo.parentNpcInterfaces.Count; i++)
+                {
+                    NpcInterfaceInfo parentNpcInterface = interfaceInfo.parentNpcInterfaces[i];
+                    listBuilder.Append(' ');
+                    listBuilder.Append(parentNpcInterface.name);
+                }
                 listBuilder.Append('\n');
 
                 for (int i = 0; i < interfaceInfo.npcMethods.Length; i++)
@@ -661,9 +667,9 @@ namespace More
             foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
             {
                 listBuilder.Append(executionObject.objectName);
-                for (int i = 0; i < executionObject.npcInterfaces.Count; i++)
+                for (int i = 0; i < executionObject.parentNpcInterfaces.Count; i++)
                 {
-                    NpcInterfaceInfo npcInterface = executionObject.npcInterfaces[i];
+                    NpcInterfaceInfo npcInterface = executionObject.parentNpcInterfaces[i];
                     listBuilder.Append(' ');
                     listBuilder.Append(npcInterface.name);
                 }

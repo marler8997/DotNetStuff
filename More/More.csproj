@@ -44,6 +44,7 @@
     <Compile Include="Asn1.cs" />
     <Compile Include="BetterBitArray.cs" />
     <Compile Include="BigEndianSerialization.cs" />
+    <Compile Include="Config.cs" />
     <Compile Include="ContextTypeFinder.cs" />
     <Compile Include="ArrayReflectors.cs" />
     <Compile Include="DataSync.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="Buffer.cs" />
     <Compile Include="IniParser.cs" />
     <Compile Include="OneOrMoreEnumerator.cs" />
+    <Compile Include="OrderedSet.cs" />
     <Compile Include="Pdl.cs" />
     <Compile Include="PlatformPath.cs" />
     <Compile Include="Ports.cs" />
