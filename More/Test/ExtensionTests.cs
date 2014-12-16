@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -11,6 +12,23 @@ namespace More
     [TestClass]
     public class ExtensionTests
     {
+        [TestMethod]
+        public void TestStopwatchTicksPrettyTime()
+        {
+            Assert.AreEqual("0 microseconds", (0L).StopwatchTicksAsPrettyTime(0));
+            Assert.AreEqual("0.0 microseconds", (0L).StopwatchTicksAsPrettyTime(1));
+
+            Console.WriteLine("Frequency {0}", Stopwatch.Frequency);
+
+            Assert.AreEqual("1 microseconds", ((Int64)(.000001D * (Double)Stopwatch.Frequency)).StopwatchTicksAsPrettyTime(0));
+            Assert.AreEqual("2 microseconds", ((Int64)(.000002D * (Double)Stopwatch.Frequency)).StopwatchTicksAsPrettyTime(0));
+
+            Assert.AreEqual("1 milliseconds", ((Int64)(.001D * (Double)Stopwatch.Frequency)).StopwatchTicksAsPrettyTime(0));
+
+            Assert.AreEqual("1 seconds", ((Int64)(1D * (Double)Stopwatch.Frequency)).StopwatchTicksAsPrettyTime(0));
+        }
+
+
         /*
         [TestMethod]
         public void SubstringMethods()

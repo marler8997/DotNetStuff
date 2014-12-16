@@ -1037,20 +1037,30 @@ namespace More.Net
             this.acceptHandler = acceptHandler;
         }
     }
+
+    /// <summary>Lock on the tcpListenSockets member to use the sockets</summary>
     public class SelectServerStaticTcpListeners : IDisposable
     {
         //
         // Listen Sockets
         //
-        readonly Socket[] tcpListenSockets;
+        /// <summary>
+        /// Use to access the tcp sockets
+        /// </summary>
+        public readonly Socket[] tcpListenSockets;
         readonly IDictionary<Socket, AcceptHandler> tcpListenSocketMap;
 
         //
         // Receive Sockets
         //
-        readonly List<Socket> tcpReceiveSocketList;
+        /// <summary>These sockets can be used if tcpListenSockets is locked on, however,
+        /// the list itself cannot be modified outside this class</summar>
+        public readonly List<Socket> tcpReceiveSocketList;
         readonly IDictionary<Socket, SocketHandlerMethods> tcpReceiveSocketMap;
 
+        /// <summary>
+        /// Note: Can be used if the code locks on tcpListenSockets
+        /// </summary>
         readonly ByteBuffer safeBuffer;
 
         Boolean keepRunning;

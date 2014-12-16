@@ -15,7 +15,7 @@ namespace More
     {
         public readonly Encoding encoding;
 
-        readonly ByteBuffer buffer;
+        public readonly ByteBuffer buffer;
         UInt32 nextStartOfLineOffset;
         UInt32 nextIndexToCheck;
         UInt32 dataOffsetLimit;
@@ -78,6 +78,44 @@ namespace More
             this.dataOffsetLimit = copyLength;
 
             return null;
+        }
+        public UInt32 GetLineBytes(out UInt32 outOffset)
+        {
+            while (this.nextIndexToCheck < this.dataOffsetLimit)
+            {
+                if (buffer.array[this.nextIndexToCheck] == '\n')
+                {
+                    outOffset = this.nextStartOfLineOffset;
+                    UInt32 nextLineLength = this.nextIndexToCheck - this.nextStartOfLineOffset;
+                    if(this.nextIndexToCheck > this.nextStartOfLineOffset && buffer.array[nextIndexToCheck - 1] == '\r')
+                    {
+                        nextLineLength--;
+                    }
+
+                    this.nextIndexToCheck++;
+                    this.nextStartOfLineOffset = this.nextIndexToCheck;
+                    return nextLineLength;
+                }
+                this.nextIndexToCheck++;
+            }
+
+            //
+            // Move remaining data to the beginning of the buffer
+            //
+            if (this.nextStartOfLineOffset <= 0 || this.nextStartOfLineOffset >= this.dataOffsetLimit)
+            {
+                outOffset = 0;
+                return 0;
+            }
+
+            UInt32 copyLength = this.dataOffsetLimit - this.nextStartOfLineOffset;
+            ArrayCopier.Copy(buffer.array, this.nextStartOfLineOffset, buffer.array, 0, copyLength);
+            this.nextStartOfLineOffset = 0;
+            this.nextIndexToCheck = 0;
+            this.dataOffsetLimit = copyLength;
+
+            outOffset = 0;
+            return 0;
         }
     }
     public interface ILineReader : IDisposable

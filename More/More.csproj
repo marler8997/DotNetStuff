@@ -44,10 +44,13 @@
     <Compile Include="Asn1.cs" />
     <Compile Include="BetterBitArray.cs" />
     <Compile Include="BigEndianSerialization.cs" />
+    <Compile Include="Collections.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="ContextTypeFinder.cs" />
     <Compile Include="ArrayReflectors.cs" />
     <Compile Include="DataSync.cs" />
+    <Compile Include="DataWriter.cs" />
+    <Compile Include="Encoding.cs" />
     <Compile Include="Enumerators.cs" />
     <Compile Include="Http.cs" />
     <Compile Include="IDataHandler.cs" />

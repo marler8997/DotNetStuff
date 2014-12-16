@@ -158,7 +158,7 @@ namespace More
     public struct OrderedSet<T> : IEnumerable<T>, IEquatable<OrderedSet<T>>
     {
         static readonly List<OrderedSet<T>> allCreatedSets = new List<OrderedSet<T>>();
-        public static OrderedSet<T> SortArrayAndGetSet(T[] set)
+        public static OrderedSet<T> SortArrayAndGetSet(params T[] set)
         {
             Array.Sort(set);
             return GetSetUsingPreorderedSet(set);
@@ -214,11 +214,11 @@ namespace More
         }
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
-            return orderedSet.GetArrayEnumerator();
+            return orderedSet.GetGenericEnumerator();
         }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
-            return orderedSet.GetArrayEnumerator();
+            return orderedSet.GetGenericEnumerator();
         }
         //
         // Uses a fast binary search method

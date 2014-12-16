@@ -1236,8 +1236,8 @@ namespace More
     }
     public static class StopwatchExtensions
     {
-        private static Double StopwatchTicksPerMillisecondAsDouble = 1000.0 / Stopwatch.Frequency;
-        //private static Double StopwatchTicksPerMicrosecondAsDouble = 1000000.0 / Stopwatch.Frequency;
+        private static Double MillisecondsPerStopwatchTicksAsDouble = 1000.0 / Stopwatch.Frequency;
+        private static Double MicrosecondsPerStopwatchTicksAsDouble = 1000000.0 / Stopwatch.Frequency;
 
         private static String stopwatchTickIntervalString = null;
         public static String StopwatchTickIntervalString
@@ -1290,7 +1290,26 @@ namespace More
         }
         public static Double StopwatchTicksAsDoubleMilliseconds(this Int64 stopwatchTicks)
         {
-            return StopwatchTicksPerMillisecondAsDouble * stopwatchTicks;
+            return MillisecondsPerStopwatchTicksAsDouble * stopwatchTicks;
+        }
+
+
+        const Double OneThousand  = 1000;
+        const Double OneMillion   = 1000000;
+        const Double OneBillion   = 1000000000;
+
+        public static String StopwatchTicksAsPrettyTime(this Int64 stopwatchTicks, Byte maxDecimalDigits)
+        {
+            Double microseconds = (Double)stopwatchTicks * MicrosecondsPerStopwatchTicksAsDouble;
+            if (microseconds < 999.5D)
+            {
+                return microseconds.ToString("F" + maxDecimalDigits) + " microseconds";
+            }
+            if (microseconds < 999999.5D)
+            {
+                return (microseconds / OneThousand).ToString("F" + maxDecimalDigits) + " milliseconds";
+            }
+            return (microseconds / OneMillion).ToString("N" + maxDecimalDigits) + " seconds";
         }
     }
     public static class SocketExtensions
@@ -1343,6 +1362,24 @@ namespace More
     }
     public static class TextWriterExtensions
     {
+        public static void WriteString(this TextWriter writer, String str, UInt32 offset, UInt32 length)
+        {
+            if (offset == 0)
+            {
+                if (length == str.Length)
+                {
+                    writer.Write(str);
+                }
+                else
+                {
+                    writer.Write(str.Remove((Int32)length));
+                }
+            }
+            else
+            {
+                writer.Write(str.Substring((Int32)offset, (Int32)length));
+            }
+        }
         public static void WriteLine(this TextWriter writer, UInt32 spaces, String fmt, params Object[] obj)
         {
             writer.Write(String.Format("{{0,{0}}}", spaces), String.Empty);
@@ -1430,6 +1467,28 @@ namespace More
                 }
 
                 builder.Append((char)next);
+            }
+        }
+        */
+        /*
+        public static UInt32 ReadUntil(this Stream stream, Byte[] readBuffer, out UInt32 readBufferOffset, StringBuilder builder, Byte until)
+        {
+            while (true)
+            {
+                Int32 bytesRead = stream.Read(readBuffer, 0, readBuffer.Length);
+                if (bytesRead <= 0) throw new IOException(String.Format("Reached end of stream while waiting for '{0}' ({1})", (Char)until, until));
+
+                Int32 untilOffset;
+                for (untilOffset = 0; untilOffset < bytesRead; untilOffset++)
+                {
+                    if (readBuffer[untilOffset] == until)
+                    {
+                        builder.Append(
+                    }
+                }
+
+
+
             }
         }
         */

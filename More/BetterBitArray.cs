@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace More
 {
-    public class BetterBitArray : IEnumerable<Boolean>
+    public struct BetterBitArray : IEnumerable<Boolean>
     {
         public class Enumerator : IEnumerator<Boolean>
         {
@@ -162,6 +162,36 @@ namespace More
             }
         }
     }
+    public static class Bits
+    {
+        /*
+        public static Boolean GetBit(Int32 bitFieldIndex)
+        {
+            int byteIndex = bitFieldIndex / 8;
+            if (byteIndex >= bytes.Count) return false;
+            byte bitFlag = (byte)(1 << (bitFieldIndex % 8));
+            return (bytes[byteIndex] & bitFlag) != 0;
+        }
+        */
+        public static void SetBit(this Byte[] bitField, Int32 bitFieldIndex, Boolean on)
+        {
+            int byteIndex = bitFieldIndex / 8;
+
+            if (byteIndex >= bitField.Length) throw new ArgumentOutOfRangeException("bitFieldIndex", bitFieldIndex, String.Format(
+                 "Cannot set bit {0} in bit field of length {1}", bitFieldIndex, bitField.Length));
+
+            byte bitFlag = (byte)(1 << (bitFieldIndex % 8));
+
+            if (on)
+            {
+                bitField[byteIndex] |= bitFlag;
+            }
+            else
+            {
+                bitField[byteIndex] &= ((byte)~bitFlag);
+            }
+        }
+    }
     public class BitFieldBuilder
     {
         public readonly List<Byte> bytes;
@@ -180,6 +210,13 @@ namespace More
             {
                 bytes[i] = 0;
             }
+        }
+        public Boolean GetBit(Int32 bitFieldIndex)
+        {
+            int byteIndex = bitFieldIndex / 8;
+            if (byteIndex >= bytes.Count) return false;
+            byte bitFlag = (byte)(1 << (bitFieldIndex % 8));
+            return (bytes[byteIndex] & bitFlag) != 0;
         }
         public void SetBit(Int32 bitFieldIndex, Boolean on)
         {

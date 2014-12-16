@@ -27,8 +27,12 @@ namespace More
 
         public static Object[] CreateParameterObjects(NpcMethodInfo npcMethodInfo, params String[] parameterStrings)
         {
+            return CreateParameterObjects(npcMethodInfo.parameters, parameterStrings);
+        }
+        public static Object[] CreateParameterObjects(ParameterInfo[] parameterInfos, params String[] parameterStrings)
+        {
             int parameterStringsLength = (parameterStrings == null) ? 0 : parameterStrings.Length;
-            int parameterInfosLength = (npcMethodInfo.parameters == null) ? 0 : npcMethodInfo.parameters.Length;
+            int parameterInfosLength = (parameterInfos == null) ? 0 : parameterInfos.Length;
 
             if (parameterInfosLength != parameterStringsLength)
                 throw new InvalidOperationException(String.Format("Expected {0} arguments but got {1}",
@@ -36,7 +40,6 @@ namespace More
 
             if (parameterStringsLength <= 0) return null;
 
-            ParameterInfo[] parameterInfos = npcMethodInfo.parameters;
             Object[] parameterObjects = new Object[parameterStringsLength];
 
             for (int i = 0; i < parameterStringsLength; i++)

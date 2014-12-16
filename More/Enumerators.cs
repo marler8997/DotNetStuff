@@ -45,22 +45,32 @@ namespace More
     */
     public static class EnumeratorExtensions
     {
-        public static IEnumerator<T> GetArrayEnumerator<T>(this T[] array)
+        public static IEnumerable<T> GetEnumerable<T>(this T[] array)
+        {
+            if (array == null) return default(EmptyEnumerable<T>);
+            return new ArrayEnumerable<T>(array);
+        }
+        public static IEnumerator<T> GetGenericEnumerator<T>(this T[] array)
         {
             if (array == null) return default(EmptyEnumerator<T>);
             return new ArrayEnumerator<T>(array);
         }
-        public static IEnumerator<T> GetArrayEnumerator<T>(this T[] array, UInt32 offset)
+        public static IEnumerator<T> GetEnumerator<T>(this T[] array, UInt32 offset)
         {
-            if (offset == 0) return GetArrayEnumerator(array);
+            if (offset == 0) return GetGenericEnumerator(array);
             if (array == null) return default(EmptyEnumerator<T>);
             return new ArrayOffsetEnumerator<T>(array, offset);
         }
     }
+    public struct EmptyEnumerable<T> : IEnumerable<T>
+    {
+        public IEnumerator<T> GetEnumerator() { return new EmptyEnumerator<T>(); }
+        IEnumerator IEnumerable.GetEnumerator() { return new EmptyEnumerator<T>(); }
+    }
     public struct EmptyEnumerator<T> : IEnumerator<T>
     {
         public T Current { get { throw new InvalidOperationException(); } }
-        public void Dispose() { throw new NotImplementedException(); }
+        public void Dispose() {}
         Object IEnumerator.Current { get { throw new InvalidOperationException(); } }
         public bool MoveNext() { return false; }
         public void Reset() { }
@@ -231,6 +241,22 @@ namespace More
         {
             if (obj == null) return default(EmptyEnumerator<Object>);
             return new SingleObjectEnumerator<Object>(this.obj);
+        }
+    }
+    public struct ArrayEnumerable<T> : IEnumerable<T>
+    {
+        readonly T[] array;
+        public ArrayEnumerable(T[] array)
+        {
+            this.array = array;
+        }
+        public IEnumerator<T> GetEnumerator()
+        {
+            return new ArrayEnumerator<T>(array);
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return new ArrayEnumerator<T>(array);
         }
     }
     public class ArrayEnumerator<T> : IEnumerator<T>

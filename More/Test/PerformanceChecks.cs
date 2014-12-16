@@ -141,9 +141,64 @@ namespace More
         }
 
 
+        /*
+        struct ArrayAndUInts
+        {
+            Byte[] data;
+            UInt32 a;
+            UInt32 b;
+        }
+        struct LengthArray
+        {
+            Byte[] array;
+            UInt32 offset;
+            UInt32 length;
+        }
+        struct LimitArray
+        {
+            Byte[] array;
+            UInt32 offset;
+            UInt32 limit;
+        }
+        [TestMethod]
+        public void PerformanceTestCastBetweenStructs()
+        {
+        }
+        public void PerformanceTestCastBetweenStructs(UInt32 runCount)
+        {
+            long before;
+
+            ArrayAndUInts arr = new ArrayAndUInts();
+            LengthArray len = new LengthArray();
+            LimitArray lim = new LimitArray();
+            //
+            // Run once to jit the code
+            //
+            len = (LengthArray)arr;
 
 
+            for (UInt32 run = 0; run < runCount; run++)
+            {
+                Console.WriteLine("Run {0}", run);
 
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                }
+                Console.WriteLine("None: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("None: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+
+
+                before = Stopwatch.GetTimestamp();
+                for (int i = 0; i < 10000000; i++)
+                {
+                    len = (LengthArray)arr;
+                }
+                Console.WriteLine("Cast: " + (Stopwatch.GetTimestamp() - before).StopwatchTicksAsDoubleMilliseconds());
+                Console.WriteLine("Cast: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+            }
+        }
+        */
 
 
 
