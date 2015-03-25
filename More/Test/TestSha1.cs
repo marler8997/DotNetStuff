@@ -15,54 +15,52 @@ namespace More
         [TestMethod]
         public void TestSha1HashApi()
         {
-            UInt32[] expectedHash = new UInt32[] {
+            Sha1 expectedHash = new Sha1(
                 0x12DADA1F, 0xFF4D4787, 0xADE33331, 0x47202C3B, 0x443E376F
-            };
+            );
 
-
-            Console.WriteLine("EXPCTD:" + Sha1.HashString(expectedHash));
+            Console.WriteLine("EXPCTD:" + expectedHash);
             Console.WriteLine("----------------------------------------------------------");
-
 
             Byte[] data = new Byte[] { 1, 2, 3, 4 };
             String diff;
 
             //
-            Sha1 fourCallSha = new Sha1();
+            Sha1Builder fourCallSha = new Sha1Builder();
 
             fourCallSha.Add(data, 0, 1);
             fourCallSha.Add(data, 1, 1);
             fourCallSha.Add(data, 2, 1);
             fourCallSha.Add(data, 3, 1);
 
-            UInt32[] fourCallFinalHash = fourCallSha.Finish();
-            Console.WriteLine("FINAL1 :" + Sha1.HashString(fourCallFinalHash));
+            var fourCallFinalHash = fourCallSha.Finish(false);
+            Console.WriteLine("FINAL1 :" + fourCallFinalHash);
 
             diff = expectedHash.Diff(fourCallFinalHash);
             Assert.IsNull(diff);
 
             Console.WriteLine("----------------------------------------------------------");
             //
-            Sha1 twoCallSha = new Sha1();
+            Sha1Builder twoCallSha = new Sha1Builder();
 
             twoCallSha.Add(data, 0, 2);
 
             twoCallSha.Add(data, 2, 2);
 
-            UInt32[] twoCallFinahHash = twoCallSha.Finish();
-            Console.WriteLine("FINAL2 :" + Sha1.HashString(twoCallFinahHash));
+            var twoCallFinahHash = twoCallSha.Finish(false);
+            Console.WriteLine("FINAL2 :" + twoCallFinahHash);
 
             diff = expectedHash.Diff(twoCallFinahHash);
             Assert.IsNull(diff);
 
             Console.WriteLine("----------------------------------------------------------");
             //
-            Sha1 oneCallSha = new Sha1();
+            Sha1Builder oneCallSha = new Sha1Builder();
 
             oneCallSha.Add(data, 0, 4);
 
-            UInt32[] oneCallFinalHash = oneCallSha.Finish();
-            Console.WriteLine("FINAL3 :" + Sha1.HashString(oneCallFinalHash));
+            var oneCallFinalHash = oneCallSha.Finish(false);
+            Console.WriteLine("FINAL3 :" + oneCallFinalHash);
 
             diff = expectedHash.Diff(oneCallFinalHash);
             Assert.IsNull(diff);
@@ -73,12 +71,13 @@ namespace More
             public readonly String contentString;
             public readonly Byte[] contentBytes;
             
-            public readonly UInt32[] expectedHash;
+            public readonly Sha1 expectedHash;
             public TestClass(String contentString, params UInt32[] expectedHash)
             {
                 this.contentString = contentString;
                 this.contentBytes = Encoding.ASCII.GetBytes(contentString);
-                this.expectedHash = expectedHash;
+                this.expectedHash = new Sha1(expectedHash[0], expectedHash[1],
+                    expectedHash[2], expectedHash[3], expectedHash[4]);
             }
         }
 
@@ -95,24 +94,34 @@ namespace More
                     0xEEC53E5E, 0x78191154, 0x0A073AE1, 0x39743E68, 0x8A6CD077),
             };
 
+            Sha1Builder reusedShaBuilder = new Sha1Builder();
+
             for(int i = 0; i < tests.Length; i++)
             {
                 TestClass test = tests[i];
-                
+
                 //
                 // Test using 1 call
                 //
-                Sha1 sha = new Sha1();
-                sha.Add(test.contentBytes, 0, test.contentBytes.Length);
+                {
+                    Sha1Builder newShaBuilder = new Sha1Builder();
 
-                UInt32[] finished = sha.Finish();
+                    newShaBuilder.Add(test.contentBytes, 0, test.contentBytes.Length);
+                    reusedShaBuilder.Add(test.contentBytes, 0, test.contentBytes.Length);
 
-                Console.WriteLine("Content '{0}'", test.contentString);
-                Console.WriteLine("    Expected {0}", Sha1.HashString(test.expectedHash));
-                Console.WriteLine("    Actual   {0}", Sha1.HashString(finished));
+                    var newFinished = newShaBuilder.Finish(false);
+                    var reusedFinished = reusedShaBuilder.Finish(true);
 
-                String sosDiff = Sos.Diff(test.expectedHash, finished);
-                Assert.IsNull(sosDiff, sosDiff);
+                    Console.WriteLine("Content '{0}'", test.contentString);
+                    Console.WriteLine("    Expected {0}", test.expectedHash);
+                    Console.WriteLine("    Actual   {0}", newFinished);
+                    Console.WriteLine("    Reused   {0}", reusedFinished);
+
+                    Assert.AreEqual(test.expectedHash, newFinished);
+                    Assert.AreEqual(test.expectedHash, reusedFinished);
+                    //String sosDiff = Sos.Diff(test.expectedHash, finished);
+                    //Assert.IsNull(sosDiff, sosDiff);
+                }
 
                 //
                 // Test using multiple calls
@@ -120,7 +129,7 @@ namespace More
                 for (int addLength = 1; addLength < test.contentBytes.Length; addLength++)
                 {
                     Console.WriteLine("Test AddLength {0}", addLength);
-                    sha = new Sha1();
+                    Sha1Builder shaBuilder = new Sha1Builder();
 
                     // Add the bytes
                     Int32 bytesToWrite = test.contentBytes.Length;
@@ -128,22 +137,25 @@ namespace More
                     while (bytesToWrite > 0)
                     {
                         Int32 writeLength = Math.Min(bytesToWrite, addLength);
-                        sha.Add(test.contentBytes, contentBytesOffset, writeLength);
+                        shaBuilder.Add(test.contentBytes, contentBytesOffset, writeLength);
+                        reusedShaBuilder.Add(test.contentBytes, contentBytesOffset, writeLength);
                         contentBytesOffset += writeLength;
                         bytesToWrite -= writeLength;
                     }
 
-                    finished = sha.Finish();
+                    var shaFinished = shaBuilder.Finish(false);
+                    var reusedShaFinished = reusedShaBuilder.Finish(true);
 
-
-                    sosDiff = Sos.Diff(test.expectedHash, finished);
+                    var sosDiff = Sos.Diff(test.expectedHash, shaFinished);
                     if (sosDiff != null)
                     {
                         Console.WriteLine("Content '{0}'", test.contentString);
-                        Console.WriteLine("    Expected {0}", Sha1.HashString(test.expectedHash));
-                        Console.WriteLine("    Actual   {0}", Sha1.HashString(finished));
+                        Console.WriteLine("    Expected {0}", test.expectedHash);
+                        Console.WriteLine("    Actual   {0}", shaFinished);
                         Assert.Fail();
                     }
+                    Assert.AreEqual(test.expectedHash, shaFinished);
+                    Assert.AreEqual(test.expectedHash, reusedShaFinished);
                 }
             }
         }

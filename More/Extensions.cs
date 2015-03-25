@@ -263,6 +263,23 @@ namespace More
             return offset + 3;
         }
     }
+    public static class StringBuilderExtensions
+    {
+        public static void AppendUtf8(this StringBuilder builder, Byte[] bytes)
+        {
+            builder.AppendUtf8(bytes, 0, (uint)bytes.Length);
+        }
+        public static void AppendUtf8(this StringBuilder builder, Byte[] bytes, UInt32 offset, UInt32 limit)
+        {
+            while (true)
+            {
+                if (offset >= limit)
+                    return;
+                var c = Utf8.Decode(bytes, ref offset, limit);
+                builder.Append((Char)c);
+            }
+        }
+    }
     public static class StringExtensions
     {
         public static String JsonEncode(this String str)

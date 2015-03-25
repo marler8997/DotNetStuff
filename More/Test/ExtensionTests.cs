@@ -12,6 +12,23 @@ namespace More
     [TestClass]
     public class ExtensionTests
     {
+        void TestStringBuilderExtensions(String testString)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendUtf8(Encoding.UTF8.GetBytes(testString));
+            Assert.AreEqual(testString, builder.ToString());
+            //Console.WriteLine("TestString '{0}'", testString);
+        }
+        [TestMethod]
+        public void TestStringBuilderExtensions()
+        {
+            TestStringBuilderExtensions("");
+            TestStringBuilderExtensions("a");
+            TestStringBuilderExtensions("Hello, World!");
+            TestStringBuilderExtensions("\0");
+            TestStringBuilderExtensions("\uFFFF");
+            TestStringBuilderExtensions("a\uFF00b\u9876c");
+        }
         void TestInvalidParseInt32(String testString)
         {
             Byte[] testBuffer = new Byte[testString.Length + 5];

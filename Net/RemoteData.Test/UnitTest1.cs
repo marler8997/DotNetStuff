@@ -32,9 +32,7 @@ public class RemoteDataTests
         socket.ReadFullSize(bytes, 0, (Int32)size);
         return size;
     }
-
-
-
+    /*
     [TestMethod]
     public void TestMethod1()
     {
@@ -60,4 +58,5 @@ public class RemoteDataTests
             Console.WriteLine(entries[i]);
         }
     }
+    */
 }
