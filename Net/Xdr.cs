@@ -225,14 +225,12 @@ namespace More.Net
             }
         }
     }
-
-
     public class XdrOpaqueVarLengthReflector2 : ClassFieldReflector
     {
         public readonly UInt32 maxLength;
 
         public XdrOpaqueVarLengthReflector2(Type typeThatContainsThisField, String fieldName, UInt32 maxLength)
-            : base(typeThatContainsThisField, fieldName, typeof(ByteArraySegmentStruct))
+            : base(typeThatContainsThisField, fieldName, typeof(Slice<Byte>))
         {
             this.maxLength = maxLength;
         }
@@ -242,12 +240,12 @@ namespace More.Net
         }
         public override UInt32 SerializationLength(Object instance)
         {
-            ByteArraySegmentStruct segment = (ByteArraySegmentStruct)fieldInfo.GetValue(instance);
+            Slice<Byte> segment = (Slice<Byte>)fieldInfo.GetValue(instance);
             return 4 + Xdr.UpToNearestMod4(segment.length);
         }
         public override UInt32 Serialize(Object instance, Byte[] array, UInt32 offset)
         {
-            ByteArraySegmentStruct segment = (ByteArraySegmentStruct)fieldInfo.GetValue(instance);
+            Slice<Byte> segment = (Slice<Byte>)fieldInfo.GetValue(instance);
 
             array[offset    ] = (Byte)(segment.length >> 24);
             array[offset + 1] = (Byte)(segment.length >> 16);
@@ -272,11 +270,11 @@ namespace More.Net
 
             if (length == 0)
             {
-                fieldInfo.SetValue(instance, new ByteArraySegmentStruct(null, 0, 0));
+                fieldInfo.SetValue(instance, new Slice<Byte>(null, 0, 0));
                 return offset;
             }
 
-            fieldInfo.SetValue(instance, new ByteArraySegmentStruct(array, offset, length));
+            fieldInfo.SetValue(instance, new Slice<Byte>(array, offset, length));
 
             UInt32 lengthMod4 = Xdr.UpToNearestMod4(length);
 
@@ -284,7 +282,7 @@ namespace More.Net
         }
         public override void DataString(Object instance, StringBuilder builder)
         {
-            ByteArraySegmentStruct segment = (ByteArraySegmentStruct)fieldInfo.GetValue(instance);
+            Slice<Byte> segment = (Slice<Byte>)fieldInfo.GetValue(instance);
             builder.Append(fieldInfo.Name);
             builder.Append(":[");
             for (int i = 0; i < segment.length; i++)

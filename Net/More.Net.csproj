@@ -64,10 +64,8 @@
     <Compile Include="GenericUtilities.cs" />
     <Compile Include="MessageLogger.cs" />
     <Compile Include="SimpleReflectorSerializers.cs" />
-    <Compile Include="SocksProxies.cs" />
     <Compile Include="ResourceFactory.cs" />
     <Compile Include="ServerListener.cs" />
-    <Compile Include="SocketConnector.cs" />
     <Compile Include="SocketConstructorArgs.cs" />
     <Compile Include="SocketExceptionNewMessage.cs" />
     <Compile Include="SocketReaderWriterTunnel.cs" />

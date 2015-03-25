@@ -57,7 +57,7 @@ namespace More.Net
             try
             {
                 StringBuilder builder = new StringBuilder();
-                ByteBuffer buffer = new ByteBuffer(1024, 1024);
+                Buf buffer = new Buf(1024, 1024);
 
                 //
                 // Make connection to portmap service

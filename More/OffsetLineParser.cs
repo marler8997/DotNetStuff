@@ -7,11 +7,11 @@ namespace More
 {
     public class OffsetLineParser
     {
-        readonly ByteBuffer buffer;
+        readonly Buf buffer;
         Int32 count;
         Int32 nextLineStart;
 
-        public OffsetLineParser(ByteBuffer buffer)
+        public OffsetLineParser(Buf buffer)
         {
             this.buffer = buffer;
             this.count = 0;

@@ -44,6 +44,7 @@
     <Compile Include="Asn1.cs" />
     <Compile Include="BetterBitArray.cs" />
     <Compile Include="BigEndianSerialization.cs" />
+    <Compile Include="Builders.cs" />
     <Compile Include="Collections.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="ContextTypeFinder.cs" />
@@ -53,15 +54,17 @@
     <Compile Include="Encoding.cs" />
     <Compile Include="Enumerators.cs" />
     <Compile Include="Http.cs" />
+    <Compile Include="HttpClient.cs" />
     <Compile Include="IDataHandler.cs" />
     <Compile Include="FixedInterfaces.cs" />
     <Compile Include="IRandomGenerator.cs" />
+    <Compile Include="Json.cs" />
     <Compile Include="Lfd.cs" />
     <Compile Include="OffsetLineParser.cs" />
     <Compile Include="LfdReader.cs" />
     <Compile Include="LineParser.cs" />
     <Compile Include="BinaryStream.cs" />
-    <Compile Include="Buffer.cs" />
+    <Compile Include="Buf.cs" />
     <Compile Include="IniParser.cs" />
     <Compile Include="OneOrMoreEnumerator.cs" />
     <Compile Include="OrderedSet.cs" />
@@ -77,7 +80,10 @@
     <Compile Include="SelectSocketTunnels.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Slice.cs" />
     <Compile Include="Snmp.cs" />
+    <Compile Include="SocketConnector.cs" />
+    <Compile Include="SocksProxies.cs" />
     <Compile Include="StarExpression.cs" />
     <Compile Include="SymExp.cs" />
     <Compile Include="Sha1.cs" />

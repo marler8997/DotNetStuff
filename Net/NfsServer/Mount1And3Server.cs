@@ -20,7 +20,7 @@ namespace More.Net
         private readonly RpcServicesManager servicesManager;
         private readonly SharedFileSystem sharedFileSystem;
 
-        public Mount1And3Server(RpcServicesManager servicesManager, SharedFileSystem sharedFileSystem, ByteBuffer sendBuffer)
+        public Mount1And3Server(RpcServicesManager servicesManager, SharedFileSystem sharedFileSystem, Buf sendBuffer)
             : base("Mount3", sendBuffer)
         {
             this.servicesManager = servicesManager;

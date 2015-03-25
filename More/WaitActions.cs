@@ -139,7 +139,7 @@ namespace More
         }
 
 
-        public UInt32 WaitActionTimes(Buffer<Int32> times, Int64 now)
+        public UInt32 WaitActionTimes(Expandable<Int32> times, Int64 now)
         {
             times.EnsureCapacityCopyData(waitActions.count);
 

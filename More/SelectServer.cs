@@ -987,7 +987,7 @@ namespace More.Net
         {
             this.dataHandler = dataHandler;
         }
-        public Boolean ReceiveHandler(Socket socket, ByteBuffer safeBuffer, ref SocketReceiveHandler receiveHandler)
+        public Boolean ReceiveHandler(Socket socket, Buf safeBuffer, ref SocketReceiveHandler receiveHandler)
         {
             Int32 bytesRead = socket.Receive(safeBuffer.array);
             if (bytesRead <= 0) return true;
@@ -998,10 +998,10 @@ namespace More.Net
     }
 
     // return null to close the client
-    public delegate SocketHandlerMethods AcceptHandler(Socket listenSocket, Socket socket, ByteBuffer safeBuffer);
+    public delegate SocketHandlerMethods AcceptHandler(Socket listenSocket, Socket socket, Buf safeBuffer);
 
     // return true to close client
-    public delegate void SocketReceiveHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods receiveHandler);
+    public delegate void SocketReceiveHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods receiveHandler);
     public delegate void SocketClosedHandler(Socket socket);
 
     public class TcpListener
@@ -1061,7 +1061,7 @@ namespace More.Net
         /// <summary>
         /// Note: Can be used if the code locks on tcpListenSockets
         /// </summary>
-        readonly ByteBuffer safeBuffer;
+        readonly Buf safeBuffer;
 
         Boolean keepRunning;
 
@@ -1083,7 +1083,7 @@ namespace More.Net
             this.tcpReceiveSocketList = new List<Socket>();
             this.tcpReceiveSocketMap = new Dictionary<Socket, SocketHandlerMethods>();
 
-            this.safeBuffer = new ByteBuffer(safeBufferInitialCapacity, safeBufferExpandLength);
+            this.safeBuffer = new Buf(safeBufferInitialCapacity, safeBufferExpandLength);
 
             this.keepRunning = true;
         }
@@ -1227,7 +1227,7 @@ namespace More.Net
         readonly List<Socket> tcpReceiveSocketList;
         readonly IDictionary<Socket, SocketHandlerMethods> tcpReceiveSocketMap;
 
-        readonly ByteBuffer safeBuffer;
+        readonly Buf safeBuffer;
 
         Boolean keepRunning;
 
@@ -1243,7 +1243,7 @@ namespace More.Net
             this.tcpReceiveSocketList = new List<Socket>();
             this.tcpReceiveSocketMap = new Dictionary<Socket, SocketHandlerMethods>();
 
-            this.safeBuffer = new ByteBuffer(safeBufferInitialCapacity, safeBufferExpandLength);
+            this.safeBuffer = new Buf(safeBufferInitialCapacity, safeBufferExpandLength);
 
             this.keepRunning = true;
         }

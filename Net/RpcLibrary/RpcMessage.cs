@@ -83,7 +83,7 @@ namespace More.Net
             this.messageType = RpcMessageType.Reply;
             this.reply = reply;
         }
-        public RpcMessage(Socket socket, ByteBuffer buffer, out UInt32 contentOffset, out UInt32 contentOffsetLimit)
+        public RpcMessage(Socket socket, Buf buffer, out UInt32 contentOffset, out UInt32 contentOffsetLimit)
             : base(memberSerializers)
         {
             //
@@ -120,7 +120,7 @@ namespace More.Net
             contentOffset = Deserialize(data, offset, offsetLimit);
             if (RpcPerformanceLog.rpcMessageSerializationLogger != null) RpcPerformanceLog.StopSerializationAndLog("RpcDeserializationTime");
         }
-        public void SendTcp(Socket socket, ByteBuffer buffer, ISerializer messageContents)
+        public void SendTcp(Socket socket, Buf buffer, ISerializer messageContents)
         {
             UInt32 messageContentLength = (messageContents == null) ? 0 : messageContents.SerializationLength();
             UInt32 totalMessageLength = SerializationLength() + messageContentLength;
@@ -149,7 +149,7 @@ namespace More.Net
 
             socket.Send(buffer.array, 0, (Int32)(totalMessageLength + 4), SocketFlags.None);
         }
-        public void SendUdp(EndPoint endPoint, Socket socket, ByteBuffer buffer, ISerializer messageContents)
+        public void SendUdp(EndPoint endPoint, Socket socket, Buf buffer, ISerializer messageContents)
         {
             UInt32 messageContentLength = (messageContents == null) ? 0 : messageContents.SerializationLength();
             UInt32 totalMessageLength = SerializationLength() + messageContentLength;

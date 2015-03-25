@@ -103,8 +103,6 @@ namespace More
             return -1;
         }
     }
-
-
     public enum EncodingType
     {
         Default = 0,
@@ -132,7 +130,6 @@ namespace More
             throw new InvalidOperationException(String.Format("Unknown EncodingType '{0}'", encodingType));
         }
     }
-
     public class ArrayBuilder
     {
         const Int32 InitialArraySize = 16;
@@ -218,7 +215,7 @@ namespace More
             if (b >= '0' && b <= '9') return (b - '0');
             if (b >= 'A' && b <= 'F') return (b - 'A') + 10;
             if (b >= 'a' && b <= 'f') return (b - 'a') + 10;
-            throw new FormatException(String.Format("Expected 0-9, A-F, or a-f but got '{0}' (charcode={1})", b, (UInt32)b));
+            throw new FormatException(String.Format("Expected 0-9, A-F, or a-f but got '{0}' (charcode={1})", (Char)b, (UInt32)b));
         }
     }
     public static class CharExtensions
@@ -239,6 +236,31 @@ namespace More
             if (c >= 'A' && c <= 'F') return (c - 'A') + 10;
             if (c >= 'a' && c <= 'f') return (c - 'a') + 10;
             throw new FormatException(String.Format("Expected 0-9, A-F, or a-f but got '{0}' (charcode={1})", c, (UInt32)c));
+        }
+        public static Byte GetUtf8ByteCount(this Char c)
+        {
+            if (c <= 0x007F) return 1;
+            if (c <= 0x07FF) return 2;
+            return 3;
+        }
+        // Returns the offset after encoding the character
+        public static UInt32 EncodeUtf8(this Char c, Byte[] buffer, UInt32 offset)
+        {
+            if (c <= 0x007F)
+            {
+                buffer[offset    ] = (Byte)c;
+                return offset + 1;
+            }
+            if (c <= 0x07FF)
+            {
+                buffer[offset    ] = (Byte)(0xC0 | ((c >> 6)        )); // 110xxxxx
+                buffer[offset + 1] = (Byte)(0x80 | ( c        & 0x3F)); // 10xxxxxx
+                return offset + 2;
+            }
+            buffer[offset    ]     = (Byte)(0xE0 | ((c >> 12)       )); // 1110xxxx
+            buffer[offset + 1]     = (Byte)(0x80 | ((c >>  6) & 0x3F)); // 10xxxxxx
+            buffer[offset + 2]     = (Byte)(0x80 | ( c        & 0x3F)); // 10xxxxxx
+            return offset + 3;
         }
     }
     public static class StringExtensions
@@ -574,7 +596,6 @@ namespace More
                 offset++;
             }
         }
-
         public static String UnderscoreToCamelCase(this String underscoreString)
         {
             if (String.IsNullOrEmpty(underscoreString)) return underscoreString;
@@ -893,15 +914,15 @@ namespace More
         //
         public static UInt64 BigEndianReadUInt64(this Byte[] bytes, UInt32 offset)
         {
-            return (UInt64)(
-                (bytes[offset    ] << 56) |
-                (bytes[offset    ] << 48) |
-                (bytes[offset    ] << 40) |
-                (bytes[offset    ] << 32) |
-                (bytes[offset    ] << 24) |
-                (bytes[offset + 1] << 16) |
-                (bytes[offset + 2] <<  8) |
-                (bytes[offset + 3]      ) );
+            return
+                (((UInt64)bytes[offset    ]) << 56) |
+                (((UInt64)bytes[offset + 1]) << 48) |
+                (((UInt64)bytes[offset + 2]) << 40) |
+                (((UInt64)bytes[offset + 3]) << 32) |
+                (((UInt64)bytes[offset + 4]) << 24) |
+                (((UInt64)bytes[offset + 5]) << 16) |
+                (((UInt64)bytes[offset + 6]) <<  8) |
+                (((UInt64)bytes[offset + 7])      ) ;
         }
 
 
@@ -1112,6 +1133,179 @@ namespace More
             ArrayCopier.Copy(bytes, offset, subArray, 0, length);
             return subArray;
         }
+
+        //
+        // Number Parsing
+        //
+        // Returns the new offset of all the digits parsed.  Returns 0 to indicate overflow or invalid number.
+        public static UInt32 TryParseUInt32(this Byte[] array, UInt32 offset, UInt32 limit, out UInt32 value)
+        {
+            if (offset >= limit) // Invalid number
+            {
+                value = 0;
+                return 0;
+            }
+            UInt32 result;
+            {
+                Byte c = array[offset];
+                if (c > '9' || c < '0')
+                {
+                    value = 0; // Invalid number
+                    return 0;
+                }
+                result = (uint)(c - '0');
+            }
+            while (true)
+            {
+                offset++;
+                if (offset >= limit)
+                    break;
+                var c = array[offset];
+                if (c > '9' || c < '0')
+                    break;
+
+                UInt32 newResult = result * 10 + c - '0';
+                if (newResult < result)
+                {
+                    value = 0;
+                    return 0; // Overflow
+                }
+                result = newResult;
+            }
+
+            value = result;
+            return offset;
+        }
+        // Returns the new offset of all the digits parsed.  Returns 0 to indicate overflow.
+        public static UInt32 TryParseInt32(this Byte[] array, UInt32 offset, UInt32 limit, out Int32 value)
+        {
+            if (offset >= limit)
+            {
+                value = 0;
+                return 0;
+            }
+            Boolean negative;
+            {
+                var c = array[offset];
+                if (c == '-')
+                {
+                    negative = true;
+                    offset++;
+                }
+                else
+                {
+                    negative = false;
+                }
+            }
+            if (offset >= limit) // Invalid number
+            {
+                value = 0;
+                return 0;
+            }
+            UInt32 result;
+            {
+                Byte c = array[offset];
+                if (c > '9' || c < '0')
+                {
+                    value = 0; // Invalid number
+                    return 0;
+                }
+                result = (uint)(c - '0');
+            }
+            while (true)
+            {
+                offset++;
+                if (offset >= limit)
+                    break;
+                var c = array[offset];
+                if (c > '9' || c < '0')
+                    break;
+
+                UInt32 newResult = result * 10 + c - '0';
+                if (newResult < result)
+                {
+                    value = 0;
+                    return 0; // Overflow
+                }
+                result = newResult;
+            }
+
+            if (negative)
+            {
+                if (result > ((UInt32)Int32.MaxValue) + 1)
+                {
+                    value = 0;
+                    return 0; // Overflow
+                }
+                value = -(int)result;
+            }
+            else
+            {
+                if (result > (UInt32)Int32.MaxValue)
+                {
+                    value = 0;
+                    return 0; // Overflow
+                }
+                value = (int)result;
+            }
+            value = negative ? -(Int32)result : (Int32)result;
+            return offset;
+        }
+        public static UInt32 ParseByte(this Byte[] array, UInt32 offset, UInt32 limit, out Byte value)
+        {
+            UInt32 uint32;
+            var newOffset = array.TryParseUInt32(offset, limit, out uint32);
+            if (newOffset == 0 || uint32 > (UInt32)Byte.MaxValue)
+                throw new OverflowException(String.Format("Overflow while parsing '{0}' as a Byte",
+                    Encoding.ASCII.GetString(array, (int)offset, (newOffset == 0) ? (int)ConsumeNum(array, offset, limit) : (int)newOffset)));
+            value = (Byte)uint32;
+            return newOffset;
+        }
+        public static UInt32 ParseUInt16(this Byte[] array, UInt32 offset, UInt32 limit, out UInt16 value)
+        {
+            UInt32 uint32;
+            var newOffset = array.TryParseUInt32(offset, limit, out uint32);
+            if (newOffset == 0 || uint32 > (UInt32)UInt16.MaxValue)
+                throw new OverflowException(String.Format("Overflow while parsing '{0}' as a UInt16",
+                    Encoding.ASCII.GetString(array, (int)offset, (newOffset == 0) ? (int)ConsumeNum(array, offset, limit) : (int)newOffset)));
+            value = (UInt16)uint32;
+            return newOffset;
+        }
+        public static UInt32 ParseUInt32(this Byte[] array, UInt32 offset, UInt32 limit, out UInt32 value)
+        {
+            var newOffset = array.TryParseUInt32(offset, limit, out value);
+            if (newOffset == 0)
+                throw new OverflowException(String.Format("Overflow while parsing '{0}' as a UInt32",
+                    Encoding.ASCII.GetString(array, (int)offset, (newOffset == 0) ? (int)array.ConsumeNum(offset, limit) : (int)newOffset)));
+            return newOffset;
+        }
+        public static UInt32 ParseInt32(this Byte[] array, UInt32 offset, UInt32 limit, out Int32 value)
+        {
+            var newOffset = array.TryParseInt32(offset, limit, out value);
+            if (newOffset == 0)
+                throw new OverflowException(String.Format("Overflow while parsing '{0}' as a Int32",
+                    Encoding.ASCII.GetString(array, (int)offset, (newOffset == 0) ? (int)array.ConsumeNum(offset, limit) : (int)newOffset)));
+            return newOffset;
+        }
+        static UInt32 ConsumeNum(this Byte[] array, UInt32 offset, UInt32 limit)
+        {
+            if (offset >= limit)
+                return offset;
+            if (array[offset] == '-')
+                offset++;
+            while (true)
+            {
+                if (offset >= limit)
+                    return offset;
+                var c = array[offset];
+                if(c < '0' || c > '9')
+                    return offset;
+                offset++;
+            }
+        }
+        //
+        // TODO: Add ParseSingle and ParseDouble
+        //
     }
     public static class ListExtensions
     {

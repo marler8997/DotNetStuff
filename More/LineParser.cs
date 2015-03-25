@@ -15,7 +15,7 @@ namespace More
     {
         public readonly Encoding encoding;
 
-        public readonly ByteBuffer buffer;
+        public readonly Buf buffer;
         UInt32 nextStartOfLineOffset;
         UInt32 nextIndexToCheck;
         UInt32 dataOffsetLimit;
@@ -24,7 +24,7 @@ namespace More
         {
             this.encoding = encoding;
 
-            this.buffer = new ByteBuffer(lineBufferInitialCapacity, lineBufferExpandLength);
+            this.buffer = new Buf(lineBufferInitialCapacity, lineBufferExpandLength);
             this.nextStartOfLineOffset = 0;
             this.nextIndexToCheck = 0;
             this.dataOffsetLimit = 0;
@@ -139,7 +139,7 @@ namespace More
         readonly Byte[] receiveBuffer;
 
         public StreamLineReader(Encoding encoding, Stream stream)
-            : this(encoding, stream, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength)
+            : this(encoding, stream, Buf.DefaultInitialCapacity, Buf.DefaultExpandLength)
         {
         }
         public StreamLineReader(Encoding encoding, Stream stream, UInt32 lineBufferInitialCapacity, UInt32 lineBufferExpandLength)

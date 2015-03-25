@@ -10,21 +10,20 @@ namespace More
         void GenerateRandom(Byte[] buffer);
         void GenerateRandom(Byte[] buffer, Int32 offset, Int32 length);
     }
-
     public class RandomGenerator : IRandomGenerator
     {
         readonly Random random;
-        readonly ByteBuffer buffer;
+        readonly Buf buffer;
         public RandomGenerator(Random random)
         {
             this.random = random;
-            this.buffer = new ByteBuffer();
+            this.buffer = new Buf();
         }
-        public void GenerateRandom(byte[] bytes)
+        public void GenerateRandom(Byte[] bytes)
         {
             random.NextBytes(bytes);
         }
-        public void GenerateRandom(byte[] bytes, int offset, int length)
+        public void GenerateRandom(Byte[] bytes, int offset, int length)
         {
             buffer.EnsureCapacityCopyData(length);
 

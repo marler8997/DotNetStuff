@@ -10,7 +10,6 @@ using More.Net.TmpCommand;
 
 namespace More.Net
 {
-
     public class TunnelManipulationReverseServer
     {
         public static void Run(TlsSettings tlsSettings, String serverName, String accessorConnectorString, UInt16 heartbeatSeconds,
@@ -36,7 +35,7 @@ namespace More.Net
             // TmpHiddenServer Loop
             //
             Byte[] receiveBuffer = new Byte[receiveBufferLength];
-            ByteBuffer sendBuffer = new ByteBuffer(256, 256);
+            Buf sendBuffer = new Buf(256, 256);
             Int64 lastHearbeatTime = 0;
             SingleObjectList singleAccessorSocket = new SingleObjectList();
 

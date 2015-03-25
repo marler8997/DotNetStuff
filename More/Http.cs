@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace More
+namespace More.Net
 {
     public static class Http
     {
@@ -16,15 +16,22 @@ namespace More
         public const String DeleteMethod  = "DELETE";
         public const String PutMethod     = "PUT";
 
-
-
-
         public const UInt16 ResponseOK                  = 200;
         public const UInt16 ResponseMovedPermanently    = 301;
         public const UInt16 ResponseRedirection         = 302;
         public const UInt16 ResponseBadRequest          = 400;
         public const UInt16 ResponseNotFound            = 404;
-        public const UInt16 ResponseInternalServerError = 500;
+        public const UInt16 ResponseInternalServerError = 500;        
+
+        public static readonly Byte[] HostHeaderPrefix          = Encoding.ASCII.GetBytes("Host: ");
+        public static readonly Byte[] ContentLengthHeaderPrefix = Encoding.ASCII.GetBytes("Content-Length: ");
+        public static readonly Byte[] ContentTypeHeaderPrefix   = Encoding.ASCII.GetBytes("Content-Type: ");
+        public static readonly Byte[] ConnectionHeaderPrefix    = Encoding.ASCII.GetBytes("Connection: ");
+        public static readonly Byte[] ConnectionKeepAlive       = Encoding.ASCII.GetBytes("Keep-Alive");
+        public static readonly Byte[] ConnectionClose           = Encoding.ASCII.GetBytes("close");
+
+        public static readonly Byte[] Newline       = Encoding.ASCII.GetBytes("\r\n");
+        public static readonly Byte[] DoubleNewline = Encoding.ASCII.GetBytes("\r\n\r\n");
 
         static Dictionary<UInt16, String> responseMap = null;
         public static Dictionary<UInt16, String> ResponseMap
@@ -180,7 +187,5 @@ namespace More
             }
             return builder.CreateString();
         }
-
-
     }
 }

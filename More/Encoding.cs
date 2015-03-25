@@ -3,6 +3,39 @@ using System.Diagnostics;
 
 namespace More
 {
+    public static class Ascii
+    {
+        public static Boolean StartsWithAscii(this String value, Byte[] text, UInt32 offset, UInt32 length)
+        {
+            return StartsWithAscii(value, 0, text, offset, length);
+        }
+        public static Boolean StartsWithAscii(this String value, UInt32 stringOffset, Byte[] text, UInt32 offset, UInt32 length)
+        {
+            if (length > value.Length)
+                return false;
+            for (UInt32 i = 0; i < length; i++)
+            {
+                if (text[offset + i] != value[(int)(stringOffset + i)])
+                    return false;
+            }
+            return true;
+        }
+        public static Boolean EqualsAscii(this String value, Byte[] text, UInt32 offset, UInt32 length)
+        {
+            return EqualsAscii(value, 0, text, offset, length);
+        }
+        public static Boolean EqualsAscii(this String value, UInt32 stringOffset, Byte[] text, UInt32 offset, UInt32 length)
+        {
+            if (length != value.Length)
+                return false;
+            for (UInt32 i = 0; i < length; i++)
+            {
+                if (text[offset + i] != value[(int)(stringOffset + i)])
+                    return false;
+            }
+            return true;
+        }
+    }
     public enum Utf8ExceptionType
     {
         StartedInsideCodePoint,
@@ -129,16 +162,16 @@ namespace More
              * IDEOGRAPHIC SPACE (U+3000)*/
         }
 
-        /// <summary>Peel the first string surrounded by whitespace</summary>
+        /// <summary>Peel the first string surrounded by whitespace.</summary>
         /// <returns>The first string surrounded by whitespace BY LIMIT</returns>
-        public static Segment Peel(Byte[] array, ref UInt32 offset, UInt32 limit)
+        public static OffsetLimit Peel(ref SliceByLimit<Byte> segment)
         {
-            Debug.Assert(SegmentByLimit.InValidState(array, offset, limit));
+            Debug.Assert(segment.InValidState());
+            var array = segment.array;
+            var limit = segment.limit;
 
-            if (offset >= limit)
-            {
-                return new Segment(array, offset, limit);
-            }
+            if (segment.offset >= limit)
+                return new OffsetLimit(segment.offset, limit);
 
             UInt32 c;
             UInt32 save;
@@ -148,12 +181,11 @@ namespace More
             //
             while (true)
             {
-                if (offset >= limit)
-                {
-                    return new Segment(array, offset, limit);
-                }
-                save = offset;
-                c = Decode(array, ref offset, limit);
+                if (segment.offset >= limit)
+                    return new OffsetLimit(segment.offset, limit);
+
+                save = segment.offset;
+                c = Decode(array, ref segment.offset, limit);
                 if (!IsNormalWhiteSpace(c)) break;
             }
 
@@ -164,15 +196,17 @@ namespace More
             //
             while (true)
             {
-                if (offset >= limit)
-                {
-                    return new Segment(array, peelStart, offset);
-                }
-                save = offset;
-                c = Decode(array, ref offset, limit);
+                if (segment.offset >= limit)
+                    return new OffsetLimit(peelStart, segment.offset);
+
+                save = segment.offset;
+                c = Decode(array, ref segment.offset, limit);
                 if (IsNormalWhiteSpace(c)) break;
             }
 
+            return new OffsetLimit(peelStart, save);
+
+            /*
             UInt32 peelLimit = save;
 
             //
@@ -180,19 +214,17 @@ namespace More
             //
             while (true)
             {
-                if (offset >= limit)
-                {
-                    offset = save;
-                    return new Segment(array, peelStart, peelLimit);
-                }
-                save = offset;
-                c = Decode(array, ref offset, limit);
+                if (segment.offset >= limit)
+
+                save = segment.offset;
+                c = Decode(array, ref segment.offset, limit);
                 if (!IsNormalWhiteSpace(c))
                 {
-                    offset = save;
+                    segment.offset = save;
                     return new Segment(array, peelStart, peelLimit);
                 }
             }
+            */
         }
 
 

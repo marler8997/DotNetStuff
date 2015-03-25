@@ -31,7 +31,7 @@ namespace More.Net
 
             this.nextTransactionID = 0;
         }
-        public void CallBlockingTcp(UInt32 procedureNumber, ISerializer requestSerializer, ISerializer responseSerializer, ByteBuffer buffer)
+        public void CallBlockingTcp(UInt32 procedureNumber, ISerializer requestSerializer, ISerializer responseSerializer, Buf buffer)
         {
             UInt32 transmissionID = nextTransactionID++;
 
@@ -60,7 +60,7 @@ namespace More.Net
                     DataStringBuilder.DataString(reply, dataBuilder), DataStringBuilder.DataString(responseSerializer, dataBuilder), offset, contentMaxOffset));
             }
         }
-        public T CallBlockingTcp<T>(UInt32 procedureNumber, ISerializer requestSerializer, IInstanceSerializer<T> responseSerializer, ByteBuffer buffer)
+        public T CallBlockingTcp<T>(UInt32 procedureNumber, ISerializer requestSerializer, IInstanceSerializer<T> responseSerializer, Buf buffer)
         {
             UInt32 transmissionID = nextTransactionID++;
 

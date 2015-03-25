@@ -164,15 +164,13 @@ namespace More
     }
     public static class Bits
     {
-        /*
-        public static Boolean GetBit(Int32 bitFieldIndex)
+        public static Boolean GetBit(this Byte[] bitField, UInt32 bitFieldIndex)
         {
-            int byteIndex = bitFieldIndex / 8;
-            if (byteIndex >= bytes.Count) return false;
-            byte bitFlag = (byte)(1 << (bitFieldIndex % 8));
-            return (bytes[byteIndex] & bitFlag) != 0;
+            UInt32 byteIndex = bitFieldIndex / 8;
+            if (byteIndex >= bitField.Length) return false;
+            byte bitFlag = (byte)(1 << (int)(bitFieldIndex % 8U));
+            return (bitField[byteIndex] & bitFlag) != 0;
         }
-        */
         public static void SetBit(this Byte[] bitField, Int32 bitFieldIndex, Boolean on)
         {
             int byteIndex = bitFieldIndex / 8;

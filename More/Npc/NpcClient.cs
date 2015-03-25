@@ -174,7 +174,7 @@ namespace More
             this.threadSafe = threadSafe;
 
             this.socketLineReader = (socket == null || !socket.Connected) ? null :
-                new SocketLineReader(socket, Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
+                new SocketLineReader(socket, Encoding.ASCII, Buf.DefaultInitialCapacity, Buf.DefaultExpandLength);
 
             this.enumAndObjectTypes = new List<Type>();
             InitializeStaticClientTypeFinder();
@@ -203,7 +203,7 @@ namespace More
                 if (socketLineReader != null) socketLineReader.Dispose();
 
                 socketLineReader = new SocketLineReader(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp),
-                    Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
+                    Encoding.ASCII, Buf.DefaultInitialCapacity, Buf.DefaultExpandLength);
                 socketLineReader.socket.Connect(serverEndPoint);
             }
         }

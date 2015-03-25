@@ -12,6 +12,111 @@ namespace More
     [TestClass]
     public class ExtensionTests
     {
+        void TestInvalidParseInt32(String testString)
+        {
+            Byte[] testBuffer = new Byte[testString.Length + 5];
+            Int32 actualValue;
+            UInt32 offset;
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 0);
+            offset = testBuffer.TryParseInt32(0U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual(0U, offset);
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 5);
+            offset = testBuffer.TryParseInt32(5U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual(0U, offset);
+        }
+        void TestInvalidParseUInt32(String testString)
+        {
+            Byte[] testBuffer = new Byte[testString.Length + 5];
+            UInt32 actualValue;
+            UInt32 offset;
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 0);
+            offset = testBuffer.TryParseUInt32(0U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual(0U, offset);
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 5);
+            offset = testBuffer.TryParseUInt32(5U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual(0U, offset);
+        }
+        void TestParseInt32(Int32 expectedValue, String testString)
+        {
+            Byte[] testBuffer = new Byte[testString.Length + 5];
+            Int32 actualValue;
+            UInt32 offset;
+            
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 0);
+            offset = testBuffer.TryParseInt32(0U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual((uint)testString.Length, offset);
+            Assert.AreEqual(expectedValue, actualValue);
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 5);
+            offset = testBuffer.TryParseInt32(5U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual((uint)(testString.Length + 5), offset);
+            Assert.AreEqual(expectedValue, actualValue);
+        }
+        void TestParseUInt32(UInt32 expectedValue, String testString)
+        {
+            Byte[] testBuffer = new Byte[testString.Length + 5];
+            UInt32 actualValue;
+            UInt32 offset;
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 0);
+            offset = testBuffer.TryParseUInt32(0U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual((uint)testString.Length, offset);
+            Assert.AreEqual(expectedValue, actualValue);
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 5);
+            offset = testBuffer.TryParseUInt32(5U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual((uint)(testString.Length + 5), offset);
+            Assert.AreEqual(expectedValue, actualValue);
+        }
+        void TestParseNum<T>(ByteArrayParser<T> parser, T expectedValue, String testString)
+        {
+            Byte[] testBuffer = new Byte[testString.Length + 5];
+            T actualValue;
+            UInt32 offset;
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 0);
+            offset = parser(testBuffer, 0U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual((uint)testString.Length, offset);
+            Assert.AreEqual(expectedValue, actualValue);
+
+            Encoding.ASCII.GetBytes(testString, 0, testString.Length, testBuffer, 5);
+            offset = parser(testBuffer, 5U, (uint)testBuffer.Length, out actualValue);
+            Assert.AreEqual((uint)(testString.Length + 5), offset);
+            Assert.AreEqual(expectedValue, actualValue);
+        }
+        [TestMethod]
+        public void TestParseNumbers()
+        {
+            // Invalid Values
+            TestInvalidParseUInt32("");
+            TestInvalidParseInt32("");
+            TestInvalidParseUInt32("A");
+            TestInvalidParseInt32("A");
+            TestInvalidParseInt32("2147483648");
+
+            TestParseInt32(0, "0");
+            TestParseUInt32(0, "0");
+
+            TestParseInt32(2147483647, "2147483647");
+            TestParseUInt32(2147483647, "2147483647");
+
+            TestParseInt32(-2147483648, "-2147483648");
+            TestParseUInt32(4294967295, "4294967295");
+
+            TestParseNum<Byte>  (ByteArray.ParseByte  , 0, "0");
+            TestParseNum<UInt16>(ByteArray.ParseUInt16, 0, "0");
+            TestParseNum<UInt32>(ByteArray.ParseUInt32, 0, "0");
+            TestParseNum<Int32> (ByteArray.ParseInt32 , 0, "0");            
+
+            TestParseNum<Byte>  (ByteArray.ParseByte  , 255       , "255");
+            TestParseNum<UInt16>(ByteArray.ParseUInt16, 65535     , "65535");
+            TestParseNum<UInt32>(ByteArray.ParseUInt32, 4294967295, "4294967295");
+            TestParseNum<Int32> (ByteArray.ParseInt32 , 2147483647, "2147483647");
+        }
         [TestMethod]
         public void TestStopwatchTicksPrettyTime()
         {
@@ -27,8 +132,6 @@ namespace More
 
             Assert.AreEqual("1 seconds", ((Int64)(1D * (Double)Stopwatch.Frequency)).StopwatchTicksAsPrettyTime(0));
         }
-
-
         /*
         [TestMethod]
         public void SubstringMethods()

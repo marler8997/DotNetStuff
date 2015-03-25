@@ -149,7 +149,7 @@ namespace More
 
             SharedFileSystem sharedFileSystem = new SharedFileSystem(shareObjects, /*permissions, */rootShareDirectories);
 
-            ByteBuffer sendBuffer = new ByteBuffer(4096, 1024);
+            Buf sendBuffer = new Buf(4096, 1024);
 
             RemoteDataServer remoteDataServer = new RemoteDataServer(sharedFileSystem, sendBuffer);
 

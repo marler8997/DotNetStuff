@@ -23,7 +23,7 @@ namespace More.Net
             IPAddress listenIPAddress, Int32 backlog, SharedFileSystem sharedFileSystem,
             Int32 portmapPort, Int32 mountPort, Int32 nfsPort, UInt32 readSizeMax, UInt32 suggestedReadSizeMultiple)
         {
-            ByteBuffer sendBuffer = new ByteBuffer(4096, 1024);
+            Buf sendBuffer = new Buf(4096, 1024);
 
             //
             // Create Mappings List

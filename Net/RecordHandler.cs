@@ -8,13 +8,13 @@ namespace More.Net
 {
     public class RecordHandler
     {
-        ByteBuffer buffer;
+        Buf buffer;
         private int bytesOffset;
 
         private int currentRecordSize;
         private int bytesReturnedInLastRecord;
 
-        public RecordHandler(ByteBuffer buffer)
+        public RecordHandler(Buf buffer)
         {
             this.buffer = buffer;
             this.buffer.EnsureCapacityCopyData(5);

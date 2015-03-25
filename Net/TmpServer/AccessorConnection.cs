@@ -75,7 +75,7 @@ namespace More.Net
             }
             return socket;
         }
-        public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, ByteBuffer sendBuffer, ServerInfo serverInfo, SelectTunnelsThread tunnelsThread)
+        public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, Buf sendBuffer, ServerInfo serverInfo, SelectTunnelsThread tunnelsThread)
         {
             if (Connected) throw new InvalidOperationException(String.Format(
                 "You called Connect() on accessor '{0}' but its already connected", accessorEndPoint));

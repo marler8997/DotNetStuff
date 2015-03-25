@@ -7,7 +7,6 @@ using More;
 
 namespace More.Net
 {
-    
     public enum SocksCommand : byte
     {
         Connect      = 0x01,
@@ -20,23 +19,21 @@ namespace More.Net
         DomainName = 0x03,
         IPv6       = 0x04,
     };
-
     public static class Socks5
     {
-
         public const Int32 RequestLengthWithoutAddress = 6;
-        public const Int32 ReplyLengthWithoutAddress   = 6;
+        public const Int32 ReplyLengthWithoutAddress = 6;
 
         public static Int32 MakeRequest(Byte[] packet, SocksCommand command, IPAddress ip, Int32 port)
         {
             Byte[] address = ip.GetAddressBytes();
-            
+
             packet[0] = 0x05;          // Version 5
             packet[1] = (Byte)command;
             packet[2] = 0;             // Reserved
 
             Int32 offset;
-            if(address.Length == 4)
+            if (address.Length == 4)
             {
                 packet[3] = (Byte)SocksAddressType.IPv4;
                 packet[4] = address[0];
@@ -57,7 +54,7 @@ namespace More.Net
             }
 
             packet[offset++] = (Byte)(port >> 8);
-            packet[offset++] = (Byte)(port     );
+            packet[offset++] = (Byte)(port);
 
             return offset;
         }
@@ -66,7 +63,7 @@ namespace More.Net
             packet[0] = 0x05;          // Version 5
             packet[1] = (Byte)command;
             packet[2] = 0;             // Reserved
-            
+
             packet[3] = (Byte)SocksAddressType.DomainName;
             packet[4] = (Byte)domainName.Length;
 
@@ -79,7 +76,6 @@ namespace More.Net
 
             return offset;
         }
-        
         public static void ReadAndIgnoreAddress(Socket socket, Byte[] buffer)
         {
             socket.ReadFullSize(buffer, 0, 5);
@@ -105,14 +101,13 @@ namespace More.Net
                     throw new Proxy5Exception(String.Format("Expected Address type to be {0} ({1}),{2} ({3}), or {4} ({5}), but got {6}",
                         SocksAddressType.IPv4, (Int32)SocksAddressType.IPv4,
                         SocksAddressType.DomainName, (Int32)SocksAddressType.DomainName,
-                        SocksAddressType.IPv6, (Int32) SocksAddressType.IPv6, buffer[3]));
+                        SocksAddressType.IPv6, (Int32)SocksAddressType.IPv6, buffer[3]));
             }
             socket.ReadFullSize(buffer, 5, addressLength + 1);
         }
         public static EndPoint ReadReply(Socket socket, Byte[] buffer)
         {
             socket.ReadFullSize(buffer, 0, 5);
-
 
             if (buffer[0] != 5) throw new InvalidOperationException(String.Format(
                 "The first byte of the proxy response was expected to be 5 (for SOCKS5 version) but it was {0}", buffer[0]));
@@ -153,13 +148,10 @@ namespace More.Net
                     throw new Proxy5Exception(String.Format("Expected Address type to be {0} ({1}),{2} ({3}), or {4} ({5}), but got {6}",
                         SocksAddressType.IPv4, (Int32)SocksAddressType.IPv4,
                         SocksAddressType.DomainName, (Int32)SocksAddressType.DomainName,
-                        SocksAddressType.IPv6, (Int32) SocksAddressType.IPv6, buffer[3]));
+                        SocksAddressType.IPv6, (Int32)SocksAddressType.IPv6, buffer[3]));
             }
         }
     }
-
-
-
     public class ProxyException : SystemException
     {
         public ProxyException(String message)
@@ -167,12 +159,11 @@ namespace More.Net
         {
         }
     }
- 
     public class Proxy4Exception : ProxyException
     {
         public static String Proxy4ResultCodeToMessage(Byte resultCode)
         {
-            switch(resultCode)
+            switch (resultCode)
             {
                 case 90:
                     return "request granted";
@@ -183,7 +174,7 @@ namespace More.Net
                 case 93:
                     return "request rejected because the client program and identd report different user-ids";
                 default:
-                    return String.Format("Unknown Proxy4 Result Code {0}",resultCode);
+                    return String.Format("Unknown Proxy4 Result Code {0}", resultCode);
             }
         }
 
@@ -191,12 +182,10 @@ namespace More.Net
 
         public Proxy4Exception(byte resultCode)
             : base(Proxy4ResultCodeToMessage(resultCode))
-
         {
             this.resultCode = resultCode;
         }
     }
-
     public class Proxy5Exception : ProxyException
     {
         public static String Proxy5ResultCodeToMessage(byte resultCode)
@@ -225,12 +214,10 @@ namespace More.Net
                     return String.Format("Unknown Proxy5 Result Code {0}", resultCode);
             }
         }
-
         public Proxy5Exception(byte resultCode)
             : base(Proxy5ResultCodeToMessage(resultCode))
         {
         }
-
         public Proxy5Exception(String message)
             : base(message)
         {
@@ -240,12 +227,11 @@ namespace More.Net
 
     public static class SocksProxy
     {
-        public const Byte ProxyVersion4                = 0x04;
-        public const Byte ProxyVersion5                = 0x05;
+        public const Byte ProxyVersion4 = 0x04;
+        public const Byte ProxyVersion5 = 0x05;
 
         public const Byte ProxyVersion4ConnectFunction = 0x01;
-        public const Byte ProxyVersion4BindFunction    = 0x02;
-
+        public const Byte ProxyVersion4BindFunction = 0x02;
 
         public static void RequestBind(String proxyHost, UInt16 proxyPort, IPAddress bindIP, UInt16 bindPort, byte[] userID)
         {
@@ -349,10 +335,10 @@ namespace More.Net
             }
 
             if (replyBuffer[1] != 90) throw new Proxy4Exception(replyBuffer[1]);
-            
+
             UInt16 listenPort = (UInt16)(
-                (0xFF00 & (replyBuffer[2] << 8)) | 
-                (0xFF   & (replyBuffer[3]     ))
+                (0xFF00 & (replyBuffer[2] << 8)) |
+                (0xFF & (replyBuffer[3]))
                 );
             Byte[] ip = new Byte[4];
             ip[0] = replyBuffer[4];
@@ -374,7 +360,7 @@ namespace More.Net
         public void ConnectUsingHostName(Socket socket, Byte[] hostNameBytes, Int32 port)
         {
             Byte[] replyBuffer = new Byte[8];
-            Byte[] connectRequest = new Byte[10 + 
+            Byte[] connectRequest = new Byte[10 +
                 ((userID == null) ? 0 : userID.Length) +
                 hostNameBytes.Length];
 
@@ -382,7 +368,7 @@ namespace More.Net
             connectRequest[1] = 1; // Command 1 "CONNECT"
 
             connectRequest[2] = (Byte)(port >> 8);
-            connectRequest[3] = (Byte)(port     );
+            connectRequest[3] = (Byte)(port);
 
             connectRequest[4] = 0;
             connectRequest[5] = 0;
@@ -419,7 +405,7 @@ namespace More.Net
             //}
 
             if (replyBuffer[1] != 90) throw new Proxy4Exception(replyBuffer[1]);
-        }       
+        }
         public void ConnectUsingIP(Socket socket, IPAddress address, Int32 port)
         {
             Byte[] replyBuffer = new Byte[8];
@@ -428,7 +414,7 @@ namespace More.Net
             connectRequest[0] = 4;                 // Version 4 of SOCKS protocol
             connectRequest[1] = 1;                 // Command 1 "CONNECT"            
             connectRequest[2] = (Byte)(port >> 8);
-            connectRequest[3] = (Byte)(port     );
+            connectRequest[3] = (Byte)(port);
             byte[] hostIPArray = address.GetAddressBytes();
             connectRequest[4] = hostIPArray[0];
             connectRequest[5] = hostIPArray[1];
@@ -459,7 +445,6 @@ namespace More.Net
             if (replyBuffer[1] != 90) throw new Proxy4Exception(replyBuffer[1]);
         }
     }
-
     public class Socks5NoAuthenticationConnectSocket : IPOrDnsProxy
     {
         readonly EndPoint proxyEndPoint;

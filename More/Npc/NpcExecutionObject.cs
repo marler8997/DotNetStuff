@@ -13,6 +13,10 @@ namespace More
             {
                 this.typeMap = typeMap;
             }
+            public void TryAdd(Type type, NpcInterfaceInfo info)
+            {
+                typeMap[type] = info;
+            }
             public NpcInterfaceInfo LookupOrCreate(Type interfaceType)
             {
                 NpcInterfaceInfo info;
@@ -134,9 +138,6 @@ namespace More
             */
         }
     }
-
-
-
     public class NpcExecutionObject
     {
         public readonly Type type;
@@ -178,6 +179,17 @@ namespace More
 
                 if (parentNpcInterfaces.Count <= 0) throw new InvalidOperationException(String.Format(
                     "Class {0} did not implement any NpcInterfaces (An NpcInterface is an interface with the [NpcInterface] attribute)", type.Name));
+            }
+            else
+            {
+                foreach (var @interface in parentNpcInterfaces)
+                {
+                    interfaceSet.TryAdd(@interface.interfaceType, @interface);
+                }
+                foreach (var @interface in ancestorNpcInterfaces)
+                {
+                    interfaceSet.TryAdd(@interface.interfaceType, @interface);
+                }
             }
         }
         public override string ToString()

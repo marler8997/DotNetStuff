@@ -10,14 +10,14 @@ namespace More
     {
         readonly SharedFileSystem sharedFileSystem;
 
-        public RemoteDataServer(SharedFileSystem sharedFileSystem, ByteBuffer sendBuffer)
+        public RemoteDataServer(SharedFileSystem sharedFileSystem, Buf sendBuffer)
             : base("RemoteData", sendBuffer)
         {
             this.sharedFileSystem = sharedFileSystem;
         }
         
         public override UInt32 HandleRecord(String clientString, Byte[] record, UInt32 offset, UInt32 offsetLimit,
-            ByteBuffer sendBuffer, UInt32 sendOffset)
+            Buf sendBuffer, UInt32 sendOffset)
         {
             Byte command = record[offset];
             offset++;

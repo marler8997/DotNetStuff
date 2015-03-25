@@ -783,9 +783,9 @@ namespace More.Net.Nfs3Procedure
         public Count count;
         public Boolean endOfFile;
         //public PartialByteArraySerializer fileData;
-        public ByteArraySegmentStruct fileDataSegment;
+        public Slice<Byte> fileDataSegment;
 
-        public ReadReply(OptionalFileAttributes optionalFileAttributes, Count count, Boolean endOfFile, ByteArraySegmentStruct fileDataSegment)
+        public ReadReply(OptionalFileAttributes optionalFileAttributes, Count count, Boolean endOfFile, Slice<Byte> fileDataSegment)
         {
             this.status = Status.Ok;
             this.optionalFileAttributes = optionalFileAttributes;
@@ -826,13 +826,13 @@ namespace More.Net.Nfs3Procedure
         public Offset offset;
         public Count count;
         public StableHowEnum stableHow;
-        public ByteArraySegmentStruct data;
+        public Slice<Byte> data;
         
         public WriteCall(Byte[] data, UInt32 offset, UInt32 offsetLimit)
         {
             memberSerializers.Deserialize(this, data, offset, offsetLimit);
         }
-        public WriteCall(Byte[] fileHandle, StableHowEnum stableHow, ByteArraySegmentStruct data, Offset offset, Count count)
+        public WriteCall(Byte[] fileHandle, StableHowEnum stableHow, Slice<Byte> data, Offset offset, Count count)
         {
             this.fileHandle = fileHandle;
             this.data = data;

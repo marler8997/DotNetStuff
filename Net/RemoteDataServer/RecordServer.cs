@@ -12,9 +12,9 @@ namespace More
         public readonly String serviceName;
         readonly Dictionary<Socket, RecordBuilder> socketToRecordParser;
 
-        private readonly ByteBuffer sendBuffer;
+        private readonly Buf sendBuffer;
 
-        public RecordServerHandler(String serviceName, ByteBuffer sendBuffer)
+        public RecordServerHandler(String serviceName, Buf sendBuffer)
         {
             this.serviceName = serviceName;
             this.socketToRecordParser = new Dictionary<Socket, RecordBuilder>();
@@ -24,7 +24,7 @@ namespace More
         // returns the number of bytes to respond with
         public abstract UInt32 HandleRecord(String clientString,
             Byte[] record, UInt32 offset, UInt32 offsetLimit,
-            ByteBuffer sendBuffer, UInt32 sendOffset);
+            Buf sendBuffer, UInt32 sendOffset);
 
         public void ServerListening(Socket listenSocket)
         {

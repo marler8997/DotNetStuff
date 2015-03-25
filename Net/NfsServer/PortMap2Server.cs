@@ -21,7 +21,7 @@ namespace More.Net
         private readonly RpcServicesManager servicesManager;
         readonly NamedMapping[] namedMappings;
 
-        public PortMap2Server(RpcServicesManager servicesManager, NamedMapping[] namedMappings, ByteBuffer sendBuffer)
+        public PortMap2Server(RpcServicesManager servicesManager, NamedMapping[] namedMappings, Buf sendBuffer)
             : base("PortMap2", sendBuffer)
         {
             this.servicesManager = servicesManager;

@@ -53,7 +53,7 @@ namespace More
             //
             // Test using line parser
             //
-            OffsetLineParser lineParser = new OffsetLineParser(new ByteBuffer(0, 1));
+            OffsetLineParser lineParser = new OffsetLineParser(new Buf(0, 1));
             Byte[] linesAsBytes = Encoding.UTF8.GetBytes(builder.ToString());
             lineParser.Add(linesAsBytes, linesAsBytes.Length);
 

@@ -164,7 +164,7 @@ namespace More
         {
             this.name = name;
         }
-        public abstract UInt32 Serialize(ByteBuffer sendBuffer, UInt32 offset);
+        public abstract UInt32 Serialize(Buf sendBuffer, UInt32 offset);
     }
     public class DataObjectEntry : ObjectEntry
     {
@@ -176,7 +176,7 @@ namespace More
             this.permissions = permissions;
             this.id = id;
         }
-        public override UInt32 Serialize(ByteBuffer sendBuffer, UInt32 offset)
+        public override UInt32 Serialize(Buf sendBuffer, UInt32 offset)
         {
             /*
             Byte flags = (Byte)type;
@@ -199,7 +199,7 @@ namespace More
             this.permissions = permissions;
             this.id = id;
         }
-        public override UInt32 Serialize(ByteBuffer sendBuffer, UInt32 offset)
+        public override UInt32 Serialize(Buf sendBuffer, UInt32 offset)
         {
             throw new NotImplementedException();
         }
@@ -212,7 +212,7 @@ namespace More
         {
             this.permissions = permissions;
         }
-        public override UInt32 Serialize(ByteBuffer sendBuffer, UInt32 offset)
+        public override UInt32 Serialize(Buf sendBuffer, UInt32 offset)
         {
             throw new NotImplementedException();
         }
@@ -227,7 +227,7 @@ namespace More
             this.permissions = permissions;
             this.id = id;
         }
-        public override UInt32 Serialize(ByteBuffer sendBuffer, UInt32 offset)
+        public override UInt32 Serialize(Buf sendBuffer, UInt32 offset)
         {
             throw new NotImplementedException();
         }
@@ -265,7 +265,7 @@ namespace More
         // }
 
 
-        public static UInt32 Serialize(this ObjectEntry[] entries, ByteBuffer sendBuffer, UInt32 offset)
+        public static UInt32 Serialize(this ObjectEntry[] entries, Buf sendBuffer, UInt32 offset)
         {
             UInt32 sizeOffset = offset;
             sendBuffer.EnsureCapacityCopyData(offset + 4);

@@ -44,12 +44,10 @@ public class RemoteDataTests
         Byte[] bytes = new Byte[1024];
         UInt32 offset;
 
-
         offset = 4;
         bytes[offset++] = RemoteData.List;
         offset = bytes.SetVarUInt32(offset, 0); // 0 is the root directory object id
         SendRecord(socket, bytes, offset);
-
 
         UInt32 recordLength = ReadRecord(socket, bytes);
 
@@ -61,7 +59,5 @@ public class RemoteDataTests
         {
             Console.WriteLine(entries[i]);
         }
-
-
     }
 }

@@ -42,7 +42,7 @@ namespace More.Net
             InsertLength(frame, offset, length);
             return frame;
         }
-        public static UInt32 SetupFrame(ByteBuffer buffer, UInt32 frameOffset, UInt32 contentLength)
+        public static UInt32 SetupFrame(Buf buffer, UInt32 frameOffset, UInt32 contentLength)
         {
             buffer.EnsureCapacityCopyData(frameOffset + 4 + contentLength);
             InsertLength(buffer.array, frameOffset, contentLength);
@@ -93,12 +93,12 @@ namespace More.Net
     }
     public class FrameProtocolFilter : IDataFilter
     {
-        readonly ByteBuffer buffer;
+        readonly Buf buffer;
         UInt32 currentBufferLength;
 
         public FrameProtocolFilter()
         {
-            this.buffer = new ByteBuffer();
+            this.buffer = new Buf();
             this.currentBufferLength = 0;
         }
         public void FilterTo(DataHandler handler, Byte[] data, UInt32 offset, UInt32 length)

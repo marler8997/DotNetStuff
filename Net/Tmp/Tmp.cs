@@ -211,7 +211,7 @@ namespace More.Net
         public const Byte ToServerOpenTunnelRequestID         = 0;
         public const Byte ToServerOpenAccessorTunnelRequestID = 1;
 
-        public static UInt32 SerializeCommand<T>(IInstanceSerializer<T> serializer, Byte commandID, T command, ByteBuffer buffer, UInt32 offset)
+        public static UInt32 SerializeCommand<T>(IInstanceSerializer<T> serializer, Byte commandID, T command, Buf buffer, UInt32 offset)
         {
             UInt32 commandLength = 1 + serializer.SerializationLength(command);
             offset = FrameProtocol.SetupFrame(buffer, offset, commandLength);

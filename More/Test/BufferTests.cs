@@ -21,7 +21,7 @@ namespace More
             testBuffer[1] = (Byte)'a';
             testBuffer[2] = (Byte)'B';
 
-            SegmentByLength segment = new SegmentByLength(testBuffer);
+            Slice<Byte> segment = new Slice<Byte>(testBuffer);
 
             segment.offset = 0;
             segment.length = 0;
@@ -87,18 +87,18 @@ namespace More
             testBuffer[16] = (Byte)' ';
             testBuffer[17] = (Byte)'\t';
 
-            SegmentByLength segment = new SegmentByLength();
-            SegmentByLength peeledSegment;
+            Slice<Byte> segment = new Slice<Byte>();
+            OffsetLength peeledSegment;
 
             segment.length = 0;
-            peeledSegment = SegmentByLength.PeelAscii(ref segment);
+            peeledSegment = Slice<Byte>.PeelAscii(ref segment);
             Assert.AreEqual(0U, segment.length);
             Assert.AreEqual(0U, peeledSegment.length);
 
             segment.array = testBuffer;
             segment.offset = 0;
             segment.length = 4;
-            peeledSegment = SegmentByLength.PeelAscii(ref segment);
+            peeledSegment = Slice<Byte>.PeelAscii(ref segment);
             Assert.AreEqual(4U, segment.offset);
             Assert.AreEqual(0U, segment.length);
             Assert.AreEqual(4U, peeledSegment.offset);
@@ -106,7 +106,7 @@ namespace More
 
             segment.offset = 2;
             segment.length = 2;
-            peeledSegment = SegmentByLength.PeelAscii(ref segment);
+            peeledSegment = Slice<Byte>.PeelAscii(ref segment);
             Assert.AreEqual(4U, segment.offset);
             Assert.AreEqual(0U, segment.length);
             Assert.AreEqual(4U, peeledSegment.offset);
@@ -114,7 +114,7 @@ namespace More
 
             segment.offset = 3;
             segment.length = 2;
-            peeledSegment = SegmentByLength.PeelAscii(ref segment);
+            peeledSegment = Slice<Byte>.PeelAscii(ref segment);
             Assert.AreEqual(5U, segment.offset);
             Assert.AreEqual(0U, segment.length);
             Assert.AreEqual(4U, peeledSegment.offset);
@@ -122,7 +122,7 @@ namespace More
 
             segment.offset = 1;
             segment.length = 13;
-            peeledSegment = SegmentByLength.PeelAscii(ref segment);
+            peeledSegment = Slice<Byte>.PeelAscii(ref segment);
             Assert.AreEqual(11U, segment.offset);
             Assert.AreEqual(3U, segment.length);
             Assert.AreEqual(4U, peeledSegment.offset);
@@ -130,7 +130,7 @@ namespace More
 
             segment.offset = 2;
             segment.length = 16;
-            peeledSegment = SegmentByLength.PeelAscii(ref segment);
+            peeledSegment = Slice<Byte>.PeelAscii(ref segment);
             Assert.AreEqual(11U, segment.offset);
             Assert.AreEqual(7U, segment.length);
             Assert.AreEqual(4U, peeledSegment.offset);
@@ -160,50 +160,50 @@ namespace More
             testBuffer[16] = (Byte)' ';
             testBuffer[17] = (Byte)'\t';
 
-            Segment peeledSegment;
-            UInt32 offset;
-            UInt32 limit;
+            OffsetLimit peeled;
+            SliceByLimit<Byte> testSegment;
+            testSegment.array = testBuffer;
 
-            offset = 0;
-            limit = 0;
-            peeledSegment = Utf8.Peel(testBuffer, ref offset, limit);
-            Assert.AreEqual(0U, offset);
-            Assert.AreEqual(0U, peeledSegment.lengthOrLimit);
+            testSegment.offset = 0;
+            testSegment.limit = 0;
+            peeled = Utf8.Peel(ref testSegment);
+            Assert.AreEqual( 0U, testSegment.offset);
+            Assert.AreEqual( 0U, peeled.limit);
 
-            offset = 0;
-            limit = 4;
-            peeledSegment = Utf8.Peel(testBuffer, ref offset, limit);
-            Assert.AreEqual(4U, offset);
-            Assert.AreEqual(4U, peeledSegment.offset);
-            Assert.AreEqual(4U, peeledSegment.lengthOrLimit);
+            testSegment.offset = 0;
+            testSegment.limit = 4;
+            peeled = Utf8.Peel(ref testSegment);
+            Assert.AreEqual( 4U, testSegment.offset);
+            Assert.AreEqual( 4U, peeled.offset);
+            Assert.AreEqual( 4U, peeled.limit);
 
-            offset = 2;
-            limit = 4;
-            peeledSegment = Utf8.Peel(testBuffer, ref offset, limit);
-            Assert.AreEqual(4U, offset);
-            Assert.AreEqual(4U, peeledSegment.offset);
-            Assert.AreEqual(4U, peeledSegment.lengthOrLimit);
+            testSegment.offset = 2;
+            testSegment.limit = 4;
+            peeled = Utf8.Peel(ref testSegment);
+            Assert.AreEqual( 4U, testSegment.offset);
+            Assert.AreEqual( 4U, peeled.offset);
+            Assert.AreEqual( 4U, peeled.limit);
 
-            offset = 3;
-            limit = 5;
-            peeledSegment = Utf8.Peel(testBuffer, ref offset, limit);
-            Assert.AreEqual(5U, offset);
-            Assert.AreEqual(4U, peeledSegment.offset);
-            Assert.AreEqual(5U, peeledSegment.lengthOrLimit);
+            testSegment.offset = 3;
+            testSegment.limit = 5;
+            peeled = Utf8.Peel(ref testSegment);
+            Assert.AreEqual( 5U, testSegment.offset);
+            Assert.AreEqual( 4U, peeled.offset);
+            Assert.AreEqual( 5U, peeled.limit);
 
-            offset = 1;
-            limit = 14;
-            peeledSegment = Utf8.Peel(testBuffer, ref offset, limit);
-            Assert.AreEqual(11U, offset);
-            Assert.AreEqual(4U, peeledSegment.offset);
-            Assert.AreEqual(9U, peeledSegment.lengthOrLimit);
+            testSegment.offset = 1;
+            testSegment.limit = 14;
+            peeled = Utf8.Peel(ref testSegment);
+            Assert.AreEqual(10U, testSegment.offset);
+            Assert.AreEqual( 4U, peeled.offset);
+            Assert.AreEqual( 9U, peeled.limit);
 
-            offset = 2;
-            limit = 18;
-            peeledSegment = Utf8.Peel(testBuffer, ref offset, limit);
-            Assert.AreEqual(11U, offset);
-            Assert.AreEqual(4U, peeledSegment.offset);
-            Assert.AreEqual(9U, peeledSegment.lengthOrLimit);
+            testSegment.offset = 2;
+            testSegment.limit = 18;
+            peeled = Utf8.Peel(ref testSegment);
+            Assert.AreEqual(10U, testSegment.offset);
+            Assert.AreEqual( 4U, peeled.offset);
+            Assert.AreEqual( 9U, peeled.limit);
         }
     }
 }

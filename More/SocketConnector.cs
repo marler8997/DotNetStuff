@@ -91,15 +91,15 @@ namespace More.Net
 
             String[] splitStrings = proxyString.Split(':');
             if (splitStrings.Length != 3)
-                throw new ParseException(String.Format("Invalid proxy '{0}', expected 'http:<host>:<port>', 'socks4:<host>:<port>' or 'socks5:<host>:<port>'", proxyString));
+                throw new FormatException(String.Format("Invalid proxy '{0}', expected 'http:<host>:<port>', 'socks4:<host>:<port>' or 'socks5:<host>:<port>'", proxyString));
 
             String proxyTypeString = splitStrings[0];
-            String ipOrHostString = splitStrings[1];
-            String portString = splitStrings[2];
+            String ipOrHostString  = splitStrings[1];
+            String portString      = splitStrings[2];
 
             UInt16 port;
             if (!UInt16.TryParse(portString, out port))
-                throw new ParseException(String.Format("Invalid port '{0}'", portString));
+                throw new FormatException(String.Format("Invalid port '{0}'", portString));
 
             if (proxyTypeString.Equals("socks4", StringComparison.CurrentCultureIgnoreCase))
             {
@@ -118,16 +118,16 @@ namespace More.Net
                 return new HttpConnectProxyProxy(EndPoints.EndPointFromIPOrHost(ipOrHostString, port));
             }
 
-            throw new ParseException(String.Format("Unexpected proxy type '{0}', expected 'http', 'socks4' or 'socks5'", proxyTypeString));
+            throw new FormatException(String.Format("Unexpected proxy type '{0}', expected 'http', 'socks4' or 'socks5'", proxyTypeString));
         }
     }
     public enum ProxyType
     {
         Gateway,     // No special data is sent to the proxy, the client just talks to the proxy like it is end intended target.
-                     // Protocols can use this type of proxy if the protocol itself contains the intended host name.
-                     // Applicable Protocols: HTTP
+        // Protocols can use this type of proxy if the protocol itself contains the intended host name.
+        // Applicable Protocols: HTTP
         HttpConnect, // Initiates connection to the target by using an HTTP CONNECT method
-                     // Typically used for HTTPS proxy connections, but could be used for anything.
+        // Typically used for HTTPS proxy connections, but could be used for anything.
         Socks4,
         Socks5,
     }

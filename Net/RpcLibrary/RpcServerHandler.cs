@@ -12,10 +12,10 @@ namespace More.Net
     {
         public readonly String serviceName;
         readonly Dictionary<Socket, RecordBuilder> socketToRecordParser;
-        
-        private readonly ByteBuffer sendBuffer;
 
-        public RpcServerHandler(String serviceName, ByteBuffer sendBuffer)
+        private readonly Buf sendBuffer;
+
+        public RpcServerHandler(String serviceName, Buf sendBuffer)
         {
             this.serviceName = serviceName;
             this.socketToRecordParser = new Dictionary<Socket, RecordBuilder>();

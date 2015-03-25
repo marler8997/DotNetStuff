@@ -144,10 +144,10 @@ namespace More.Net
 
         private readonly RpcServicesManager servicesManager;
         private readonly SharedFileSystem sharedFileSystem;
-        private ByteArraySegmentStruct fileContents;
+        private Slice<Byte> fileContents;
         private readonly UInt32 suggestedReadSizeMultiple;
 
-        public Nfs3Server(RpcServicesManager servicesManager, SharedFileSystem sharedFileSystem, ByteBuffer sendBuffer,
+        public Nfs3Server(RpcServicesManager servicesManager, SharedFileSystem sharedFileSystem, Buf sendBuffer,
             UInt32 readSizeMax, UInt32 suggestedReadSizeMultiple)
             : base("Nfs3", sendBuffer)
         {

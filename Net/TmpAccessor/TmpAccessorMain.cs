@@ -186,13 +186,13 @@ namespace More.Net
             tmpControlConnections.Remove(tmpControlConnection);
             serverNameToControlConnection.Remove(tmpControlConnection.ServerInfoName);
         }
-        public SocketHandlerMethods HandleConnectionFromTmpServer(Socket listenSocket, Socket socket, ByteBuffer safeBuffer)
+        public SocketHandlerMethods HandleConnectionFromTmpServer(Socket listenSocket, Socket socket, Buf safeBuffer)
         {
             Console.WriteLine("{0} [{1}] Accepted TmpServer Socket", DateTime.Now, socket.SafeRemoteEndPointString());
 
             return new SocketHandlerMethods(false, HandleInitialConnectionInfo, SocketFromTmpServerClosed);
         }
-        void HandleInitialConnectionInfo(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
+        void HandleInitialConnectionInfo(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
             Int32 bytesRead = socket.Receive(safeBuffer.array, 1, SocketFlags.None);
             if (bytesRead <= 0)
@@ -292,7 +292,7 @@ namespace More.Net
 
             disconnectedTunnel.CompleteTunnel(socket, ref handlerMethods);
         }
-        public SocketHandlerMethods AcceptAndInitiateTunnel(TunnelListenerHandler listener, Socket clientSocket, ByteBuffer safeBuffer)
+        public SocketHandlerMethods AcceptAndInitiateTunnel(TunnelListenerHandler listener, Socket clientSocket, Buf safeBuffer)
         {
             //
             // Check if server is connected
@@ -445,7 +445,7 @@ namespace More.Net
             Console.WriteLine("{0} [{1}] [TmpControl] Got heartbeat", DateTime.Now, remoteEndPoint);
         }
         */
-        public void SocketReceiverHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void SocketReceiverHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
             Int32 bytesRead = socket.Receive(safeBuffer.array);
             if (bytesRead <= 0)
@@ -517,7 +517,7 @@ namespace More.Net
         {
             Console.WriteLine("{0} TmpServer Tunnel connection closing while reading its TunnelKey", DateTime.Now);
         }
-        public void SocketReceiverHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void SocketReceiverHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
             Int32 bytesRead;
 
@@ -578,8 +578,7 @@ namespace More.Net
 
             this.targetHostBytes = Encoding.ASCII.GetBytes(targetHost);
         }
-
-        public SocketHandlerMethods AcceptClientHandler(Socket listenSocket, Socket socket, ByteBuffer safeBuffer)
+        public SocketHandlerMethods AcceptClientHandler(Socket listenSocket, Socket socket, Buf safeBuffer)
         {
             return tmpConnectionManager.AcceptAndInitiateTunnel(this, socket, safeBuffer);
         }
@@ -603,16 +602,16 @@ namespace More.Net
             a.ShutdownAndDispose();
             b.ShutdownAndDispose();
         }
-        public void AToBHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void AToBHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
             Handle(a, b, safeBuffer, ref handlerMethods);
         }
-        public void BToAHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void BToAHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
             Handle(b, a, safeBuffer, ref handlerMethods);
         }
         // return true to close
-        void Handle(Socket receiveFrom, Socket sendTo, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
+        void Handle(Socket receiveFrom, Socket sendTo, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
             Int32 bytesRead = 0;
             try
@@ -639,7 +638,7 @@ namespace More.Net
     {
         readonly Socket connectedSocket;
 
-        ByteBuffer buffer;
+        Buf buffer;
         Int32 bufferLength;
 
         ConnectedTunnel connectedTunnel; // gets set when the other end connects
@@ -699,7 +698,7 @@ namespace More.Net
                 handlerMethods.socketClosedHandler = connectedTunnel.SocketCloseHandler;
             }
         }
-        public void ConnectedSocketReceiveHandler(Socket socket, ByteBuffer safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void ConnectedSocketReceiveHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
         {
             //
             // Check if the connection has been made
@@ -716,7 +715,7 @@ namespace More.Net
             //
             if (buffer == null)
             {
-                buffer = new ByteBuffer(256, 256);
+                buffer = new Buf(256, 256);
                 bufferLength = 0;
             }
             else

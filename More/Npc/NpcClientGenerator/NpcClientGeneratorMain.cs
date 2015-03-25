@@ -15,7 +15,7 @@ namespace More
         Stream stream;
         Encoding encoding;
 
-        ByteBuffer buffer;
+        Buf buffer;
 
         public UnbufferedStreamReader(Stream stream)
             : this(stream, Encoding.UTF8)
@@ -25,7 +25,7 @@ namespace More
         {
             this.stream = stream;
             this.encoding = encoding;
-            this.buffer = new ByteBuffer(256, 256);
+            this.buffer = new Buf(256, 256);
         }
         public override string ReadLine()
         {
@@ -100,7 +100,6 @@ namespace More
             Console.Error.WriteLine("Generate template file : NpcClientGenerator.exe --template <file>");
         }
     }
-
 
 
     public class CustomObjectConfiguration : LfdConfiguration
@@ -724,10 +723,8 @@ namespace More
             //
             currentNamespace = SwitchNamespace(output, currentNamespace, objectNamespace);
 
-
             Dictionary<String,RemoteNpcInterface> serverInterfaces;
-            List<RemoteNpcObject> remoteNpcObjects = NpcClient.GetServerInterface(socketLineReader, out serverInterfaces);
-            
+            List<RemoteNpcObject> remoteNpcObjects = NpcClient.GetServerInterface(socketLineReader, out serverInterfaces);            
 
             //
             // Generate Interfaces Definitions

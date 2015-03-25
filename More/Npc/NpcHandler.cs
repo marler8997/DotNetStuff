@@ -34,7 +34,7 @@ namespace More
         public NpcDataHandler(String clientString, INpcServerCallback callback, IDataHandler responseHandler, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
             : base(clientString, callback, responseHandler, npcExecutor, npcHtmlGenerator)
         {
-            this.lineParser = new LineParser(Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
+            this.lineParser = new LineParser(Encoding.ASCII, Buf.DefaultInitialCapacity, Buf.DefaultExpandLength);
             this.atFirstLine = true;
             this.done = false;
         }
@@ -79,7 +79,7 @@ namespace More
             NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
             : base(clientString, callback, new SocketSendDataHandler(socket), npcExecutor, npcHtmlGenerator)
         {
-            this.socketLineReader = new SocketLineReader(socket, Encoding.ASCII, ByteBuffer.DefaultInitialCapacity, ByteBuffer.DefaultExpandLength);
+            this.socketLineReader = new SocketLineReader(socket, Encoding.ASCII, Buf.DefaultInitialCapacity, Buf.DefaultExpandLength);
         }
         public void Run()
         {

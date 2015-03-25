@@ -8,18 +8,9 @@ using System.CodeDom;
 
 namespace More.Net
 {
-    public class ParseException : FormatException
-    {
-        public ParseException(String message)
-            : base(message)
-        {
-        }
-    }
-
 #if !WindowsCE
     public static class ParseUtilities
     {
-
         public static IPortTunnel[] ParseTunnels(List<String> tunnelStrings)
         {
             IPortTunnel[] tunnelArray = new IPortTunnel[tunnelStrings.Count];
@@ -29,8 +20,7 @@ namespace More.Net
                 tunnelArray[index++] = ParseTunnel(tunnelString);
             }
             return tunnelArray;
-        }
-        
+        }        
         public static IPortTunnel ParseTunnel(String tunnel)
         {
             Int32 dashIndex = tunnel.IndexOf('-');
@@ -116,7 +106,6 @@ namespace More.Net
                 return new TunnelMultipleInAndOut(new PortSetArray(smaller), new PortSetArray(bigger));
             }
         }
-
         public static PortSet ParsePortSet(List<String> portList, Int32 offset)
         {
             if (offset >= portList.Count) throw new ArgumentOutOfRangeException("offset",
@@ -136,7 +125,6 @@ namespace More.Net
             Array.Sort(ports);
             return new PortSetArray(ports);
         }
-
         public static PortSet ParsePortSet(String portListString)
         {
             UInt16[] ports = ParsePorts(portListString);
@@ -148,7 +136,6 @@ namespace More.Net
             Array.Sort(ports);
             return new PortSetArray(ports);
         }
-
         public static UInt16[] ParsePorts(String portListString)
         {
             String[] portStrings = portListString.SplitCorrectly(',');
@@ -167,22 +154,21 @@ namespace More.Net
 
             return ports;
         }
-
         public static String ParseHostAndPort(String hostAndPort, out UInt16 port)
         {
             Int32 colonIndex = hostAndPort.IndexOf(':');
-            if (colonIndex < 0) throw new ParseException(String.Format("'{0}' needs a port, i.e. '{0}:80' would work", hostAndPort));
-            if (colonIndex == 0) throw new ParseException(String.Format("'{0}' needs a host before the colon at the beginning", hostAndPort));
-            if (colonIndex >= hostAndPort.Length - 1) throw new ParseException(String.Format("'{0}' needs a port after the colon", hostAndPort));
+            if (colonIndex < 0) throw new FormatException(String.Format("'{0}' needs a port, i.e. '{0}:80' would work", hostAndPort));
+            if (colonIndex == 0) throw new FormatException(String.Format("'{0}' needs a host before the colon at the beginning", hostAndPort));
+            if (colonIndex >= hostAndPort.Length - 1) throw new FormatException(String.Format("'{0}' needs a port after the colon", hostAndPort));
 
             String hostString = hostAndPort.Substring(0, colonIndex);
             String portString = hostAndPort.Substring(colonIndex + 1);
 
             if (!UInt16.TryParse(portString, out port))
             {
-                throw new ParseException(String.Format("Port '{0}', could not be parsed as a 2 byte unsigned integer", portString));
+                throw new FormatException(String.Format("Port '{0}', could not be parsed as a 2 byte unsigned integer", portString));
             }
-            if (port == 0) throw new ParseException("You can't have a port of 0");
+            if (port == 0) throw new FormatException("You can't have a port of 0");
 
             return hostString;
         }

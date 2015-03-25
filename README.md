@@ -36,7 +36,8 @@ The More.dll .NET assembly contains many usefull C# classes that include the fol
   * TextWriter extensions to prefix a line with n spaces
   * Stream extensions to read the entire stream
   * FileExtensions to read the entire file or write a string to a file
-* Some Http helper methods 
+* An HTTP client and some Http helper methods
+* A JSON parser
 * An Ini-format parser
 * An LFD parser/reader (another file format)
 * A line parser that can be used by readers who aren’t guaranteed to receive data on line boundaries
