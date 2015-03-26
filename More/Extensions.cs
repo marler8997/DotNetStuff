@@ -237,31 +237,6 @@ namespace More
             if (c >= 'a' && c <= 'f') return (c - 'a') + 10;
             throw new FormatException(String.Format("Expected 0-9, A-F, or a-f but got '{0}' (charcode={1})", c, (UInt32)c));
         }
-        public static Byte GetUtf8ByteCount(this Char c)
-        {
-            if (c <= 0x007F) return 1;
-            if (c <= 0x07FF) return 2;
-            return 3;
-        }
-        // Returns the offset after encoding the character
-        public static UInt32 EncodeUtf8(this Char c, Byte[] buffer, UInt32 offset)
-        {
-            if (c <= 0x007F)
-            {
-                buffer[offset    ] = (Byte)c;
-                return offset + 1;
-            }
-            if (c <= 0x07FF)
-            {
-                buffer[offset    ] = (Byte)(0xC0 | ((c >> 6)        )); // 110xxxxx
-                buffer[offset + 1] = (Byte)(0x80 | ( c        & 0x3F)); // 10xxxxxx
-                return offset + 2;
-            }
-            buffer[offset    ]     = (Byte)(0xE0 | ((c >> 12)       )); // 1110xxxx
-            buffer[offset + 1]     = (Byte)(0x80 | ((c >>  6) & 0x3F)); // 10xxxxxx
-            buffer[offset + 2]     = (Byte)(0x80 | ( c        & 0x3F)); // 10xxxxxx
-            return offset + 3;
-        }
     }
     public static class StringBuilderExtensions
     {

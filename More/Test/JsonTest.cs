@@ -33,9 +33,9 @@ namespace More
                                 (j << 8) |
                                 (k << 4) |
                                 l);
-                            Assert.AreEqual(Encoding.UTF8.GetByteCount(new Char[] { unicodeChar }), CharExtensions.GetUtf8ByteCount(unicodeChar));
+                            Assert.AreEqual(Encoding.UTF8.GetByteCount(new Char[] { unicodeChar }), Utf8.GetCharEncodeLength(unicodeChar));
 
-                            UInt32 length = CharExtensions.EncodeUtf8(unicodeChar, encoded, 0);
+                            UInt32 length = Utf8.EncodeChar(unicodeChar, encoded, 0);
                             String decoded = Encoding.UTF8.GetString(encoded, 0, (Int32)length);
                             Assert.AreEqual(unicodeChar, decoded[0]);
                             //Console.WriteLine("Decoded = '{0}'", decoded);

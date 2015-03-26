@@ -198,7 +198,7 @@ namespace More
                             (((Char)text[offset + 3]).HexValue() <<  4) |
                             (((Char)text[offset + 4]).HexValue()      ) );
                         offset += 5;
-                        removeEscapeChars += (6U - unicodeChar.GetUtf8ByteCount());
+                        removeEscapeChars += (6U - Utf8.GetCharEncodeLength(unicodeChar));
                     }
                     else
                     {
@@ -230,11 +230,11 @@ namespace More
                         c = text[offset];
                         if (c == (Byte)'u')
                         {
-                            utf8Offset = ((Char)(
+                            utf8Offset = Utf8.EncodeChar((Char)(
                                     (((Char)text[offset + 1]).HexValue() << 12) |
                                     (((Char)text[offset + 2]).HexValue() <<  8) |
                                     (((Char)text[offset + 3]).HexValue() <<  4) |
-                                    (((Char)text[offset + 4]).HexValue()      ) )).EncodeUtf8(utf8Buffer, utf8Offset);
+                                    (((Char)text[offset + 4]).HexValue()      ) ), utf8Buffer, utf8Offset);
                             offset += 5;
                         }
                         else

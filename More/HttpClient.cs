@@ -14,7 +14,7 @@ namespace More.Net
         public readonly Byte[] contentAsBytes;
         // Option 2
         public readonly String contentAsString;
-        public readonly Encoding contentAsStringEncoding;
+        public readonly Encoder contentAsStringEncoder;
         // Option 3
         public readonly ByteAppender contentAppender;
 
@@ -30,31 +30,31 @@ namespace More.Net
             this.contentAsBytes          = content;
             // Option 2
             this.contentAsString         = null;
-            this.contentAsStringEncoding = null;
+            this.contentAsStringEncoder  = null;
             // Option 3
             this.contentAppender         = null;
 
             this.contentType             = contentType;
         }
         public HttpContent(String content)
-            : this(content, Encoding.UTF8, null)
+            : this(content, Encoder.Utf8, null)
         {
         }
         public HttpContent(String content, String contentType)
-            : this(content, Encoding.UTF8, contentType)
+            : this(content, Encoder.Utf8, contentType)
         {
         }
-        public HttpContent(String content, Encoding encoding)
+        public HttpContent(String content, Encoder encoding)
             : this(content, encoding, null)
         {
         }
-        public HttpContent(String content, Encoding encoding, String contentType)
+        public HttpContent(String content, Encoder encoding, String contentType)
         {
             // Option 1
             this.contentAsBytes          = null;
             // Option 2
             this.contentAsString         = content;
-            this.contentAsStringEncoding = encoding;
+            this.contentAsStringEncoder  = encoding;
             // Option 3
             this.contentAppender         = null;
 
@@ -70,7 +70,7 @@ namespace More.Net
             this.contentAsBytes          = null;
             // Option 2
             this.contentAsString         = null;
-            this.contentAsStringEncoding = null;
+            this.contentAsStringEncoder  = null;
             // Option 3
             this.contentAppender         = contentAppender;
 
@@ -156,11 +156,11 @@ namespace More.Net
             //
             // <METHOD> <resource> HTTP/1.1\r\n
             //
-            builder.Append(Encoding.ASCII, method);
-            builder.Append((Byte)' ');
+            builder.AppendAscii(method); // Todo: Should I verify that method is ascii beforehand?
+            builder.AppendAscii(' ');
             if (!String.IsNullOrEmpty(resource))
             {
-                builder.Append(Encoding.ASCII, resource);
+                builder.AppendAscii(resource); // Todo: Should I verify that resource is ascii beforehand?
             }
             else if (resourceAppender != null)
             {
@@ -175,14 +175,14 @@ namespace More.Net
             builder.Append(Http.HostHeaderPrefix);
             if (overrideHostHeader != null)
             {
-                builder.Append(Encoding.ASCII, overrideHostHeader);
+                builder.AppendAscii(overrideHostHeader);
             }
             else
             {
-                builder.Append(Encoding.ASCII, client.ipOrHost);
+                builder.AppendAscii(client.ipOrHost);
                 if (client.port != 80 || forcePortInHostHeader)
                 {
-                    builder.Append((Byte)':');
+                    builder.AppendAscii(':');
                     builder.AppendNumber(client.port, 10);
                 }
             }
@@ -203,7 +203,7 @@ namespace More.Net
                 else if (content.contentAsString != null)
                 {
                     hasContent = true;
-                    contentLength = (UInt32)content.contentAsStringEncoding.GetByteCount(content.contentAsString);
+                    contentLength = content.contentAsStringEncoder.GetEncodeLength(content.contentAsString);
                 }
                 else if (content.contentAppender != null)
                 {
@@ -224,7 +224,7 @@ namespace More.Net
                     if (content.contentType != null)
                     {
                         builder.Append(Http.ContentTypeHeaderPrefix);
-                        builder.Append(Encoding.ASCII, content.contentType);
+                        builder.AppendAscii(content.contentType);
                         builder.Append(Http.Newline);
                     }
                 }
@@ -268,7 +268,7 @@ namespace More.Net
             }
             else if (content.contentAsString != null)
             {
-                builder.Append(content.contentAsStringEncoding, content.contentAsString);
+                builder.Append(content.contentAsStringEncoder, content.contentAsString);
             }
             else if (content.contentAppender != null)
             {

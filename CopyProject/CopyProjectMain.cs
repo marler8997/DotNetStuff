@@ -331,8 +331,6 @@ namespace CopyProject
                 newNamespace = null;
             }
 
-
-
             //
             // Copy the project file
             //
@@ -369,6 +367,7 @@ namespace CopyProject
                     fileContents = fileContents.Replace("using " + oldDottedNamespace, "using " + newDottedNamespace);
                     fileContents = fileContents.Replace("using " + oldNamespace, "using " + newNamespace);
 
+                    fileContents = fileContents.Replace(oldNamespace + ".", newNamespace + ".");
 
                     FileExtensions.SaveStringToFile(compileFile.destRelativeToCWDNameAndPath, FileMode.Create, fileContents);
                 }

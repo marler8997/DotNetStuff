@@ -3,6 +3,36 @@ using System.Diagnostics;
 
 namespace More
 {
+    public class Encoder
+    {
+        public static readonly Encoder Ascii = new Encoder(
+            More.Ascii.GetCharEncodeLength, More.Ascii.GetEncodeLength,
+            More.Ascii.EncodeChar, More.Ascii.Encode);
+        public static readonly Encoder Utf8 = new Encoder(
+            More.Utf8.GetCharEncodeLength, More.Utf8.GetEncodeLength,
+            More.Utf8.EncodeChar, More.Utf8.Encode);
+
+        public delegate Byte GetCharEncodeLengthDelegate(Char c);
+        public delegate UInt32 GetEncodeLengthDelegate(String str);
+        public delegate UInt32 EncodeCharDelegate(Char c, Byte[] buffer, UInt32 offset);
+        public delegate void EncodeDelegate(String str, Byte[] buffer, UInt32 offset);
+
+        public readonly GetCharEncodeLengthDelegate GetCharEncodeLength;
+        public readonly GetEncodeLengthDelegate GetEncodeLength;
+        public readonly EncodeCharDelegate EncodeChar;
+        public readonly EncodeDelegate Encode;
+        private Encoder(
+            GetCharEncodeLengthDelegate GetCharEncodeLength,
+            GetEncodeLengthDelegate GetEncodeLength,
+            EncodeCharDelegate EncodeChar,
+            EncodeDelegate Encode)
+        {
+            this.GetCharEncodeLength = GetCharEncodeLength;
+            this.GetEncodeLength = GetEncodeLength;
+            this.EncodeChar = EncodeChar;
+            this.Encode = Encode;
+        }
+    }
     public static class Ascii
     {
         public static Boolean StartsWithAscii(this String value, Byte[] text, UInt32 offset, UInt32 length)
@@ -34,6 +64,33 @@ namespace More
                     return false;
             }
             return true;
+        }
+        /// <summary>The maximum number of bytes it would take to encode a C# Char type</summary>
+        public const UInt32 MaxCharEncodeLength = 3;
+        public static Byte GetCharEncodeLength(Char c)
+        {
+            return 1;
+        }
+        public static UInt32 GetEncodeLength(String str)
+        {
+            return (uint)str.Length;
+        }
+        // Returns the offset after encoding the character
+        public static UInt32 EncodeChar(Char c, Byte[] buffer, UInt32 offset)
+        {
+            buffer[offset] = (Byte)c;
+            return offset + 1;
+        }
+        // Returns the offset after encoding the character
+        // Note: it is assumed that the caller will have already calculated the encoded length, for
+        //       that reason, this method does not return the offset after the encoding
+        public static void Encode(String str, Byte[] buffer, UInt32 offset)
+        {
+            for (int i = 0; i < str.Length; i++)
+            {
+                var c = str[i];
+                buffer[offset++] = (Byte)c;
+            }
         }
     }
     public enum Utf8ExceptionType
@@ -103,7 +160,79 @@ namespace More
 
             throw new Utf8Exception(Utf8ExceptionType.OutOfRange);
         }
-
+        /// <summary>The maximum number of bytes it would take to encode a C# Char type</summary>
+        public const UInt32 MaxCharEncodeLength = 3;
+        public static Byte GetCharEncodeLength(Char c)
+        {
+            if (c <= 0x007F) return 1;
+            if (c <= 0x07FF) return 2;
+            return 3;
+        }
+        public static UInt32 GetEncodeLength(String str)
+        {
+            UInt32 byteCount = 0;
+            for (int i = 0; i < str.Length; i++)
+            {
+                var c = str[i];
+                if (c <= 0x007F)
+                {
+                    byteCount++;
+                }
+                else if (c <= 0x07FF)
+                {
+                    byteCount += 2;
+                }
+                else
+                {
+                    byteCount += 3;
+                }
+            }
+            return byteCount;
+        }
+        // Returns the offset after encoding the character
+        public static UInt32 EncodeChar(Char c, Byte[] buffer, UInt32 offset)
+        {
+            if (c <= 0x007F)
+            {
+                buffer[offset    ] = (Byte)c;
+                return offset + 1;
+            }
+            if (c <= 0x07FF)
+            {
+                buffer[offset    ] = (Byte)(0xC0 | ((c >> 6)        )); // 110xxxxx
+                buffer[offset + 1] = (Byte)(0x80 | ( c        & 0x3F)); // 10xxxxxx
+                return offset + 2;
+            }
+            buffer[offset    ]     = (Byte)(0xE0 | ((c >> 12)       )); // 1110xxxx
+            buffer[offset + 1]     = (Byte)(0x80 | ((c >>  6) & 0x3F)); // 10xxxxxx
+            buffer[offset + 2]     = (Byte)(0x80 | ( c        & 0x3F)); // 10xxxxxx
+            return offset + 3;
+        }
+        // Returns the offset after encoding the character
+        // Note: it is assumed that the caller will have already calculated the encoded length, for
+        //       that reason, this method does not return the offset after the encoding
+        public static void Encode(String str, Byte[] buffer, UInt32 offset)
+        {
+            for (int i = 0; i < str.Length; i++)
+            {
+                var c = str[i];
+                if (c <= 0x007F)
+                {
+                    buffer[offset++] = (Byte)c;
+                }
+                else if (c <= 0x07FF)
+                {
+                    buffer[offset++] = (Byte)(0xC0 | ((c >> 6)       )); // 110xxxxx
+                    buffer[offset++] = (Byte)(0x80 | ( c       & 0x3F)); // 10xxxxxx
+                }
+                else
+                {
+                    buffer[offset++] = (Byte)(0xE0 | ((c >> 12)      )); // 1110xxxx
+                    buffer[offset++] = (Byte)(0x80 | ((c >> 6) & 0x3F)); // 10xxxxxx
+                    buffer[offset++] = (Byte)(0x80 | ( c       & 0x3F)); // 10xxxxxx
+                }
+            }
+        }
         // TODO: implement this correctly later
         public static Boolean IsUpper(UInt32 c)
         {
@@ -226,8 +355,6 @@ namespace More
             }
             */
         }
-
-
         public static Boolean EqualsString(Byte[] array, UInt32 offset, UInt32 limit, String compare, Boolean ignoreCase)
         {
             return EqualsString(array, offset, limit, compare, 0, (UInt32)compare.Length, ignoreCase);
