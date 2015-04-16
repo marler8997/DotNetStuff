@@ -137,7 +137,7 @@ namespace More
 
     public static class Sos
     {
-        static readonly Type[] StringParam = new Type[] { typeof(String) };
+        //public static readonly Type[] StringParam = new Type[] { typeof(String) };
 
         //
         // According to the performance checks, this method is much faster when it is inlined
@@ -154,7 +154,8 @@ namespace More
         {
             return (c == ',' || c == ']' || c == '}' || c == ':' || c == '>');
         }
-
+        /*
+         * I commented this out because it wasn't being used
         static readonly Char[] EndOfValue = new Char[] {
             ',', // If the value is not the last item in an array/object/table
             ']', // If the value is the last item in an array
@@ -162,7 +163,7 @@ namespace More
             ':', // If the value is the last item in a table row
             '>'  // If the value is the last item in a table
         };
-
+        */
         // Used to create a user friendly string describing the difference
         // between the given expected object and the actual object
         public static String Diff(this Object expected, Object actual)
@@ -1014,7 +1015,7 @@ namespace More
                 //
                 // Slower way using reflection
                 //
-                //MethodInfo parseMethod = type.GetMethod("Parse", stringParam);
+                //MethodInfo parseMethod = type.GetMethod("Parse", StringParam);
                 //obj = parseMethod.Invoke(null, new Object[] { numberString });
 
                 //

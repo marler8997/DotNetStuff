@@ -17,7 +17,6 @@ namespace More
         UInt32 nextIndex;
 
         readonly SortedList<UInt32> sortedFreeIndices;
-        readonly Dictionary<ObjectType, UInt32> objectToIndexDictionary;
 
         public ObjectManager(IObjectFactory factory, UInt32 initialCapacity, UInt32 extendLength)
         {
@@ -30,7 +29,6 @@ namespace More
             nextIndex = 0;
 
             this.sortedFreeIndices = new SortedList<UInt32>(initialCapacity, extendLength, CommonComparisons.IncreasingUInt32);
-            this.objectToIndexDictionary = new Dictionary<ObjectType, UInt32>();
         }
         public Boolean ThereExistsAllocatedObjectsThatAreFree()
         {

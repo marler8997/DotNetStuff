@@ -54,6 +54,9 @@ namespace More
             builder.Append(String.Format("[{0} bytes]", fixedLength));
         }
     }
+    /*
+     * I commented this class out because it wasn't using arraySizeByteCount.
+     * If I find another peice of code is using this I may uncomment it and fix it.
     public class ByteArrayReflector : ClassFieldReflector
     {
         readonly Byte arraySizeByteCount;
@@ -128,6 +131,7 @@ namespace More
             builder.Append(String.Format("[{0} bytes]", GetLength(instance)));
         }
     }
+    */
 
     public class FixedLengthElementArrayReflector<ElementType> : ClassFieldReflector
     {

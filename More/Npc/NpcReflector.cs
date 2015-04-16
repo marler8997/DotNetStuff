@@ -217,13 +217,10 @@ namespace More
         }
         public override NpcReturnObjectOrException ExecuteWithObjects(NpcExecutionObject executionObject, NpcMethodInfo npcMethodInfo, params Object[] args)
         {
-            UInt16 argsLength = (args == null) ? (UInt16)0 : (UInt16)args.Length;
-
             //
             // Setup Parameter array of Objects to invoke the method
             //
             MethodInfo methodInfo = npcMethodInfo.methodInfo;
-            ParameterInfo[] parameters = npcMethodInfo.parameters;
 
             //
             // Invoke

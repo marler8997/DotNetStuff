@@ -33,6 +33,8 @@ namespace More
 
         public void LoadFromFile(String filename, ProgramSettingsFormat format)
         {
+            throw new NotImplementedException("ProgramSettings.LoadFromFile is not implemented yet");
+            /*
             if (format == ProgramSettingsFormat.Sos)
             {
                 String fileContents = Encoding.UTF8.GetString(FileExtensions.ReadFile(filename));
@@ -43,6 +45,7 @@ namespace More
             {
                 throw new NotSupportedException(String.Format("Program Setting Format '{0}' is not currently supported", format));
             }
+            */
         }
 
         public void LoadFromCommandLine(String[] args)

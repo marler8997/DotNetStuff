@@ -120,7 +120,6 @@ namespace More
         }
         public void Run()
         {
-            Socket listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             selectServer = new TcpSelectServer();
             selectServer.PrepareToRun();
             selectServer.Run(null, new IPEndPoint(IPAddress.Any, port), Backlog,

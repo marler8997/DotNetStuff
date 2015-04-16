@@ -1249,8 +1249,7 @@ namespace More
             Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());
         }
         */
-
-        static readonly Type[] stringParam = new Type[] { typeof(String) };
+        static readonly Type[] StringParam = new Type[] { typeof(String) };
         [TestMethod]
         public void PerformanceTestParseNumber()
         {
@@ -1317,7 +1316,7 @@ namespace More
             before = Stopwatch.GetTimestamp();
             for (int i = 0; i < 100000; i++)
             {
-                MethodInfo parseMethod = type.GetMethod("Parse", stringParam);
+                MethodInfo parseMethod = type.GetMethod("Parse", StringParam);
                 parseMethod.Invoke(null, new Object[] { s });
             }
             Console.WriteLine((Stopwatch.GetTimestamp() - before).StopwatchTicksAsInt64Milliseconds());

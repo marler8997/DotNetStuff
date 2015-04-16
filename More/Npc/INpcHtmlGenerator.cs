@@ -103,7 +103,6 @@ namespace More
 
             if (type.IsArray)
             {
-                Type elementType = type.GetElementType();
                 Array array = (Array)returnObject;
 
                 if (array.Length <= 0)
