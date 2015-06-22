@@ -99,11 +99,11 @@ namespace More
         [TestMethod]
         public void TestCombined2()
         {
-            OrderedSet<Int32> First = OrderedSet<Int32>.SortArrayAndGetSet(new Int32[] { 0, 1, 3});
+            OrderedSet<Int32> First = OrderedSet.SortArrayAndGetSet(new Int32[] { 0, 1, 3});
 
             AssertEquals(new Int32[] { 0, 1, 3 }, First.orderedSet);
             
-            OrderedSet<Int32> Second = First.Combine(OrderedSet<Int32>.SortArrayAndGetSet(new Int32[] { 0, 2 }));
+            OrderedSet<Int32> Second = First.Combine(OrderedSet.SortArrayAndGetSet(new Int32[] { 0, 2 }));
 
             AssertEquals(new Int32[] { 0, 1, 2, 3 }, Second.orderedSet);
         }

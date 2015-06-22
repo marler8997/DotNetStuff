@@ -49,6 +49,7 @@
     <Compile Include="EnumeratorTests.cs" />
     <Compile Include="HttpTests.cs" />
     <Compile Include="JsonTest.cs" />
+    <Compile Include="OrderedSetTests.cs" />
     <Compile Include="RollingLogTest.cs" />
     <Compile Include="SnmpTest.cs" />
     <Compile Include="SortedSetTests.cs" />

@@ -155,22 +155,55 @@ namespace More
             }
         }
     }
-    public struct OrderedSet<T> : IEnumerable<T>, IEquatable<OrderedSet<T>>
+    public static class OrderedSet
     {
-        static readonly List<OrderedSet<T>> allCreatedSets = new List<OrderedSet<T>>();
-        public static OrderedSet<T> SortArrayAndGetSet(params T[] set)
+        public static OrderedSet<T> SortArrayAndGetSet<T>(params T[] set)
         {
             Array.Sort(set);
+            // Verify there are no duplicates
+            if (set.Length > 0)
+            {
+                T last = set[0];
+                for (int i = 1; i < set.Length; i++)
+                {
+                    T current = set[i];
+                    var result = Comparer<T>.Default.Compare(last, current);
+                    if (result == 0)
+                        throw new ArgumentException(String.Format("The array contained duplicates of '{0}' starting at index {1}",
+                            current, i-1));
+                    last = current;
+                }
+            }
             return GetSetUsingPreorderedSet(set);
         }
-        static OrderedSet<T> GetSetUsingPreorderedSet(T[] orderedSet)
+        public static OrderedSet<T> VerifySortedAndGetSet<T>(params T[] set)
+        {
+            if (set.Length > 0)
+            {
+                T last = set[0];
+                for (int i = 1; i < set.Length; i++)
+                {
+                    T current = set[i];
+                    var result = Comparer<T>.Default.Compare(last, current);
+                    if (result >= 0)
+                    {
+                        if(result == 0)
+                            throw new ArgumentException(String.Format("The array contained duplicates of '{0}'", current));
+                        throw new ArgumentException(String.Format("The array was not sorted (unsorted at index {0})", i-1));
+                    }
+                    last = current;
+                }
+            }
+            return GetSetUsingPreorderedSet(set);
+        }
+        static OrderedSet<T> GetSetUsingPreorderedSet<T>(T[] orderedSet)
         {
             //
             // Check if this set is already created
             //
-            for (int i = 0; i < allCreatedSets.Count; i++)
+            for (int i = 0; i < OrderedSet<T>.allCreatedSets.Count; i++)
             {
-                OrderedSet<T> existingSet = allCreatedSets[i];
+                OrderedSet<T> existingSet = OrderedSet<T>.allCreatedSets[i];
                 if (orderedSet.Length == existingSet.orderedSet.Length)
                 {
                     Boolean isMatch = true;
@@ -190,13 +223,17 @@ namespace More
             // Create a new ordered set
             //
             OrderedSet<T> newSet = new OrderedSet<T>(orderedSet);
-            allCreatedSets.Add(newSet);
+            OrderedSet<T>.allCreatedSets.Add(newSet);
             return newSet;
         }
+    }
+    public struct OrderedSet<T> : IEnumerable<T>, IEquatable<OrderedSet<T>>
+    {
+        internal static readonly List<OrderedSet<T>> allCreatedSets = new List<OrderedSet<T>>();
 
         // Ordered set can be null
         public readonly T[] orderedSet;
-        private OrderedSet(T[] orderedSet)
+        internal OrderedSet(T[] orderedSet)
         {
             this.orderedSet = orderedSet;
         }
