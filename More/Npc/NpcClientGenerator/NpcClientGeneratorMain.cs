@@ -113,7 +113,7 @@ namespace More
         void Add(Config config)
         {
             configs.Add(config);
-            AddWithNameLowerInvariant(config.nameLowerInvarient, config.Handle);
+            Add(config.name, config.Handle);
         }
         public CustomObjectConfiguration()
         {
@@ -181,7 +181,7 @@ namespace More
         void Add(Config config)
         {
             configs.Add(config);
-            AddWithNameLowerInvariant(config.nameLowerInvarient, config.Handle);
+            Add(config.name, config.Handle);
         }
         public NpcClientGenerationConfiguration()
         {
@@ -236,7 +236,7 @@ namespace More
             Add(defaultObjectFilter);
 
             customObjectConfiguration = new CustomObjectConfiguration();
-            AddWithNameLowerInvariant("CustomObject".ToLowerInvariant(), HandleCustomObject);
+            Add("CustomObject", HandleCustomObject);
         }
         LfdLine HandleCustomObject(LfdReader reader, LfdLine line)
         {

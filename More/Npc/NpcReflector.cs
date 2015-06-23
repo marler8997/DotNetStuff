@@ -30,8 +30,8 @@ namespace More
 
         readonly NpcInterfaceInfo.Set interfaceSet;
         readonly List<NpcMethodOverloadable> methodList;
-        readonly Dictionary<String,NpcMethodOverloadable> withObjectLowerInvariantMethodDictionary;
-        readonly Dictionary<String, List<NpcMethodOverloadable>> noObjectLowerInvariantMethodDictionary;
+        readonly Dictionary<String,NpcMethodOverloadable> withObjectMethodDictionary;
+        readonly Dictionary<String, List<NpcMethodOverloadable>> noObjectDictionary;
         readonly Dictionary<String, Type> enumAndObjectTypesDictionary;
         readonly Dictionary<String, OneOrMoreTypes> enumAndObjectTypesWithUniqueShortNamesDictionary;
 
@@ -42,11 +42,11 @@ namespace More
 
             this.npcExecutionObjects = new NpcExecutionObject[executionObjects.Length];
 
-            this.interfaceSet                             = new NpcInterfaceInfo.Set(new Dictionary<Type, NpcInterfaceInfo>());
-            this.methodList                               = new List<NpcMethodOverloadable>();
-            this.withObjectLowerInvariantMethodDictionary = new Dictionary<String, NpcMethodOverloadable>();
-            this.noObjectLowerInvariantMethodDictionary   = new Dictionary<String, List<NpcMethodOverloadable>>();
-            this.enumAndObjectTypesDictionary             = new Dictionary<String, Type>();
+            this.interfaceSet                 = new NpcInterfaceInfo.Set(new Dictionary<Type, NpcInterfaceInfo>());
+            this.methodList                   = new List<NpcMethodOverloadable>();
+            this.withObjectMethodDictionary   = new Dictionary<String, NpcMethodOverloadable>(StringComparer.OrdinalIgnoreCase);
+            this.noObjectDictionary           = new Dictionary<String, List<NpcMethodOverloadable>>(StringComparer.OrdinalIgnoreCase);
+            this.enumAndObjectTypesDictionary = new Dictionary<String, Type>();
             this.enumAndObjectTypesWithUniqueShortNamesDictionary = new Dictionary<String, OneOrMoreTypes>();
 
             //
@@ -91,26 +91,24 @@ namespace More
                         //
                         // Add method info to dictionary
                         //
-                        String objectMethodNameLowerInvariant = npcExecutionObject.objectNameLowerInvariant + "." + npcMethodInfo.methodNameLowerInvariant;
+                        String objectMethodName = npcExecutionObject.objectName + "." + npcMethodInfo.methodName;
                         NpcMethodOverloadable overloadableMethod;
-                        if (withObjectLowerInvariantMethodDictionary.TryGetValue(objectMethodNameLowerInvariant, out overloadableMethod))
+                        if (withObjectMethodDictionary.TryGetValue(objectMethodName, out overloadableMethod))
                         {
                             overloadableMethod.AddOverload(npcMethodInfo);
                         }
                         else
                         {
                             overloadableMethod = new NpcMethodOverloadable(npcExecutionObject, npcMethodInfo);
-
                             methodList.Add(overloadableMethod);
-
-                            withObjectLowerInvariantMethodDictionary.Add(objectMethodNameLowerInvariant, overloadableMethod);
+                            withObjectMethodDictionary.Add(objectMethodName, overloadableMethod);
                         }
 
                         List<NpcMethodOverloadable> methodsWithSameShortName;
-                        if (!noObjectLowerInvariantMethodDictionary.TryGetValue(npcMethodInfo.methodNameLowerInvariant, out methodsWithSameShortName))
+                        if (!noObjectDictionary.TryGetValue(npcMethodInfo.methodName, out methodsWithSameShortName))
                         {
                             methodsWithSameShortName = new List<NpcMethodOverloadable>();
-                            noObjectLowerInvariantMethodDictionary.Add(npcMethodInfo.methodNameLowerInvariant, methodsWithSameShortName);
+                            noObjectDictionary.Add(npcMethodInfo.methodName, methodsWithSameShortName);
                         }
                         methodsWithSameShortName.Add(overloadableMethod);
                     }
@@ -172,15 +170,13 @@ namespace More
         }
         public override NpcMethodInfo GetNpcMethodInfo(String methodName, UInt16 parameterCount, out NpcExecutionObject executionObject)
         {
-            String methodNameLowerInvariant = methodName.ToLowerInvariant();
-
             //
             // Find method with matching name
             //
             NpcMethodOverloadable overloadableMethod;
             if (methodName.Contains("."))
             {
-                if (!withObjectLowerInvariantMethodDictionary.TryGetValue(methodNameLowerInvariant, out overloadableMethod))
+                if (!withObjectMethodDictionary.TryGetValue(methodName, out overloadableMethod))
                 {
                     throw new NpcErrorException(NpcErrorCode.UnknownMethodName,
                         String.Format("Method '{0}' was not found", methodName));
@@ -189,7 +185,7 @@ namespace More
             else
             {
                 List<NpcMethodOverloadable> overloadableMethodsWithSameName;
-                if (!noObjectLowerInvariantMethodDictionary.TryGetValue(methodNameLowerInvariant, out overloadableMethodsWithSameName))
+                if (!noObjectDictionary.TryGetValue(methodName, out overloadableMethodsWithSameName))
                 {
                     throw new NpcErrorException(NpcErrorCode.UnknownMethodName,
                         String.Format("Method '{0}' was not found", methodName));

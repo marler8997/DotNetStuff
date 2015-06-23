@@ -19,25 +19,18 @@ namespace More
     public delegate LfdLine LfdConfigHandler(LfdReader reader, LfdLine line);
     public class LfdConfiguration
     {
-        readonly Dictionary<String, LfdLineConfigHandler> lineParsers = new Dictionary<String, LfdLineConfigHandler>();
-        readonly Dictionary<String, LfdConfigHandler>     readerParsers = new Dictionary<String, LfdConfigHandler>();
+        readonly Dictionary<String, LfdLineConfigHandler> lineParsers =
+            new Dictionary<String, LfdLineConfigHandler>(StringComparer.OrdinalIgnoreCase);
+        readonly Dictionary<String, LfdConfigHandler>     readerParsers =
+            new Dictionary<String, LfdConfigHandler>(StringComparer.OrdinalIgnoreCase);
 
         public void Add(String name, LfdLineConfigHandler handler)
         {
-            lineParsers.Add(name.ToLowerInvariant(), handler);
+            lineParsers.Add(name, handler);
         }
-        public void AddWithNameLowerInvariant(String nameLowerInvarient, LfdLineConfigHandler handler)
-        {
-            lineParsers.Add(nameLowerInvarient, handler);
-        }
-
         public void Add(String name, LfdConfigHandler handler)
         {
-            readerParsers.Add(name.ToLowerInvariant(), handler);
-        }
-        public void AddWithNameLowerInvariant(String nameLowerInvarient, LfdConfigHandler handler)
-        {
-            readerParsers.Add(nameLowerInvarient, handler);
+            readerParsers.Add(name, handler);
         }
 
         public LfdLine Handle(LfdReader reader, LfdLine parentLine)
@@ -50,18 +43,18 @@ namespace More
 
                 LfdLineConfigHandler lineConfigHandler;
                 LfdConfigHandler readerConfigHandler;
-                if (lineParsers.TryGetValue(line.idLowerInvariant, out lineConfigHandler))
+                if (lineParsers.TryGetValue(line.id, out lineConfigHandler))
                 {
                     lineConfigHandler(line);
                     line = reader.ReadLineIgnoreComments();
                 }
-                else if (readerParsers.TryGetValue(line.idLowerInvariant, out readerConfigHandler))
+                else if (readerParsers.TryGetValue(line.id, out readerConfigHandler))
                 {
                     line = readerConfigHandler(reader, line);
                 }
                 else
                 {
-                    throw new FormatException(String.Format("Unknown config name '{0}'", line.idOriginalCase));
+                    throw new FormatException(String.Format("Unknown config name '{0}'", line.id));
                 }
             }
         }
@@ -74,18 +67,18 @@ namespace More
 
                 LfdLineConfigHandler lineConfigHandler;
                 LfdConfigHandler readerConfigHandler;
-                if (lineParsers.TryGetValue(line.idLowerInvariant, out lineConfigHandler))
+                if (lineParsers.TryGetValue(line.id, out lineConfigHandler))
                 {
                     lineConfigHandler(line);
                     line = reader.ReadLineIgnoreComments();
                 }
-                else if (readerParsers.TryGetValue(line.idLowerInvariant, out readerConfigHandler))
+                else if (readerParsers.TryGetValue(line.id, out readerConfigHandler))
                 {
                     line = readerConfigHandler(reader, line);
                 }
                 else
                 {
-                    throw new FormatException(String.Format("Unknown config name '{0}'", line.idOriginalCase));
+                    throw new FormatException(String.Format("Unknown config name '{0}'", line.id));
                 }
             }
         }
@@ -229,17 +222,18 @@ namespace More
             }
         }
         public readonly LfdLine parent;
-        public readonly String idOriginalCase, idLowerInvariant;
+        public readonly String id;
         public readonly String[] fields;
+        readonly Boolean comment;
 
         public readonly UInt32 actualLineNumber;
 
         public LfdLine(LfdLine parent, String comment, UInt32 actualLineNumber)
         {
-            this.parent = parent;
-            this.idOriginalCase = comment;
-            this.idLowerInvariant = null;
-            this.fields = null;
+            this.parent  = parent;
+            this.id      = comment;
+            this.fields  = null;
+            this.comment = true;
 
             this.actualLineNumber = actualLineNumber;
         }
@@ -247,17 +241,16 @@ namespace More
         {
             if (id == null) throw new ArgumentNullException("id");
 
-            this.parent = parent;
-            this.idOriginalCase = id;
-            this.idLowerInvariant = id.ToLowerInvariant();
-
-            this.fields = fields;
+            this.parent  = parent;
+            this.id      = id;
+            this.fields  = fields;
+            this.comment = false;
 
             this.actualLineNumber = actualLineNumber;
         }
         public Boolean IsComment()
         {
-            return idLowerInvariant == null;
+            return comment;
         }
         public String CreateContextString()
         {
@@ -269,7 +262,7 @@ namespace More
                 currentParent = currentParent.parent;
             }
 
-            if (parents.Count <= 1) return idLowerInvariant;
+            if (parents.Count <= 1) return id;
 
             // Pop off the root
             parents.Pop();
@@ -277,18 +270,18 @@ namespace More
             StringBuilder stringBuilder = new StringBuilder();
             while (parents.Count > 0)
             {
-                stringBuilder.Append(parents.Pop().idLowerInvariant);
+                stringBuilder.Append(parents.Pop().id);
                 stringBuilder.Append('.');
             }
-            stringBuilder.Append(idLowerInvariant);
+            stringBuilder.Append(id);
             return stringBuilder.ToString();
         }
         public override String ToString()
         {
-            if (fields == null || fields.Length <= 0) return idOriginalCase;
+            if (fields == null || fields.Length <= 0) return id;
 
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.Append(idOriginalCase);
+            stringBuilder.Append(id);
             stringBuilder.Append(' ');
             for (int i = 0; i < fields.Length - 1; i++)
             {

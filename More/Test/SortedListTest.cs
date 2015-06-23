@@ -147,7 +147,7 @@ namespace More
         [TestMethod]
         public void TestRemoveWithStrings()
         {
-            SortedList<String> list = new SortedList<String>(0, 1, StringComparer.InvariantCulture.Compare);
+            SortedList<String> list = new SortedList<String>(0, 1, StringComparer.OrdinalIgnoreCase.Compare);
 
             list.Add("c");
             list.Add("a");
@@ -192,7 +192,7 @@ namespace More
         [TestMethod]
         public void TestAddStrings()
         {
-            SortedList<String> list = new SortedList<String>(0, 100, StringComparer.InvariantCulture.Compare);
+            SortedList<String> list = new SortedList<String>(0, 100, StringComparer.OrdinalIgnoreCase.Compare);
 
             AssertList(new String[] { }, list);
 

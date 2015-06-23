@@ -79,7 +79,7 @@ namespace More
             for (int i = 0; i < maps.Length; i++)
             {
                 InterfaceMap map = maps[i];
-                if (userInterface.Equals(map.userInterface, StringComparison.InvariantCultureIgnoreCase))
+                if (userInterface.Equals(map.userInterface, StringComparison.OrdinalIgnoreCase))
                 {
                     return map.npcInterface;
                 }
@@ -91,7 +91,7 @@ namespace More
             for (int i = 0; i < maps.Length; i++)
             {
                 InterfaceMap map = maps[i];
-                if (npcInterface.Equals(map.npcInterface, StringComparison.InvariantCultureIgnoreCase))
+                if (npcInterface.Equals(map.npcInterface, StringComparison.OrdinalIgnoreCase))
                 {
                     return map.userInterface;
                 }

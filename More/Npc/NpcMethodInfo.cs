@@ -8,7 +8,6 @@ namespace More
     public class NpcMethodInfo
     {
         public readonly String methodName;
-        public readonly String methodNameLowerInvariant;
         public readonly MethodInfo methodInfo;
         public readonly ParameterInfo[] parameters;
         public readonly UInt16 parametersLength;
@@ -16,7 +15,6 @@ namespace More
         public NpcMethodInfo(MethodInfo methodInfo)
         {
             this.methodName = methodInfo.Name;
-            this.methodNameLowerInvariant = this.methodName.ToLowerInvariant();
             this.methodInfo = methodInfo;
             this.parameters = methodInfo.GetParameters();
             this.parametersLength = (this.parameters == null) ? (UInt16)0 :

@@ -56,9 +56,6 @@
     <Compile Include="StringExtensions.cs" />
     <Compile Include="WriterExtensions.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!--<Import Project="HPBuildProperties.include" />-->
   <!--<Import Project="$(HPBuildToolsPath)\ProjectIncludes\HPCSharpProject.include" />-->

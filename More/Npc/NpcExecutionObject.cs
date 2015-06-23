@@ -62,7 +62,6 @@ namespace More
         }
         public readonly Type interfaceType;
         public readonly String name;
-        public readonly String nameLowerInvariant;
 
         public List<NpcInterfaceInfo> parentNpcInterfaces;
         public List<NpcInterfaceInfo> ancestorNpcInterfaces;
@@ -73,7 +72,6 @@ namespace More
         {
             this.interfaceType = interfaceType;
             this.name = interfaceType.Name;
-            this.nameLowerInvariant = interfaceType.Name.ToLowerInvariant();
 
             // Get Methods
             MethodInfo[] methods = interfaceType.GetMethods();
@@ -105,7 +103,6 @@ namespace More
     {
         public readonly Type type;
         public readonly String objectName;
-        public readonly String objectNameLowerInvariant;
         public Object executionLock;
         internal readonly INpcPreAndPostCalls preAndPostCall;
         public NpcStaticExecutionObject(Type staticNpcObject)
@@ -116,7 +113,6 @@ namespace More
         {
             this.type = staticNpcObject;
             this.objectName = (objectName == null) ? type.Name : objectName;
-            this.objectNameLowerInvariant = this.objectName.ToLowerInvariant();
             this.executionLock = executionLock;
             this.preAndPostCall = preAndPostCall;
 
@@ -144,7 +140,6 @@ namespace More
         public readonly Object invokeObject;
 
         public readonly String objectName;
-        public readonly String objectNameLowerInvariant;
 
         public Object executionLock;
         internal readonly INpcPreAndPostCalls preAndPostCall;
@@ -165,7 +160,6 @@ namespace More
             this.type = invokeObject.GetType();
             this.invokeObject = invokeObject;
             this.objectName = (objectName == null) ? type.Name : objectName;
-            this.objectNameLowerInvariant = this.objectName.ToLowerInvariant();
             this.executionLock = executionLock;
             this.preAndPostCall = preAndPostCall;
         }

@@ -88,9 +88,7 @@ namespace More
                 Console.WriteLine("SortedContains: GC({0},{1},{2})", GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
             }
         }
-
-
-
+        
 
         public static String JsonEncodeSlower(String str)
         {

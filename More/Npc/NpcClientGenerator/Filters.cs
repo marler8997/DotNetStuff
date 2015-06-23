@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 
 namespace More
 {
-
     public interface IStringFilter
     {
         Boolean Include(String str);

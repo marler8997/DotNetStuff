@@ -337,27 +337,27 @@ namespace More
                 }
                 if (commandArguments != null) commandArguments = commandArguments.Trim();
 
-                if (command.Equals("call", StringComparison.InvariantCultureIgnoreCase))
+                if (command.Equals("call", StringComparison.OrdinalIgnoreCase))
                 {
                     response = CallCommandHandler(commandArguments);
                 }
-                else if (command.Equals("methods", StringComparison.InvariantCultureIgnoreCase))
+                else if (command.Equals("methods", StringComparison.OrdinalIgnoreCase))
                 {
                     response = MethodsCommandHandler(commandArguments);
                 }
-                else if (command.Equals("type", StringComparison.InvariantCultureIgnoreCase))
+                else if (command.Equals("type", StringComparison.OrdinalIgnoreCase))
                 {
                     response = TypeCommandHandler(commandArguments);
                 }
-                else if (command.Equals("interface", StringComparison.InvariantCultureIgnoreCase))
+                else if (command.Equals("interface", StringComparison.OrdinalIgnoreCase))
                 {
                     response = InterfaceCommandHandler();
                 }
-                else if (command.Equals("help", StringComparison.InvariantCultureIgnoreCase) || command.Equals("", StringComparison.InvariantCultureIgnoreCase))
+                else if (command.Equals("help", StringComparison.OrdinalIgnoreCase) || command.Equals("", StringComparison.OrdinalIgnoreCase))
                 {
                     response = GenerateHelpMessage(null);
                 }
-                else if (command.Equals("exit", StringComparison.InvariantCultureIgnoreCase))
+                else if (command.Equals("exit", StringComparison.OrdinalIgnoreCase))
                 {
                     responseHandler.Dispose();
                     return;
@@ -536,12 +536,10 @@ namespace More
             //
             Boolean verbose = false;
             String objectName = null;
-            String objectNameLowerInvariant = null;
             while (args != null)
             {
                 String arg = args.Peel(out args);
-                String argLowerInvariant = arg.ToLowerInvariant();
-                if (argLowerInvariant.Equals("verbose".ToLowerInvariant()))
+                if (arg.Equals("verbose", StringComparison.OrdinalIgnoreCase))
                 {
                     verbose = true;
                 }
@@ -552,7 +550,6 @@ namespace More
                         return Encoding.ASCII.GetBytes(String.Format("Invalid arguments '{0}'\n", originalArgs));
                     }
                     objectName = arg;
-                    objectNameLowerInvariant = argLowerInvariant;
                 }
             }
 
@@ -591,7 +588,7 @@ namespace More
                 Boolean foundObject = false;
                 foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
                 {
-                    if(executionObject.objectNameLowerInvariant.Equals(objectNameLowerInvariant))
+                    if(executionObject.objectName.Equals(objectName, StringComparison.OrdinalIgnoreCase))
                     {
                         if(verbose)
                         {

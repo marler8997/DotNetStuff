@@ -28,23 +28,23 @@ namespace More
             {
                 LfdLine line = reader.ReadLine();
 
-                Assert.AreEqual("LineWithNoValues", line.idOriginalCase);
+                Assert.AreEqual("LineWithNoValues", line.id);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("Line1Fields", line.idOriginalCase);
+                Assert.AreEqual("Line1Fields", line.id);
                 Assert.AreEqual("field1", line.fields[0]);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("Line2Fields", line.idOriginalCase);
+                Assert.AreEqual("Line2Fields", line.id);
                 Assert.AreEqual("field1", line.fields[0]);
                 Assert.AreEqual("field2", line.fields[1]);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("LineFieldWithWhitespace", line.idOriginalCase);
+                Assert.AreEqual("LineFieldWithWhitespace", line.id);
                 Assert.AreEqual("this ; is a long field", line.fields[0]);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("LineWithEmptyFields", line.idOriginalCase);
+                Assert.AreEqual("LineWithEmptyFields", line.id);
                 Assert.AreEqual(String.Empty, line.fields[0]);
                 Assert.AreEqual("", line.fields[1]);
 
@@ -118,16 +118,16 @@ namespace More
                 LfdLine line;
 
                 line = reader.ReadLine();
-                Assert.AreEqual("LineFieldWithWhitespace", line.idOriginalCase);
+                Assert.AreEqual("LineFieldWithWhitespace", line.id);
                 Assert.AreEqual("this ; is a long field", line.fields[0]);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("LineWithEmptyFields", line.idOriginalCase);
+                Assert.AreEqual("LineWithEmptyFields", line.id);
                 Assert.AreEqual(String.Empty, line.fields[0]);
                 Assert.AreEqual("", line.fields[1]);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("LineWithEscapedQuotes", line.idOriginalCase);
+                Assert.AreEqual("LineWithEscapedQuotes", line.id);
                 Assert.AreEqual(" hello \"person\" in quotes ", line.fields[0]);
                 Assert.AreEqual("\"", line.fields[1]);
 
@@ -150,7 +150,7 @@ namespace More
                 LfdLine line;
 
                 line = reader.ReadLine();
-                Assert.AreEqual("line1", line.idOriginalCase);
+                Assert.AreEqual("line1", line.id);
                 Assert.AreEqual("continuationofline1", line.fields[0]);
                 Assert.AreEqual("another", line.fields[1]);
                 Assert.AreEqual("continuation", line.fields[2]);
@@ -180,30 +180,30 @@ namespace More
                 LfdLine line;
 
                 line = reader.ReadLine();
-                Assert.AreEqual("Parent1Context", line.idOriginalCase);
+                Assert.AreEqual("Parent1Context", line.id);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("Child1", line.idOriginalCase);
-                Assert.AreEqual("Parent1Context", line.parent.idOriginalCase);
+                Assert.AreEqual("Child1", line.id);
+                Assert.AreEqual("Parent1Context", line.parent.id);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("NoParent", line.idOriginalCase);
+                Assert.AreEqual("NoParent", line.id);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("FirstParentOfTree", line.idOriginalCase);
+                Assert.AreEqual("FirstParentOfTree", line.id);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("Child", line.idOriginalCase);
-                Assert.AreEqual("FirstParentOfTree", line.parent.idOriginalCase);
+                Assert.AreEqual("Child", line.id);
+                Assert.AreEqual("FirstParentOfTree", line.parent.id);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("SecondParentOfTree", line.idOriginalCase);
-                Assert.AreEqual("FirstParentOfTree", line.parent.idOriginalCase);
+                Assert.AreEqual("SecondParentOfTree", line.id);
+                Assert.AreEqual("FirstParentOfTree", line.parent.id);
 
                 line = reader.ReadLine();
-                Assert.AreEqual("Child", line.idOriginalCase);
-                Assert.AreEqual("SecondParentOfTree", line.parent.idOriginalCase);
-                Assert.AreEqual("FirstParentOfTree", line.parent.parent.idOriginalCase);
+                Assert.AreEqual("Child", line.id);
+                Assert.AreEqual("SecondParentOfTree", line.parent.id);
+                Assert.AreEqual("FirstParentOfTree", line.parent.parent.id);
 
                 line = reader.ReadLine();
                 Assert.AreEqual(null, line);
@@ -226,7 +226,7 @@ namespace More
                 LfdLine line;
 
                 line = reader.ReadLine();
-                Assert.AreEqual("LineThatIsContinued", line.idOriginalCase);
+                Assert.AreEqual("LineThatIsContinued", line.id);
                 Assert.AreEqual("field1", line.fields[0]);
                 Assert.AreEqual("field2", line.fields[1]);
                 Assert.AreEqual("field3", line.fields[2]);
@@ -234,7 +234,7 @@ namespace More
                 Assert.AreEqual("field5", line.fields[4]);
                 
                 line = reader.ReadLine();
-                Assert.AreEqual("AnotherLine", line.idOriginalCase);
+                Assert.AreEqual("AnotherLine", line.id);
                 Assert.AreEqual("{field1", line.fields[0]);
                 Assert.AreEqual("field2", line.fields[1]);
 

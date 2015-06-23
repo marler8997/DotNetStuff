@@ -109,8 +109,8 @@ namespace More.Test
 
         void TestFactorizer(IPrimeFactorizer factorizer)
         {
-            Assert.IsNull(factorizer.PrimeFactorize(0));
-            Assert.IsNull(factorizer.PrimeFactorize(1));
+            Assert.AreEqual(PoweredPrime.None, factorizer.PrimeFactorize(0));
+            Assert.AreEqual(PoweredPrime.None, factorizer.PrimeFactorize(1));
             TestFactorize(factorizer,  2, new PoweredPrime(2, 1));
             TestFactorize(factorizer,  3, new PoweredPrime(3, 1));
             TestFactorize(factorizer,  4, new PoweredPrime(2, 2));

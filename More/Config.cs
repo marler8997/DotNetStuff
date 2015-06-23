@@ -7,13 +7,11 @@ namespace More
     public abstract class Config
     {
         public readonly String name;
-        public readonly String nameLowerInvarient;
         public readonly String description;
 
         public Config(String name, String description)
         {
             this.name = name;
-            this.nameLowerInvarient = name.ToLowerInvariant();
             this.description = description;
         }
         protected void WriteDescription(String linePrefix, TextWriter writer)

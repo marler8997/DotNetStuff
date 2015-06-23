@@ -39,7 +39,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Config.cs" />
     <Compile Include="Filters.cs" />
     <Compile Include="NpcClientGeneratorMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
