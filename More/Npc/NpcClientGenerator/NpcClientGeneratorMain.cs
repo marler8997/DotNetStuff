@@ -536,7 +536,7 @@ namespace More
             //
             // Attempt to connect to Npc Server
             //
-            EndPoint npcServerEndPoint = EndPoints.EndPointFromIPOrHost(serverHost, port);
+            EndPoint npcServerEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(AddressFamily.InterNetwork, serverHost), port);
             Socket npcServerSocket = new Socket(npcServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             try

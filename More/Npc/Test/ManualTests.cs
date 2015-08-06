@@ -16,7 +16,7 @@ class NpcServerControl : INpcServerControl
     }
     public void Stop()
     {
-        server.Dispose();
+        server.StopServerFromAnotherThread();
     }
 }
 namespace More.Npc.Test

@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Text;
+using System.Net.Sockets;
 
 using More;
+using More.Net;
 
 namespace More
 {
@@ -25,8 +26,9 @@ namespace More
 
             String serverIPOrHostAndOptionalPort = args[0];
 
-            CommandLineClient client = new CommandLineClient(
-                EndPoints.EndPointFromIPOrHostAndOptionalPort(serverIPOrHostAndOptionalPort, defaultPort), interfaceMapping);
+            IPEndPoint serverEndPoint = EndPoints.ParseIPOrResolveHostWithOptionalPort(
+                AddressFamily.InterNetwork, serverIPOrHostAndOptionalPort, defaultPort);
+            CommandLineClient client = new CommandLineClient(serverEndPoint, interfaceMapping);
 
             String line;
 

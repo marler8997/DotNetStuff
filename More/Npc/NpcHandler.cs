@@ -7,6 +7,7 @@ using System.Threading;
 using System.Web;
 
 using More;
+using More.Net;
 
 namespace More
 {
@@ -37,6 +38,26 @@ namespace More
             this.lineParser = new LineParser(Encoding.ASCII, Buf.DefaultInitialCapacity, Buf.DefaultExpandLength);
             this.atFirstLine = true;
             this.done = false;
+        }
+        public void HandleReceive(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
+        {
+            try
+            {
+                var bytesReceived = socket.Receive(safeBuffer.array);
+                if (bytesReceived <= 0)
+                {
+                    done = true;
+                    selectControl.RemoveReceiveSocket(socket);
+                    return;
+                }
+
+                Handle(safeBuffer.array, 0, (uint)bytesReceived);
+            }
+            catch (Exception e)
+            {
+                callback.UnhandledException(clientString, e);
+                selectControl.RemoveReceiveSocket(socket);
+            }
         }
         public void Handle(Byte[] buffer, UInt32 bytesRead)
         {

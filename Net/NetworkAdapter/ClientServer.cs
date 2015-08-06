@@ -9,20 +9,20 @@ namespace More.Net
 {
     public class ClientServer
     {
-        private readonly EndPoint clientSideServerEndPoint;
-        private readonly ISocketConnector clientSideProxyConnector;
+        readonly HostWithOptionalProxy server;
+        readonly String clientSideServerLogString;
 
-        private readonly PortSet listenPorts;
+        readonly PortSet listenPorts;
         public readonly Int32 socketBackLog;
         public readonly Int32 readBufferSize;
         readonly Boolean logData;
 
-        public ClientServer(EndPoint clientSideServerEndPoint, ISocketConnector clientSideProxyConnector,
-            ClientConnectWaitMode clientWaitMode, PortSet listenPorts, Int32 socketBackLog, Int32 readBufferSize,
+        public ClientServer(HostWithOptionalProxy server, ClientConnectWaitMode clientWaitMode,
+            PortSet listenPorts, Int32 socketBackLog, Int32 readBufferSize,
             Boolean logData)
         {
-            this.clientSideServerEndPoint = clientSideServerEndPoint;
-            this.clientSideProxyConnector = clientSideProxyConnector;
+            this.server = server;
+            this.clientSideServerLogString = server.TargetString();
 
             this.listenPorts = listenPorts;
             this.socketBackLog = socketBackLog;
@@ -39,20 +39,12 @@ namespace More.Net
 
         public void AcceptedNewClient(UInt32 socketID, UInt16 port, IncomingConnection incomingConnection)
         {
-            Socket clientSideSocket = new Socket(clientSideServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-            if (clientSideProxyConnector == null)
-            {
-                clientSideSocket.Connect(clientSideServerEndPoint);
-            }
-            else
-            {
-                clientSideProxyConnector.Connect(clientSideSocket, clientSideServerEndPoint);
-            }
+            Socket clientSideSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            clientSideSocket.ConnectTcpSocketThroughProxy(server);
 
             ConnectionMessageLogger messageLogger = ConnectionMessageLogger.NullConnectionMessageLogger;
             IConnectionDataLogger dataLogger = logData ? new ConnectionDataLoggerPrettyLog(socketID, ConsoleDataLogger.Instance,
-                clientSideServerEndPoint.ToString(), incomingConnection.endPointName) :
+                clientSideServerLogString, incomingConnection.endPointName) :
                 ConnectionDataLogger.Null;
 
             TwoWaySocketTunnel socketTunnel = new TwoWaySocketTunnel(

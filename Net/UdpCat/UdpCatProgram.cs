@@ -15,6 +15,7 @@ namespace UdpCat
     //
     public class UdpCatOptions : CLParser
     {
+        public readonly CLSwitch help;
         public readonly CLSwitch listenMode;
 
         public readonly CLGenericArgument<UInt16> localPort;
@@ -27,6 +28,9 @@ namespace UdpCat
         public UdpCatOptions()
             : base()
         {
+            help = new CLSwitch('h', "help", "Show the usage");
+            Add(help);
+
             listenMode = new CLSwitch('l', "listen", "Specifies that UdpCat should listen for UDP packets");
             Add(listenMode);
 
@@ -77,15 +81,21 @@ namespace UdpCat
             UdpCatOptions options = new UdpCatOptions();
 
             List<String> nonOptionArgs = options.Parse(args);
+            if (options.help.set || (nonOptionArgs.Count <= 0 && !options.listenMode.set))
+            {
+                options.PrintUsage();
+                return 0;
+            }
 
             //
             // Create the UDP Socket
             //
-            IPEndPoint listenEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(options.localHost.ArgValue),
+            IPEndPoint listenEndPoint = new IPEndPoint(
+                EndPoints.ParseIPOrResolveHost(options.localHost.ArgValue),
                 options.localPort.ArgValue);
-             udpSocket = new Socket(listenEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-            udpSocket.Bind(listenEndPoint);
 
+            udpSocket = new Socket(listenEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            udpSocket.Bind(listenEndPoint);
 
             Boolean noConsoleLoop;
             if (nonOptionArgs.Count == 0)
@@ -124,13 +134,16 @@ namespace UdpCat
             String portString = nonOptionArgs[1];
             UInt16 port = UInt16.Parse(portString);
 
-            ISocketConnector connector;
-            String hostString = ConnectorParser.ParseConnector(hostConnectorString, out connector);
-            EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHost(hostString, port);
-
-            if (connector != null)
+            IPEndPoint directIPEndPoint;
+            HostWithOptionalProxy host = ConnectorParser.ParseConnectorWithNoPortAndOptionalProxy(hostConnectorString, port);
+            if (host.proxy == null)
             {
-                connector.Connect(udpSocket, serverEndPoint);
+                directIPEndPoint = host.directEndPoint.GetOrResolveToIPEndPoint();
+            }
+            else
+            {
+                directIPEndPoint = null;
+                udpSocket.ConnectUdpSocketThroughProxy(host);
             }
 
             //
@@ -148,9 +161,9 @@ namespace UdpCat
 
                 Byte[] packet = Encoding.ASCII.GetBytes((String)deserialized);
 
-                if (connector == null)
+                if (host.proxy == null)
                 {
-                    udpSocket.SendTo(packet, serverEndPoint);
+                    udpSocket.SendTo(packet, directIPEndPoint);
                 }
                 else
                 {

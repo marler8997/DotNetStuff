@@ -3,6 +3,13 @@ using System.Diagnostics;
 
 namespace More
 {
+    public struct BufStruct
+    {
+        public Byte[] buf;
+        public UInt32 contentLength;
+    }
+
+
     // This class wraps a Byte array that can be passed to and from functions
     // that will ensure that the array will be expanded to accomodate as much data is needed.
     public class Buf
@@ -16,6 +23,11 @@ namespace More
         public Buf()
             : this(DefaultInitialCapacity, DefaultExpandLength)
         {
+        }
+        public Buf(UInt32 initialCapacity)
+        {
+            this.expandLength = initialCapacity;
+            this.array = new Byte[initialCapacity];
         }
         public Buf(UInt32 initialCapacity, UInt32 expandLength)
         {

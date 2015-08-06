@@ -179,11 +179,11 @@ namespace More.Net
             }
             else
             {
-                builder.AppendAscii(client.ipOrHost);
-                if (client.port != 80 || forcePortInHostHeader)
+                builder.AppendAscii(client.IPORHost);
+                if (client.Port != 80 || forcePortInHostHeader)
                 {
                     builder.AppendAscii(':');
-                    builder.AppendNumber(client.port, 10);
+                    builder.AppendNumber(client.Port, 10);
                 }
             }
             builder.Append(Http.Newline);
@@ -320,41 +320,49 @@ namespace More.Net
     {
         Socket socket;
 
-        public readonly String ipOrHost;
-        public readonly UInt16 port;
-        public readonly EndPoint hostEndPoint;
+        StringEndPoint serverEndPoint;
 
-        ISocketConnector socketConnector;
+        Proxy proxy;
+
         Callback requestLogger;
         public Callback RequestLogger { set { this.requestLogger = value; } }
 
+        public String IPORHost { get { return serverEndPoint.unparsedIPOrHost; } }
+        public UInt16 Port { get { return serverEndPoint.port; } }
+
         public HttpClient(String ipOrHost, UInt16 port)
         {
-            this.ipOrHost = ipOrHost;
-            this.port = port;
-            this.hostEndPoint = EndPoints.EndPointFromIPOrHost(ipOrHost, port);
+            this.serverEndPoint = new StringEndPoint(ipOrHost, port);
         }
-        public ISocketConnector SocketConnector
+        public Proxy Proxy
         {
             set
             {
                 if (socket != null && socket.Connected)
-                    throw new InvalidOperationException("Cannot set SocketConnector while the HttpClient is connected");
-                this.socketConnector = value;
+                    throw new InvalidOperationException("Cannot set Proxy while the HttpClient is connected");
+
+                serverEndPoint.parsedOrResolvedIP = null;
+
+                this.proxy = value;
+                if (proxy != null)
+                {
+                    this.proxy.PrepareEndPoint(ref serverEndPoint);
+                }
             }
         }
-        void Open()
+        void Open(Buf buf)
         {
             if (socket == null || !socket.Connected)
             {
-                socket = new Socket(hostEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                if (socketConnector == null)
+                if (proxy == null)
                 {
-                    socket.Connect(hostEndPoint);
+                    socket.Connect(serverEndPoint.unparsedIPOrHost, serverEndPoint.port);
                 }
                 else
                 {
-                    socketConnector.Connect(socket, hostEndPoint);
+                    throw new NotImplementedException();
+                    //socket.Connect(proxy.endPoint);
+                    //proxy.ProxyConnectTcp(socket, serverEndPoint, ProxyConnectOptions.ContentIsRawHttp);
                 }
             }
         }
@@ -395,7 +403,7 @@ namespace More.Net
             UInt32 retryCount = 0;
 
         RETRY:
-            Open();
+            Open(null);
 
             Boolean clearedRequest = false;
             UInt32 responseContentOffset;

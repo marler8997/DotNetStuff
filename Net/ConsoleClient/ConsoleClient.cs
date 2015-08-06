@@ -19,8 +19,9 @@ namespace More.Net
         readonly Int32 sendFileBufferSize;
         readonly Int32 recvBufferSize;
 
-        ISocketConnector connector;
-        EndPoint serverEndPoint;
+        Boolean HostSet { get { return endPoint.unparsedIPOrHost != null; } }
+        StringEndPoint endPoint;
+        Proxy proxy;
 
         MessageLogger messageLogger;
         IConnectionDataLogger connectionLogger;
@@ -30,14 +31,14 @@ namespace More.Net
         private Socket socket;
         Boolean keepRunning;
 
-        public ConsoleClient(Int32 sendFileBufferSize, Int32 recvBufferSize, ISocketConnector connector, EndPoint serverEndPoint,
-            MessageLogger messageLogger, IConnectionDataLogger connectionLogger)
+        public ConsoleClient(Int32 sendFileBufferSize, Int32 recvBufferSize, StringEndPoint endPoint,
+            Proxy proxy, MessageLogger messageLogger, IConnectionDataLogger connectionLogger)
         {
             this.sendFileBufferSize = sendFileBufferSize;
             this.recvBufferSize = recvBufferSize;
 
-            this.connector = connector;
-            this.serverEndPoint = serverEndPoint;
+            this.endPoint = endPoint;
+            this.proxy = proxy;
 
             this.messageLogger = messageLogger;
             this.connectionLogger = connectionLogger;
@@ -94,15 +95,40 @@ namespace More.Net
         {
             this.keepRunning = true;
         }
+        void Connect()
+        {
+            BufStruct bufStruct = default(BufStruct);
+            if (proxy == null)
+            {
+                Console.WriteLine("[Connecting to {0}...]", endPoint);
+                // TODO: Add option to make AddressFamily one type of family
+                // Note: when the user changes the family type, I might need to
+                //       unset the serverHost ip address
+                endPoint.ForceIPResolution(AddressFamily.Unspecified);
+                socket = new Socket(endPoint.parsedOrResolvedIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                socket.Connect(endPoint.parsedOrResolvedIP);
+            }
+            else
+            {
+                Console.WriteLine("[Connecting to {0} through {1}...]", endPoint, proxy);
+                socket = new Socket(proxy.endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                socket.Connect(proxy.endPoint);
+                proxy.ProxyConnectTcp(socket, endPoint, ProxyConnectOptions.None, ref bufStruct);
+            }
+
+            Console.WriteLine("[Connected]");
+
+            if (bufStruct.contentLength > 0)
+            {
+                if (messageLogger != null) messageLogger.Log("[RecvThread] Received {0} bytes", bufStruct.contentLength);
+                if (connectionLogger != null) connectionLogger.LogDataBToA(bufStruct.buf, 0, (int)bufStruct.contentLength);
+            }
+        }
         public void Run()
         {
-            if (serverEndPoint != null)
+            if (HostSet)
             {
-                Console.WriteLine("[Connecting to {0}...]", serverEndPoint);
-
-                socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                if (connector == null) socket.Connect(serverEndPoint); else connector.Connect(socket, serverEndPoint);
-                Console.WriteLine("[Connected]");
+                Connect();
             }
 
             try
@@ -168,7 +194,7 @@ namespace More.Net
             String server = line.Peel(out line);
             if (String.IsNullOrEmpty(server))
             {
-                if (serverEndPoint == null)
+                if (endPoint.unparsedIPOrHost == null)
                 {
                     Console.WriteLine("Error: missing server and port");
                     return;
@@ -192,7 +218,10 @@ namespace More.Net
                     Console.WriteLine("Error: invalid port '{0}'", line);
                     return;
                 }
-                serverEndPoint = EndPoints.EndPointFromIPOrHost(server, port);
+                HostWithOptionalProxy host = ConnectorParser.ParseConnectorWithNoPortAndOptionalProxy(
+                    AddressFamily.Unspecified, server, port);
+                this.endPoint = host.endPoint;
+                this.proxy = host.proxy;
             }
             Open();
         }
@@ -206,14 +235,9 @@ namespace More.Net
                     return;
                 }
 
-                Console.WriteLine("[Connecting to {0}...]", serverEndPoint.ToString());
                 try
                 {
-                    socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                    if (connector == null) socket.Connect(serverEndPoint); else connector.Connect(socket, serverEndPoint);
-                    new Thread(ReceiveThread).Start();
-
-                    Console.WriteLine("[Connected]");
+                    Connect();
                 }
                 catch (SocketException e)
                 {
@@ -277,7 +301,7 @@ namespace More.Net
         }
         public void ProxyCommand(String line)
         {
-            connector = ConnectorParser.ParseProxy(line);
+            proxy = ConnectorParser.ParseProxy(AddressFamily.Unspecified, line);
         }
         public void HelpCommand(String line)
         {

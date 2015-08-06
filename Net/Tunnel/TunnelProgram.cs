@@ -40,8 +40,6 @@ namespace More.Net
 
     class TunnelProgram
     {
-        public static MultipleListenersSelectServer selectServer = new MultipleListenersSelectServer();
-
         static Int32 Main(string[] args)
         {
             TunnelOptions optionsParser = new TunnelOptions();
@@ -54,8 +52,7 @@ namespace More.Net
                 return -1;
             }
 
-            List<TcpSelectListener> tcpListenerList = new List<TcpSelectListener>();
-            List<UdpSelectListener> udpListenerList = new List<UdpSelectListener>();
+            SelectControl selectControl = new SelectControl(false);
             
             //
             // Parse listeners
@@ -77,9 +74,7 @@ namespace More.Net
                 //
                 // Parse End Point
                 //
-                ISocketConnector proxyConnector;
-                String ipOrHostAndPort = ConnectorParser.ParseConnector(connector, out proxyConnector);
-                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHostAndPort(ipOrHostAndPort);
+                HostWithOptionalProxy forwardHost = ConnectorParser.ParseConnectorWithPortAndOptionalProxy(connector);
 
                 //
                 // Parse Protocol and Port Set
@@ -120,233 +115,204 @@ namespace More.Net
 
                 if (isTcp)
                 {
-                    TcpCallback tcpCallback = new TcpCallback(serverEndPoint, proxyConnector);
+                    TcpCallback tcpCallback = new TcpCallback(forwardHost);
 
                     for (int i = 0; i < portSet.Length; i++)
                     {
-                        tcpListenerList.Add(new TcpSelectListener(new IPEndPoint(IPAddress.Any, portSet[i]),
-                            optionsParser.socketBackLog.ArgValue, tcpCallback));
+                        Socket listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                        listenSocket.Bind(new IPEndPoint(IPAddress.Any, portSet[i]));
+                        listenSocket.Listen(optionsParser.socketBackLog.ArgValue);
+                        selectControl.AddListenSocket(listenSocket, tcpCallback.HandleAccept);
                     }
                 }
                 else
                 {
-                    if (proxyConnector == null)
+                    if (forwardHost.proxy == null)
                     {
-                        DirectUdpCallback udpCallback = new DirectUdpCallback(serverEndPoint);
-
+                        IPEndPoint serverEndPoint = forwardHost.directEndPoint.GetOrResolveToIPEndPoint();
+                        DirectUdpCallback udpCallback = new DirectUdpCallback(serverEndPoint, 30 * 60); // 30 minutes
                         for (int i = 0; i < portSet.Length; i++)
                         {
-                            udpListenerList.Add(new UdpSelectListener(new IPEndPoint(IPAddress.Any, portSet[i]), udpCallback));
+                            Socket udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            udpSocket.Bind(new IPEndPoint(IPAddress.Any, portSet[i]));
+                            selectControl.AddReceiveSocket(udpSocket, udpCallback.ReceiveHandler);
                         }
                     }
                     else
                     {
+                        throw new NotImplementedException();
+                        /*
                         UdpThroughProxyCallback udpCallback = new UdpThroughProxyCallback(serverEndPoint, proxyConnector,
                             1000 * 60 * 4, 1000 * 60 * 10);
                         for (int i = 0; i < portSet.Length; i++)
                         {
                             udpListenerList.Add(new UdpSelectListener(new IPEndPoint(IPAddress.Any, portSet[i]), udpCallback));
                         }
+                        */
                     }
                 }
             } while (arg < nonOptionArgs.Count);
 
-            selectServer.PrepareToRun();
-            selectServer.Run(Console.Out, new byte[8192], tcpListenerList.ToArray(), udpListenerList.ToArray());
+            SelectServer selectServer = new SelectServer(selectControl, new Buf(8192));
+            selectServer.Run();
 
             return -1;
         }
     }
-    class TcpCallback : StreamSelectServerCallback
+
+
+    public class TcpBridge
     {
-        readonly EndPoint remoteServerEndPoint;
-        readonly ISocketConnector proxyConnector;
-
-        readonly Dictionary<Socket, Socket> socketPairs;
-        Int32 expectedSocketCount;
-
-        public TcpCallback(EndPoint remoteServerEndPoint, ISocketConnector proxyConnector)
+        readonly String clientLogString;
+        readonly String serverLogString;
+        readonly Socket client, server;
+        public TcpBridge(String clientLogString, Socket client, String serverLogString, Socket server)
         {
-            this.remoteServerEndPoint = remoteServerEndPoint;
-            this.proxyConnector = proxyConnector;
-
-            this.socketPairs = new Dictionary<Socket, Socket>();
-            expectedSocketCount = 0;
+            Console.WriteLine("New Tunnel  {0,21} > {1,-21}", clientLogString, serverLogString);
+            this.clientLogString = clientLogString;
+            this.client = client;
+            this.serverLogString = serverLogString;
+            this.server = server;
         }
-        public void ServerListening(Socket listenSocket)
+        public void ReceiveHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
-        }
-        public void ServerStopped()
-        {
-        }
-        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
-        {
-            return ServerInstruction.StopServer;
-        }
-        void VerifyClientCount()
-        {
-            if (socketPairs.Count != expectedSocketCount)
+            try
             {
-                throw new InvalidOperationException(String.Format("Expected there to be {0} sockets but there are {1} entries in the socket dictionary",
-                    expectedSocketCount, socketPairs.Count));
-            }
-        }
-        public ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket)
-        {
-            Socket newRemoteServerSocket = new Socket(remoteServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-            if (proxyConnector == null)
-            {
-                newRemoteServerSocket.Connect(remoteServerEndPoint);
-            }
-            else
-            {
-                proxyConnector.Connect(newRemoteServerSocket, remoteServerEndPoint);
-            }
-
-            socketPairs.Add(socket, newRemoteServerSocket);
-            socketPairs.Add(newRemoteServerSocket, socket);
-            expectedSocketCount += 2;
-            VerifyClientCount();
-
-            TunnelProgram.selectServer.AddReadTcpSocket(newRemoteServerSocket, this);
-
-            Console.WriteLine("New Tunnel  {0,21} > {1,-21}", socket.RemoteEndPoint, newRemoteServerSocket.RemoteEndPoint);
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket)
-        {
-            Console.WriteLine("Closed      {0,21}", socket.RemoteEndPoint);
-
-            Socket socketPair;
-            if (socketPairs.TryGetValue(socket, out socketPair))
-            {
-                socketPairs.Remove(socket);
-                expectedSocketCount--;
-
-                // Close and remove the client socket as well                
-                if (socketPair.Connected)
+                int bytesReceived = socket.Receive(safeBuffer.array);
+                if (bytesReceived <= 0)
                 {
-                    try { socketPair.Shutdown(SocketShutdown.Both); } catch (IOException) { }
+                    if (socket == client)
+                    {
+                        Console.WriteLine("{0} > {1} TCP:Client Disconnected", clientLogString, serverLogString);
+                        selectControl.DisposeAndRemoveReceiveSocket(client);
+                        selectControl.ShutdownIfConnectedDisposeAndRemoveReceiveSocket(server);
+                    }
+                    else
+                    {
+                        Console.WriteLine("{0} > {1} TCP:Server Disconnected", clientLogString, serverLogString);
+                        selectControl.DisposeAndRemoveReceiveSocket(server);
+                        selectControl.ShutdownIfConnectedDisposeAndRemoveReceiveSocket(client);
+                    }
                 }
-
-                VerifyClientCount();
-
-                return ServerInstruction.NoInstruction;
+                else
+                {
+                    if (socket == client)
+                    {
+                        Console.WriteLine("{0} > {1} TCP:{2} bytes",  clientLogString, serverLogString, bytesReceived);
+                        server.Send(safeBuffer.array, bytesReceived, SocketFlags.None);
+                    }
+                    else
+                    {
+                        Console.WriteLine("{0} < {1} TCP:{2} bytes", clientLogString, serverLogString, bytesReceived);
+                        client.Send(safeBuffer.array, bytesReceived, SocketFlags.None);
+                    }
+                }
             }
-
-            throw new InvalidOperationException(String.Format(
-                "Received close for a client '{0}' that wasn't in the socket dictionary", socket.RemoteEndPoint));
-        }
-        public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)
-        {
-            Socket socketPair;
-            if (!socketPairs.TryGetValue(socket, out socketPair))
-                throw new InvalidOperationException(String.Format("Missing Socket pair of socket '{0}'", socket.RemoteEndPoint));
-
-            if (!socketPair.Connected)
+            catch (Exception)
             {
-                Console.WriteLine("[Warning] Got {0} bytes from '{1}' but socket pair is closed", bytesRead);
-                return ServerInstruction.CloseClient;
+                selectControl.ShutdownIfConnectedDisposeAndRemoveReceiveSocket(client);
+                selectControl.ShutdownIfConnectedDisposeAndRemoveReceiveSocket(server);
             }
-
-            Console.WriteLine("{0,5} Bytes {1,21} > {2,-21}", bytesRead, socket.RemoteEndPoint, socketPair.RemoteEndPoint);
-            socketPair.Send(bytes, (Int32)bytesRead, SocketFlags.None);
-            return ServerInstruction.NoInstruction;
         }
     }
-
-    class SocketAndLastAccessTime
+    class TcpCallback
     {
-        public Socket socket;
-        public Int64 expireTime;
-        public SocketAndLastAccessTime(Socket socket, Int64 expireTime)
+        HostWithOptionalProxy serverHost;
+        public TcpCallback(HostWithOptionalProxy serverHost)
         {
-            this.socket = socket;
+            this.serverHost = serverHost;
+        }
+
+        // TODO: catch and handle exceptions
+        public void HandleAccept(ref SelectControl selectControl, Socket listenSocket, Buf safeBuffer)
+        {
+            Socket newClientSocket = listenSocket.Accept();
+
+            Socket newRemoteServerSocket = new Socket(serverHost.directEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            newRemoteServerSocket.ConnectTcpSocketThroughProxy(serverHost);
+
+            TcpBridge bridge = new TcpBridge(newClientSocket.SafeRemoteEndPointString(), newClientSocket,
+                newRemoteServerSocket.SafeRemoteEndPointString(), newRemoteServerSocket);
+            selectControl.AddReceiveSocket(newClientSocket, bridge.ReceiveHandler);
+            selectControl.AddReceiveSocket(newRemoteServerSocket, bridge.ReceiveHandler);
+        }
+    }
+    struct EndPointAndLastAccessTime
+    {
+        public readonly EndPoint endPoint;
+        public Int64 expireTime;
+        public EndPointAndLastAccessTime(EndPoint endPoint, Int64 expireTime)
+        {
+            this.endPoint = endPoint;
             this.expireTime = expireTime;
         }
     }
-    class DirectUdpCallback : DatagramSelectServerCallback
+    class DirectUdpCallback
     {
-        // TODO: keep an ordered list (ordered by how recent the last communication was)
-        //       and also get a maximum connection count, then clean up oldest sockets
-        //       when new connections arrive
+        // Can be shared because this application is single threaded
+        static EndPoint From = new IPEndPoint(IPAddress.Any, 0);
 
         readonly EndPoint remoteServerEndPoint;
+        readonly Int64 udpTimeoutTicks;
 
-        readonly Dictionary<EndPoint, Socket> clientEndPointToServerSockets;
-        readonly Dictionary<Socket, EndPoint> remoteServerSocketsToClientEndPoints;
+        // Note: these clients timeout after a certain amount of no activity
+        readonly Dictionary<EndPoint,EndPointAndLastAccessTime> currentClients;
 
-        Socket clientListenSocket;
-
-        public DirectUdpCallback(EndPoint remoteServerEndPoint)
+        public DirectUdpCallback(EndPoint remoteServerEndPoint, Int64 mappingTimeoutSeconds)
         {
             this.remoteServerEndPoint = remoteServerEndPoint;
-            this.clientEndPointToServerSockets = new Dictionary<EndPoint, Socket>();
-            this.remoteServerSocketsToClientEndPoints = new Dictionary<Socket, EndPoint>();
+            this.udpTimeoutTicks = Stopwatch.Frequency * mappingTimeoutSeconds;
+            this.currentClients = new Dictionary<EndPoint, EndPointAndLastAccessTime>();
         }
-        public void ServerStopped()
+        public void ReceiveHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
-        }
-        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
-        {
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction DatagramPacket(EndPoint endPoint, Socket socket, Byte[] bytes, UInt32 bytesRead)
-        {
-            //
-            // Check if this socket is from RemoteServer
-            //
-            EndPoint clientEndPoint;
-            if (remoteServerSocketsToClientEndPoints.TryGetValue(socket, out clientEndPoint))
+            int bytesRead = socket.ReceiveFrom(safeBuffer.array, ref From);
+            // TODO: Handle disconnects somehow?
+            // Note: make sure that 0 doesn't also mean disconnect
+            if (bytesRead < 0)
+                throw new InvalidOperationException("Error: udp socket.ReceiveFrom returned negative");
+            
+            var now = Stopwatch.GetTimestamp();
+            if (From.Equals(remoteServerEndPoint))
             {
-                Console.WriteLine("[UDP] {0} Byte Datagram '{0}' to '{1}'", bytesRead, endPoint, clientEndPoint);
-                clientListenSocket.SendTo(bytes, (Int32)bytesRead, SocketFlags.None, clientEndPoint);
-                return ServerInstruction.NoInstruction;
-            }
+                List<EndPoint> removeList = null;
+                foreach (var pair in currentClients)
+                {
+                    if (pair.Value.expireTime >= now)
+                    {
+                        Console.WriteLine("Udp Client '{0}' expired", pair.Key.ToString());
+                        if (removeList == null)
+                        {
+                            removeList = new List<EndPoint>();
+                        }
+                        removeList.Add(pair.Key);
+                    }
+                    else
+                    {
+                        // Should I update the expire times here?
+                        Console.WriteLine("{0} > {1} UDP:{2} bytes",
+                            remoteServerEndPoint.ToString(), pair.Key.ToString(), bytesRead);
+                        socket.SendTo(safeBuffer.array, bytesRead, SocketFlags.None, pair.Key);
+                    }
+                }
 
-            //
-            // The datagram is from a client
-            //
-            if (clientListenSocket == null)
-            {
-                clientListenSocket = socket; // This should never change
+                if (removeList != null)
+                {
+                    foreach (var endpoint in removeList)
+                    {
+                        currentClients.Remove(endpoint);
+                    }
+                }
             }
             else
             {
-                if (clientListenSocket != socket)
-                {
-                    String clientListenLocal = "?", clientListenRemote = "?",
-                        socketLocal = "?", socketRemote = "?";
-
-                    try { clientListenLocal = clientListenSocket.LocalEndPoint.ToString(); } catch(Exception) { }
-                    try { clientListenRemote = clientListenSocket.RemoteEndPoint.ToString(); } catch(Exception) { }
-                    try { socketLocal = socket.LocalEndPoint.ToString(); } catch(Exception) { }
-                    try { socketRemote = socket.RemoteEndPoint.ToString(); } catch(Exception) { }
-
-                    throw new InvalidOperationException(String.Format(
-                    "Code Bug: These sockets should always be equal '{0}' != '{1}'",
-                    clientListenLocal + "/" + clientListenRemote, socketLocal + "/" + socketRemote));
-                }
+                currentClients[From] = new EndPointAndLastAccessTime(From, now + udpTimeoutTicks);
+                Console.WriteLine("{0} > {1} UDP:{2} bytes", From.ToString(), remoteServerEndPoint.ToString(), bytesRead);
+                socket.SendTo(safeBuffer.array, bytesRead, SocketFlags.None, remoteServerEndPoint);
             }
-
-            Socket socketToRemoteServer;
-            if (!clientEndPointToServerSockets.TryGetValue(endPoint, out socketToRemoteServer))
-            {
-                socketToRemoteServer = new Socket(remoteServerEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                socketToRemoteServer.Connect(remoteServerEndPoint);
-
-                clientEndPointToServerSockets.Add(endPoint, socketToRemoteServer);
-                remoteServerSocketsToClientEndPoints.Add(socketToRemoteServer, endPoint);
-
-                TunnelProgram.selectServer.AddUdpSocket(socketToRemoteServer, this);
-                Console.WriteLine("[UDP] New Connection From '{0}' to '{1}' ({2} Connections To This Remote Server/Port)", endPoint, remoteServerEndPoint, clientEndPointToServerSockets.Count);
-            }
-            Console.WriteLine("[UDP] {0} Byte Datagram '{0}' to '{1}'", bytesRead, endPoint, remoteServerEndPoint);
-            socketToRemoteServer.Send(bytes, (Int32)bytesRead, SocketFlags.None);
-            return ServerInstruction.NoInstruction;
         }
     }
+    /*
     class UdpThroughProxyCallback : DatagramSelectServerCallback
     {
         readonly EndPoint remoteServerEndPoint;
@@ -433,5 +399,6 @@ namespace More.Net
             return ServerInstruction.NoInstruction;
         }
     }
+    */
 
 }

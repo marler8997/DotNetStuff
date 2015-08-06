@@ -46,16 +46,16 @@ namespace More.Net
                 //
                 while (!accessorConnection.Connected)
                 {
-                    Console.WriteLine("{0} [{1}] Attempting reconnect...", DateTime.Now, accessorConnection.accessorEndPoint);
+                    Console.WriteLine("{0} [{1}] Attempting reconnect...", DateTime.Now, accessorConnection.accessorHostString);
                     if (accessorConnection.TryConnectAndInitialize(tlsSettings, sendBuffer, serverInfo, tunnelsThread))
                     {
-                        Console.WriteLine("{0} [{1}] Connected", DateTime.Now, accessorConnection.accessorEndPoint);
+                        Console.WriteLine("{0} [{1}] Connected", DateTime.Now, accessorConnection.accessorHostString);
                         lastHearbeatTime = Stopwatch.GetTimestamp();
                     }
                     else
                     {
                         Console.WriteLine("{0} [{1}] Failed to connect, waiting {2} seconds for reconnect",
-                            DateTime.Now, accessorConnection.accessorEndPoint, reconnectWaitMillis / 1000);
+                            DateTime.Now, accessorConnection.accessorHostString, reconnectWaitMillis / 1000);
                         Thread.Sleep(reconnectWaitMillis);
                     }
                 }
@@ -72,7 +72,7 @@ namespace More.Net
                     Int32 nextHeartbeatTimeoutMillis = heartbeatMillis - StopwatchExtensions.StopwatchTicksAsInt32Milliseconds(now - lastHearbeatTime);
                     if (nextHeartbeatTimeoutMillis <= 0)
                     {
-                        Console.WriteLine("{0} [{1}] Sending hearbeat...", DateTime.Now, accessorConnection.accessorEndPoint);
+                        Console.WriteLine("{0} [{1}] Sending hearbeat...", DateTime.Now, accessorConnection.accessorHostString);
 
                         accessorConnection.SendHeartbeat();
                         if (!accessorConnection.Connected) break;

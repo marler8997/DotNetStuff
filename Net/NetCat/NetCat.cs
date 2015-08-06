@@ -67,9 +67,11 @@ namespace More.Net
 
             if (optionsParser.listenMode.set)
             {
-                Socket listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                listenSocket.Bind(new IPEndPoint(EndPoints.ParseIPOrResolveHost(optionsParser.localHost.ArgValue),
-                    optionsParser.localPort.ArgValue));
+                IPAddress localAddress = EndPoints.ParseIPOrResolveHost(
+                    AddressFamily.Unspecified, optionsParser.localHost.ArgValue);
+
+                Socket listenSocket = new Socket(localAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                listenSocket.Bind(new IPEndPoint(localAddress, optionsParser.localPort.ArgValue));
 
                 listenSocket.Listen(1);
                 connectedSocket = listenSocket.Accept();
@@ -85,24 +87,34 @@ namespace More.Net
                 String portString = nonOptionArgs[1];
                 UInt16 port = UInt16.Parse(portString);
 
-                ISocketConnector connector;
-                String hostString = ConnectorParser.ParseConnector(hostConnectorString, out connector);
-                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHost(hostString, port);
+                HostWithOptionalProxy host = ConnectorParser.ParseConnectorWithNoPortAndOptionalProxy(
+                    AddressFamily.Unspecified, hostConnectorString, port);
 
-                connectedSocket = new Socket(serverEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-                if(optionsParser.localPort.set)
+                if (host.proxy == null)
                 {
-                    connectedSocket.Bind(new IPEndPoint(IPAddress.Any, optionsParser.localPort.ArgValue));
-                }
-
-                if (connector == null)
-                {
-                    connectedSocket.Connect(serverEndPoint);
+                    var endPoint = host.endPoint;
+                    endPoint.ForceIPResolution(AddressFamily.Unspecified);
+                    connectedSocket = new Socket(endPoint.parsedOrResolvedIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    if (optionsParser.localPort.set)
+                    {
+                        connectedSocket.Bind(new IPEndPoint(IPAddress.Any, optionsParser.localPort.ArgValue));
+                    }
+                    connectedSocket.Connect(endPoint);
                 }
                 else
                 {
-                    connector.Connect(connectedSocket, serverEndPoint);
+                    connectedSocket = new Socket(host.proxy.endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    if (optionsParser.localPort.set)
+                    {
+                        connectedSocket.Bind(new IPEndPoint(IPAddress.Any, optionsParser.localPort.ArgValue));
+                    }
+                    connectedSocket.Connect(host.proxy.endPoint);
+                    BufStruct bufStruct = new BufStruct();
+                    host.proxy.ProxyConnectTcp(connectedSocket, host.endPoint, ProxyConnectOptions.None, ref bufStruct);
+                    if (bufStruct.contentLength > 0)
+                    {
+                        Console.WriteLine(Encoding.UTF8.GetString(bufStruct.buf, 0, (int)bufStruct.contentLength));
+                    }
                 }
             }
 

@@ -70,6 +70,8 @@ namespace More.Net
 
     public class TelnetProgram
     {
+        const UInt16 DefaultPort = 23;
+
         public static readonly ConsoleColor DefaultConsoleForegroundColor = Console.ForegroundColor;
         public static readonly ConsoleColor DefaultConsoleBackgroundColor = Console.BackgroundColor;
 
@@ -84,21 +86,23 @@ namespace More.Net
                 optionsParser.PrintUsage();
                 return -1;
             }
-            
-            ISocketConnector connector = null;
-            EndPoint serverEndPoint = null;
+
+            HostWithOptionalProxy? serverHost;
             if (nonOptionArgs.Count == 1)
             {
-                String serverIPOrHostAndOptionalPort = ConnectorParser.ParseConnector(nonOptionArgs[0], out connector);
-                serverEndPoint = EndPoints.EndPointFromIPOrHostAndOptionalPort(serverIPOrHostAndOptionalPort, 23);
+                serverHost.Value = ConnectorParser.ParseConnectorWithOptionalPortAndProxy(nonOptionArgs[0], DefaultPort);
+            }
+            else
+            {
+                serverHost = null;
             }
 
             TelnetClient client = new TelnetClient(optionsParser.wantServerEcho.set, !optionsParser.disableColorDecoding.set);
 
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            if (serverEndPoint != null)
+            if (serverHost != null)
             {
-                if (connector == null) socket.Connect(serverEndPoint); else connector.Connect(socket, serverEndPoint);
+                socket.ConnectTcpSocketAndProxy(serverHost.Value);
             }
 
             client.Run(socket);

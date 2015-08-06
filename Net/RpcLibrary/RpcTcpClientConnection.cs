@@ -12,7 +12,7 @@ namespace More.Net
         public const Int32 lowPrivelegedPort  = 900;
         public const Int32 highPrivelegedPort = 1010;
 
-        public readonly TcpSocket socket;
+        public readonly Socket socket;
         public readonly RpcProgramHeader programHeader;
 
         private RpcCredentials credentials;
@@ -20,7 +20,7 @@ namespace More.Net
 
         UInt32 nextTransactionID;
 
-        public RpcTcpClientConnection(TcpSocket socket, RpcProgramHeader programHeader,
+        public RpcTcpClientConnection(Socket socket, RpcProgramHeader programHeader,
             RpcCredentials credentials, RpcVerifier verifier)
         {
             this.socket = socket;

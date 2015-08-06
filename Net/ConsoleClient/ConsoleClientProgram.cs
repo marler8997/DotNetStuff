@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Sockets;
 
 using More;
 
@@ -16,8 +17,8 @@ namespace More.Net
         {
             ConsoleClientOptions optionsParser = new ConsoleClientOptions();
             List<String> nonOptionArgs = optionsParser.Parse(args);
-            
-            EndPoint serverEndPoint = null;
+
+            HostWithOptionalProxy host;
 
             if (nonOptionArgs.Count > 0)
             {
@@ -27,12 +28,15 @@ namespace More.Net
                     optionsParser.PrintUsage();
                     return -1;
                 }
-                serverEndPoint = EndPoints.EndPointFromIPOrHost(args[0], UInt16.Parse(args[1]));
+                host = ConnectorParser.ParseConnectorWithNoPortAndOptionalProxy(
+                    AddressFamily.Unspecified, args[0], UInt16.Parse(args[1]));
+            }
+            else
+            {
+                host = default(HostWithOptionalProxy);
             }
 
-            //Proxy proxy = optionsParser.proxy.ArgValue;
-
-            ConsoleClient commandClient = new ConsoleClient(1024, 1024, null, serverEndPoint, new ConsoleMessageLogger("Connection"),
+            ConsoleClient commandClient = new ConsoleClient(1024, 1024, host.endPoint, host.proxy, new ConsoleMessageLogger("Connection"),
                 new ConnectionDataLoggerSingleLog(ConsoleDataLogger.Instance, "[SendData]", "[RecvData]"));
             commandClient.RunPrepare();
             commandClient.Run();

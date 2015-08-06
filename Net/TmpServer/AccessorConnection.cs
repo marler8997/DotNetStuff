@@ -9,9 +9,8 @@ namespace More.Net
 {
     public class AccessorConnection
     {
-        public readonly String accessorIPOrHost;
-        public readonly EndPoint accessorEndPoint;
-        public readonly ISocketConnector connector;
+        HostWithOptionalProxy accessorHost;
+        public readonly String accessorHostString;
 
         Socket accessorSocket;
         DataFilterHandler accessorReceiveHandler;
@@ -33,7 +32,7 @@ namespace More.Net
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("{0} [{1}] Sending heartbeat threw exception : {2}", DateTime.Now, accessorEndPoint, e.ToString());
+                    Console.WriteLine("{0} [{1}] Sending heartbeat threw exception : {2}", DateTime.Now, accessorHost, e.ToString());
                     accessorSocket = null;
                     accessorReceiveHandler = null;
                 }
@@ -42,55 +41,31 @@ namespace More.Net
 
         public AccessorConnection(String connectorString)
         {
-            String accessorIPOrHostAndOptionalPort = ConnectorParser.ParseConnector(connectorString, out connector);
-            this.accessorIPOrHost = EndPoints.RemoveOptionalPort(accessorIPOrHostAndOptionalPort);
-
-            this.accessorEndPoint = EndPoints.EndPointFromIPOrHostAndOptionalPort(accessorIPOrHostAndOptionalPort, Tmp.DefaultPort);
+            this.accessorHost = ConnectorParser.ParseConnectorWithOptionalPortAndProxy(connectorString, Tmp.DefaultPort);
+            this.accessorHostString = accessorHost.TargetString();
         }
         public Socket MakeNewSocketAndConnect()
         {
-            Socket socket = new Socket(accessorEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            if (connector == null)
-            {
-                socket.Connect(accessorEndPoint);
-            }
-            else
-            {
-                connector.Connect(socket, accessorEndPoint);
-            }
+            Socket socket = new Socket(accessorHost.directEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            socket.ConnectTcpSocketThroughProxy(accessorHost);
             return socket;
         }
         public Socket MakeNewSocketAndConnectOnPort(UInt16 port)
         {
-            EndPoint thisPortEndPoint = EndPoints.EndPointFromIPOrHost(accessorIPOrHost, port);
-
-            Socket socket = new Socket(thisPortEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            if (connector == null)
-            {
-                socket.Connect(thisPortEndPoint);
-            }
-            else
-            {
-                connector.Connect(socket, thisPortEndPoint);
-            }
+            HostWithOptionalProxy newHost = new HostWithOptionalProxy(accessorHost, port);
+            Socket socket = new Socket(newHost.directEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            socket.ConnectTcpSocketThroughProxy(newHost);
             return socket;
         }
         public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, Buf sendBuffer, ServerInfo serverInfo, SelectTunnelsThread tunnelsThread)
         {
             if (Connected) throw new InvalidOperationException(String.Format(
-                "You called Connect() on accessor '{0}' but its already connected", accessorEndPoint));
+                "You called Connect() on accessor '{0}' but its already connected", accessorHostString));
 
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            Socket socket = new Socket(accessorHost.directEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             try
             {
-                if (connector == null)
-                {
-                    socket.Connect(accessorEndPoint);
-                }
-                else
-                {
-                    connector.Connect(socket, accessorEndPoint);
-                }
+                socket.ConnectTcpSocketThroughProxy(accessorHost);
 
                 this.accessorSocket = socket;
 
@@ -144,7 +119,7 @@ namespace More.Net
         }
         public void ReceiveWithTimeout(Byte[] receiveBuffer, Int32 timeoutMillis)
         {
-            Console.WriteLine("{0} [{1}] Select timeout is {2} seconds", DateTime.Now, accessorEndPoint, timeoutMillis / 1000);
+            Console.WriteLine("{0} [{1}] Select timeout is {2} seconds", DateTime.Now, accessorHostString, timeoutMillis / 1000);
 
             SingleObjectList list = new SingleObjectList(accessorSocket);
 
@@ -154,7 +129,7 @@ namespace More.Net
             }
             catch (Exception e)
             {
-                Console.WriteLine("{0} [{1}] Select threw exception : {2}", DateTime.Now, accessorEndPoint, e.ToString());
+                Console.WriteLine("{0} [{1}] Select threw exception : {2}", DateTime.Now, accessorHostString, e.ToString());
                 accessorSocket = null;
                 accessorReceiveHandler = null;
                 return;

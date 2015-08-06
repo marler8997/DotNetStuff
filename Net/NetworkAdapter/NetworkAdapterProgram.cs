@@ -47,9 +47,7 @@ namespace More.Net
                 String clientSideWaitModeString = nonOptionArgs[1];
                 String listenPortsString = nonOptionArgs[2];
 
-                ISocketConnector clientSideServerProxyConnector;
-                String clientSideServerIPOrHostAndPort = ConnectorParser.ParseConnector(clientSideConnectorString, out clientSideServerProxyConnector);
-                EndPoint clientSideServerEndPoint = EndPoints.EndPointFromIPOrHostAndPort(clientSideServerIPOrHostAndPort);
+                HostWithOptionalProxy clientSideServer = ConnectorParser.ParseConnectorWithPortAndOptionalProxy(clientSideConnectorString);
                 ClientConnectWaitMode clientConnectWaitMode = ClientConnectWaitModeMethods.Parse(clientSideWaitModeString);
 
                 PortSet listenPortSet = ParseUtilities.ParsePortSet(listenPortsString);
@@ -60,7 +58,7 @@ namespace More.Net
                 //
                 // Run
                 //
-                ClientServer clientServer = new ClientServer(clientSideServerEndPoint, clientSideServerProxyConnector,
+                ClientServer clientServer = new ClientServer(clientSideServer,
                     clientConnectWaitMode, listenPortSet, optionsParser.socketBackLog.ArgValue,
                     optionsParser.readBufferSize.ArgValue, optionsParser.logData.set);
                 clientServer.Start();

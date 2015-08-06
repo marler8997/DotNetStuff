@@ -33,6 +33,8 @@ namespace More.Net
     }
     public static class TmpAccessorMain
     {
+        static TmpConnectionManager TmpConnectionManager;
+
         static void Main(string[] args)
         {
             TmpAccessorOptions options = new TmpAccessorOptions();
@@ -40,7 +42,7 @@ namespace More.Net
 
             TlsSettings settings = new TlsSettings(false);
 
-            TmpConnectionManager tmpConnectionManager = new TmpConnectionManager(settings);
+            TmpConnectionManager = new TmpConnectionManager(settings);
 
             //
             // Add Tunnel Listeners from command line arguments
@@ -64,12 +66,12 @@ namespace More.Net
 
                     if(tunnelListenerStrings.Length == 3)
                     {
-                        tmpConnectionManager.AddTunnelListener(serverName, false, targetHost, targetPort);
+                        TmpConnectionManager.AddTunnelListener(serverName, false, targetHost, targetPort);
                     }
                     else if(tunnelListenerStrings.Length == 4)
                     {
                         UInt16 listenPort = UInt16.Parse(tunnelListenerStrings[3]);
-                        tmpConnectionManager.AddTunnelListener(serverName, false, targetHost, targetPort, listenPort);
+                        TmpConnectionManager.AddTunnelListener(serverName, false, targetHost, targetPort, listenPort);
                     }
                     else
                     {
@@ -85,7 +87,7 @@ namespace More.Net
                 // Setup and start Npc Accessor Control Server
                 //
                 NpcReflector npcReflector = new NpcReflector(
-                    new NpcExecutionObject(tmpConnectionManager, "Accessor", null, null));
+                    new NpcExecutionObject(TmpConnectionManager, "Accessor", null, null));
                 NpcServerSingleThreaded npcServer = new NpcServerSingleThreaded(
                     NpcServerConsoleLoggerCallback.Instance, npcReflector, new DefaultNpcHtmlGenerator("Accessor", npcReflector), 2030);
                 Thread npcServerThread = new Thread(npcServer.Run);
@@ -95,12 +97,21 @@ namespace More.Net
             //
             // Setup and run Tmp listen/handler thread
             //
-            SelectServerStaticTcpListeners tmpSelectServer = new SelectServerStaticTcpListeners(
-                new TcpListener[] {
-                    new TcpListener(new IPEndPoint(IPAddress.Any, Tmp.DefaultPort), 8, tmpConnectionManager.HandleConnectionFromTmpServer)
-                },
-                1024, 1024);
-            tmpSelectServer.Run();
+            SelectControl selectControl = new SelectControl(false);
+
+            IPAddress listenIP = IPAddress.Any;
+            Socket listenSocket = new Socket(listenIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            listenSocket.Bind(new IPEndPoint(listenIP, Tmp.DefaultPort));
+            listenSocket.Listen(8);
+            selectControl.AddListenSocket(listenSocket, AcceptClient);
+
+            SelectServer selectServer = new SelectServer(selectControl, 1024, 1024, false);
+            selectServer.Run();
+        }
+        public static void AcceptClient(ref SelectControl selectControl, Socket listenSocket, Buf safeBuffer)
+        {
+            Console.WriteLine("{0} [{1}] Accepted TmpServer Socket", DateTime.Now, listenSocket.SafeLocalEndPointString());
+            selectControl.PerformAccept(listenSocket, TmpConnectionManager.HandleInitialConnectionInfo);
         }
     }
     [NpcInterface]
@@ -140,7 +151,7 @@ namespace More.Net
             this.tmpControlConnections = new List<TmpControlConnection>();
             this.serverNameToControlConnection = new Dictionary<String, TmpControlConnection>();
 
-            this.tunnelSelectServer = new SelectServerDynamicTcpListeners(1024, 1024);
+            this.tunnelSelectServer = new SelectServerDynamicTcpListeners(1024, 1024, false);
             new Thread(tunnelSelectServer.Run).Start();
 
             this.incompleteTunnels = new Dictionary<Int32, DisconnectedTunnel>();
@@ -154,10 +165,12 @@ namespace More.Net
             }
             return null;
         }
+        /*
         void SocketFromTmpServerClosed(Socket closedSocket)
         {
             Console.WriteLine("{0} WARNING: Socket closed using the default initial SocketCloseHandler", DateTime.Now);
         }
+        */
         public void GotServerName(String oldServerName, String newServerName, TmpControlConnection controlConnection)
         {
             if(oldServerName != null)
@@ -186,18 +199,21 @@ namespace More.Net
             tmpControlConnections.Remove(tmpControlConnection);
             serverNameToControlConnection.Remove(tmpControlConnection.ServerInfoName);
         }
-        public SocketHandlerMethods HandleConnectionFromTmpServer(Socket listenSocket, Socket socket, Buf safeBuffer)
+        /*
+        public SimpleSelectHandler HandleConnectionFromTmpServer(Socket listenSocket, Socket socket, Buf safeBuffer)
         {
             Console.WriteLine("{0} [{1}] Accepted TmpServer Socket", DateTime.Now, socket.SafeRemoteEndPointString());
-
-            return new SocketHandlerMethods(false, HandleInitialConnectionInfo, SocketFromTmpServerClosed);
+            return HandleInitialConnectionInfo;
         }
-        void HandleInitialConnectionInfo(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
+        */
+        public void HandleInitialConnectionInfo(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
             Int32 bytesRead = socket.Receive(safeBuffer.array, 1, SocketFlags.None);
             if (bytesRead <= 0)
             {
-                handlerMethods.receiveHandler = null;
+                Console.WriteLine("{0} WARNING: Socket closed", DateTime.Now);
+                selectControl.DisposeAndRemoveReceiveSocket(socket);
+                //receiveHandler = null;
                 return;
             }
 
@@ -238,7 +254,7 @@ namespace More.Net
                 //
                 Console.WriteLine("{0} [{1}] This connection requires tls but it is not currently supported",
                     DateTime.Now, socket.SafeRemoteEndPointString());
-                handlerMethods.receiveHandler = null;
+                selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
                 return;             
             }
 
@@ -248,8 +264,7 @@ namespace More.Net
             {
                 Console.WriteLine("{0} [{1}] Is a Tunnel Connection", DateTime.Now, remoteEndPoint.ToString());
                 TmpServerSideTunnelKeyReceiver keyReceiver = new TmpServerSideTunnelKeyReceiver(this);
-                handlerMethods.receiveHandler = keyReceiver.SocketReceiverHandler;
-                handlerMethods.socketClosedHandler = keyReceiver.SocketCloseHandler;
+                selectControl.UpdateHandler(socket, keyReceiver.SocketReceiverHandler);
             }
             else
             {
@@ -260,11 +275,10 @@ namespace More.Net
                 {
                     tmpControlConnections.Add(tmpControlConnection);
                 }
-                handlerMethods.receiveHandler = tmpControlConnection.SocketReceiverHandler;
-                handlerMethods.socketClosedHandler = tmpControlConnection.SocketClosedHandler;
+                selectControl.UpdateHandler(socket, tmpControlConnection.SocketReceiverHandler);
             }
         }
-        internal void ReceivedTunnelKey(Socket socket, Byte[] receivedKey, ref SocketHandlerMethods handlerMethods)
+        internal void ReceivedTunnelKey(ref SelectControl selectControl, Socket socket, Byte[] receivedKey)
         {
             //
             // Get Tunnel
@@ -272,7 +286,7 @@ namespace More.Net
             if (receivedKey.Length != 4)
             {
                 Console.WriteLine("{0} Expected tunnel key to be 4 byte but is {1}", DateTime.Now, receivedKey.Length);
-                handlerMethods = null;
+                selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
                 return;
             }
 
@@ -286,13 +300,13 @@ namespace More.Net
             if (!incompleteTunnels.TryGetValue(key, out disconnectedTunnel))
             {
                 Console.WriteLine("{0} Could not find tunnel for key {1}", DateTime.Now, key);
-                handlerMethods = null;
+                selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
                 return;
             }
 
-            disconnectedTunnel.CompleteTunnel(socket, ref handlerMethods);
+            disconnectedTunnel.CompleteTunnel(ref selectControl, socket);
         }
-        public SocketHandlerMethods AcceptAndInitiateTunnel(TunnelListenerHandler listener, Socket clientSocket, Buf safeBuffer)
+        public SimpleSelectHandler AcceptAndInitiateTunnel(TunnelListenerHandler listener, Socket clientSocket, Buf safeBuffer)
         {
             //
             // Check if server is connected
@@ -343,8 +357,7 @@ namespace More.Net
             //
             // Create a diconnected tunnel handler
             //
-            return new SocketHandlerMethods(false, disconnectedTunnel.ConnectedSocketReceiveHandler,
-                disconnectedTunnel.ConnectedSocketClosedHandler);
+            return disconnectedTunnel.ConnectedSocketReceiveHandler;
         }
 
         //
@@ -426,7 +439,6 @@ namespace More.Net
         }
         public void Dispose()
         {
-            socket.ShutdownAndDispose();
             Console.WriteLine("{0} TmpControlConnection 'Name={1}' Closed", DateTime.Now,
                 (serverInfoName == null) ? "<null>" : serverInfoName);
             tmpConnectionManager.LostTmpControlConnection(this);
@@ -445,12 +457,13 @@ namespace More.Net
             Console.WriteLine("{0} [{1}] [TmpControl] Got heartbeat", DateTime.Now, remoteEndPoint);
         }
         */
-        public void SocketReceiverHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void SocketReceiverHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
             Int32 bytesRead = socket.Receive(safeBuffer.array);
             if (bytesRead <= 0)
             {
-                handlerMethods.receiveHandler = null;
+                selectControl.DisposeAndRemoveReceiveSocket(socket);
+                Dispose();
                 return;
             }
 
@@ -513,11 +526,11 @@ namespace More.Net
             this.tmpConnectionManager = tmpConnectionManager;
             receivedKey = null;
         }
-        public void SocketCloseHandler(Socket socket)
+        public void CloseHandler()
         {
             Console.WriteLine("{0} TmpServer Tunnel connection closing while reading its TunnelKey", DateTime.Now);
         }
-        public void SocketReceiverHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void SocketReceiverHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
             Int32 bytesRead;
 
@@ -526,7 +539,8 @@ namespace More.Net
                 bytesRead = socket.Receive(safeBuffer.array, 1, SocketFlags.None);
                 if(bytesRead <= 0)
                 {
-                    handlerMethods.receiveHandler = null;
+                    CloseHandler();
+                    selectControl.DisposeAndRemoveReceiveSocket(socket);
                     return;
                 }
                 receivedKey = new Byte[safeBuffer.array[0]];
@@ -542,7 +556,8 @@ namespace More.Net
             bytesRead = socket.Receive(receivedKey, receivedLength, receivedKey.Length - receivedLength, SocketFlags.None);
             if (bytesRead <= 0)
             {
-                handlerMethods.receiveHandler = null;
+                CloseHandler();
+                selectControl.DisposeAndRemoveReceiveSocket(socket);
                 return;
             }
 
@@ -550,7 +565,7 @@ namespace More.Net
 
             if (receivedLength >= receivedKey.Length)
             {
-                tmpConnectionManager.ReceivedTunnelKey(socket, receivedKey, ref handlerMethods);
+                tmpConnectionManager.ReceivedTunnelKey(ref selectControl, socket, receivedKey);
             }
         }
     }
@@ -578,7 +593,7 @@ namespace More.Net
 
             this.targetHostBytes = Encoding.ASCII.GetBytes(targetHost);
         }
-        public SocketHandlerMethods AcceptClientHandler(Socket listenSocket, Socket socket, Buf safeBuffer)
+        public SimpleSelectHandler AcceptClientHandler(Socket listenSocket, Socket socket, Buf safeBuffer)
         {
             return tmpConnectionManager.AcceptAndInitiateTunnel(this, socket, safeBuffer);
         }
@@ -597,27 +612,26 @@ namespace More.Net
             Socket otherSocket = (socket == a) ? b : a;
             otherSocket.ShutdownAndDispose();
         }
-        public void Dispose()
+        public void Dispose(ref SelectControl selectControl)
         {
-            a.ShutdownAndDispose();
-            b.ShutdownAndDispose();
+            selectControl.ShutdownDisposeAndRemoveReceiveSocket(a);
+            selectControl.ShutdownDisposeAndRemoveReceiveSocket(b);
         }
-        public void AToBHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void AToBHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
-            Handle(a, b, safeBuffer, ref handlerMethods);
+            Handle(ref selectControl, a, b, safeBuffer);
         }
-        public void BToAHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void BToAHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
-            Handle(b, a, safeBuffer, ref handlerMethods);
+            Handle(ref selectControl, b, a, safeBuffer);
         }
         // return true to close
-        void Handle(Socket receiveFrom, Socket sendTo, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
+        void Handle(ref SelectControl selectControl, Socket receiveFrom, Socket sendTo, Buf safeBuffer)
         {
             Int32 bytesRead = 0;
             try
             {
                 bytesRead = receiveFrom.Receive(safeBuffer.array, SocketFlags.None);
-
                 if (bytesRead > 0)
                 {
                     sendTo.Send(safeBuffer.array, 0, bytesRead, SocketFlags.None);
@@ -628,13 +642,11 @@ namespace More.Net
             {
             }
 
-            // An exception occurred or the receive socket has closed
-            Dispose();
-            handlerMethods.receiveHandler = null;
+            Dispose(ref selectControl);
         }
     }
 
-    public class DisconnectedTunnel : IDisposable
+    public class DisconnectedTunnel// : IDisposable
     {
         readonly Socket connectedSocket;
 
@@ -652,22 +664,18 @@ namespace More.Net
 
             this.connectedTunnel = null;
         }
-        public void ConnectedSocketClosedHandler(Socket socket)
-        {
-            Dispose();
-        }
-        public void Dispose()
+        public void Dispose(ref SelectControl selectControl)
         {
             if (connectedTunnel != null)
             {
-                connectedTunnel.Dispose();
+                connectedTunnel.Dispose(ref selectControl);
             }
             else
             {
-                connectedSocket.ShutdownAndDispose();
+                selectControl.ShutdownDisposeAndRemoveReceiveSocket(connectedSocket);
             }
         }
-        public void CompleteTunnel(Socket socket, ref SocketHandlerMethods handlerMethods)
+        public void CompleteTunnel(ref SelectControl selectControl, Socket socket)
         {
             lock (connectedSocket)
             {
@@ -687,26 +695,25 @@ namespace More.Net
                     }
                     catch (Exception)
                     {
-                        connectedSocket.ShutdownAndDispose();
-                        handlerMethods.receiveHandler = null;
+                        selectControl.ShutdownDisposeAndRemoveReceiveSocket(connectedSocket);
+                        selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
                         return;
                     }
                 }
 
                 connectedTunnel = new ConnectedTunnel(connectedSocket, socket);
-                handlerMethods.receiveHandler = connectedTunnel.BToAHandler;
-                handlerMethods.socketClosedHandler = connectedTunnel.SocketCloseHandler;
+                selectControl.UpdateHandler(socket, connectedTunnel.BToAHandler);
             }
         }
-        public void ConnectedSocketReceiveHandler(Socket socket, Buf safeBuffer, ref SocketHandlerMethods handlerMethods)
+        public void ConnectedSocketReceiveHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
             //
             // Check if the connection has been made
             //
             if (this.connectedTunnel != null)
             {
-                handlerMethods.receiveHandler = this.connectedTunnel.AToBHandler;
-                handlerMethods.receiveHandler(socket, safeBuffer, ref handlerMethods);
+                selectControl.UpdateHandler(socket, this.connectedTunnel.AToBHandler);
+                this.connectedTunnel.AToBHandler(ref selectControl, socket, safeBuffer);
                 return;
             }
 
@@ -734,8 +741,7 @@ namespace More.Net
             }
             else
             {
-                handlerMethods.receiveHandler = null;
-                Dispose();
+                Dispose(ref selectControl);
             }
         }
     }

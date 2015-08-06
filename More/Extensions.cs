@@ -246,6 +246,9 @@ namespace More
         }
         public static void AppendUtf8(this StringBuilder builder, Byte[] bytes, UInt32 offset, UInt32 limit)
         {
+            // Small optimization to prevent multiple resizes
+            builder.EnsureCapacity((int)(builder.Length + (limit - offset)));
+
             while (true)
             {
                 if (offset >= limit)
@@ -257,6 +260,10 @@ namespace More
     }
     public static class StringExtensions
     {
+        public static Boolean EqualsIgnoreCase(this String str, String other)
+        {
+            return str.Equals(other, StringComparison.OrdinalIgnoreCase);
+        }
         public static String JsonEncode(this String str)
         {
             if (str == null) return "null";
@@ -1298,6 +1305,58 @@ namespace More
         //
         // TODO: Add ParseSingle and ParseDouble
         //
+
+        // Assume compareOffset + length <= compare.Length
+        public static Boolean EqualsAt(this Byte[] array, UInt32 offset, Byte[] compare, UInt32 compareOffset, UInt32 length)
+        {
+            if (offset + length > array.Length)
+                return false;
+            for (int i = 0; i < length; i++)
+            {
+                if (array[offset + i] != compare[compareOffset + i])
+                    return false;
+            }
+            return true;
+        }
+        public static Int32 IndexOf(this Byte[] array, UInt32 offset, UInt32 limit, Byte[] b)
+        {
+            while (offset + b.Length <= limit)
+            {
+                int matchLength = 0;
+                while (true)
+                {
+                    if (matchLength >= b.Length)
+                        return (int)offset;
+                    if (array[offset + matchLength] != b[matchLength])
+                        break;
+                    matchLength++;
+                }
+                offset++;
+            }
+            return -1;
+        }
+        public static Int32 IndexOf(this Byte[] array, UInt32 offset, UInt32 limit, Byte b)
+        {
+            while (offset < limit)
+            {
+                if (array[offset] == b)
+                    return (int)offset;
+                offset++;
+            }
+            return -1;
+        }
+        public static Int32 LastIndexOf(this Byte[] array, UInt32 offset, UInt32 limit, Byte b)
+        {
+            if (limit <= offset)
+                return -1;
+            do
+            {
+                limit--;
+                if (array[limit] == b)
+                    return (int)limit;
+            } while (limit > offset);
+            return -1;
+        }
     }
     public static class ListExtensions
     {
@@ -1500,6 +1559,57 @@ namespace More
     }
     public static class SocketExtensions
     {
+        /*
+        public static void Connect(this Socket socket, IPOrHostEndPoint endpoint)
+        {
+            if (endpoint.ipEndPoint == null)
+            {
+                socket.Connect(endpoint.hostName, endpoint.port);
+            }
+            else
+            {
+                socket.Connect(endpoint.ipEndPoint);
+            }
+        }
+        */
+        // This is a convenience function but it is recomended that you resolve the
+        // endpoint ip address and call a different function
+        public static void Connect(this Socket socket, StringEndPoint endpoint)
+        {
+            if (endpoint.parsedOrResolvedIP == null)
+            {
+                socket.Connect(endpoint.unparsedIPOrHost, endpoint.port);
+            }
+            else
+            {
+                socket.Connect(endpoint.parsedOrResolvedIP);
+            }
+        }
+        public static void ConnectTcpSocketThroughProxy(this Socket socket, More.Net.HostWithOptionalProxy host,
+            More.Net.ProxyConnectOptions options, ref BufStruct buf)
+        {
+            if (host.proxy == null)
+            {
+                socket.Connect(host.endPoint);
+            }
+            else
+            {
+                socket.Connect(host.proxy.endPoint);
+                host.proxy.ProxyConnectTcp(socket, host.endPoint, options, ref buf);
+            }
+        }
+        public static void ConnectUdpSocketThroughProxy(this Socket socket, More.Net.HostWithOptionalProxy host)
+        {
+            if (host.proxy == null)
+            {
+                socket.Connect(host.endPoint);
+            }
+            else
+            {
+                socket.Connect(host.proxy.endPoint);
+                host.proxy.ProxyConnectUdp(socket, host.endPoint);
+            }
+        }
         public static String SafeLocalEndPointString(this Socket socket)
         {
             try { return socket.LocalEndPoint.ToString(); }

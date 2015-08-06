@@ -8,6 +8,7 @@ using More;
 
 namespace More.Net
 {
+    /*
     public abstract class RpcServerHandler : StreamSelectServerCallback, DatagramSelectServerCallback
     {
         public readonly String serviceName;
@@ -114,4 +115,5 @@ namespace More.Net
             }
         }
     }
+    */
 }

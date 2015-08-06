@@ -6,7 +6,7 @@ namespace More.Net
 {
     public class StringBuilderWriter : TextWriter
     {
-        private StringBuilder builder;
+        readonly StringBuilder builder;
 
         public StringBuilderWriter()
         {
@@ -34,14 +34,8 @@ namespace More.Net
                 throw new NotSupportedException();
             }
         }
-        public override void Close()
-        {
-            builder = null;
-        }
-        protected override void Dispose(bool disposing)
-        {
-            builder = null;
-        }
+        public override void Close() { }
+        protected override void Dispose(bool disposing) { }
         public override void Flush() { }
         public override void Write(bool value) { builder.Append(value); }
         public override void Write(char value) { builder.Append(value); }

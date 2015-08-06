@@ -86,7 +86,9 @@ namespace More
             NpcServerSingleThreaded server = new NpcServerSingleThreaded(NpcServerConsoleLoggerCallback.Instance,
                     reflector, new DefaultNpcHtmlGenerator("Npc", reflector), TestTcpPort);
 
-            Thread serverThread = new Thread(server.Run);
+            Thread serverThread = new Thread(() => {
+                try { server.Run(); }  catch (Exception) { }
+            });
             serverThread.Start();
             Thread.Sleep(100);
 
@@ -111,7 +113,7 @@ namespace More
             client.Call("NpcMethodsForTest.SetCustomObjects", new Object[] {customObjects});
             Assert.IsNull(customObjects.Diff(client.Call("NpcMethodsForTest.GetCustomObjects")));
 
-            server.Dispose();
+            server.StopServerFromAnotherThread();
             serverThread.Join();
         }
         [TestMethod]
@@ -122,7 +124,9 @@ namespace More
 
             NpcServerSingleThreaded server = new NpcServerSingleThreaded(NpcServerConsoleLoggerCallback.Instance,
                     reflector, new DefaultNpcHtmlGenerator("Npc", reflector), TestTcpPort);
-            Thread serverThread = new Thread(server.Run);
+            Thread serverThread = new Thread(() => {
+                try { server.Run(); }  catch (Exception) { }
+            });
             serverThread.Start();
 
             Thread.Sleep(100);
@@ -152,12 +156,14 @@ namespace More
             // Restart the Server
             //
             Console.WriteLine("Resetting server");
-            server.Dispose();
+            server.StopServerFromAnotherThread();
             serverThread.Join();
             
             server = new NpcServerSingleThreaded(NpcServerConsoleLoggerCallback.Instance,
                 reflector, new DefaultNpcHtmlGenerator("Npc", reflector), TestTcpPort);
-            serverThread = new Thread(server.Run);
+            serverThread = new Thread(() => {
+                try { server.Run(); }  catch (Exception) { }
+            });
             serverThread.Start();
 
             Thread.Sleep(100);
@@ -165,7 +171,7 @@ namespace More
             client.Call("NpcMethodsForTest.EmptyCall");
             client.Call("NpcMethodsForTest.EmptyCall");
 
-            server.Dispose();
+            server.StopServerFromAnotherThread();
             serverThread.Join();
         }
     }

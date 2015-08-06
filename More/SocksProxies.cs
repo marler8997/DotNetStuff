@@ -76,6 +76,26 @@ namespace More.Net
 
             return offset;
         }
+        public static Int32 MakeRequest(Byte[] packet, SocksCommand command, String asciiHostName, Int32 port)
+        {
+            packet[0] = 0x05;          // Version 5
+            packet[1] = (Byte)command;
+            packet[2] = 0;             // Reserved
+
+            packet[3] = (Byte)SocksAddressType.DomainName;
+            packet[4] = (Byte)asciiHostName.Length;
+
+            Int32 offset = 5;
+            for (int i = 0; i < asciiHostName.Length; i++)
+            {
+                packet[offset++] = (Byte)asciiHostName[i];
+            }
+
+            packet[offset++] = (Byte)(port >> 8);
+            packet[offset++] = (Byte)(port);
+
+            return offset;
+        }
         public static void ReadAndIgnoreAddress(Socket socket, Byte[] buffer)
         {
             socket.ReadFullSize(buffer, 0, 5);
@@ -288,20 +308,40 @@ namespace More.Net
     }
 
 
-    public class Socks4Proxy : IPOrDnsProxy
+    // TODO: Modify connect to use buffer that is passed in
+    public class Socks4Proxy : Proxy
     {
-        readonly EndPoint proxyEndPoint;
         readonly Byte[] userID;
-
-        public Socks4Proxy(EndPoint proxyEndPoint, byte[] userID)
-            : base(ProxyType.Socks4)
+        public Socks4Proxy(String ipOrHost, IPEndPoint endPoint, byte[] userID)
+            : base(ipOrHost, endPoint)
         {
-            this.proxyEndPoint = proxyEndPoint;
             this.userID = userID;
         }
-        public override String ConnectorString(EndPoint endPoint)
+        public override ProxyType Type
         {
-            return ConnectorParser.Format(type, proxyEndPoint, endPoint);
+            get { return ProxyType.Socks4; }
+        }
+        public override void PrepareEndPoint(ref StringEndPoint endPoint)
+        {
+            // Parse the endpoint because this proxy will do something
+            // different depending on if the host is an ip or a string
+            endPoint.Parse();
+        }
+        public override void ProxyConnectUdp(Socket socket, StringEndPoint endpoint)
+        {
+            throw new NotImplementedException();
+        }
+        public override void ProxyConnectTcp(Socket socket, StringEndPoint endpoint,
+            ProxyConnectOptions options, ref BufStruct buf)
+        {
+            if (endpoint.parsedOrResolvedIP == null)
+            {
+                SetupProxyWithHost(socket, endpoint.unparsedIPOrHost, endpoint.port);
+            }
+            else
+            {
+                SetupProxyWithIP(socket, endpoint.parsedOrResolvedIP);
+            }
         }
         public Socket ListenAndAccept(UInt16 port)
         {
@@ -324,8 +364,8 @@ namespace More.Net
             //
             // Connect to the proxy server
             //
-            Socket socket = new Socket(proxyEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(proxyEndPoint);
+            Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            socket.Connect(endPoint);
             socket.Send(bindRequest);
             socket.ReadFullSize(replyBuffer, 0, 8);
 
@@ -349,20 +389,10 @@ namespace More.Net
 
             return socket;
         }
-        public override void Connect(Socket socket, DnsEndPoint dnsEndPoint)
-        {
-            ConnectUsingHostName(socket, Encoding.UTF8.GetBytes(dnsEndPoint.domainName), dnsEndPoint.port);
-        }
-        public override void Connect(Socket socket, IPEndPoint endPoint)
-        {
-            ConnectUsingIP(socket, endPoint.Address, endPoint.Port);
-        }
-        public void ConnectUsingHostName(Socket socket, Byte[] hostNameBytes, Int32 port)
+        public void SetupProxyWithHost(Socket socket, String asciiHostName, UInt16 port)
         {
             Byte[] replyBuffer = new Byte[8];
-            Byte[] connectRequest = new Byte[10 +
-                ((userID == null) ? 0 : userID.Length) +
-                hostNameBytes.Length];
+            Byte[] connectRequest = new Byte[10 + ((userID == null) ? 0 : userID.Length) + asciiHostName.Length];
 
             connectRequest[0] = 4; // Version 4 of SOCKS protocol
             connectRequest[1] = 1; // Command 1 "CONNECT"
@@ -385,17 +415,17 @@ namespace More.Net
             }
             connectRequest[offset++] = 0;
 
-
-            for (int i = 0; i < hostNameBytes.Length; i++)
+            //Console.WriteLine("[DEBUG] Setting up host name '{0}'", asciiHostName);
+            for (int i = 0; i < asciiHostName.Length; i++)
             {
-                connectRequest[offset++] = hostNameBytes[i];
+                //Console.WriteLine("[DEBUG] [{0}] '{1}' {2}", i, asciiHostName[i], (Byte)asciiHostName[i]);
+                connectRequest[offset++] = (Byte)asciiHostName[i];
             }
             connectRequest[offset] = 0;
 
             //
-            // Connect to the proxy server, send CONNECT, and read response
+            // send CONNECT, and read response
             //
-            socket.Connect(proxyEndPoint);
             socket.Send(connectRequest);
             socket.ReadFullSize(replyBuffer, 0, 8);
 
@@ -406,16 +436,16 @@ namespace More.Net
 
             if (replyBuffer[1] != 90) throw new Proxy4Exception(replyBuffer[1]);
         }
-        public void ConnectUsingIP(Socket socket, IPAddress address, Int32 port)
+        public void SetupProxyWithIP(Socket socket, IPEndPoint ipEndPoint)
         {
             Byte[] replyBuffer = new Byte[8];
             Byte[] connectRequest = new Byte[9 + ((userID == null) ? 0 : userID.Length)];
 
             connectRequest[0] = 4;                 // Version 4 of SOCKS protocol
             connectRequest[1] = 1;                 // Command 1 "CONNECT"            
-            connectRequest[2] = (Byte)(port >> 8);
-            connectRequest[3] = (Byte)(port);
-            byte[] hostIPArray = address.GetAddressBytes();
+            connectRequest[2] = (Byte)(ipEndPoint.Port >> 8);
+            connectRequest[3] = (Byte)(ipEndPoint.Port);
+            byte[] hostIPArray = ipEndPoint.Address.GetAddressBytes();
             connectRequest[4] = hostIPArray[0];
             connectRequest[5] = hostIPArray[1];
             connectRequest[6] = hostIPArray[2];
@@ -431,9 +461,8 @@ namespace More.Net
             connectRequest[offset] = 0;
 
             //
-            // Connect to the proxy server, send CONNECT, and read response
+            // send CONNECT, and read response
             //
-            socket.Connect(proxyEndPoint);
             socket.Send(connectRequest);
             socket.ReadFullSize(replyBuffer, 0, 8);
 
@@ -445,49 +474,70 @@ namespace More.Net
             if (replyBuffer[1] != 90) throw new Proxy4Exception(replyBuffer[1]);
         }
     }
-    public class Socks5NoAuthenticationConnectSocket : IPOrDnsProxy
+    // TODO: Modify connect to use buffer that is passed in
+    public class Socks5NoAuthenticationConnectSocket : Proxy
     {
-        readonly EndPoint proxyEndPoint;
         private readonly Byte[] buffer;
 
-        public Socks5NoAuthenticationConnectSocket(EndPoint proxyEndPoint)
-            : base(ProxyType.Socks5)
+        public Socks5NoAuthenticationConnectSocket(String ipOrHost, IPEndPoint endPoint)
+            : base(ipOrHost, endPoint)
         {
-            this.proxyEndPoint = proxyEndPoint;
             //int maxAuthenticationBuffer = 3 + usernameBytes.Length + passwordBytes.Length;
-
             this.buffer = new Byte[21];
         }
-        public override String ConnectorString(EndPoint endPoint)
+        public override ProxyType Type { get { return ProxyType.Socks5; } }
+        public override void PrepareEndPoint(ref StringEndPoint endPoint)
         {
-            return ConnectorParser.Format(type, proxyEndPoint, endPoint);
+            // Parse the endpoint because this proxy will do something
+            // different depending on if the host is an ip or a string
+            endPoint.Parse();
         }
-        public override void Connect(Socket socket, DnsEndPoint dnsEndPoint)
+        public override void ProxyConnectTcp(Socket socket, StringEndPoint endpoint,
+            ProxyConnectOptions options, ref BufStruct buf)
         {
-            if (socket.ProtocolType == ProtocolType.Tcp)
+            if (endpoint.parsedOrResolvedIP == null)
             {
-                TcpConnectUsingHostName(socket, Encoding.UTF8.GetBytes(dnsEndPoint.domainName), dnsEndPoint.port);
+                ProxyConnectTcpUsingHost(socket, endpoint.unparsedIPOrHost, endpoint.port);
             }
             else
             {
-                UdpConnectUsingHostName(socket, Encoding.UTF8.GetBytes(dnsEndPoint.domainName), dnsEndPoint.port);
+                ProxyConnectTcpUsingIP(socket, endpoint.parsedOrResolvedIP.Address,
+                    endpoint.parsedOrResolvedIP.Port);
             }
         }
-        public override void Connect(Socket socket, IPEndPoint endPoint)
+        public void ProxyConnectTcpUsingHost(Socket socket, String asciiHostName, UInt16 port)
         {
-            if (socket.ProtocolType == ProtocolType.Tcp)
-            {
-                TcpConnectUsingIP(socket, endPoint.Address, endPoint.Port);
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-        public void TcpConnectUsingIP(Socket socket, IPAddress ip, Int32 port)
-        {
-            socket.Connect(proxyEndPoint);
+            Byte[] buffer = new Byte[10 + asciiHostName.Length];
 
+            //
+            // 1. Send Initial Greeting
+            //
+            buffer[0] = 5; // Version 5 of the SOCKS protocol
+            buffer[1] = 1; // This class only supports 1 authentication protocol
+            buffer[2] = 0; // The 'No Authentication' protocol
+            socket.Send(buffer, 0, 3, SocketFlags.None);
+
+            //
+            // 2. Receive Initial Response
+            //
+            socket.ReadFullSize(buffer, 0, 2);
+            if (buffer[0] != 5) throw new InvalidOperationException(String.Format(
+                "The first byte of the proxy response was expected to be 5 (for SOCKS5 version) but it was {0}", buffer[0]));
+            if (buffer[1] != 0) throw new Proxy5Exception(String.Format("Expected server's response to be 0 (Means no authenticaion), but it was {0}", buffer[1]));
+
+            //
+            // 3. Issue a CONNECT command
+            //
+            Int32 size = Socks5.MakeRequest(buffer, SocksCommand.Connect, asciiHostName, port);
+            socket.Send(buffer, 0, size, SocketFlags.None);
+
+            //
+            // 4. Get Response
+            //
+            Socks5.ReadAndIgnoreAddress(socket, buffer);
+        }
+        void ProxyConnectTcpUsingIP(Socket socket, IPAddress ip, Int32 port)
+        {
             //
             // 1. Send Initial Greeting
             //
@@ -515,46 +565,24 @@ namespace More.Net
             //
             Socks5.ReadAndIgnoreAddress(socket, buffer);
         }
-        public void TcpConnectUsingHostName(Socket socket, Byte[] hostName, Int32 port)
+
+        public override void ProxyConnectUdp(Socket socket, StringEndPoint endpoint)
         {
-            socket.Connect(proxyEndPoint);
-
-            Byte[] buffer = new Byte[10 + hostName.Length];
-
-            //
-            // 1. Send Initial Greeting
-            //
-            buffer[0] = 5; // Version 5 of the SOCKS protocol
-            buffer[1] = 1; // This class only supports 1 authentication protocol
-            buffer[2] = 0; // The 'No Authentication' protocol
-            socket.Send(buffer, 0, 3, SocketFlags.None);
-
-            //
-            // 2. Receive Initial Response
-            //
-            socket.ReadFullSize(buffer, 0, 2);
-            if (buffer[0] != 5) throw new InvalidOperationException(String.Format(
-                "The first byte of the proxy response was expected to be 5 (for SOCKS5 version) but it was {0}", buffer[0]));
-            if (buffer[1] != 0) throw new Proxy5Exception(String.Format("Expected server's response to be 0 (Means no authenticaion), but it was {0}", buffer[1]));
-
-            //
-            // 3. Issue a CONNECT command
-            //
-            Int32 size = Socks5.MakeRequest(buffer, SocksCommand.Connect, hostName, port);
-            socket.Send(buffer, 0, size, SocketFlags.None);
-
-            //
-            // 4. Get Response
-            //
-            Socks5.ReadAndIgnoreAddress(socket, buffer);
+            if (endpoint.parsedOrResolvedIP == null)
+            {
+                ProxyConnectUdpUsingHost(socket, endpoint.unparsedIPOrHost, endpoint.port);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
-
-        public void UdpConnectUsingHostName(Socket socket, Byte[] hostName, Int32 port)
+        public void ProxyConnectUdpUsingHost(Socket socket, String asciiHostName, Int32 port)
         {
-            Socket proxySocket = new Socket(proxyEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            proxySocket.Connect(proxyEndPoint);
+            Socket proxySocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            proxySocket.Connect(endPoint);
 
-            Byte[] buffer = new Byte[10 + hostName.Length];
+            Byte[] buffer = new Byte[10 + asciiHostName.Length];
 
             //
             // 1. Send Initial Greeting
@@ -575,7 +603,7 @@ namespace More.Net
             //
             // 3. Issue a CONNECT command
             //
-            Int32 size = Socks5.MakeRequest(buffer, SocksCommand.Connect, hostName, port);
+            Int32 size = Socks5.MakeRequest(buffer, SocksCommand.Connect, asciiHostName, port);
             proxySocket.Send(buffer, 0, size, SocketFlags.None);
 
             //

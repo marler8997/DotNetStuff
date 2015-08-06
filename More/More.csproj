@@ -82,7 +82,7 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Slice.cs" />
     <Compile Include="Snmp.cs" />
-    <Compile Include="SocketConnector.cs" />
+    <Compile Include="Proxies.cs" />
     <Compile Include="SocksProxies.cs" />
     <Compile Include="StarExpression.cs" />
     <Compile Include="SymExp.cs" />
