@@ -67,7 +67,7 @@ namespace More
             if (parsedOrResolvedIP == null)
             {
                 IPAddress address;
-                if (IPAddress.TryParse(unparsedIPOrHost, out address))
+                if (IPParser.TryParse(unparsedIPOrHost, out address))
                 {
                     parsedOrResolvedIP = new IPEndPoint(address, port);
                 }
@@ -87,7 +87,7 @@ namespace More
             }
 
             IPAddress address;
-            if (!IPAddress.TryParse(unparsedIPOrHost, out address))
+            if (!IPParser.TryParse(unparsedIPOrHost, out address))
             {
                 Console.WriteLine("[DEBUG] Resolving '{0}'...", unparsedIPOrHost);
                 address = EndPoints.DnsResolve(specificFamily, unparsedIPOrHost);

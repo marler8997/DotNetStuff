@@ -1,5 +1,4 @@
-﻿
-#if WindowsCE
+﻿#if WindowsCE
 
 using System;
 using System.Collections;
@@ -49,6 +48,13 @@ namespace System
     }
     public static class MissingInCEArrayCopier
     {
+        public static void Copy(Array srcArray, Array dstArray, Int64 length)
+        {
+            if (length > Int32.MaxValue) throw new InvalidOperationException(String.Format(
+                "Platform Error: The Compact .NET framework does not support Array.Copy for Int64 values, this call will perform differently on the compact .NET framework"));
+
+            Array.Copy(srcArray, dstArray, (Int32)length);
+        }
         public static void Copy(Array srcArray, Int64 srcOffset, Array dstArray, Int64 dstOffset, Int64 length)
         {
             if (srcOffset > Int32.MaxValue || dstOffset > Int32.MaxValue || length > Int32.MaxValue) throw new InvalidOperationException(String.Format(
@@ -177,6 +183,17 @@ namespace System.Net
                 address = null;
                 return false;
             }
+        }
+    }
+}
+namespace System.Net.Sockets
+{
+    public static class MissingInCESocket
+    {
+        public static void Connect(this Socket socket, String host, Int32 port)
+        {
+            var ip = EndPoints.ParseIPOrResolveHost(AddressFamily.Unspecified, host);
+            socket.Connect(new IPEndPoint(ip, port));
         }
     }
 }

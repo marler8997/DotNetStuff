@@ -83,15 +83,14 @@ namespace More
 
             if (type == typeof(Boolean))
             {
-                htmlBuilder.Append(String.Format("<span class=\"cskeyword\">{0}</span>",
-                    ((Boolean)returnObject) ? "true" : "false"));
+                htmlBuilder.AppendFormat("<span class=\"cskeyword\">{0}</span>",
+                    ((Boolean)returnObject) ? "true" : "false");
                 return;
             }
 
             if (type == typeof(String))
             {
-                htmlBuilder.Append(String.Format("<span class=\"csstring\">\"{0}\"</span>",
-                    (String)returnObject));
+                htmlBuilder.AppendFormat("<span class=\"csstring\">\"{0}\"</span>", (String)returnObject);
                 return;
             }
 
@@ -139,8 +138,8 @@ namespace More
                 {
                     FieldInfo fieldInfo = fieldInfos[i];
                     Object fieldValue = fieldInfo.GetValue(returnObject);
-                    htmlBuilder.Append(String.Format("<tr><td>{0}</td><td>{1}</td><td>",
-                        TypeAsHtml(fieldInfo.FieldType), fieldInfo.Name));
+                    htmlBuilder.AppendFormat("<tr><td>{0}</td><td>{1}</td><td>",
+                        TypeAsHtml(fieldInfo.FieldType), fieldInfo.Name);
                     GenerateHtmlValue(htmlBuilder, fieldValue);
                     htmlBuilder.Append("</td></tr>");
                 }
@@ -185,23 +184,23 @@ namespace More
                         ParameterInfo[] parameters = npcMethodInfo.parameters;
                         Int32 parameterCount = (parameters == null) ? 0 : parameters.Length;
 
-                        htmlBuilder.Append(String.Format("<form class=\"methodform\" action=\"call/{0}.{1}\" method=\"get\">", executionObject.objectName, npcMethodInfo.methodName));
-                        htmlBuilder.Append(String.Format("<input class=\"executebutton\" type=\"submit\" value=\"Execute\" tabindex=\"{0}\"/>", tabIndex + parameterCount));
+                        htmlBuilder.AppendFormat("<form class=\"methodform\" action=\"call/{0}.{1}\" method=\"get\">", executionObject.objectName, npcMethodInfo.methodName);
+                        htmlBuilder.AppendFormat("<input class=\"executebutton\" type=\"submit\" value=\"Execute\" tabindex=\"{0}\"/>", tabIndex + parameterCount);
 #if WindowsCE
-                    htmlBuilder.Append(TypeAsHtml(npcMethodInfo.methodInfo.ReturnType));
+                        htmlBuilder.Append(TypeAsHtml(npcMethodInfo.methodInfo.ReturnType));
 #else
                         htmlBuilder.Append(TypeAsHtml(npcMethodInfo.methodInfo.ReturnParameter.ParameterType));
 #endif
 
-                        htmlBuilder.Append(String.Format("&nbsp;<font class=\"bold\">{0}</font>(", npcMethodInfo.methodInfo.Name));
+                        htmlBuilder.AppendFormat("&nbsp;<font class=\"bold\">{0}</font>(", npcMethodInfo.methodInfo.Name);
                         if (parameterCount > 0)
                         {
                             htmlBuilder.Append("<div style=\"padding-left:50px;\"><table class=\"methodtable\">");
                             for (UInt16 j = 0; j < parameterCount; j++)
                             {
                                 ParameterInfo parameterInfo = parameters[j];
-                                htmlBuilder.Append(String.Format("<tr><td>{0}</td><td>&nbsp;{1}</td><td>&nbsp;=&nbsp;</td><td width=\"100%\"><input style=\"width:100%;\" tabindex=\"{3}\" name=\"{2}\"/></td></tr>",
-                                    TypeAsHtml(parameterInfo.ParameterType), parameterInfo.Name, j, tabIndex++));
+                                htmlBuilder.AppendFormat("<tr><td>{0}</td><td>&nbsp;{1}</td><td>&nbsp;=&nbsp;</td><td width=\"100%\"><input style=\"width:100%;\" tabindex=\"{3}\" name=\"{2}\"/></td></tr>",
+                                    TypeAsHtml(parameterInfo.ParameterType), parameterInfo.Name, j, tabIndex++);
                             }
                             htmlBuilder.Append("</table></div>");
                         }
@@ -239,7 +238,7 @@ namespace More
             }
             else
             {
-                htmlBuilder.Append(String.Format("<h2>{0} enum types</h2><hr/>", enumTypeCount));
+                htmlBuilder.AppendFormat("<h2>{0} enum types</h2><hr/>", enumTypeCount);
                 foreach (KeyValuePair<String, Type> pair in npcExecutor.EnumAndObjectTypes)
                 {
                     if (pair.Value.IsEnum)
@@ -257,7 +256,7 @@ namespace More
             }
             else
             {
-                htmlBuilder.Append(String.Format("<h2>{0} object types</h2><hr/>", objectTypeCount));
+                htmlBuilder.AppendFormat("<h2>{0} object types</h2><hr/>", objectTypeCount);
                 foreach (KeyValuePair<String, Type> pair in npcExecutor.EnumAndObjectTypes)
                 {
                     if (!pair.Value.IsEnum)
@@ -309,7 +308,7 @@ namespace More
                 return;
             }
 
-            htmlBuilder.Append(String.Format("<a href=\"#\" class=\"cstype\">{0}</a>", type) + " is an unknown type");
+            htmlBuilder.AppendFormat("<a href=\"#\" class=\"cstype\">{0}</a> is an unknown type", type);
         }
         public void GenerateCallPage(StringBuilder htmlBuilder, string call)
         {
@@ -355,16 +354,16 @@ namespace More
 
             if (returnObject.exception == null)
             {
-                htmlBuilder.Append(String.Format("<div style=\"background:#333;color:#0f5;padding:5px;\"><h1>Success</h1></div>"));
+                htmlBuilder.AppendFormat("<div style=\"background:#333;color:#0f5;padding:5px;\"><h1>Success</h1></div>");
             }
             else
             {
-                htmlBuilder.Append(String.Format("<div style=\"background:#333;color:#f00;padding:5px;\"><h1>Exception</h1></div>"));
+                htmlBuilder.AppendFormat("<div style=\"background:#333;color:#f00;padding:5px;\"><h1>Exception</h1></div>");
             }
 
             htmlBuilder.Append("<br/>");
 
-            htmlBuilder.Append(String.Format("<div><div><span class=\"SectionTitle\">Function Called</span><hr/></div> {0}&nbsp;<span class=\"bold\">{1}</span>(", TypeAsHtml(npcMethodInfo.methodInfo.ReturnType), methodName));
+            htmlBuilder.AppendFormat("<div><div><span class=\"SectionTitle\">Function Called</span><hr/></div> {0}&nbsp;<span class=\"bold\">{1}</span>(", TypeAsHtml(npcMethodInfo.methodInfo.ReturnType), methodName);
             if (parameterCount > 0)
             {
                 htmlBuilder.Append("<table>");
@@ -372,8 +371,8 @@ namespace More
                 {
                     ParameterInfo parameterInfo = npcMethodInfo.parameters[i];
                     String parameterString = parameters[i];
-                    htmlBuilder.Append(String.Format("<tr><td>&nbsp;{0}</td><td>&nbsp;{1}</td><td>&nbsp;=&nbsp;</td><td>{2}</td></tr>",
-                        TypeAsHtml(parameterInfo.ParameterType), parameterInfo.Name, parameterString));
+                    htmlBuilder.AppendFormat("<tr><td>&nbsp;{0}</td><td>&nbsp;{1}</td><td>&nbsp;=&nbsp;</td><td>{2}</td></tr>",
+                        TypeAsHtml(parameterInfo.ParameterType), parameterInfo.Name, parameterString);
                 }
                 htmlBuilder.Append("</table>");
             }
@@ -385,13 +384,13 @@ namespace More
             {
                 if (returnObject.type != typeof(void))
                 {
-                    htmlBuilder.Append(String.Format("<div><span class=\"SectionTitle\">Return Value</span>&nbsp;{0}<hr/></div>", TypeAsHtml(returnObject.type)));
+                    htmlBuilder.AppendFormat("<div><span class=\"SectionTitle\">Return Value</span>&nbsp;{0}<hr/></div>", TypeAsHtml(returnObject.type));
                     GenerateHtmlValue(htmlBuilder, returnObject.value);
                 }
             }
             else
             {
-                htmlBuilder.Append(String.Format("<div><span class=\"SectionTitle\">Exception</span>&nbsp;<span class=\"cstype\">{0}</span><hr/></div>", returnObject.type.FullName));
+                htmlBuilder.AppendFormat("<div><span class=\"SectionTitle\">Exception</span>&nbsp;<span class=\"cstype\">{0}</span><hr/></div>", returnObject.type.FullName);
                 GenerateExceptionHtml(htmlBuilder, returnObject.exception);
             }
         }

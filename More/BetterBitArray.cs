@@ -175,7 +175,7 @@ namespace More
         {
             int byteIndex = bitFieldIndex / 8;
 
-            if (byteIndex >= bitField.Length) throw new ArgumentOutOfRangeException("bitFieldIndex", bitFieldIndex, String.Format(
+            if (byteIndex >= bitField.Length) throw new ArgumentOutOfRangeException("bitFieldIndex", String.Format(
                  "Cannot set bit {0} in bit field of length {1}", bitFieldIndex, bitField.Length));
 
             byte bitFlag = (byte)(1 << (bitFieldIndex % 8));

@@ -269,7 +269,7 @@ namespace More.Net
             String portString      = splitStrings[2];
 
             UInt16 port;
-            if (!UInt16.TryParse(portString, out port))
+            if (!UInt16Parser.TryParse(portString, out port))
                 throw new FormatException(String.Format("Invalid port '{0}'", portString));
 
             IPEndPoint ipEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(specificFamily, ipOrHost), port);

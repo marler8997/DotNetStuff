@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Reflection;
 
+#if !WindowsCE
 namespace More
 {
+    
     /// <summary>
     /// Used to find types from fully qualified class names (means it includes the namespace).
     /// It caches types that have already been found, and also first checks assemblies that other types
@@ -137,3 +139,4 @@ namespace More
         }
     }
 }
+#endif

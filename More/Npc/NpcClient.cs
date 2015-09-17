@@ -168,7 +168,6 @@ namespace More
             this.enumAndObjectTypes = new List<Type>();
             InitializeStaticClientTypeFinder();
         }
-        /*
         public NpcClient(Socket socket, RemoteNpcInterface[] expectedInterfaces, Boolean threadSafe)
         {
             this.serverEndPoint = socket.RemoteEndPoint;
@@ -181,7 +180,6 @@ namespace More
             this.enumAndObjectTypes = new List<Type>();
             InitializeStaticClientTypeFinder();
         }
-        */
         InvalidOperationException UnexpectedClose()
         {
             Dispose();

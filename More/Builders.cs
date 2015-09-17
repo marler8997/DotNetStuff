@@ -2,6 +2,12 @@
 using System.IO;
 using System.Text;
 
+#if WindowsCE
+using ArrayCopier = System.MissingInCEArrayCopier;
+#else
+using ArrayCopier = System.Array;
+#endif
+
 namespace More
 {
     // AppendAscii = The data being appended is guaranteed to be valid ascii (0-127)
@@ -124,7 +130,7 @@ namespace More
                     newLength = capacity;
                 }
                 var newBytes = new Byte[newLength];
-                Array.Copy(bytes, newBytes, contentLength);
+                ArrayCopier.Copy(bytes, newBytes, contentLength);
                 bytes = newBytes;
             }
         }
@@ -187,13 +193,13 @@ namespace More
         public void Append(Byte[] content)
         {
             EnsureTotalCapacity(contentLength + (UInt32)content.Length);
-            Array.Copy(content, 0, bytes, contentLength, content.Length);
+            ArrayCopier.Copy(content, 0, bytes, contentLength, content.Length);
             contentLength += (UInt32)content.Length;
         }
         public void Append(Byte[] content, UInt32 offset, UInt32 length)
         {
             EnsureTotalCapacity(contentLength + length);
-            Array.Copy(content, offset, bytes, contentLength, length);
+            ArrayCopier.Copy(content, offset, bytes, contentLength, length);
             contentLength += length;
         }
 
@@ -235,7 +241,7 @@ namespace More
         public void AppendNumber(UInt32 num, Byte @base)
         {
             if(@base > Chars.Length)
-                throw new ArgumentOutOfRangeException("base", @base, String.Format("base cannot be greater than {0}", Chars.Length));
+                throw new ArgumentOutOfRangeException("base", String.Format("base cannot be greater than {0}", Chars.Length));
 
             // Enusure Capacity for max value
             if (@base >= 10)

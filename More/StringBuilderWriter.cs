@@ -50,15 +50,17 @@ namespace More.Net
         public override void Write(uint value) { builder.Append(value); }
         public override void Write(ulong value) { builder.Append(value); }
         public override void Write(string format, object obj)
-        { builder.Append(String.Format(format, obj)); }
+        { builder.AppendFormat(format, obj); }
         public override void Write(string format, params object[] obj)
-        { builder.Append(String.Format(format, obj)); }
+        { builder.AppendFormat(format, obj); }
         public override void Write(char[] buffer, int index, int count)
         { builder.Append(buffer, index, count); }
         public override void Write(string format, object obj1, object obj2)
-        { builder.Append(String.Format(format, obj1, obj2)); }
+        { builder.AppendFormat(format, obj1, obj2); }
+#if !WindowsCE
         public override void Write(string format, object obj1, object obj2, object obj3)
-        { builder.Append(String.Format(format, obj1, obj2, obj3)); }
+        { builder.AppendFormat(format, obj1, obj2, obj3); }
+#endif
         public override void WriteLine() { builder.AppendLine(); }
         public override void WriteLine(bool value) { builder.AppendLine(value.ToString()); }
         public override void WriteLine(char value) { builder.AppendLine(value.ToString()); }
@@ -81,7 +83,9 @@ namespace More.Net
         { builder.AppendLine(new String(buffer, index, count)); }
         public override void WriteLine(string format, object obj1, object obj2)
         { builder.AppendLine(String.Format(format, obj1, obj2)); }
+#if !WindowsCE
         public override void WriteLine(string format, object obj1, object obj2, object obj3)
         { builder.AppendLine(String.Format(format, obj1, obj2, obj3)); }
+#endif
     }
 }

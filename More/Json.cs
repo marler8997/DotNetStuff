@@ -265,7 +265,7 @@ namespace More
                 }
 
                 Debug.Assert(text[offset] == '"');
-                value = Encoding.UTF8.GetString(utf8Buffer);
+                value = Encoding.UTF8.GetString(utf8Buffer, 0, utf8Buffer.Length);
             }
 
             return offset + 1;

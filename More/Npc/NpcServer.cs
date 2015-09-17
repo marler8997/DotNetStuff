@@ -88,18 +88,15 @@ namespace More
         public readonly INpcServerCallback callback;
         public readonly NpcExecutor npcExecutor;
         public readonly INpcHtmlGenerator htmlGenerator;
-        public readonly UInt16 port;
+        //public readonly UInt16 port;
 
-        SelectControl selectControl;
-        SelectServer selectServer;
+        readonly SelectServer selectServer;
 
-        public NpcServerSingleThreaded(INpcServerCallback callback, NpcExecutor npcExecutor, String htmlPageTitle,
-            UInt16 port)
+        public NpcServerSingleThreaded(INpcServerCallback callback, NpcExecutor npcExecutor, String htmlPageTitle, UInt16 port)
             : this(callback, npcExecutor, new DefaultNpcHtmlGenerator(htmlPageTitle, npcExecutor), port)
         {
         }
-        public NpcServerSingleThreaded(INpcServerCallback callback, NpcExecutor npcExecutor, INpcHtmlGenerator htmlGenerator,
-            UInt16 port)
+        public NpcServerSingleThreaded(INpcServerCallback callback, NpcExecutor npcExecutor, INpcHtmlGenerator htmlGenerator, UInt16 port)
         {
             if (callback == null) throw new ArgumentNullException("callback");
             if (npcExecutor == null) throw new ArgumentNullException("npcExecutor");
@@ -108,7 +105,31 @@ namespace More
             this.callback = callback;
             this.npcExecutor = npcExecutor;
             this.htmlGenerator = htmlGenerator;
-            this.port = port;
+            //this.port = port;
+
+            Socket listenSocket = new Socket(IPAddress.Any.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            listenSocket.Bind(new IPEndPoint(IPAddress.Any, port));
+            listenSocket.Listen(Backlog);
+            callback.ServerListening(listenSocket);
+
+            SelectControl selectControl = new SelectControl(false);
+            selectControl.AddListenSocket(listenSocket, AcceptCallback);
+
+            selectServer = new SelectServer(selectControl, new Buf(SingleThreadedReceiveBufferLength));
+        }
+        public NpcServerSingleThreaded(INpcServerCallback callback, NpcExecutor npcExecutor, INpcHtmlGenerator htmlGenerator, Socket listenSocket)
+        {
+            if (callback == null) throw new ArgumentNullException("callback");
+            if (npcExecutor == null) throw new ArgumentNullException("npcExecutor");
+            if (htmlGenerator == null) throw new ArgumentNullException("htmlGenerator");
+
+            this.callback = callback;
+            this.npcExecutor = npcExecutor;
+            this.htmlGenerator = htmlGenerator;
+
+            SelectControl selectControl = new SelectControl(false);
+            selectControl.AddListenSocket(listenSocket, AcceptCallback);
+            selectServer = new SelectServer(selectControl, new Buf(SingleThreadedReceiveBufferLength));
         }
         public void StopServerFromTheRunThread()
         {
@@ -120,16 +141,6 @@ namespace More
         }
         public void Run()
         {
-            IPAddress listenIP = IPAddress.Any;
-            Socket listenSocket = new Socket(listenIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listenSocket.Bind(new IPEndPoint(listenIP, port));
-            listenSocket.Listen(Backlog);
-            callback.ServerListening(listenSocket);
-
-            selectControl = new SelectControl(false);
-            selectControl.AddListenSocket(listenSocket, AcceptCallback);
-
-            selectServer = new SelectServer(selectControl, new Buf(SingleThreadedReceiveBufferLength));
             selectServer.Run();
         }
         public void AcceptCallback(ref SelectControl selectControl, Socket listenSocket, Buf safeBuffer)
@@ -148,7 +159,6 @@ namespace More
                 clientSocket.Close();
             }
         }
-
     }
     /*
     public class NpcStreamSelectServerCallback : StreamSelectServerCallback

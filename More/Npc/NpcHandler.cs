@@ -249,8 +249,8 @@ namespace More
             //
             htmlContentBuilder.Append("<div id=\"Nav\"><div id=\"NavLinkWrapper\">");
 
-            htmlContentBuilder.Append(String.Format("<a href=\"/methods\" class=\"NavLink\"{0}>Methods</a>", methodsPage ? " id=\"CurrentNav\"" : ""));
-            htmlContentBuilder.Append(String.Format("<a href=\"/type\" class=\"NavLink\"{0}>Types</a>", typesPage ? " id=\"CurrentNav\"" : ""));
+            htmlContentBuilder.AppendFormat("<a href=\"/methods\" class=\"NavLink\"{0}>Methods</a>", methodsPage ? " id=\"CurrentNav\"" : "");
+            htmlContentBuilder.AppendFormat("<a href=\"/type\" class=\"NavLink\"{0}>Types</a>", typesPage ? " id=\"CurrentNav\"" : "");
 
             htmlContentBuilder.Append("</div></div>");
             htmlContentBuilder.Append("<div id=\"ContentDiv\">");
@@ -321,7 +321,7 @@ namespace More
             StringBuilder httpHeadersBuilder = new StringBuilder();
             httpHeadersBuilder.Append(httpVersionString);
             httpHeadersBuilder.Append(" 200 OK\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html\r\n");
-            httpHeadersBuilder.Append(String.Format("Content-Length: {0}\r\n", contents.Length));
+            httpHeadersBuilder.AppendFormat("Content-Length: {0}\r\n", contents.Length);
             httpHeadersBuilder.Append("\r\n");
             Byte[] headerBytes = Encoding.UTF8.GetBytes(httpHeadersBuilder.ToString());
 

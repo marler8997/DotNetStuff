@@ -51,7 +51,7 @@ namespace More
         }
         public override void DataSmallString(object instance, StringBuilder builder)
         {
-            builder.Append(String.Format("[{0} bytes]", fixedLength));
+            builder.AppendFormat("[{0} bytes]", fixedLength);
         }
     }
     /*
@@ -128,7 +128,7 @@ namespace More
         }
         public override void DataSmallString(object instance, StringBuilder builder)
         {
-            builder.Append(String.Format("[{0} bytes]", GetLength(instance)));
+            builder.AppendFormat("[{0} bytes]", GetLength(instance)));
         }
     }
     */
@@ -230,7 +230,7 @@ namespace More
             }
 
             ElementType[] valueAsArray = (ElementType[])valueAsObject;
-            builder.Append(String.Format("[{0} elements]", valueAsArray.Length));
+            builder.AppendFormat("[{0} elements]", valueAsArray.Length);
         }
     }
 
@@ -314,7 +314,7 @@ namespace More
             }
 
             ElementType[] valueAsArray = (ElementType[])valueAsObject;
-            builder.Append(String.Format("[{0} elements]", valueAsArray.Length));
+            builder.AppendFormat("[{0} elements]", valueAsArray.Length);
         }
         public override void DataString(Object instance, StringBuilder builder)
         {
@@ -411,7 +411,7 @@ namespace More
                 return;
             }
             ElementType[] valueAsArray = (ElementType[])valueAsObject;
-            builder.Append(String.Format("[{0} elements]", valueAsArray.Length));
+            builder.AppendFormat("[{0} elements]", valueAsArray.Length);
         }
         public override void DataString(Object instance, StringBuilder builder)
         {
