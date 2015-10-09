@@ -78,11 +78,12 @@ namespace More
             }
             return combinedLength;
         }
-        public static void Combine<T>(T[] orderedSetA, T[] orderedSetB, List<T> combined)
+        public static void Combine<T>(T[] orderedSetA, T[] orderedSetB, T[] combined)
         {
             if (orderedSetA == null || orderedSetA.Length <= 0 ||
                 orderedSetB == null || orderedSetB.Length <= 0) throw new ArgumentException("sets cannot be null or empty");
 
+            UInt32 combinedIndex = 0;
             UInt32 setAIndex = 0, setBIndex = 0;
 
             T setAValue = orderedSetA[0];
@@ -92,7 +93,7 @@ namespace More
                 Int32 compareValue = Comparer<T>.Default.Compare(setAValue, setBValue);
                 if (compareValue == 0)
                 {
-                    combined.Add(setAValue);
+                    combined[combinedIndex++] = setAValue;
                     setAIndex++;
                     setBIndex++;
                     if (setAIndex >= orderedSetA.Length || setBIndex >= orderedSetB.Length) break;
@@ -101,14 +102,14 @@ namespace More
                 }
                 else if (compareValue < 0)
                 {
-                    combined.Add(setAValue);
+                    combined[combinedIndex++] = setAValue;
                     setAIndex++;
                     if (setAIndex >= orderedSetA.Length) break;
                     setAValue = orderedSetA[setAIndex];
                 }
                 else
                 {
-                    combined.Add(setBValue);
+                    combined[combinedIndex++] = setBValue;
                     setBIndex++;
                     if (setBIndex >= orderedSetB.Length) break;
                     setBValue = orderedSetB[setBIndex];
@@ -117,14 +118,17 @@ namespace More
 
             while (setBIndex < orderedSetB.Length)
             {
-                combined.Add(orderedSetB[setBIndex]);
+                combined[combinedIndex++] = orderedSetB[setBIndex];
                 setBIndex++;
             }
             while (setAIndex < orderedSetA.Length)
             {
-                combined.Add(orderedSetA[setAIndex]);
+                combined[combinedIndex++] = orderedSetA[setAIndex];
                 setAIndex++;
             }
+
+            if (combinedIndex != combined.Length)
+                throw new ArgumentException(String.Format("Expected combined length to be {0} but was {1}", combined.Length, combinedIndex));
         }
         public static Boolean OrderedContains<T>(this T[] ordered, T value)
         {
@@ -379,10 +383,10 @@ namespace More
             //
             // Create the combination
             //
-            List<T> combined = new List<T>();
+            T[] combined = new T[combinedLength];
             OrderedSets.Combine(this.orderedSet, otherSet.orderedSet, combined);
 
-            OrderedSet<T> newOrderedSet = new OrderedSet<T>(combined.ToArray());
+            OrderedSet<T> newOrderedSet = new OrderedSet<T>(combined);
             allCreatedSets.Add(newOrderedSet);
 
             return newOrderedSet;
