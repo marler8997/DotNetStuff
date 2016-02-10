@@ -96,7 +96,6 @@ namespace CopyProject
                 return 1;
             }
 
-
             //
             // Print Settings
             //
@@ -106,7 +105,6 @@ namespace CopyProject
             Console.WriteLine("-----------------------------------------------------------------------------");
             Console.WriteLine("Source Proj File : {0}", sourceProj);
             Console.WriteLine("Dest Proj File   : {0}", destProj);
-
 
             //
             //
@@ -118,6 +116,25 @@ namespace CopyProject
 
             HashSet<FileResource> compileFiles = new HashSet<FileResource>();
 
+            /*
+            BuildProperty DefaultMSBuildBinPath = null;
+            if (sourceProjName.EndsWith(".CE.csproj"))
+            {
+                if (DefaultMSBuildBinPath == null)
+                {
+                    DefaultMSBuildBinPath = Engine.GlobalEngine.GlobalProperties["MSBuildBinPath"];
+                    //Engine.GlobalEngine.GlobalProperties["MSBuildBinPath"] = new BuildProperty("MSBuildBinPath", @"C:\Windows\Microsoft.NET\Framework\v3.5");
+                }
+            }
+            else
+            {
+                if (DefaultMSBuildBinPath != null)
+                {
+                    //Engine.GlobalEngine.GlobalProperties["MSBuildBinPath"] = DefaultMSBuildBinPath;
+                    DefaultMSBuildBinPath = null;
+                }
+            }
+            */
             Project sourceProject = new Project();
             sourceProject.Load(sourceProj);
 

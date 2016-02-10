@@ -140,19 +140,26 @@ namespace More
             this.value = returnValue;
             this.valueSosSerializationString = returnValueSosSerializationString.Replace("\n","\\n");
         }
-        public virtual String ToNpcReturnLineString()
+
+        public virtual void AppendNpcReturnLine(ITextBuilder responseBuilder)
         {
             //
             // This method call will always return a specifically formatted string.
             //    1. On Success "Success <ReturnType> <ReturnValue>"
             //    2. On Exception "Exception <ExceptionTypeName> <ExceptionMessage> <StackTrace>
             //
+            responseBuilder.AppendAscii(NpcReturnLineSuccessPrefix);
             if (type == typeof(void))
             {
-                return NpcReturnLineSuccessPrefix + "Void\n";
+                responseBuilder.AppendAscii("Void\n");
             }
-
-            return String.Format("{0}{1} {2}\n", NpcReturnLineSuccessPrefix, type.SosTypeName(), valueSosSerializationString);
+            else
+            {
+                responseBuilder.AppendAscii(type.SosTypeName());
+                responseBuilder.AppendAscii(' ');
+                responseBuilder.AppendAscii(valueSosSerializationString);
+                responseBuilder.AppendAscii('\n');
+            }
         }
     }
     public class NpcReturnObjectOrException : NpcReturnObject
@@ -173,15 +180,25 @@ namespace More
             if (returnType == null) throw new ArgumentNullException("returnType");
             this.exception = null;
         }
-        public override String ToNpcReturnLineString()
+        public override void AppendNpcReturnLine(ITextBuilder responseBuilder)
         {
-            if (exception == null) return base.ToNpcReturnLineString();
+            if (exception == null)
+            {
+                base.AppendNpcReturnLine(responseBuilder);
+            }
+            else
+            {
+                String exceptionMessage = exception.Message.SerializeString().Replace("\n", "\\n");
+                String exceptionAsNpcString = exception.SerializeObject().Replace("\n", "\\n");
 
-            String exceptionMessage = exception.Message.SerializeString().Replace("\n", "\\n");
-            String exceptionAsNpcString = exception.SerializeObject().Replace("\n", "\\n");
-
-            return String.Format("{0}{1} {2} {3}\n", NpcReturnObject.NpcReturnLineExceptionPrefix,
-                exceptionMessage, exception.GetType().SosTypeName(), exceptionAsNpcString);
+                responseBuilder.AppendAscii(NpcReturnObject.NpcReturnLineExceptionPrefix);
+                responseBuilder.AppendAscii(exceptionMessage);
+                responseBuilder.AppendAscii(' ');
+                responseBuilder.AppendAscii(exception.GetType().SosTypeName());
+                responseBuilder.AppendAscii(' ');
+                responseBuilder.AppendAscii(exceptionAsNpcString);
+                responseBuilder.AppendAscii('\n');
+            }
         }
     }
 }

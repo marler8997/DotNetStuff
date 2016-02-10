@@ -25,188 +25,295 @@ namespace More
 
         void UnhandledException(String clientString, Exception e);
     }
-    public class NpcDataHandler : NpcHandler
+    public class NpcSocketHandler : NpcHandler
     {
         readonly LineParser lineParser;
-        Boolean atFirstLine;
-        Boolean done;
-        public Boolean Done { get { return done; } }
-
-        public NpcDataHandler(String clientString, INpcServerCallback callback, IDataHandler responseHandler, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
-            : base(clientString, callback, responseHandler, npcExecutor, npcHtmlGenerator)
+        public NpcSocketHandler(String clientString, INpcServerCallback callback, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
+            : base(clientString, callback, npcExecutor, npcHtmlGenerator)
         {
+            if (callback == null) throw new ArgumentNullException("callback");
+
             this.lineParser = new LineParser(Encoding.ASCII, Buf.DefaultInitialCapacity, Buf.DefaultExpandLength);
-            this.atFirstLine = true;
-            this.done = false;
         }
-        public void HandleReceive(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
+
+        // Returns false on error
+        public Boolean TryReceive(Socket socket, Buf safeBuffer)
+        {
+            int bytesReceived;
+            try
+            {
+                bytesReceived = socket.Receive(safeBuffer.array);
+            }
+            catch (SocketException)
+            {
+                bytesReceived = -1;
+            }
+
+            if (bytesReceived <= 0)
+            {
+                return false; // Error
+            }
+
+            lineParser.Add(safeBuffer.array, 0, (uint)bytesReceived);
+            return true; // Success
+        }
+
+
+        void HandleNpcLines(ref SelectControl selectControl, Socket socket, Buf safeBuffer, ByteBuilder builder, String line)
+        {
+            do
+            {
+                if (!HandleLine(builder, line))
+                {
+                    selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
+                    break;
+                }
+                if (builder.bytes != safeBuffer.array)
+                {
+                    safeBuffer.array = builder.bytes; // Update the buffer with the bigger buffer
+                }
+
+                if (builder.contentLength > 0)
+                {
+                    socket.Send(builder.bytes, (int)builder.contentLength, SocketFlags.None);
+                    builder.Clear();
+                }
+
+                line = lineParser.GetLine();
+
+            } while (line != null);
+        }
+
+        public void InitialRecvHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
             try
             {
-                var bytesReceived = socket.Receive(safeBuffer.array);
-                if (bytesReceived <= 0)
+                if (!TryReceive(socket, safeBuffer))
                 {
-                    done = true;
-                    selectControl.RemoveReceiveSocket(socket);
+                    selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
                     return;
                 }
 
-                Handle(safeBuffer.array, 0, (uint)bytesReceived);
+                String line = lineParser.GetLine();
+                if (line == null)
+                {
+                    return;
+                }
+
+                ByteBuilder builder = new ByteBuilder(safeBuffer.array);
+
+                // Check if it is an HTTP request
+                if (line.StartsWith("GET "))
+                {
+                    selectControl.RemoveReceiveSocket(socket);
+                    uint start = BuildHttpResponseFromFirstLine(builder, line);
+
+                    if (builder.bytes != safeBuffer.array)
+                        safeBuffer.array = builder.bytes; // Update the buffer with the bigger buffer
+
+                    if (builder.contentLength > 0)
+                        socket.Send(builder.bytes, (int)start, (int)(builder.contentLength - start), SocketFlags.None);
+
+                    selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
+                    return;
+                }
+
+                selectControl.UpdateHandler(socket, AfterFirstLineRecvHandler);
+                HandleNpcLines(ref selectControl, socket, safeBuffer, builder, line);
             }
             catch (Exception e)
             {
                 callback.UnhandledException(clientString, e);
-                selectControl.RemoveReceiveSocket(socket);
+                selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
             }
         }
-        public void Handle(Byte[] buffer, UInt32 bytesRead)
+        public void AfterFirstLineRecvHandler(ref SelectControl selectControl, Socket socket, Buf safeBuffer)
         {
-            Handle(buffer, 0, bytesRead);
-        }
-        public void Handle(Byte[] buffer, UInt32 offset, UInt32 bytesRead)
-        {
-            if (done == true) return;
-
-            lineParser.Add(buffer, offset, bytesRead);
-
-            String line = lineParser.GetLine();
-            if(line == null) return;
-
-            if (atFirstLine)
+            try
             {
-                atFirstLine = false;
-                if (line.StartsWith("GET"))
+                if (!TryReceive(socket, safeBuffer))
                 {
-                    HandleHttpRequest(line);
-                    done = true;
+                    selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
                     return;
-                }  
+                }
+
+                String line = lineParser.GetLine();
+                if (line == null)
+                {
+                    return;
+                }
+                
+                ByteBuilder builder = new ByteBuilder(safeBuffer.array);
+                HandleNpcLines(ref selectControl, socket, safeBuffer, builder, line);
             }
-
-            do
+            catch (Exception e)
             {
-
-                HandleLine(line);
-                line = lineParser.GetLine();
-
-            } while(line != null);
+                callback.UnhandledException(clientString, e);
+                selectControl.ShutdownDisposeAndRemoveReceiveSocket(socket);
+            }
         }
     }
     public class NpcBlockingThreadHander : NpcHandler
     {
+        readonly Socket socket;
         protected SocketLineReader socketLineReader;
 
         public NpcBlockingThreadHander(String clientString, INpcServerCallback callback, Socket socket,
             NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
-            : base(clientString, callback, new SocketSendDataHandler(socket), npcExecutor, npcHtmlGenerator)
+            : base(clientString, callback, npcExecutor, npcHtmlGenerator)
         {
+            this.socket = socket;
             this.socketLineReader = new SocketLineReader(socket, Encoding.ASCII, Buf.DefaultInitialCapacity, Buf.DefaultExpandLength);
         }
         public void Run()
         {
             try
             {
+                ByteBuilder builder = new ByteBuilder(2048);
+
                 //
                 // Get first line
                 //
                 String line = socketLineReader.ReadLine();
                 if (line == null) return;
 
-                if (line.StartsWith("GET"))
+                if (line.StartsWith("GET "))
                 {
-                    HandleHttpRequest(line);
+                    uint start = BuildHttpResponseFromFirstLine(builder, line);
+                    if (builder.contentLength > 0)
+                    {
+                        socket.Send(builder.bytes, (int)start, (int)(builder.contentLength - start), SocketFlags.None);
+                    }
+
+                    socket.ShutdownAndDispose();
                 }
                 else
                 {
                     //
                     // Tcp Mode
                     //
-                    while (true)
+                    do
                     {
-                        HandleLine(line);
+                        if (!HandleLine(builder, line))
+                        {
+                            socket.ShutdownAndDispose();
+                            break;
+                        }
+                        if (builder.contentLength > 0)
+                        {
+                            socket.Send(builder.bytes, (int)builder.contentLength, SocketFlags.None);
+                            builder.Clear();
+                        }
 
                         line = socketLineReader.ReadLine();
-                        if (line == null) return;
-                    }
+                    } while (line != null);
+
+                    socket.ShutdownAndDispose();
                 }
             }
             catch (Exception e)
             {
                 callback.UnhandledException(clientString, e);
-            }
-            finally
-            {
-                if (socketLineReader.socket.Connected)
-                {
-                    Thread.Sleep(500);
-                    Dispose();
-                }
+                socket.ShutdownAndDispose();
             }
         }
     }
-    public class NpcHandler : IDisposable
+    public class NpcHandler
     {
         protected readonly String clientString;
-        protected readonly INpcServerCallback callback;
-        protected readonly IDataHandler responseHandler;
-        protected readonly NpcExecutor npcExecutor;
-        protected readonly INpcHtmlGenerator npcHtmlGenerator;
 
-        public NpcHandler(String clientString, INpcServerCallback callback, IDataHandler responseHandler, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
+        protected readonly INpcServerCallback callback;
+        protected readonly NpcExecutor npcExecutor;
+        protected readonly INpcHtmlGenerator htmlGenerator;
+
+        public NpcHandler(String clientString, INpcServerCallback callback, NpcExecutor npcExecutor, INpcHtmlGenerator npcHtmlGenerator)
         {
             if (callback == null) throw new ArgumentNullException("callback");
-            if (responseHandler == null) throw new ArgumentNullException("responseHandler");
             if (npcExecutor == null) throw new ArgumentNullException("npcExecutor");
             if (npcHtmlGenerator == null) throw new ArgumentNullException("npcHtmlGenerator");
 
             this.clientString = clientString;
+
             this.callback = callback;
-            this.responseHandler = responseHandler;
             this.npcExecutor = npcExecutor;
-            this.npcHtmlGenerator = npcHtmlGenerator;
+            this.htmlGenerator = npcHtmlGenerator;
         }
-        public void Dispose()
+        public UInt32 BuildHttpResponseFromFirstLine(ByteBuilder httpBuilder, String firstLineOfHttpRequest)
         {
-            responseHandler.Dispose();
-        }
-        protected void HandleHttpRequest(String firstLineOfHttpRequest)
-        {
-            //
-            // HTTP MODE
-            //
             String[] httpStrings = firstLineOfHttpRequest.Split(new Char[] { ' ' }, 3);
 
             String resourceString = HttpUtility.UrlDecode(httpStrings[1]);
-            String httpVersionString = httpStrings[2];
+
+            httpBuilder.AppendAscii(httpStrings[2]);
+            httpBuilder.AppendAscii(' ');
 
             if (resourceString.Equals("/favicon.ico"))
             {
-                Byte[] response404 = Encoding.UTF8.GetBytes(String.Format("{0} 404 Not Found\r\n\r\n", httpVersionString));
-                responseHandler.HandleData(response404, 0, (UInt32)response404.Length);
-                responseHandler.Dispose();
-                return;
+                httpBuilder.AppendAscii("200 OK\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html\r\nContent-Length: ");
+                httpBuilder.AppendNumber(DefaultFavIcon.Length);
+                httpBuilder.AppendAscii(Http.DoubleNewline);
+                httpBuilder.AppendAscii(DefaultFavIcon);
+                return 0;
+            }
+            else
+            {
+                return BuildHttpResponseFromResource(httpBuilder, resourceString);
+            }
+        }
+        // Returns the offset of the http response in the text builder
+        public UInt32 BuildHttpResponseFromResource(ByteBuilder httpBuilder, String resourceString)
+        {
+            // Append the headers (leave space for content length)
+            httpBuilder.AppendAscii("200 OK\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html\r\nContent-Length: ??????????\r\n\r\n");
+
+            uint contentOffset = httpBuilder.contentLength;
+            BuildHtmlResponse(httpBuilder, resourceString);
+            uint contentLength = httpBuilder.contentLength - contentOffset;
+
+            // Insert the content length
+            String contentLengthString = contentLength.ToString();
+            if (contentLengthString.Length > 10)
+            {
+                throw new InvalidOperationException(String.Format("CodeBug: content length {0} is too big", contentLengthString));
+            }
+            for (int i = 0; i < contentLengthString.Length; i++)
+            {
+                httpBuilder.bytes[contentOffset - 4 - contentLengthString.Length + i] = (byte)contentLengthString[i];
             }
 
-            StringBuilder htmlContentBuilder = new StringBuilder();
+            // Shift the headers
+            UInt32 shift = 10 - (uint)contentLengthString.Length; // 10 characters were reserved for the content length
+            if (shift > 0)
+            {
+                for (int i = 0; i <= (contentOffset - 15); i++)
+                {
+                    httpBuilder.bytes[contentOffset - 5 - contentLengthString.Length - i] =
+                        httpBuilder.bytes[contentOffset - 5 - contentLengthString.Length - i - shift];
+                }
+            }
 
+            return shift;
+        }
+        public void BuildHtmlResponse(ITextBuilder builder, String resourceString)
+        {
             //
             // Generate HTML Headers
             //
-            htmlContentBuilder.Append("<html><head>");
+            builder.AppendAscii("<html><head>");
             try
             {
-                npcHtmlGenerator.GenerateHtmlHeaders(htmlContentBuilder, resourceString);
+                htmlGenerator.GenerateHtmlHeaders(builder, resourceString);
             }
             catch (Exception) { }
 
             //
             // Add CSS
             //
-            htmlContentBuilder.Append("<style type=\"text/css\">");
-            npcHtmlGenerator.GenerateCss(htmlContentBuilder);
-            htmlContentBuilder.Append("</style>");
+            builder.AppendAscii("<style type=\"text/css\">");
+            htmlGenerator.GenerateCss(builder);
+            builder.AppendAscii("</style>");
 
-            htmlContentBuilder.Append("</head><body><div id=\"PageDiv\">");
+            builder.AppendAscii("</head><body><div id=\"PageDiv\">");
 
             //
             // Check page type
@@ -247,36 +354,44 @@ namespace More
             //
             // Generate Page Links
             //
-            htmlContentBuilder.Append("<div id=\"Nav\"><div id=\"NavLinkWrapper\">");
+            builder.AppendAscii("<div id=\"Nav\"><div id=\"NavLinkWrapper\">");
 
-            htmlContentBuilder.AppendFormat("<a href=\"/methods\" class=\"NavLink\"{0}>Methods</a>", methodsPage ? " id=\"CurrentNav\"" : "");
-            htmlContentBuilder.AppendFormat("<a href=\"/type\" class=\"NavLink\"{0}>Types</a>", typesPage ? " id=\"CurrentNav\"" : "");
+            //htmlContentBuilder.AppendFormat("<a href=\"/methods\" class=\"NavLink\"{0}>Methods</a>", methodsPage ? " id=\"CurrentNav\"" : "");
+            builder.AppendAscii("<a href=\"/methods\" class=\"NavLink\"");
+            if (methodsPage)
+                builder.AppendAscii(" id=\"CurrentNav\"");
+            builder.AppendAscii(">Methods</a>");
+            //htmlContentBuilder.AppendFormat("<a href=\"/type\" class=\"NavLink\"{0}>Types</a>", typesPage ? " id=\"CurrentNav\"" : "");
+            builder.AppendAscii("<a href=\"/type\" class=\"NavLink\"");
+            if (typesPage)
+                builder.AppendAscii(" id=\"CurrentNav\"");
+            builder.AppendAscii(">Types</a>");
 
-            htmlContentBuilder.Append("</div></div>");
-            htmlContentBuilder.Append("<div id=\"ContentDiv\">");
+            builder.AppendAscii("</div></div>");
+            builder.AppendAscii("<div id=\"ContentDiv\">");
 
             //
             // Generate HTML Body
             //
             try
             {
-                Int32 lengthBeforeBody = htmlContentBuilder.Length;
+                UInt32 lengthBeforeBody = builder.Length;
 
                 Boolean success;
                 if (methodsPage)
                 {
-                    npcHtmlGenerator.GenerateMethodsPage(htmlContentBuilder);
+                    htmlGenerator.GenerateMethodsPage(builder);
                     success = true;
                 }
                 else if (typesPage)
                 {
-                    npcHtmlGenerator.GenerateTypesPage(htmlContentBuilder);
+                    htmlGenerator.GenerateTypesPage(builder);
                     success = true;
                 }
                 else if (startsWithType)
                 {
                     resourceString = resourceString.Substring("/type".Length + 1);
-                    npcHtmlGenerator.GenerateTypePage(htmlContentBuilder, resourceString);
+                    htmlGenerator.GenerateTypePage(builder, resourceString);
                     success = true;
                 }
                 else if (call)
@@ -286,7 +401,7 @@ namespace More
                         throw new InvalidOperationException("no method name was supplied in the url (should be /call/&lt;method-name&gt;?&lt;parameters&gt;)");
                     }
                     resourceString = resourceString.Substring("/call".Length + 1);
-                    npcHtmlGenerator.GenerateCallPage(htmlContentBuilder, resourceString);
+                    htmlGenerator.GenerateCallPage(builder, resourceString);
                     success = true;
                 }
                 else
@@ -298,7 +413,7 @@ namespace More
                 {
                     String message = String.Format("Error Processing HTTP Resource '{0}'", resourceString);
 
-                    if (htmlContentBuilder.Length <= lengthBeforeBody) htmlContentBuilder.Append(message);
+                    if (builder.Length <= lengthBeforeBody) builder.AppendAscii(message);
                     callback.GotInvalidData(clientString, message);
                 }
                 else
@@ -308,119 +423,86 @@ namespace More
             }
             catch (Exception e)
             {
-                npcHtmlGenerator.GenerateExceptionHtml(htmlContentBuilder, e);
+                htmlGenerator.GenerateExceptionHtml(builder, e);
                 callback.ExceptionWhileGeneratingHtml(clientString, e);
             }
-            htmlContentBuilder.Append("</div></div></body></html>");
-
-            //
-            // Generate HTTP Headers
-            //
-            Byte[] contents = Encoding.UTF8.GetBytes(htmlContentBuilder.ToString());
-
-            StringBuilder httpHeadersBuilder = new StringBuilder();
-            httpHeadersBuilder.Append(httpVersionString);
-            httpHeadersBuilder.Append(" 200 OK\r\nConnection: close\r\nAccess-Control-Allow-Origin: *\r\nContent-Type: text/html\r\n");
-            httpHeadersBuilder.AppendFormat("Content-Length: {0}\r\n", contents.Length);
-            httpHeadersBuilder.Append("\r\n");
-            Byte[] headerBytes = Encoding.UTF8.GetBytes(httpHeadersBuilder.ToString());
-
-            //
-            // Send Response
-            //
-            responseHandler.HandleData(headerBytes, 0, (UInt32)headerBytes.Length);
-            responseHandler.HandleData(contents, 0, (UInt32)contents.Length);
-
-            return;
+            builder.AppendAscii("</div></div></body></html>");
         }
-        public void HandleLine(String line)
-        {
-            Byte[] response = null;
 
+
+        // Returns false if the npc stream is done
+        public Boolean HandleLine(ITextBuilder responseBuilder, String line)
+        {
             String commandArguments;
             String command = line.Peel(out commandArguments);
 
             if (String.IsNullOrEmpty(command))
             {
-                response = GenerateHelpMessage(null);
+                AppendProtocolHelp(responseBuilder);
             }
             else
             {
-                Boolean isColonCommand;
-                if (command[0] == ':')
-                {
-                    isColonCommand = true;
-                    command = command.Substring(1);
-                }
-                else
-                {
-                    isColonCommand = false;
-                }
                 if (commandArguments != null) commandArguments = commandArguments.Trim();
 
-                if (command.Equals("call", StringComparison.OrdinalIgnoreCase))
+                if (command[0] != ':')
                 {
-                    response = CallCommandHandler(commandArguments);
+                    CallCommandHandler(responseBuilder, command, commandArguments);
                 }
-                else if (command.Equals("methods", StringComparison.OrdinalIgnoreCase))
+                else if (command.Equals(":call", StringComparison.OrdinalIgnoreCase))
                 {
-                    response = MethodsCommandHandler(commandArguments);
+                    CallCommandHandler(responseBuilder, commandArguments);
                 }
-                else if (command.Equals("type", StringComparison.OrdinalIgnoreCase))
+                else if (command.Equals(":methods", StringComparison.OrdinalIgnoreCase))
                 {
-                    response = TypeCommandHandler(commandArguments);
+                    MethodsCommandHandler(responseBuilder, commandArguments);
                 }
-                else if (command.Equals("interface", StringComparison.OrdinalIgnoreCase))
+                else if (command.Equals(":type", StringComparison.OrdinalIgnoreCase))
                 {
-                    response = InterfaceCommandHandler();
+                    TypeCommandHandler(responseBuilder, commandArguments);
                 }
-                else if (command.Equals("help", StringComparison.OrdinalIgnoreCase) || command.Equals("", StringComparison.OrdinalIgnoreCase))
+                else if (command.Equals(":interface", StringComparison.OrdinalIgnoreCase))
                 {
-                    response = GenerateHelpMessage(null);
+                    InterfaceCommandHandler(responseBuilder);
                 }
-                else if (command.Equals("exit", StringComparison.OrdinalIgnoreCase))
+                else if (command.Equals(":help", StringComparison.OrdinalIgnoreCase) || command.Equals("", StringComparison.OrdinalIgnoreCase))
                 {
-                    responseHandler.Dispose();
-                    return;
+                    AppendProtocolHelp(responseBuilder);
+                }
+                else if (command.Equals(":exit", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false; // Close the stream
                 }
                 else
                 {
-                    if (isColonCommand)
-                    {
-                        callback.GotInvalidData(clientString, String.Format("Unknown Command from line '{0}'", line));
-                        response = GenerateHelpMessage(String.Format("Unknown Command '{0}', expected 'help', 'exit', 'methods', 'type' or 'call'", command));
-                    }
-                    else
-                    {
-                        response = CallCommandHandler(command, commandArguments);
-                    }
+                    callback.GotInvalidData(clientString, String.Format("Unknown Command from line '{0}'", line));
+                    responseBuilder.AppendAscii("Unknown command '");
+                    responseBuilder.AppendAscii(command);
+                    responseBuilder.AppendAscii("'\n");
+                    AppendProtocolHelp(responseBuilder);
                 }
             }
-            if (response != null) responseHandler.HandleData(response, 0, (UInt32)response.Length);
+            return true; // Stay connected
         }
-        private String NpcError(NpcErrorCode errorCode, String errorMessage)
+        static void AppendNpcError(ITextBuilder responseBuilder, NpcErrorCode errorCode, String errorMessage)
         {
-            return String.Format("{0}{1} {2}: {3}\n", NpcReturnObject.NpcReturnLineNpcErrorPrefix,
-                (Int32)errorCode, errorCode, errorMessage.Replace("\n", "\\n"));
+            responseBuilder.AppendAscii(NpcReturnObject.NpcReturnLineNpcErrorPrefix);
+            responseBuilder.AppendNumber((byte)errorCode);
+            responseBuilder.AppendAscii(' ');
+            responseBuilder.AppendAscii(errorCode.ToString());
+            responseBuilder.AppendAscii(errorMessage.Replace("\n", "\\n"));
+            responseBuilder.AppendAscii('\n');
         }
-        private Byte[] GenerateHelpMessage(String prefixMessage)
+        static void AppendProtocolHelp(ITextBuilder responseBuilder)
         {
-            StringBuilder builder = new StringBuilder();
-            if (prefixMessage != null)
-            {
-                builder.Append(prefixMessage);
-                builder.Append('\n');
-            }
-            builder.Append("Npc Protocol:\n");
-            builder.Append("   method-name [args...]       Call method-name with the given arguments\n");
-            builder.Append("   :methods [object] [verbose] Print all objects and their methods or just the given objects methods\n");
-            builder.Append("   :type [type]                No argument: print all types, 1 argument: print given type information\n");
-            builder.Append("   :interface                  Print all interfaces then the objects\n");
-            builder.Append("   :exit                       Exit\n");
-            builder.Append("   :help                       Show this help\n");
-            return Encoding.UTF8.GetBytes(builder.ToString());
+            responseBuilder.AppendAscii("Npc Protocol:\n");
+            responseBuilder.AppendAscii("   method-name [args...]       Call method-name with the given arguments\n");
+            responseBuilder.AppendAscii("   :methods [object] [verbose] Print all objects and their methods or just the given objects methods\n");
+            responseBuilder.AppendAscii("   :type [type]                No argument: print all types, 1 argument: print given type information\n");
+            responseBuilder.AppendAscii("   :interface                  Print all interfaces then the objects\n");
+            responseBuilder.AppendAscii("   :exit                       Exit\n");
+            responseBuilder.AppendAscii("   :help                       Show this help\n");
         }
-        Byte[] CallCommandHandler(String call)
+        public void CallCommandHandler(ITextBuilder responseBuilder, String call)
         {
             //
             // This method always returns a specifically formatted string.
@@ -429,7 +511,10 @@ namespace More
             //    2. On NpcError  "NpcError <ErrorCode> <ErrorMessage>
             //
             if (String.IsNullOrEmpty(call))
-                return Encoding.ASCII.GetBytes(NpcError(NpcErrorCode.InvalidCallSyntax, "missing method name"));
+            {
+                AppendNpcError(responseBuilder, NpcErrorCode.InvalidCallSyntax, "missing method name");
+                return;
+            }
 
             //
             // Get method name
@@ -438,9 +523,9 @@ namespace More
             String parametersString;
             methodName = call.Peel(out parametersString);
 
-            return CallCommandHandler(methodName, parametersString);
+            CallCommandHandler(responseBuilder, methodName, parametersString);
         }
-        Byte[] CallCommandHandler(String methodName, String arguments)
+        public void CallCommandHandler(ITextBuilder responseBuilder, String methodName, String arguments)
         {
             //
             // Parse Parameters
@@ -452,9 +537,9 @@ namespace More
             }
             catch (FormatException e)
             {
-                String message = NpcError(NpcErrorCode.InvalidCallParameters, e.Message);
-                callback.GotInvalidData(clientString, message);
-                return Encoding.ASCII.GetBytes(message);
+                callback.GotInvalidData(clientString, e.Message);
+                AppendNpcError(responseBuilder, NpcErrorCode.InvalidCallParameters, e.Message);
+                return;
             }
 
             String[] parameters = (parametersList == null) ? null : parametersList.ToArray();
@@ -470,20 +555,23 @@ namespace More
                     callback.FunctionCall(clientString, methodName);
                 }
 
-                return Encoding.ASCII.GetBytes(returnObject.ToNpcReturnLineString());
+                returnObject.AppendNpcReturnLine(responseBuilder);
+                return;
             }
             catch (NpcErrorException ne)
             {
                 callback.ExceptionDuringExecution(clientString, methodName, ne);
-                return Encoding.ASCII.GetBytes(NpcError(ne.errorCode, ne.Message));
+                responseBuilder.Clear();
+                AppendNpcError(responseBuilder, ne.errorCode, ne.Message);
             }
             catch (Exception e)
             {
                 callback.ExceptionDuringExecution(clientString, methodName, e);
-                return Encoding.ASCII.GetBytes(NpcError(NpcErrorCode.UnhandledException, e.GetType().Name + ": " + e.Message));
+                responseBuilder.Clear();
+                AppendNpcError(responseBuilder, NpcErrorCode.UnhandledException, e.GetType().Name + ": " + e.Message);
             }
         }
-        void AddVerboseObjectMethods(StringBuilder builder, NpcExecutionObject executionObject)
+        static void AddVerboseObjectMethods(ITextBuilder builder, NpcExecutionObject executionObject)
         {
             for (int interfaceIndex = 0; interfaceIndex < executionObject.ancestorNpcInterfaces.Count; interfaceIndex++)
             {
@@ -492,29 +580,29 @@ namespace More
                 {
                     NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
 #if WindowsCE
-                    listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
+                    builder.AppendAscii(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
 #else
-                    builder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
+                    builder.AppendAscii(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
 #endif
-                    builder.Append(' ');
-                    builder.Append(npcMethodInfo.methodName);
+                    builder.AppendAscii(' ');
+                    builder.AppendAscii(npcMethodInfo.methodName);
 
-                    builder.Append('(');
+                    builder.AppendAscii('(');
 
                     ParameterInfo[] parameters = npcMethodInfo.parameters;
                     for (UInt16 j = 0; j < npcMethodInfo.parametersLength; j++)
                     {
                         ParameterInfo parameterInfo = parameters[j];
-                        if (j > 0) builder.Append(',');
-                        builder.Append(parameterInfo.ParameterType.SosTypeName());
-                        builder.Append(' ');
-                        builder.Append(parameterInfo.Name);
+                        if (j > 0) builder.AppendAscii(',');
+                        builder.AppendAscii(parameterInfo.ParameterType.SosTypeName());
+                        builder.AppendAscii(' ');
+                        builder.AppendAscii(parameterInfo.Name);
                     }
-                    builder.Append(")\n");
+                    builder.AppendAscii(")\n");
                 }
             }
         }
-        void AddShortObjectMethods(StringBuilder builder, NpcExecutionObject executionObject)
+        static void AddShortObjectMethods(ITextBuilder builder, NpcExecutionObject executionObject)
         {
             for (int interfaceIndex = 0; interfaceIndex < executionObject.ancestorNpcInterfaces.Count; interfaceIndex++)
             {
@@ -522,29 +610,29 @@ namespace More
                 for (int methodIndex = 0; methodIndex < npcInterfaceInfo.npcMethods.Length; methodIndex++)
                 {
                     NpcMethodInfo npcMethodInfo = npcInterfaceInfo.npcMethods[methodIndex];
-                    builder.Append(npcMethodInfo.methodName);
+                    builder.AppendAscii(npcMethodInfo.methodName);
 
                     ParameterInfo[] parameters = npcMethodInfo.parameters;
                     for (UInt16 argIndex = 0; argIndex < npcMethodInfo.parametersLength; argIndex++)
                     {
                         ParameterInfo parameterInfo = parameters[argIndex];
-                        builder.Append(' ');
-                        builder.Append(parameterInfo.ParameterType.SosShortTypeName());
-                        builder.Append(':');
-                        builder.Append(parameterInfo.Name);
+                        builder.AppendAscii(' ');
+                        builder.AppendAscii(parameterInfo.ParameterType.SosShortTypeName());
+                        builder.AppendAscii(':');
+                        builder.AppendAscii(parameterInfo.Name);
                     }
 
-                    builder.Append(" returns ");
+                    builder.AppendAscii(" returns ");
 #if WindowsCE
-                    listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
+                    builder.AppendAscii(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
 #else
-                    builder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosShortTypeName());
+                    builder.AppendAscii(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosShortTypeName());
 #endif
-                    builder.Append("\n");
+                    builder.AppendAscii("\n");
                 }
             }
         }
-        private Byte[] MethodsCommandHandler(String args)
+        void MethodsCommandHandler(ITextBuilder responseBuilder, String args)
         {
             String originalArgs = args;
             if(String.IsNullOrEmpty(args))
@@ -568,7 +656,11 @@ namespace More
                 {
                     if (objectName != null)
                     {
-                        return Encoding.ASCII.GetBytes(String.Format("Invalid arguments '{0}'\n", originalArgs));
+                        //String.Format("Invalid arguments '{0}'\n", originalArgs);
+                        responseBuilder.AppendAscii("Invalid arguments '");
+                        responseBuilder.AppendAscii(originalArgs);
+                        responseBuilder.AppendAscii("'\n");
+                        return;
                     }
                     objectName = arg;
                 }
@@ -577,31 +669,29 @@ namespace More
             //
             // Build Response
             //
-            StringBuilder listBuilder = new StringBuilder();
-
             if (objectName == null)
             {
                 if (verbose)
                 {
                     foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
                     {
-                        listBuilder.Append(executionObject.objectName);
-                        listBuilder.Append('\n');
-                        AddVerboseObjectMethods(listBuilder, executionObject);
-                        listBuilder.Append("\n"); // Indicates end of object methods
+                        responseBuilder.AppendAscii(executionObject.objectName);
+                        responseBuilder.AppendAscii('\n');
+                        AddVerboseObjectMethods(responseBuilder, executionObject);
+                        responseBuilder.AppendAscii("\n"); // Indicates end of object methods
                     }
-                    listBuilder.Append("\n"); // Indicates end of all objects
+                    responseBuilder.AppendAscii("\n"); // Indicates end of all objects
                 }
                 else
                 {
                     foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
                     {
-                        listBuilder.Append(executionObject.objectName);
-                        listBuilder.Append('\n');
-                        AddShortObjectMethods(listBuilder, executionObject);
-                        listBuilder.Append("\n"); // Indicates end of object methods
+                        responseBuilder.AppendAscii(executionObject.objectName);
+                        responseBuilder.AppendAscii('\n');
+                        AddShortObjectMethods(responseBuilder, executionObject);
+                        responseBuilder.AppendAscii("\n"); // Indicates end of object methods
                     }
-                    listBuilder.Append("\n"); // Indicates end of all objects
+                    responseBuilder.AppendAscii("\n"); // Indicates end of all objects
                 }
             }
             else
@@ -613,119 +703,118 @@ namespace More
                     {
                         if(verbose)
                         {
-                            AddVerboseObjectMethods(listBuilder, executionObject);
+                            AddVerboseObjectMethods(responseBuilder, executionObject);
                         }
                         else
                         {
-                            AddShortObjectMethods(listBuilder, executionObject);
+                            AddShortObjectMethods(responseBuilder, executionObject);
                         }
-                        listBuilder.Append("\n"); // Indicates end of object methods
+                        responseBuilder.AppendAscii("\n"); // Indicates end of object methods
                         foundObject = true;
                         break;
                     }
                 }
                 if(!foundObject)
                 {
-                    listBuilder.Append("Error: Could not find object '");
-                    listBuilder.Append(objectName);
-                    listBuilder.Append("'\n");
+                    responseBuilder.AppendAscii("Error: Could not find object '");
+                    responseBuilder.AppendAscii(objectName);
+                    responseBuilder.AppendAscii("'\n");
                 }
             }
-            return Encoding.ASCII.GetBytes(listBuilder.ToString());
         }
-        private Byte[] InterfaceCommandHandler()
+        void InterfaceCommandHandler(ITextBuilder responseBuilder)
         {
-            StringBuilder listBuilder = new StringBuilder();
-
             //
             // Add Interface Definitions
             //
             foreach (NpcInterfaceInfo interfaceInfo in npcExecutor.Interfaces)
             {
-                listBuilder.Append(interfaceInfo.name);
+                responseBuilder.AppendAscii(interfaceInfo.name);
                 for (int i = 0; i < interfaceInfo.parentNpcInterfaces.Count; i++)
                 {
                     NpcInterfaceInfo parentNpcInterface = interfaceInfo.parentNpcInterfaces[i];
-                    listBuilder.Append(' ');
-                    listBuilder.Append(parentNpcInterface.name);
+                    responseBuilder.AppendAscii(' ');
+                    responseBuilder.AppendAscii(parentNpcInterface.name);
                 }
-                listBuilder.Append('\n');
+                responseBuilder.AppendAscii('\n');
 
                 for (int i = 0; i < interfaceInfo.npcMethods.Length; i++)
                 {
                     NpcMethodInfo npcMethodInfo = interfaceInfo.npcMethods[i];
 #if WindowsCE
-                    listBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
+                    responseBuilder.Append(npcMethodInfo.methodInfo.ReturnType.SosTypeName());
 #else
-                    listBuilder.Append(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
+                    responseBuilder.AppendAscii(npcMethodInfo.methodInfo.ReturnParameter.ParameterType.SosTypeName());
 #endif
-                    listBuilder.Append(' ');
-                    listBuilder.Append(npcMethodInfo.methodName);
+                    responseBuilder.AppendAscii(' ');
+                    responseBuilder.AppendAscii(npcMethodInfo.methodName);
 
-                    listBuilder.Append('(');
+                    responseBuilder.AppendAscii('(');
 
                     ParameterInfo[] parameters = npcMethodInfo.parameters;
                     for (UInt16 j = 0; j < npcMethodInfo.parametersLength; j++)
                     {
                         ParameterInfo parameterInfo = parameters[j];
-                        if (j > 0) listBuilder.Append(',');
-                        listBuilder.Append(parameterInfo.ParameterType.SosTypeName());
-                        listBuilder.Append(' ');
-                        listBuilder.Append(parameterInfo.Name);
+                        if (j > 0) responseBuilder.AppendAscii(',');
+                        responseBuilder.AppendAscii(parameterInfo.ParameterType.SosTypeName());
+                        responseBuilder.AppendAscii(' ');
+                        responseBuilder.AppendAscii(parameterInfo.Name);
                     }
-                    listBuilder.Append(")\n");
+                    responseBuilder.AppendAscii(")\n");
                 }
-                listBuilder.Append('\n');
+                responseBuilder.AppendAscii('\n');
             }
-            listBuilder.Append('\n'); // Add blank line to end (to mark end of interfaces)
+            responseBuilder.AppendAscii('\n'); // Add blank line to end (to mark end of interfaces)
 
             //
             // Add Object Names and their Interfaces
             //
             foreach (NpcExecutionObject executionObject in npcExecutor.ExecutionObjects)
             {
-                listBuilder.Append(executionObject.objectName);
+                responseBuilder.AppendAscii(executionObject.objectName);
                 for (int i = 0; i < executionObject.parentNpcInterfaces.Count; i++)
                 {
                     NpcInterfaceInfo npcInterface = executionObject.parentNpcInterfaces[i];
-                    listBuilder.Append(' ');
-                    listBuilder.Append(npcInterface.name);
+                    responseBuilder.AppendAscii(' ');
+                    responseBuilder.AppendAscii(npcInterface.name);
                 }
-                listBuilder.Append('\n');
+                responseBuilder.AppendAscii('\n');
             }
-            listBuilder.Append('\n'); // Add blank line to end (to mark end of objects
-
-            return Encoding.UTF8.GetBytes(listBuilder.ToString());
+            responseBuilder.AppendAscii('\n'); // Add blank line to end (to mark end of objects
         }
-        private Byte[] TypeCommandHandler(String arguments)
+        void TypeCommandHandler(ITextBuilder responseBuilder, String arguments)
         {
             if (arguments == null || arguments.Length <= 0)
             {
-                StringBuilder returnString = new StringBuilder();
-
                 foreach (KeyValuePair<String,Type> pair in npcExecutor.EnumAndObjectTypes)
                 {
                     Type type = pair.Value;
-                    returnString.Append(type.SosTypeName());
-                    returnString.Append(' ');
-                    returnString.Append(type.SosTypeDefinition());
-                    returnString.Append('\n');
+                    responseBuilder.AppendAscii(type.SosTypeName());
+                    responseBuilder.AppendAscii(' ');
+                    responseBuilder.AppendAscii(type.SosTypeDefinition());
+                    responseBuilder.AppendAscii('\n');
                 }
-                returnString.Append('\n');
-                return Encoding.UTF8.GetBytes(returnString.ToString());
+                responseBuilder.AppendAscii('\n');
+                return;
             }
 
             String requestedTypeString = arguments.Trim();
 
             if (requestedTypeString.IsSosPrimitive())
             {
-                return Encoding.UTF8.GetBytes(requestedTypeString + " primitive type\n");
+                responseBuilder.AppendAscii(requestedTypeString);
+                responseBuilder.AppendAscii(" primitive type\n");
+                return;
             }
 
             Type enumOrObjectType;
             if(npcExecutor.EnumAndObjectTypes.TryGetValue(requestedTypeString, out enumOrObjectType))
             {
-                return Encoding.UTF8.GetBytes(enumOrObjectType.SosTypeName() + " " + enumOrObjectType.SosTypeDefinition() + "\n");
+                responseBuilder.AppendAscii(enumOrObjectType.SosTypeName());
+                responseBuilder.AppendAscii(' ');
+                responseBuilder.AppendAscii(enumOrObjectType.SosTypeDefinition());
+                responseBuilder.AppendAscii('\n');
+                return;
             }
             OneOrMoreTypes oneOrMoreEnumOrObjectType;
             if (npcExecutor.EnumAndObjectShortNameTypes.TryGetValue(requestedTypeString, out oneOrMoreEnumOrObjectType))
@@ -733,15 +822,99 @@ namespace More
                 enumOrObjectType = oneOrMoreEnumOrObjectType.firstType;
                 if (oneOrMoreEnumOrObjectType.otherTypes == null)
                 {
-                    return Encoding.UTF8.GetBytes(enumOrObjectType.SosTypeName() + " " + enumOrObjectType.SosTypeDefinition() + "\n");
+                    responseBuilder.AppendAscii(enumOrObjectType.SosTypeName());
+                    responseBuilder.AppendAscii(' ');
+                    responseBuilder.AppendAscii(enumOrObjectType.SosTypeDefinition());
+                    responseBuilder.AppendAscii('\n');
+                    return;
                 }
                 else
                 {
-                    return Encoding.UTF8.GetBytes(String.Format("Error: '{0}' is ambiguous, include namespace to find the correct type", requestedTypeString));
+                    responseBuilder.AppendAscii("Error: '");
+                    responseBuilder.AppendAscii(requestedTypeString);
+                    responseBuilder.AppendAscii("' is ambiguous, include namespace to find the correct type");
+                    return;
                 }
             }
 
-            return Encoding.UTF8.GetBytes(requestedTypeString + " unknown type\n");
+            responseBuilder.AppendAscii(requestedTypeString);
+            responseBuilder.AppendAscii(" unknown type\n");
         }
+
+        // To load a new favicon, use the ConvertFavIconToByteArrayCode function in the ManualTests.cs file
+        public static readonly Byte[] DefaultFavIcon = new Byte[] {
+            0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x10, 0x10, 0x00, 0x00, 0x01, 0x00, 0x20, 0x00, 0x68, 0x04,
+            0x00, 0x00, 0x16, 0x00, 0x00, 0x00, 0x28, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x20, 0x00,
+            0x00, 0x00, 0x01, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA1, 0x69, 0x2D, 0x14, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69,
+            0x2D, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69,
+            0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0x58, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA1, 0x69,
+            0x2D, 0x58, 0xA1, 0x69, 0x2D, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69,
+            0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69,
+            0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69,
+            0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0xFF, 0x00, 0x00, 0x00, 0x00, 0xA1, 0x69,
+            0x2D, 0x58, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69,
+            0x2D, 0x58, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69,
+            0x2D, 0x58, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69,
+            0x2D, 0x58, 0xA1, 0x69, 0x2D, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69, 0x2D, 0xFF, 0xA1, 0x69,
+            0x2D, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA1, 0x69, 0x2D, 0x58, 0xA1, 0x69,
+            0x2D, 0xFF, 0xA1, 0x69, 0x2D, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0xA1, 0x69, 0x2D, 0x58, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xA1, 0x69, 0x2D, 0x58, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0x33, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00,
+            0x00, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0x33, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00,
+            0x00, 0x33, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x33, 0x00, 0x00, 0x00, 0x00, 0xEF, 0xF7,
+            0x00, 0x00, 0xDF, 0xFB, 0x00, 0x00, 0x80, 0x01, 0x00, 0x00, 0xDF, 0xFB, 0x00, 0x00, 0xEF, 0xF7,
+            0x00, 0x00, 0x32, 0x70, 0x00, 0x00, 0x32, 0x70, 0x00, 0x00, 0x22, 0x73, 0x00, 0x00, 0x02, 0x73,
+            0x00, 0x00, 0x02, 0x73, 0x00, 0x00, 0x02, 0x13, 0x00, 0x00, 0x02, 0x13, 0x00, 0x00, 0x12, 0xD3,
+            0x00, 0x00, 0x32, 0x10, 0x00, 0x00, 0x32, 0x10, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
+        };
     }
 }

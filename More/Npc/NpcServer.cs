@@ -80,7 +80,7 @@ namespace More
             }
         }
     }
-    public class NpcServerSingleThreaded
+    public class NpcServerSingleThreaded : IDisposable
     {
         public static Int32 Backlog = 32;
         public static UInt32 SingleThreadedReceiveBufferLength = 1024;
@@ -88,7 +88,6 @@ namespace More
         public readonly INpcServerCallback callback;
         public readonly NpcExecutor npcExecutor;
         public readonly INpcHtmlGenerator htmlGenerator;
-        //public readonly UInt16 port;
 
         readonly SelectServer selectServer;
 
@@ -105,17 +104,14 @@ namespace More
             this.callback = callback;
             this.npcExecutor = npcExecutor;
             this.htmlGenerator = htmlGenerator;
-            //this.port = port;
 
             Socket listenSocket = new Socket(IPAddress.Any.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             listenSocket.Bind(new IPEndPoint(IPAddress.Any, port));
             listenSocket.Listen(Backlog);
             callback.ServerListening(listenSocket);
 
-            SelectControl selectControl = new SelectControl(false);
-            selectControl.AddListenSocket(listenSocket, AcceptCallback);
-
-            selectServer = new SelectServer(selectControl, new Buf(SingleThreadedReceiveBufferLength));
+            selectServer = new SelectServer(false, new Buf(SingleThreadedReceiveBufferLength));
+            selectServer.control.AddListenSocket(listenSocket, AcceptCallback);
         }
         public NpcServerSingleThreaded(INpcServerCallback callback, NpcExecutor npcExecutor, INpcHtmlGenerator htmlGenerator, Socket listenSocket)
         {
@@ -127,22 +123,15 @@ namespace More
             this.npcExecutor = npcExecutor;
             this.htmlGenerator = htmlGenerator;
 
-            SelectControl selectControl = new SelectControl(false);
-            selectControl.AddListenSocket(listenSocket, AcceptCallback);
-            selectServer = new SelectServer(selectControl, new Buf(SingleThreadedReceiveBufferLength));
+            selectServer = new SelectServer(false, new Buf(SingleThreadedReceiveBufferLength));
+            selectServer.control.AddListenSocket(listenSocket, AcceptCallback);
         }
-        public void StopServerFromTheRunThread()
+        public void Dispose()
         {
-            selectServer.StopServerFromTheRunThread();
+            selectServer.control.Dispose();
         }
-        public void StopServerFromAnotherThread()
-        {
-            selectServer.StopServerFromAnotherThread();
-        }
-        public void Run()
-        {
-            selectServer.Run();
-        }
+        public ThreadStart Run { get { return selectServer.Run; } }
+
         public void AcceptCallback(ref SelectControl selectControl, Socket listenSocket, Buf safeBuffer)
         {
             Socket clientSocket = listenSocket.Accept();
@@ -150,9 +139,8 @@ namespace More
             {
                 String clientLogString = clientSocket.SafeRemoteEndPointString();
                 
-                var dataHandler = new NpcDataHandler(clientLogString, callback,
-                    new SocketSendDataHandler(clientSocket), npcExecutor, htmlGenerator);
-                selectControl.AddReceiveSocket(clientSocket, dataHandler.HandleReceive);
+                var dataHandler = new NpcSocketHandler(clientLogString, callback, npcExecutor, htmlGenerator);
+                selectControl.AddReceiveSocket(clientSocket, dataHandler.InitialRecvHandler);
             }
             else
             {
@@ -160,68 +148,6 @@ namespace More
             }
         }
     }
-    /*
-    public class NpcStreamSelectServerCallback : StreamSelectServerCallback
-    {
-        readonly Dictionary<Socket, NpcDataHandler> clientMap;
-
-        readonly INpcServerCallback callback;
-        readonly NpcExecutor npcExecutor;
-        readonly INpcHtmlGenerator htmlGenerator;
-
-        public NpcStreamSelectServerCallback(NpcServerSingleThreaded server)
-            : this(server.callback, server.npcExecutor, server.htmlGenerator)
-        {
-        }
-        public NpcStreamSelectServerCallback(INpcServerCallback callback, NpcExecutor npcExecutor, INpcHtmlGenerator htmlGenerator)
-        {
-            if (callback == null) throw new ArgumentNullException("callback");
-            if (npcExecutor == null) throw new ArgumentNullException("npcExecutor");
-            if (htmlGenerator == null) throw new ArgumentNullException("htmlGenerator");
-
-            this.clientMap = new Dictionary<Socket, NpcDataHandler>();
-
-            this.callback = callback;
-            this.npcExecutor = npcExecutor;
-            this.htmlGenerator = htmlGenerator;
-        }
-        public void ServerStopped()
-        {
-            clientMap.Clear();
-        }
-        public void ServerListening(Socket listenSocket)
-        {
-            callback.ServerListening(listenSocket);
-        }
-        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
-        {
-            throw new InvalidOperationException("The listen socket has closed");
-        }
-        public ServerInstruction ClientOpenCallback(UInt32 clientCount, System.Net.Sockets.Socket socket)
-        {
-            clientMap[socket] = new NpcDataHandler(socket.SafeRemoteEndPointString(), callback,
-                new SocketSendDataHandler(socket), npcExecutor, htmlGenerator);
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction ClientCloseCallback(UInt32 clientCount, System.Net.Sockets.Socket socket)
-        {
-            clientMap[socket] = null;
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction ClientDataCallback(System.Net.Sockets.Socket socket, Byte[] bytes, UInt32 bytesRead)
-        {
-            NpcDataHandler dataHandler;
-            if (!clientMap.TryGetValue(socket, out dataHandler))
-            {
-                Console.WriteLine("Error: socket '{0}' was not found in the client map dictionary", socket.RemoteEndPoint.ToString());
-                return ServerInstruction.CloseClient;
-            }
-            dataHandler.Handle(bytes, bytesRead);
-            if (dataHandler.Done || !socket.Connected) return ServerInstruction.CloseClient;
-            return ServerInstruction.NoInstruction;
-        }
-    }
-    */
     public class NpcServerLoggerCallback : INpcServerCallback
     {
         private readonly TextWriter log;

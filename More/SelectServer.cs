@@ -10,47 +10,54 @@ using More;
 
 namespace More.Net
 {
-    public struct TcpSocket
-    {
-        public readonly Socket sock;
-        public TcpSocket(AddressFamily addressFamily)
-        {
-            this.sock = new Socket(addressFamily, SocketType.Stream, ProtocolType.Tcp);
-        }
-    }
-    public struct UdpSocket
-    {
-        public readonly Socket sock;
-        public UdpSocket(AddressFamily addressFamily)
-        {
-            this.sock = new Socket(addressFamily, SocketType.Dgram, ProtocolType.Udp);
-        }
-    }
+    /// <summary>
+    /// Callback for sockets controlled by a select server.
+    /// </summary>
+    /// <param name="control">A reference to the select server control data structure.</param>
+    /// <param name="socket">The socket that the event occurred on.</param>
+    /// <param name="safeBuffer">A safe buffer that can be used by the handler.  However, data is not guaranteed to be kept intact between handler calls.</param>
+    public delegate void SelectHandler(ref SelectControl control, Socket socket, Buf safeBuffer);
 
-    public delegate void SimpleSelectHandler(ref SelectControl readSocket, Socket socket, Buf safeBuffer);
-
+    /// <summary>
+    /// A data structure used to control the select server.
+    /// </summary>
     public struct SelectControl
     {
+        /// <summary>
+        /// Can use to check if your current thread is the same as the select server thread.
+        /// Note: DO NOT SET, should only be set by the SelectServer.
+        /// </summary>
+        public Thread RunThread;
+
         // Both listenSockets and receiveSockets are read sockets
         readonly List<Socket> listenSockets;
         readonly List<Socket> receiveSockets;
 
         readonly List<Socket> connectList;
 
-        readonly IDictionary<Socket, SimpleSelectHandler> map; // contains mapping from socket to handlers
+        readonly IDictionary<Socket, SelectHandler> map; // contains mapping from socket to handlers
 
         public UInt32 TotalSocketCount { get { return (uint)map.Count; } }
 
         /// <summary>
-        /// Should only be set by the select server, used to indicate to connect callbacks whether the
-        /// connect socket had an error.
+        /// A handler can use this to check whether or not a connect failed.
+        /// NOTE: DO NOT SET, should only be set by the SelectServer.
         /// </summary>
         Boolean connectionError;
         public Boolean ConnectionError { get { return connectionError; } set { connectionError = value; } }
 
+        /// <summary>Indicates that the control accepts connecting sockets.</summary>
         public Boolean SupportsConnect { get { return connectList != null; } }
 
-        // NOTE: Only call this if you have already checked that SupportsConnect is true
+        /// <summary>DO NOT MODIFY! Only use to access information.</summary>
+        public ICollection<Socket> ListenSockets { get { return listenSockets; } }
+        /// <summary>DO NOT MODIFY! Only use to access information.</summary>
+        public ICollection<Socket> ReceiveSockets { get { return receiveSockets; } }
+        /// <summary>DO NOT MODIFY! Only use to access information.</summary>
+        public ICollection<Socket> ConnectSockets { get { return connectList; } }
+
+        /// <summary>Returns true if there are currently any connect sockets.
+        /// This should only be called if SupportsConnect is true.</summary>
         public Boolean HasConnectSockets
         {
             get
@@ -61,9 +68,10 @@ namespace More.Net
 
         public SelectControl(Boolean supportConnectSockets)
         {
+            this.RunThread = null;
             this.listenSockets = new List<Socket>();
             this.receiveSockets = new List<Socket>();
-            this.map = new Dictionary<Socket, SimpleSelectHandler>();
+            this.map = new Dictionary<Socket, SelectHandler>();
             if(supportConnectSockets)
             {
                 this.connectList = new List<Socket>();
@@ -81,7 +89,7 @@ namespace More.Net
         /// </summary>
         /// <param name="listenSocket"></param>
         /// <param name="handler"></param>
-        public void PerformAccept(Socket listenSocket, SimpleSelectHandler handler)
+        public void PerformAccept(Socket listenSocket, SelectHandler handler)
         {
             Socket newReceiveSocket = listenSocket.Accept();
             if (newReceiveSocket.Connected)
@@ -99,13 +107,14 @@ namespace More.Net
         /// </summary>
         /// <param name="socket">A controlled socket</param>
         /// <returns>The handler if the socket is conrolled, otherwise returns null</returns>
-        public SimpleSelectHandler TryGetHandler(Socket socket)
+        public SelectHandler TryGetHandler(Socket socket)
         {
-            SimpleSelectHandler ret;
+            SelectHandler ret;
             return map.TryGetValue(socket, out ret) ? ret : null;
         }
         /// <summary>
-        /// Copies all listen and receiver sockets to the given list
+        /// Copies all listen and receiver sockets to the given list.
+        /// Typically used by the SelectServer.
         /// </summary>
         public void CopyReadSocketsTo(List<Socket> sockets)
         {
@@ -116,18 +125,19 @@ namespace More.Net
         /// <summary>
         /// Copies all connect sockets to the given list.  Note: this function assumes
         /// that SupportsConnect is true.
+        /// Typically used by the SelectServer.
         /// </summary>
         public void CopyConnectSocketsTo(List<Socket> sockets)
         {
             sockets.AddRange(connectList);
         }
-        public void UpdateHandler(Socket socket, SimpleSelectHandler handler)
+        public void UpdateHandler(Socket socket, SelectHandler handler)
         {
             if (handler == null)
                 throw new ArgumentNullException("handler");
             map[socket] = handler;
         }
-        public void UpdateConnectorToReceiver(Socket socket, SimpleSelectHandler handler)
+        public void UpdateConnectorToReceiver(Socket socket, SelectHandler handler)
         {
             if (handler == null)
                 throw new ArgumentNullException("handler");
@@ -135,14 +145,14 @@ namespace More.Net
             receiveSockets.Add(socket);
             map[socket] = handler;
         }
-        public void AddListenSocket(Socket socket, SimpleSelectHandler handler)
+        public void AddListenSocket(Socket socket, SelectHandler handler)
         {
             if (socket == null || handler == null)
                 throw new ArgumentNullException();
             listenSockets.Add(socket);
             map.Add(socket, handler);
         }
-        public void AddReceiveSocket(Socket socket, SimpleSelectHandler handler)
+        public void AddReceiveSocket(Socket socket, SelectHandler handler)
         {
             if (socket == null || handler == null)
                 throw new ArgumentNullException();
@@ -154,7 +164,7 @@ namespace More.Net
             receiveSockets.Remove(socket);
             map.Remove(socket);
         }
-        public void AddConnectSocket(Socket socket, SimpleSelectHandler handler)
+        public void AddConnectSocket(Socket socket, SelectHandler handler)
         {
             if (socket == null || handler == null)
                 throw new ArgumentNullException();
@@ -165,63 +175,44 @@ namespace More.Net
         // Note: does not call shutdown
         public void DisposeAndRemoveReceiveSocket(Socket socket)
         {
-            socket.Close();
+            try { socket.Close(); } catch { }
             receiveSockets.Remove(socket);
             map.Remove(socket);
         }
         public void DisposeAndRemoveConnectSocket(Socket socket)
         {
-            socket.Close();
+            try { socket.Close(); } catch { }
             connectList.Remove(socket);
             map.Remove(socket);
         }
 
         public void ShutdownIfConnectedDisposeAndRemoveReceiveSocket(Socket socket)
         {
-            try { if(socket.Connected) socket.Shutdown(SocketShutdown.Both); }
-            catch (Exception) { }
-            socket.Close();
+            try { if(socket.Connected) socket.Shutdown(SocketShutdown.Both); } catch { }
+            try { socket.Close(); } catch { }
             receiveSockets.Remove(socket);
             map.Remove(socket);
         }
         public void ShutdownDisposeAndRemoveReceiveSocket(Socket socket)
         {
-            try { socket.Shutdown(SocketShutdown.Both); }
-            catch (Exception) { }
-            socket.Close();
+            try { socket.Shutdown(SocketShutdown.Both); } catch { }
+            try { socket.Close(); } catch { }
             receiveSockets.Remove(socket);
             map.Remove(socket);
         }
+
+
+        /// <summary>
+        /// Shutdown and close all sockets.
+        /// If this is called from the RunThread of the SelectServer, then
+        /// it will also remove all the sockets from the control.
+        /// </summary>
         public void Dispose()
         {
             for (int i = 0; i < listenSockets.Count; i++)
             {
                 listenSockets[i].Close();
             }
-            listenSockets.Clear();
-            for (int i = 0; i < receiveSockets.Count; i++)
-            {
-                receiveSockets[i].ShutdownAndDispose();
-            }
-            receiveSockets.Clear();
-            if (connectList != null)
-            {
-                for (int i = 0; i < connectList.Count; i++)
-                {
-                    connectList[i].ShutdownAndDispose();
-                }
-                connectList.Clear();
-            }
-            map.Clear();
-        }
-        // Calls the socket shutdown/close methods
-        // but does not modify the lists
-        public void StopServerFromAnotherThread()
-        {
-            for (int i = 0; i < listenSockets.Count; i++)
-            {
-                listenSockets[i].Close();
-            }
             for (int i = 0; i < receiveSockets.Count; i++)
             {
                 receiveSockets[i].ShutdownAndDispose();
@@ -233,6 +224,13 @@ namespace More.Net
                     connectList[i].ShutdownAndDispose();
                 }
                 connectList.Clear();
+            }
+            if (Thread.CurrentThread == RunThread)
+            {
+                listenSockets.Clear();
+                receiveSockets.Clear();
+                map.Clear();
+                RunThread = null;
             }
         }
     }
@@ -244,29 +242,21 @@ namespace More.Net
     /// </summary>
     public class SelectServer
     {
-        SelectControl selectControl;
+        public SelectControl control;
         readonly Buf safeBuffer;
 
-        public SelectServer(SelectControl selectControl, Buf safeBuffer)
+        public SelectServer(Boolean supportConnectSockets, Buf safeBuffer)
         {
-            if (selectControl.TotalSocketCount == 0)
-                throw new InvalidOperationException("You must add at least one socket to selectControl");
-            this.selectControl = selectControl;
+            this.control = new SelectControl(supportConnectSockets);
             this.safeBuffer = safeBuffer;
-        }
-        public void StopServerFromTheRunThread()
-        {
-            selectControl.Dispose();
-        }
-        public void StopServerFromAnotherThread()
-        {
-            selectControl.StopServerFromAnotherThread();
         }
         public void Run()
         {
+            control.RunThread = Thread.CurrentThread;
+
             List<Socket> selectReadSockets = new List<Socket>();
             List<Socket> connectSockets, errorSockets;
-            if (selectControl.SupportsConnect)
+            if (control.SupportsConnect)
             {
                 connectSockets = new List<Socket>();
                 errorSockets = new List<Socket>();
@@ -283,9 +273,9 @@ namespace More.Net
                 // Perform the select
                 //
                 selectReadSockets.Clear();
-                selectControl.CopyReadSocketsTo(selectReadSockets);
+                control.CopyReadSocketsTo(selectReadSockets);
 
-                if (connectSockets == null || !selectControl.HasConnectSockets)
+                if (connectSockets == null || !control.HasConnectSockets)
                 {
                     if (selectReadSockets.Count == 0)
                         return;
@@ -297,8 +287,8 @@ namespace More.Net
                 {
                     connectSockets.Clear();
                     errorSockets.Clear();
-                    selectControl.CopyConnectSocketsTo(connectSockets);
-                    selectControl.CopyConnectSocketsTo(errorSockets);
+                    control.CopyConnectSocketsTo(connectSockets);
+                    control.CopyConnectSocketsTo(errorSockets);
 
                     if (selectReadSockets.Count == 0 && connectSockets.Count == 0)
                         return;
@@ -306,27 +296,27 @@ namespace More.Net
                     //Console.WriteLine("[DEBUG] Selecting on {0} connect sockets", connectSockets.Count);
                     Socket.Select(selectReadSockets, connectSockets, errorSockets, Int32.MaxValue);
 
-                    selectControl.ConnectionError = true;
+                    control.ConnectionError = true;
                     for (int i = 0; i < errorSockets.Count; i++)
                     {
                         Socket socket = errorSockets[i];
-                        SimpleSelectHandler handler = selectControl.TryGetHandler(socket);
+                        SelectHandler handler = control.TryGetHandler(socket);
                         if (handler != null)
                         {
-                            handler(ref selectControl, socket, safeBuffer);
+                            handler(ref control, socket, safeBuffer);
                         }
                     }
-                    selectControl.ConnectionError = false;
+                    control.ConnectionError = false;
                     for (int i = 0; i < connectSockets.Count; i++)
                     {
                         Socket socket = connectSockets[i];
                         // Make sure you don't call the handler twice
                         if (!errorSockets.Contains(socket))
                         {
-                            SimpleSelectHandler handler = selectControl.TryGetHandler(socket);
+                            SelectHandler handler = control.TryGetHandler(socket);
                             if (handler != null)
                             {
-                                handler(ref selectControl, socket, safeBuffer);
+                                handler(ref control, socket, safeBuffer);
                             }
                         }
                     }
@@ -336,10 +326,10 @@ namespace More.Net
                 {
                     Socket socket = selectReadSockets[i];
 
-                    SimpleSelectHandler handler = selectControl.TryGetHandler(socket);
+                    SelectHandler handler = control.TryGetHandler(socket);
                     if (handler != null)
                     {
-                        handler(ref selectControl, socket, safeBuffer);
+                        handler(ref control, socket, safeBuffer);
                     }
                 }
             }

@@ -16,14 +16,25 @@ namespace More
     // AppendNumber = Append the number converted to a string
     public interface ITextBuilder
     {
+        UInt32 Length { get; }
         void Clear();
+
+        //void ShiftRight(UInt32 shiftAmount, UInt32 offset, UInt32 length);
 
         // The caller is guaranteeing that 0 <= c <= 127
         void AppendAscii(Byte c);
         // The caller is guaranteeing that 0 <= c <= 127
         void AppendAscii(Char c);
-        // The caller is guaranteeing that every char in str is between 0 and 127 (inclusive)
+
+        /// <summary>
+        /// The 'Ascii' part means the caller is guaranteeing that every char in str is between 0 and 127 (inclusive)
+        /// </summary>
+        /// <param name="str">The string to append to the text</param>
         void AppendAscii(String str);
+        void AppendAscii(Byte[] str);
+        void AppendAscii(Byte[] str, UInt32 offset, UInt32 length);
+
+        //void AppendFormatAscii(String format, params Object[] obj);
 
         void AppendUtf8(Char c);
         void AppendUtf8(String str);
@@ -44,6 +55,7 @@ namespace More
         {
             this.builder = builder;
         }
+        public UInt32 Length { get { return (uint)builder.Length; } }
         public void Clear()
         {
             this.builder.Length = 0;
@@ -62,6 +74,25 @@ namespace More
         public void AppendAscii(String str)
         {
             builder.Append(str);
+        }
+        public void AppendAscii(Byte[] str)
+        {
+            for(int i = 0; i < str.Length; i++)
+            {
+                builder.Append((char)str[i]);
+            }
+        }
+        public void AppendAscii(Byte[] str, UInt32 offset, UInt32 length)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                builder.Append((char)str[offset + i]);
+            }
+        }
+        // The caller is guaranteeing that every char in str is between 0 and 127 (inclusive)
+        public void AppendFormatAscii(String format, params Object[] obj)
+        {
+            builder.AppendFormat(format, obj);
         }
 
         public void AppendUtf8(Char c)
@@ -100,7 +131,7 @@ namespace More
             builder.Append(num.ToString("X"));
         }
     }
-    public delegate void ByteAppender(ByteBuilder builder);
+    public delegate void ByteAppender(ITextBuilder builder);
     public class ByteBuilder : ITextBuilder
     {
         const UInt32 DefaultInitialLength = 16;
@@ -116,10 +147,40 @@ namespace More
             this.bytes = new Byte[initialLength];
             this.contentLength = 0;
         }
+        public ByteBuilder(Byte[] bytes)
+        {
+            this.bytes = bytes;
+            this.contentLength = 0;
+        }
+        public UInt32 Length { get { return contentLength; } }
         public void Clear()
         {
             this.contentLength = 0;
         }
+
+        /*
+        public void ShiftRight(UInt32 shiftAmount, UInt32 offset, UInt32 length)
+        {
+            // Shift the beginning of the request to compensate for a smaller Content-Length
+            if (shift > 0)
+            {
+                while (offset < length)
+                {
+                    bytes[
+                }
+                var offset = contentLengthOffset - 1;
+                while (true)
+                {
+                    builder.bytes[offset + shift] = builder.bytes[offset];
+                    if (offset == 0)
+                        break;
+                    offset--;
+                }
+            }
+            return shift;
+        }
+        */
+
         public void EnsureTotalCapacity(UInt32 capacity)
         {
             if (bytes.Length < capacity)
@@ -168,6 +229,30 @@ namespace More
             }
             contentLength += (uint)str.Length;
         }
+        public void AppendAscii(Byte[] str)
+        {
+            EnsureTotalCapacity(contentLength + (uint)str.Length);
+            for (int i = 0; i < str.Length; i++)
+            {
+                bytes[contentLength + i] = str[i];
+            }
+            contentLength += (uint)str.Length;
+        }
+        public void AppendAscii(Byte[] str, UInt32 offset, UInt32 length)
+        {
+            EnsureTotalCapacity(contentLength + (uint)str.Length);
+            for (int i = 0; i < length; i++)
+            {
+                bytes[contentLength + i] = str[offset + i];
+            }
+            contentLength += (uint)str.Length;
+        }
+        // The caller is guaranteeing that every char in str is between 0 and 127 (inclusive)
+        //public void AppendFormatAscii(String format, params Object[] obj)
+        //{
+        //    String.Format(
+        //    builder.AppendFormat(format, obj);
+        //}
 
         public void AppendUtf8(Char c)
         {

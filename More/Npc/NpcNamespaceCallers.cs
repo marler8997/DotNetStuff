@@ -19,18 +19,10 @@ namespace More
         {
             client.UpdateAndVerifyEnumAndObjectTypes();
         }
-        //public void VerifyInterfaceMethods(Boolean forceUpdateMethodsFromServer, ICollection<RemoteNpcInterface> expectedInterfaces)
-        //{
-        //    client.VerifyInterfaceMethods(forceUpdateMethodsFromServer, expectedInterfaces);
-        //}
         public void VerifyObject(Boolean forceInterfaceUpdateFromServer, RemoteNpcObject expectedObject)
         {
             client.VerifyObject(forceInterfaceUpdateFromServer, expectedObject);
         }
-        //public void VerifyObjectsAndInterfaceMethods(Boolean forceInterfaceUpdateFromServer, ICollection<RemoteNpcObject> expectedObjects, ICollection<RemoteNpcInterface> expectedInterfaces)
-        //{
-        //    client.VerifyObjectsAndInterfaceMethods(forceInterfaceUpdateFromServer, expectedObjects, expectedInterfaces);
-        //}
         public Object Call(String methodName, params Object[] parameters)
         {
             return client.Call(namespacePrefix + methodName, parameters);

@@ -11,7 +11,7 @@ namespace More
 {
     public class NpcInterface : Attribute { }
 
-    public enum NpcErrorCode
+    public enum NpcErrorCode : byte
     {
         UnhandledException    = 0,
         InvalidCallSyntax     = 1,

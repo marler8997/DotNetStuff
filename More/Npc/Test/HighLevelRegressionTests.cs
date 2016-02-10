@@ -113,7 +113,7 @@ namespace More
             client.Call("NpcMethodsForTest.SetCustomObjects", new Object[] {customObjects});
             Assert.IsNull(customObjects.Diff(client.Call("NpcMethodsForTest.GetCustomObjects")));
 
-            server.StopServerFromAnotherThread();
+            server.Dispose();
             serverThread.Join();
         }
         [TestMethod]
@@ -156,7 +156,7 @@ namespace More
             // Restart the Server
             //
             Console.WriteLine("Resetting server");
-            server.StopServerFromAnotherThread();
+            server.Dispose();
             serverThread.Join();
             
             server = new NpcServerSingleThreaded(NpcServerConsoleLoggerCallback.Instance,
@@ -171,7 +171,7 @@ namespace More
             client.Call("NpcMethodsForTest.EmptyCall");
             client.Call("NpcMethodsForTest.EmptyCall");
 
-            server.StopServerFromAnotherThread();
+            server.Dispose();
             serverThread.Join();
         }
     }

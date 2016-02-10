@@ -40,7 +40,7 @@ namespace More.Net
         public void AcceptedNewClient(UInt32 socketID, UInt16 port, IncomingConnection incomingConnection)
         {
             Socket clientSideSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            clientSideSocket.ConnectTcpSocketThroughProxy(server);
+            clientSideSocket.ConnectTcpSocketThroughProxy(server, ProxyConnectOptions.None);
 
             ConnectionMessageLogger messageLogger = ConnectionMessageLogger.NullConnectionMessageLogger;
             IConnectionDataLogger dataLogger = logData ? new ConnectionDataLoggerPrettyLog(socketID, ConsoleDataLogger.Instance,

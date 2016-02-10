@@ -21,7 +21,9 @@ namespace More.Net
         public const UInt16 ResponseRedirection         = 302;
         public const UInt16 ResponseBadRequest          = 400;
         public const UInt16 ResponseNotFound            = 404;
-        public const UInt16 ResponseInternalServerError = 500;        
+        public const UInt16 ResponseInternalServerError = 500;
+
+        public const String ResponseNotFoundMessage = "Not Found";
 
         public static readonly Byte[] HostHeaderPrefix          = Encoding.ASCII.GetBytes("Host: ");
         public static readonly Byte[] ContentLengthHeaderPrefix = Encoding.ASCII.GetBytes("Content-Length: ");
@@ -33,35 +35,41 @@ namespace More.Net
         public static readonly Byte[] Newline       = Encoding.ASCII.GetBytes("\r\n");
         public static readonly Byte[] DoubleNewline = Encoding.ASCII.GetBytes("\r\n\r\n");
 
-        static Dictionary<UInt16, String> responseMap = null;
-        public static Dictionary<UInt16, String> ResponseMap
+        public static readonly Byte[] VersionBytes = new Byte[]
+        {
+            (Byte)'H', (Byte)'T', (Byte)'T', (Byte)'P', (Byte)'/', (Byte)'1', (Byte)'.', (Byte)'1'
+        };
+
+        static Dictionary<UInt16, String> responseMessageMap = null;
+        public static Dictionary<UInt16, String> ResponseMessageMap
         {
             get
             {
-                if (responseMap == null)
+                if (responseMessageMap == null)
                 {
-                    responseMap = new Dictionary<UInt16, String>();
+                    responseMessageMap = new Dictionary<UInt16, String>() {
+                        {200, "Ok"},
+                        {201, "Created"},
+                        {202, "Accepted"},
+                        {204, "No Content"},
 
-                    responseMap.Add(200, "200 Ok");
-                    responseMap.Add(201, "201 Created");
-                    responseMap.Add(202, "202 Accepted");
-                    responseMap.Add(204, "204 No Content");
+                        {301, "Moved Permanently"},
+                        {302, "Redirection"},
+                        {304, "Not Modified"},
 
-                    responseMap.Add(301, "301 Moved Permanently");
-                    responseMap.Add(302, "302 Redirection");
-                    responseMap.Add(304, "304 Not Modified");
+                        {400, "Bad Request"},
+                        {401, "Unauthorized"},
+                        {403, "Forbidden"},
+                        {ResponseNotFound, ResponseNotFoundMessage},
 
-                    responseMap.Add(400, "400 Bad Request");
-                    responseMap.Add(401, "401 Unauthorized");
-                    responseMap.Add(403, "403 Forbidden");
-                    responseMap.Add(404, "404 Not Found");
+                        {500, "Internal Server Error"},
+                        {501, "Not Implemented"},
+                        {502, "Bad Gateway"},
+                        {503, "Service Unavailable"},
+                    };
 
-                    responseMap.Add(500, "500 Internal Server Error");
-                    responseMap.Add(501, "501 Not Implemented");
-                    responseMap.Add(502, "502 Bad Gateway");
-                    responseMap.Add(503, "503 Service Unavailable");
                 }
-                return responseMap;
+                return responseMessageMap;
             }
         }
         public static String GetParentUrl(this String url)
