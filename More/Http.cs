@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 
 namespace More.Net
@@ -195,5 +195,73 @@ namespace More.Net
             }
             return builder.CreateString();
         }
+
+        // Note: if you use this, make sure to set the builder to have enough bytes
+        // Returns: offset to the data (end of headers), UInt32.MaxValue if end of headers not found yet
+        public static UInt32 ReadHttpHeaders(Socket socket, ByteBuilder builder)
+        {
+            Int32 bytesReceived = socket.Receive(builder.bytes, (int)builder.contentLength,
+                (int)(builder.bytes.Length - builder.contentLength), 0);
+            if (bytesReceived <= 0)
+            {
+                throw new FormatException(String.Format("socket closed before all HTTP headers were received ({0} bytes received)'", bytesReceived));
+            }
+
+            UInt32 checkOffset = builder.contentLength;
+            builder.contentLength += (UInt32)bytesReceived;
+
+            // Search for the ending \r\n\r\n
+            Byte[] checkBuffer = builder.bytes;
+            if (checkOffset >= 3)
+                checkOffset -= 3; // Reverse 3 chars in case the last request had the partial end of double newline
+            for (; checkOffset + 3 < builder.contentLength; checkOffset++)
+            {
+                if (checkBuffer[checkOffset    ] == (Byte)'\r' &&
+                    checkBuffer[checkOffset + 1] == (Byte)'\n' &&
+                    checkBuffer[checkOffset + 2] == (Byte)'\r' &&
+                    checkBuffer[checkOffset + 3] == (Byte)'\n')
+                {
+                    return checkOffset + 4;
+                }
+            }
+
+            return UInt32.MaxValue;
+        }
+
+        // Returns: UInt32.MaxValue if Content-Length header was not found
+        public static UInt32 GetContentLength(Byte[] headers, UInt32 offset, UInt32 limit)
+        {
+            Boolean match;
+
+            for (;;offset++)
+            {
+                if (offset + Http.ContentLengthHeaderPrefix.Length > limit)
+                {
+                    return UInt32.MaxValue; // No Content-Length header
+                }
+
+                match = true;
+                for (int compareIndex = 0; compareIndex < Http.ContentLengthHeaderPrefix.Length; compareIndex++)
+                {
+                    if (headers[offset + compareIndex] != Http.ContentLengthHeaderPrefix[compareIndex])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    UInt32 contentLength;
+                    UInt32 endOfContentLength = headers.TryParseUInt32(offset + (uint)Http.ContentLengthHeaderPrefix.Length, limit, out contentLength);
+                    if (endOfContentLength == 0)
+                    {
+                        throw new FormatException("Invalid content-length");
+                    }
+                    return contentLength;
+                }
+            }
+        }
+
     }
 }

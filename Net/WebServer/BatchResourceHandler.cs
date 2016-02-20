@@ -8,6 +8,7 @@ using More;
 
 namespace More.Net
 {
+    /*
     public class BatchResourceHandler : IResourceHandler
     {
         public readonly IUrlToFileTranslator urlTranslator;
@@ -57,4 +58,5 @@ namespace More.Net
             }
         }
     }
+    */
 }

@@ -10,6 +10,7 @@ using Microsoft.Win32;
 
 namespace More.Net
 {
+    /*
     public class DefaultFileResourceHandler : IResourceHandler
     {
         public readonly IUrlToFileTranslator urlTranslator;
@@ -165,4 +166,5 @@ namespace More.Net
             return String.Format("DefaultResourceHandler: DefaultIndexFile='{0}'", defaultIndexFile);
         }
     }
+    */
 }

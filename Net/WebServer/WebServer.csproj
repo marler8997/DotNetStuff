@@ -39,16 +39,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DefaultUrlToFileTranslator.cs" />
     <Compile Include="BatchResourceHandler.cs" />
     <Compile Include="ExtensionFilteredResourceHandler.cs" />
     <Compile Include="HttpRequestHandler.cs" />
     <Compile Include="ResourceHandler.cs" />
-    <Compile Include="UrlToFileTranslator.cs" />
     <Compile Include="WebServerProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WebServer.cs" />
-    <Compile Include="WebServerOptions.cs" />
     <Compile Include="DefaultResourceHandler.cs" />
   </ItemGroup>
   <ItemGroup>

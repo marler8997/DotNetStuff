@@ -1345,6 +1345,17 @@ namespace More
             }
             return -1;
         }
+        // Returns: UInt32.MaxValue on error
+        public static UInt32 IndexOfUInt32(this Byte[] array, UInt32 offset, UInt32 limit, Byte b)
+        {
+            while (offset < limit)
+            {
+                if (array[offset] == b)
+                    return offset;
+                offset++;
+            }
+            return UInt32.MaxValue;
+        }
         public static Int32 LastIndexOf(this Byte[] array, UInt32 offset, UInt32 limit, Byte b)
         {
             if (limit <= offset)

@@ -51,7 +51,7 @@ namespace More.Net
                 HttpResponse response = new HttpResponse();
                 response.version = "HTTP/1.1";
                 response.Headers = new Dictionary<String, String>();
-                response.Headers.Add("Server", WebServer.Name);
+                response.Headers.Add("Server", WebServer.ServerName);
                 response.Headers.Add("Date", DateTime.Now.ToString("r"));
                 response.Headers.Add("Connection", "close");
 
@@ -96,7 +96,7 @@ namespace More.Net
 
                 // Put together the response string
                 StringBuilder headerStringBuilder = new StringBuilder(
-                    String.Format("{0} {1}\n", response.version, Http.ResponseMap[response.status]));
+                    String.Format("{0} {1}\n", response.version, Http.ResponseMessageMap[response.status]));
                 foreach (KeyValuePair<String, String> headerPair in response.Headers)
                 {
                     headerStringBuilder.Append(String.Format("{0}: {1}\n", headerPair.Key, headerPair.Value));

@@ -652,7 +652,8 @@ namespace More.Net
             //
             // Get Content Length
             //
-            UInt32 contentLengthFromHeader;
+            // TODO: verify this works
+            UInt32 contentLengthFromHeader = Http.GetContentLength(builder.bytes, 0, builder.contentLength);
 
 
             //
@@ -666,50 +667,6 @@ namespace More.Net
             // 4. Using Multipart/byteranges....???
             // 5. Server closes the connection
 
-            {
-                Int32 contentLengthOffset = 0;
-                while (true)
-                {
-                    if (contentLengthOffset + Http.ContentLengthHeaderPrefix.Length > builder.contentLength)
-                    {
-                        contentLengthFromHeader = UInt32.MaxValue; // No Content-Length header
-                        break;
-                    }
-
-                    Boolean match;
-                    {
-                        match = true;
-                        for (int compareIndex = 0; compareIndex < Http.ContentLengthHeaderPrefix.Length; compareIndex++)
-                        {
-                            if (builder.bytes[contentLengthOffset + compareIndex] != Http.ContentLengthHeaderPrefix[compareIndex])
-                            {
-                                match = false;
-                                break;
-                            }
-                        }
-                    }
-                    if (match)
-                    {
-                        contentLengthOffset += Http.ContentLengthHeaderPrefix.Length;
-                        String contentLengthString;
-                        {
-                            Int32 endOfLineOffset = contentLengthOffset + 1;
-                            while (true)
-                            {
-                                if (builder.bytes[endOfLineOffset] == '\r')
-                                    break;
-                                endOfLineOffset++;
-                            }
-                            contentLengthString = Encoding.ASCII.GetString(builder.bytes, contentLengthOffset,
-                                endOfLineOffset - contentLengthOffset);
-                        }
-                        contentLengthFromHeader = UInt32.Parse(contentLengthString);
-                        break;
-                    }
-
-                    contentLengthOffset++;
-                }
-            }
 
             //
             // Read the rest of the response

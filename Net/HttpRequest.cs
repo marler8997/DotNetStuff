@@ -9,10 +9,6 @@ using More;
 
 namespace More.Net
 {
-
-
-
-
     public class ClientHttpRequest
     {
         public readonly String method;
