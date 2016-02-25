@@ -266,7 +266,16 @@ namespace More
         //
         public Boolean Contains(T t)
         {
-            if (orderedSet == null || orderedSet.Length <= 0) return false;
+            return IndexOf(t) >= 0;
+        }
+        /// <summary>
+        /// Returns the index of the given parameter.
+        /// </summary>
+        /// <param name="t">The parameter to search for</param>
+        /// <returns></returns>
+        public Int32 IndexOf(T t)
+        {
+            if (orderedSet == null || orderedSet.Length <= 0) return -1;
 
             Int32 lowIndex = 0, highIndex = orderedSet.Length - 1;
             while (true)
@@ -275,12 +284,16 @@ namespace More
 
                 if (diff <= 1)
                 {
-                    return t.Equals(orderedSet[lowIndex]) || t.Equals(orderedSet[highIndex]);
+                    if (t.Equals(orderedSet[lowIndex]))
+                        return lowIndex;
+                    if (t.Equals(orderedSet[highIndex]))
+                        return highIndex;
+                    return -1;
                 }
 
-                Int32 index = lowIndex + diff / 2;
+                Int32 index = lowIndex + (diff / 2);
                 Int32 compareValue = Comparer<T>.Default.Compare(t, orderedSet[index]);
-                if (compareValue == 0) return true;
+                if (compareValue == 0) return index;
                 if (compareValue < 0)
                 {
                     highIndex = index - 1;

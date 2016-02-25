@@ -76,5 +76,22 @@ namespace More
                 Console.WriteLine("Got expected exception '{0}'", e.Message);
             }
         }
+
+        void TestSet(OrderedSet<Int32> set)
+        {
+            Assert.AreEqual(-1, set.IndexOf(set.orderedSet[0] - 1));
+            for (int i = 0; i < set.orderedSet.Length; i++)
+            {
+                //Console.WriteLine("Testing IndexOf({0}) == {1}", set.IndexOf(set.orderedSet[i]), i);
+                Assert.AreEqual(i, set.IndexOf(set.orderedSet[i]));
+            }
+            Assert.AreEqual(-1, set.IndexOf(set.orderedSet[set.orderedSet.Length-1] + 1));
+        }
+        [TestMethod]
+        public void TestIndexOf()
+        {
+            TestSet(OrderedSet.VerifySortedAndGetSet(new Int32[] { 0, 1, 2, 3, 4 }));
+            TestSet(OrderedSet.VerifySortedAndGetSet(new Int32[] { -14, 10, 20, 55, 98 }));
+        }
     }
 }
