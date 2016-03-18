@@ -80,7 +80,7 @@ namespace More
             hash_4 = InitialHash_4;
             this.block = new Byte[BlockByteLength];
         }
-        void Reset()
+        public void Reset()
         {
             hash_0 = InitialHash_0;
             hash_1 = InitialHash_1;

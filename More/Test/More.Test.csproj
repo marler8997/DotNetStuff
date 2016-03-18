@@ -51,6 +51,7 @@
     <Compile Include="JsonTest.cs" />
     <Compile Include="OrderedSetTests.cs" />
     <Compile Include="RollingLogTest.cs" />
+    <Compile Include="SinkTests.cs" />
     <Compile Include="SnmpTest.cs" />
     <Compile Include="SortedSetTests.cs" />
     <Compile Include="SymExpTest.cs" />

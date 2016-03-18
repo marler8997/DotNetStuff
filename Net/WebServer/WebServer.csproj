@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="BatchResourceHandler.cs" />
     <Compile Include="ExtensionFilteredResourceHandler.cs" />
+    <Compile Include="HttpParser.cs" />
     <Compile Include="HttpRequestHandler.cs" />
     <Compile Include="ResourceHandler.cs" />
     <Compile Include="WebServerProgram.cs" />
