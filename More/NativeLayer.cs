@@ -23,6 +23,9 @@ namespace More
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetStdHandle(int nStdHandle);
 
+        [DllImport("kernel32")]
+        public static extern UInt32 GetConsoleCP();
+
         [DllImport("kernel32.dll", EntryPoint = "WriteFile")]
         public static extern bool TryWriteFile(
             IntPtr hFile,
@@ -58,6 +61,7 @@ namespace More
     internal static class NativeWindowsConsole
     {
         internal static IntPtr StdOutFileHandle;
+        public static UInt32 StdOutCodePage;
 
         static NativeWindowsConsole()
         {
@@ -65,6 +69,10 @@ namespace More
             if (StdOutFileHandle == NativeWindows.INVALID_HANDLE_VALUE)
             {
                 throw new InvalidOperationException(String.Format("GetStdHandle(STD_OUTPUT_HANDLE) failed (error={0})", NativeWindows.GetLastError()));
+            }
+            if (StdOutFileHandle != IntPtr.Zero)
+            {
+                NativeWindowsConsole.StdOutCodePage = NativeWindows.GetConsoleCP();
             }
         }
         public static void Write(BytePtr buffer, UInt32 length)
@@ -112,6 +120,8 @@ namespace More
         }
     }
 
+
+
     public abstract class IO
     {
         static IO()
@@ -148,6 +158,7 @@ namespace More
                     {
                         throw new InvalidOperationException(String.Format("GetStdHandle(STD_OUTPUT_HANDLE) returned 0 but this doesn't make sense because we just called AllocConsole? (lasterror={0})", NativeWindows.GetLastError()));
                     }
+                    NativeWindowsConsole.StdOutCodePage = NativeWindows.GetConsoleCP();
                     StdOut = BufferedWindowsConsoleSink.Create(64, true);
                 }
             }
