@@ -602,65 +602,72 @@ namespace More
             if (threadSafe) Monitor.Enter(serverEndPoint);
             try
             {
-
                 //
                 // The reason for the retry logic is because if the underlying socket is disconnected, it may not
                 // fail until after a send and a receive...so the socket should be reconnected and the request should
                 // be repeated only once.
                 //
-                Boolean retryOnSocketException = true;
-            RETRY_LOCATION:
-                try
+                for(UInt32 attempt = 0; ; attempt++)
                 {
-                    Connect();
-
-                    socketLineReader.socket.Send(Encoding.UTF8.GetBytes(rawNpcLine.ToString()));
-
-                    String returnLineString = socketLineReader.ReadLine();
-                    if (returnLineString == null) throw UnexpectedClose();
-
-                    NpcReturnLine returnLine = new NpcReturnLine(returnLineString);
-
-                    if (returnLine.exceptionMessage != null) ThrowExceptionFromCall(methodName, returnLine);
-
-                    if (expectedReturnType == null)
+                    try
                     {
-                        if (returnLine.sosTypeName.Equals("Void")) return null;
-                        expectedReturnType = GetTypeFromSosTypeName(returnLine.sosTypeName);
+                        Connect();
+
+                        socketLineReader.socket.Send(Encoding.UTF8.GetBytes(rawNpcLine.ToString()));
+
+                        String returnLineString = socketLineReader.ReadLine();
+                        if (returnLineString == null)
+                        {
+                            if (attempt == 0)
+                            {
+                                Dispose();
+                                continue; // Retry
+                            }
+                            throw UnexpectedClose();
+                        }
+
+                        NpcReturnLine returnLine = new NpcReturnLine(returnLineString);
+
+                        if (returnLine.exceptionMessage != null) ThrowExceptionFromCall(methodName, returnLine);
+
+                        if (expectedReturnType == null)
+                        {
+                            if (returnLine.sosTypeName.Equals("Void")) return null;
+                            expectedReturnType = GetTypeFromSosTypeName(returnLine.sosTypeName);
+                        }
+                        else
+                        {
+                            if (!returnLine.sosTypeName.Equals(expectedReturnType.SosTypeName()))
+                                throw new InvalidOperationException(String.Format("Expected return type to be {0} but was {1}",
+                                    expectedReturnType.SosTypeName(), returnLine.sosTypeName));
+                        }
+
+                        if (expectedReturnType == typeof(void)) return null;
+
+                        Object returnObject;
+                        Int32 valueStringOffset = Sos.Deserialize(out returnObject, expectedReturnType,
+                            returnLine.sosSerializationString, 0, returnLine.sosSerializationString.Length);
+
+                        if (valueStringOffset != returnLine.sosSerializationString.Length)
+                            throw new InvalidOperationException(String.Format(
+                                "Used {0} characters to deserialize object of type '{1}' but the serialization string had {2} characters",
+                                valueStringOffset, expectedReturnType.SosTypeName(), returnLine.sosSerializationString.Length));
+
+                        return returnObject;
                     }
-                    else
+                    catch (SocketException)
                     {
-                        if (!returnLine.sosTypeName.Equals(expectedReturnType.SosTypeName()))
-                            throw new InvalidOperationException(String.Format("Expected return type to be {0} but was {1}",
-                                expectedReturnType.SosTypeName(), returnLine.sosTypeName));
+                        if (socketLineReader != null)
+                        {
+                            socketLineReader.Dispose();
+                            socketLineReader = null;
+                        }
+                        if (attempt == 0)
+                        {
+                            continue; // Retry
+                        }
+                        throw;
                     }
-
-                    if (expectedReturnType == typeof(void)) return null;
-
-                    Object returnObject;
-                    Int32 valueStringOffset = Sos.Deserialize(out returnObject, expectedReturnType,
-                        returnLine.sosSerializationString, 0, returnLine.sosSerializationString.Length);
-
-                    if (valueStringOffset != returnLine.sosSerializationString.Length)
-                        throw new InvalidOperationException(String.Format(
-                            "Used {0} characters to deserialize object of type '{1}' but the serialization string had {2} characters",
-                            valueStringOffset, expectedReturnType.SosTypeName(), returnLine.sosSerializationString.Length));
-
-                    return returnObject;
-                }
-                catch (SocketException)
-                {
-                    if (socketLineReader != null)
-                    {
-                        socketLineReader.Dispose();
-                        socketLineReader = null;
-                    }
-                    if (retryOnSocketException)
-                    {
-                        retryOnSocketException = false;
-                        goto RETRY_LOCATION;
-                    }
-                    throw;
                 }
             }
             finally
