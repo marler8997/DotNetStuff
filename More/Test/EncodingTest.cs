@@ -14,22 +14,38 @@ namespace More
             var bytes = Encoding.UTF8.GetBytes(s);
             TestDecodeUtf8(bytes, 0, (UInt32)bytes.Length, expectedChars);
         }
-        void TestDecodeUtf8(Byte[] s, UInt32 start, UInt32 limit, params UInt32[] expectedChars)
+        unsafe void TestDecodeUtf8(Byte[] s, UInt32 start, UInt32 limit, params UInt32[] expectedChars)
         {
             foreach(var expected in expectedChars)
             {
-                if(start >= limit)
+                if (start >= limit)
                 {
                     Assert.Fail("Expected more decoded utf8 chars but input ended");
                 }
-                var saveStart = start;
-                var decoded = Utf8.Decode(s, ref start, limit);
-                if(decoded != expected)
+                UInt32 encodedLength = limit - start;
                 {
-                    Assert.Fail("decodeUtf8: Expected '{0}' 0x{1} but decoded '{2}' 0x{3}",
-                        expected, expected, decoded, decoded);
+                    var saveStart = start;
+                    var decoded = Utf8.Decode(s, ref start, limit);
+                    if (decoded != expected)
+                    {
+                        Assert.Fail("decodeUtf8: Expected '{0}' 0x{1} but decoded '{2}' 0x{3}",
+                            expected, expected, decoded, decoded);
+                    }
+                    Console.WriteLine("decodeUtf8('{0}')", decoded);
                 }
-                Console.WriteLine("decodeUtf8('{0}')", decoded);
+
+                fixed (byte* sPointer = s)
+                {
+                    Utf8Pointer pointer = new Utf8Pointer(sPointer);
+                    Utf8Pointer pointerLimit = new Utf8Pointer(sPointer + encodedLength);
+                    var decoded = Utf8.Decode(ref pointer, pointerLimit);
+                    if (decoded != expected)
+                    {
+                        Assert.Fail("decodeUtf8: Expected '{0}' 0x{1} but decoded '{2}' 0x{3}",
+                            expected, expected, decoded, decoded);
+                    }
+                }
+
             }
 
             if (start != limit)

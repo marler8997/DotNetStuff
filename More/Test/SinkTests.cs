@@ -9,11 +9,8 @@ namespace More
     public class SinkTests
     {
         [TestMethod]
-        //[Serializable(true, Al]
         public unsafe void TestStdOutSink()
         {
-            Console.WriteLine(typeof(Object).FullName);
-            /*
             Byte[] testMessage = new Byte[] {(Byte)'T',(Byte)'e',(Byte)'s',(Byte)'t'};
             fixed (byte* testMessagePtr = testMessage)
             {
@@ -22,7 +19,6 @@ namespace More
                 IO.StdOut.WriteLine();
                 IO.StdOut.Write(testMessagePtr, (uint)testMessage.Length);
             }
-             */
         }
     }
 }

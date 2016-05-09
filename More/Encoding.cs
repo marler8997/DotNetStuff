@@ -125,10 +125,6 @@ namespace More
     {
         public static UInt32 Decode(Byte[] array, ref UInt32 offset, UInt32 limit)
         {
-#if DEBUG
-            //new SegmentByLimit(array, offset, limit); // Verifies that the arguments are valid
-#endif
-
             if(offset >= limit) throw new ArgumentException("Cannot pass an empty data segment to Utf8.Decode");
 
             UInt32 c = array[offset];
@@ -160,6 +156,43 @@ namespace More
 
             throw new Utf8Exception(Utf8ExceptionType.OutOfRange);
         }
+        public static UInt32 Decode(ref Utf8Pointer text, Utf8Pointer limit)
+        {
+            if (text >= limit) throw new ArgumentException("Cannot pass an empty data segment to Utf8.Decode");
+
+            UInt32 c = text[0];
+            if (c <= 0x7F)
+            {
+                return c;
+            }
+            if ((c & 0x40) == 0)
+            {
+                throw new Utf8Exception(Utf8ExceptionType.StartedInsideCodePoint);
+            }
+
+            text++;
+            if ((c & 0x20) == 0)
+            {
+                if (text >= limit) throw new Utf8Exception(Utf8ExceptionType.MissingBytes);
+                return ((c << 6) & 0x7C0U) | (text[0] & 0x3FU);
+            }
+
+            if ((c & 0x10) == 0)
+            {
+                if (text+1 >= limit) throw new Utf8Exception(Utf8ExceptionType.MissingBytes);
+                return ((c << 12) & 0xF000U) | ((UInt32)(text[0] << 6) & 0xFC0U) | (text[1] & 0x3FU);
+            }
+
+            if ((c & 0x08) == 0)
+            {
+                if (text+2 >= limit) throw new Utf8Exception(Utf8ExceptionType.MissingBytes);
+                return ((c << 18) & 0x1C0000U) | ((UInt32)(text[0] << 12) & 0x3F000U) |
+                    ((UInt32)(text[1] << 6) & 0xFC0U) | (text[2] & 0x3FU);
+            }
+
+            throw new Utf8Exception(Utf8ExceptionType.OutOfRange);
+        }
+
         /// <summary>The maximum number of bytes it would take to encode a C# Char type</summary>
         public const UInt32 MaxCharEncodeLength = 3;
         public static Byte GetCharEncodeLength(Char c)
@@ -362,8 +395,6 @@ namespace More
         public static Boolean EqualsString(Byte[] array, UInt32 offset, UInt32 limit,
             String compare, UInt32 compareOffset, UInt32 compareLimit, Boolean ignoreCase)
         {
-            UInt32 c;
-
             while(true)
             {
                 if (offset >= limit)
@@ -375,7 +406,7 @@ namespace More
                     return false;
                 }
 
-                c = Decode(array, ref offset, limit);
+                UInt32 c = Decode(array, ref offset, limit);
                 if (c != (UInt32)compare[(int)compareOffset])
                 {
                     if (!ignoreCase) return false;
@@ -392,6 +423,35 @@ namespace More
 
                 }
                 compareOffset++;
+            }
+        }
+        
+        public static String Decode(Utf8PointerLengthSlice text)
+        {
+            System.Text.StringBuilder builder = new System.Text.StringBuilder((int)text.length);
+            Utf8Pointer next = text.ptr;
+            Utf8Pointer limit = text.LimitPointer;
+            while (next < limit)
+            {
+                UInt32 c = Decode(ref next, limit);
+                builder.Append((Char)c);
+            }
+            return builder.ToString();
+        }
+        public static String Decode(Utf8LengthSlice text)
+        {
+            System.Text.StringBuilder builder = new System.Text.StringBuilder((int)text.length);
+            UInt32 offset = text.offset;
+            UInt32 limit = text.offset + text.length;
+            while (true)
+            {
+                if (offset >= text.length)
+                {
+                    return builder.ToString();
+                }
+
+                UInt32 c = Decode(text.array, ref offset, limit);
+                builder.Append((Char)c);
             }
         }
     }

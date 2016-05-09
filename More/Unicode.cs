@@ -194,8 +194,55 @@ namespace More
 
     public struct Utf8Pointer
     {
-        public unsafe Byte* ptr;
+        public static unsafe Boolean operator <(Utf8Pointer left, Utf8Pointer right)
+        {
+            return left.ptr < right.ptr;
+        }
+        public static unsafe Boolean operator >(Utf8Pointer left, Utf8Pointer right)
+        {
+            return left.ptr > right.ptr;
+        }
+        public static unsafe Boolean operator <=(Utf8Pointer left, Utf8Pointer right)
+        {
+            return left.ptr <= right.ptr;
+        }
+        public static unsafe Boolean operator >=(Utf8Pointer left, Utf8Pointer right)
+        {
+            return left.ptr >= right.ptr;
+        }
+        public static unsafe Boolean operator ==(Utf8Pointer left, Utf8Pointer right)
+        {
+            return left.ptr == right.ptr;
+        }
+        public static unsafe Boolean operator !=(Utf8Pointer left, Utf8Pointer right)
+        {
+            return left.ptr != right.ptr;
+        }
+        public static unsafe Utf8Pointer operator +(Utf8Pointer ptr, UInt32 value)
+        {
+            return new Utf8Pointer(ptr.ptr + value);
+        }
+        public static unsafe Utf8Pointer operator ++(Utf8Pointer ptr)
+        {
+            return new Utf8Pointer(ptr.ptr + 1);
+        }
 
+
+        public unsafe Byte* ptr;
+        public unsafe Utf8Pointer(Byte* ptr)
+        {
+            this.ptr = ptr;
+        }
+
+        public unsafe Byte this[UInt32 key]
+        {
+            get { return ptr[key]; }
+            set { ptr[key] = value; }
+        }
+        public unsafe override bool Equals(object obj)
+        {
+            return (obj is Utf8Pointer) && ( ptr == ((Utf8Pointer)obj).ptr );
+        }
         public unsafe String ToNewString(UInt32 length)
         {
             // TODO: add support for multi-byte utf8 characters
@@ -237,16 +284,51 @@ namespace More
         */
 
     }
-    public struct Utf8Slice
+
+    public struct Utf8LengthSlice
+    {
+        public Byte[] array;
+        public UInt32 offset;
+        public UInt32 length;
+    }
+    public struct Utf8LimitSlice
+    {
+        public Byte[] array;
+        public UInt32 offset;
+        public UInt32 length;
+    }
+
+    public struct Utf8PointerLimitSlice
+    {
+        public Utf8Pointer ptr;
+        public Utf8Pointer limit;
+        public Utf8PointerLimitSlice(Utf8Pointer ptr, Utf8Pointer limit)
+        {
+            this.ptr = ptr;
+            this.limit = limit;
+        }
+        public Byte this[UInt32 key]
+        {
+            get { return ptr[key]; }
+            set { ptr[key] = value; }
+        }
+    }
+    public struct Utf8PointerLengthSlice
     {
         public Utf8Pointer ptr;
         public UInt32 length;
 
-        public Utf8Slice(Utf8Pointer ptr, UInt32 length)
+        public Utf8PointerLengthSlice(Utf8Pointer ptr, UInt32 length)
         {
             this.ptr = ptr;
             this.length = length;
         }
+        public Byte this[UInt32 key]
+        {
+            get { return ptr[key]; }
+            set { ptr[key] = value; }
+        }
+        public Utf8Pointer LimitPointer { get { return ptr + length; } }
         public unsafe String ToNewString()
         {
             return ptr.ToNewString(length);

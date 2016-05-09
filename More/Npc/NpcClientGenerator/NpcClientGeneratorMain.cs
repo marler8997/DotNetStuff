@@ -512,7 +512,6 @@ namespace More
                 port = configuration.defaultPort.value;
             }
 
-
             //
             //
             //
@@ -529,14 +528,13 @@ namespace More
                 configuration.defaultObjectFilter.strings);
 
 
-
             // Reset File Stream
             StreamWriter output = new StreamWriter(stream);
 
             //
             // Attempt to connect to Npc Server
             //
-            EndPoint npcServerEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(AddressFamily.InterNetwork, serverHost), port);
+            EndPoint npcServerEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(serverHost, DnsPriority.IPv4ThenIPv6), port);
             Socket npcServerSocket = new Socket(npcServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             try
