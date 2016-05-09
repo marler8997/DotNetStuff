@@ -77,8 +77,8 @@ namespace More.Net
                         //
                         // Connect to target
                         //
-                        String targetHost = Encoding.ASCII.GetString(request.TargetHost);
-                        EndPoint targetEndPoint = EndPoints.EndPointFromIPOrHost(targetHost, request.TargetPort);
+                        String targetIPOrHost = Encoding.ASCII.GetString(request.TargetHost);
+                        IPEndPoint targetEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(targetIPOrHost, DnsPriority.IPv4ThenIPv6), request.TargetPort);
 
                         Socket socketToTarget = new Socket(targetEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                         socketToTarget.Connect(targetEndPoint);

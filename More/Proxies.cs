@@ -15,10 +15,12 @@ using UInt16Parser = System.UInt16;
 
 namespace More.Net
 {
-    public struct HostWithOptionalProxy
+    /// NOTE: since this is a struct with non-readonly members, alway use 'ref' when passing it to functions
+    /// and never make it a readonly member of a struct/class.
+    public struct InternetHost
     {
-        public static HostWithOptionalProxy FromIPOrHostWithOptionalPort(
-            String ipOrHostOptionalPort, UInt16 defaultPort, Proxy proxy)
+        public static InternetHost FromIPOrHostWithOptionalPort(
+            String ipOrHostOptionalPort, UInt16 defaultPort, PriorityQuery<IPAddress> dnsPriorityQuery, Proxy proxy)
         {
             Int32 colonIndex = ipOrHostOptionalPort.IndexOf(':');
             if (colonIndex >= 0)
@@ -32,9 +34,9 @@ namespace More.Net
                 ipOrHostOptionalPort = ipOrHostOptionalPort.Remove(colonIndex);
             }
 
-            return new HostWithOptionalProxy(ipOrHostOptionalPort, defaultPort, proxy);
+            return new InternetHost(ipOrHostOptionalPort, defaultPort, dnsPriorityQuery, proxy);
         }
-        public static HostWithOptionalProxy FromIPOrHostWithPort(String ipOrHostWithPort, Proxy proxy)
+        public static InternetHost FromIPOrHostWithPort(String ipOrHostWithPort, PriorityQuery<IPAddress> dnsPriorityQuery, Proxy proxy)
         {
             Int32 colonIndex = ipOrHostWithPort.IndexOf(':');
             if (colonIndex < 0)
@@ -49,22 +51,48 @@ namespace More.Net
             }
             String ipOrHost = ipOrHostWithPort.Remove(colonIndex);
 
-            return new HostWithOptionalProxy(ipOrHost, port, proxy);
+            return new InternetHost(ipOrHost, port, dnsPriorityQuery, proxy);
         }
 
-        public readonly StringEndPoint endPoint;
+        public StringEndPoint targetEndPoint; // Cannot be readonly because it is a struct with non-readonly parameters
+        public readonly PriorityQuery<IPAddress> dnsPriorityQuery;
         public readonly Proxy proxy;
 
-        public HostWithOptionalProxy(String ipOrHost, UInt16 port, Proxy proxy)
+        public InternetHost(String ipOrHost, UInt16 port, PriorityQuery<IPAddress> dnsPriorityQuery, Proxy proxy)
         {
-            this.endPoint = new StringEndPoint(ipOrHost, port);
+            this.targetEndPoint = new StringEndPoint(ipOrHost, port);
+            this.dnsPriorityQuery = dnsPriorityQuery;
             this.proxy = proxy;
-            if (proxy != null)
+        }
+        public InternetHost(InternetHost other, UInt16 port)
+        {
+            this.targetEndPoint = new StringEndPoint(other.targetEndPoint, port);
+            this.dnsPriorityQuery = other.dnsPriorityQuery;
+            this.proxy = other.proxy;
+        }
+        public AddressFamily GetAddressFamilyForTcp()
+        {
+            if (proxy == null)
             {
-                proxy.PrepareEndPoint(ref this.endPoint);
+                targetEndPoint.ForceIPResolution(dnsPriorityQuery);
+                return targetEndPoint.ipEndPoint.AddressFamily;
+            }
+            else
+            {
+                return proxy.host.GetAddressFamilyForTcp();
             }
         }
-        public HostWithOptionalProxy(HostWithOptionalProxy other, UInt16 overrideTargetPort)
+        /*
+        public InternetHost(InternetHost other, Proxy proxy)
+        {
+            this.ipOrHost = other.ipOrHost;
+            this.port = other.port;
+            this.dnsPriority = other.dnsPriority;
+            this.proxy = proxy;
+        }
+        */
+        /*
+        public HostAndProxy(HostWithOptionalProxy other, UInt16 overrideTargetPort)
         {
             this.endPoint = new StringEndPoint(other.endPoint.unparsedIPOrHost, overrideTargetPort);
             this.proxy = other.proxy;
@@ -73,7 +101,7 @@ namespace More.Net
                 proxy.PrepareEndPoint(ref this.endPoint);
             }
         }
-        public HostWithOptionalProxy(HostWithOptionalProxy other, Proxy overrideProxy)
+        public HostAndProxy(HostWithOptionalProxy other, Proxy overrideProxy)
         {
             this.endPoint = new StringEndPoint(other.endPoint.unparsedIPOrHost, other.endPoint.port);
             this.proxy = other.proxy;
@@ -82,6 +110,8 @@ namespace More.Net
                 proxy.PrepareEndPoint(ref this.endPoint);
             }
         }
+        */
+        /*
         public Boolean Set
         {
             get
@@ -93,17 +123,112 @@ namespace More.Net
         {
             return endPoint.ToString();
         }
+        
+        */
+        public String CreateTargetString()
+        {
+            return String.Format("{0}:{1}", targetEndPoint.ipEndPoint, targetEndPoint.port);
+        }
+        public void Connect(Socket socket, PriorityQuery<IPAddress> dnsPriorityQuery, ProxyConnectOptions proxyOptions, ref BufStruct buf)
+        {
+            if (proxy == null)
+            {
+                targetEndPoint.ForceIPResolution(dnsPriorityQuery);
+                socket.Connect(targetEndPoint.ipEndPoint);
+            }
+            else
+            {
+                proxy.ProxyConnectTcp(socket, ref targetEndPoint, proxyOptions, ref buf);
+            }
+        }
     }
     public abstract class Proxy
     {
+        public static Proxy ParseProxy(String proxySpecifier, PriorityQuery<IPAddress> dnsPriorityQuery, Proxy proxyForProxy)
+        {
+            // format
+            // http:<ip-or-host>:<port>
+            // socks4:<ip-or-host>:<port>
+            if (proxySpecifier == null || proxySpecifier.Length <= 0) return default(Proxy);
+
+            String[] splitStrings = proxySpecifier.Split(':');
+            if (splitStrings.Length != 3)
+                throw new FormatException(String.Format("Invalid proxy '{0}', expected 'http:<host>:<port>', 'socks4:<host>:<port>' or 'socks5:<host>:<port>'", proxySpecifier));
+
+            String proxyTypeString = splitStrings[0];
+            String ipOrHost = splitStrings[1];
+            String portString = splitStrings[2];
+
+            UInt16 port;
+            if (!UInt16Parser.TryParse(portString, out port))
+            {
+                throw new FormatException(String.Format("Invalid port '{0}'", portString));
+            }
+            InternetHost proxyHost = new InternetHost(ipOrHost, port, dnsPriorityQuery, proxyForProxy);
+
+            if (proxyTypeString.Equals("socks4", StringComparison.CurrentCultureIgnoreCase))
+            {
+                return new Socks4Proxy(proxyHost, null);
+            }
+            else if (proxyTypeString.Equals("socks5", StringComparison.CurrentCultureIgnoreCase))
+            {
+                return new Socks5NoAuthenticationConnectSocket(proxyHost);
+            }
+            else if (proxyTypeString.Equals("http", StringComparison.CurrentCultureIgnoreCase))
+            {
+                return new HttpProxy(proxyHost);
+            }
+            else if (proxyTypeString.Equals("gateway", StringComparison.CurrentCultureIgnoreCase))
+            {
+                return new GatewayProxy(proxyHost);
+            }
+            else if (proxyTypeString.Equals("httpconnect", StringComparison.CurrentCultureIgnoreCase))
+            {
+                return new HttpConnectProxyProxy(proxyHost);
+            }
+
+            throw new FormatException(String.Format("Unexpected proxy type '{0}', expected 'gateway', 'http', 'httpconnect', 'socks4' or 'socks5'", proxyTypeString));
+        }
+
+        /// <summary>
+        /// Strips proxies from connection specifier.
+        /// Proxies are configured before the '%' sign, i.e. socks4:myproxy:1080%host.
+        /// You can also configure multiple proxies, i.e. gateway:my-gateway-proxy:8080%socks4:myproxy:1080%host.
+        /// </summary>
+        /// <param name="connectorString">A connector string with potential proxies configured.</param>
+        /// <param name="dnsPriorityQuery">Callback that determines priority to select an address from Dns record.
+        ///   Use DnsPriority.(QueryName) for standard queries.</param>
+        /// <param name="proxy">The proxy (or proxies) stripped from the connector string.</param>
+        /// <returns>Connector string with proxies stripped.  Also returns the parsed proxies.</returns>
+        public static String StripAndParseProxies(String connectorString, PriorityQuery<IPAddress> dnsPriorityQuery, out Proxy proxy)
+        {
+            proxy = null;
+
+            while (true)
+            {
+                int percentIndex = connectorString.IndexOf('%');
+                if (percentIndex < 0)
+                {
+                    return connectorString;
+                }
+
+                proxy = ParseProxy(connectorString.Remove(percentIndex), dnsPriorityQuery, proxy);
+                connectorString = connectorString.Substring(percentIndex + 1);
+            }
+        }
+
+
         /// <summary>
         /// The ipOrHost is the original string used to get the ip address.
         /// It is either a string of the ip address or a hostname that was resolved to an ip.
         /// This member is typically used for logging purposes.
         /// </summary>
-        public readonly String ipOrHost;
-        public readonly IPEndPoint endPoint;
+        //public readonly String ipOrHost;
+        //public readonly IPEndPoint endPoint;
 
+        public InternetHost host; // Cannot be readonly because it is a struct with non-readonly fields
+
+        /*
         /// <summary>
         /// endPoint cannot be null
         /// </summary>
@@ -112,34 +237,25 @@ namespace More.Net
             this.ipOrHost = ipOrHost;
             this.endPoint = endPoint;
         }
+        */
+        protected Proxy(InternetHost host)
+        {
+            this.host = host;
+        }
 
         public abstract ProxyType Type { get; }
 
-        // Only call if impl is not null
-        public String ConnectorString(ref StringEndPoint targetEndPoint)
+        /*
+        public String ConnectorString(StringEndPoint targetEndPoint)
         {
             return String.Format("{0}:{1}:{2}%{3}", Type,
                 ipOrHost, endPoint.Port, targetEndPoint);
         }
-        // Only call if impl is not null
         public override String ToString()
         {
             return String.Format("{0}:{1}:{2}", Type, ipOrHost, endPoint.Port);
         }
-
-        /// <summary>
-        /// If the proxy is ip/host agnostic, it will not parse or try to resolve
-        /// the unparsed ip/host, if it does something different for ips/hostnames,
-        /// it will only attempt to parse it, if it can only use ip addresses, it will
-        /// try to parse or resolve the hostname to an ip.
-        ///
-        /// When you pass an endpoint to ProxyConnectTcp or ProxyConnectUdp, it is assumed
-        /// that you have already called PrepareEndPoint on it.
-        /// </summary>
-        /// <param name="ipOrHost"></param>
-        /// <param name="port"></param>
-        /// <returns></returns>
-        public abstract void PrepareEndPoint(ref StringEndPoint endPoint);
+        */
 
         // Design Note: The ProxyConnect method could also connect the socket, however,
         //              in some cases the socket will already be connected, so, this api
@@ -153,22 +269,44 @@ namespace More.Net
         /// </summary>
         /// <param name="socket">A connected tcp socket</param>
         /// <param name="ipEndPoint">The final destination, retreived from calling proxy.CreateEndpoint(...).</param>
-        public abstract void ProxyConnectTcp(Socket socket, StringEndPoint endpoint,
+        public abstract void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf);
         /// <summary>
         /// Setup a UDP proxy.
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="endpoint"></param>
-        public abstract void ProxyConnectUdp(Socket socket, StringEndPoint endpoint);
+        public abstract void ProxyConnectUdp(Socket socket, ref StringEndPoint endPoint);
     }
     public static class ConnectorParser
     {
+
+        /*
         /// <summary>
         /// A connector is a hostname/port combo with an option proxy specifier prefix of the format:
         ///   [proxy-type:proxy-ip-or-hostname:proxy-port%]ip-or-hostname:port
         /// </summary>
-        public static HostWithOptionalProxy ParseConnectorWithPortAndOptionalProxy(AddressFamily limit, String connectorString)
+        public static InternetHost ParseConnectorWithPortAndOptionalProxy(String connectorString, PriorityQuery<IPAddress> dnsPriorityQuery)
+        {
+
+            Int32 percentIndex = connectorString.IndexOf('%');
+            Proxy proxy;
+            if (percentIndex < 0)
+            {
+                proxy = default(Proxy);
+            }
+            else
+            {
+                proxy = ParseProxy(connectorString.Remove(percentIndex), dnsPriorityQuery, null);
+                connectorString = connectorString.Substring(percentIndex + 1);
+            }
+            return InternetHost.FromIPOrHostWithPort(connectorString, dnsPriorityQuery, proxy);
+        }
+        /// <summary>
+        /// A connector is a hostname/port combo with an option proxy specifier prefix of the format:
+        ///   [proxy-type:proxy-ip-or-hostname:proxy-port%]ip-or-hostname:port
+        /// </summary>
+        public static InternetHost ParseConnectorWithOptionalPortAndProxy(String connectorString, UInt16 defaultPort, PriorityQuery<IPAddress> dnsPriorityQuery)
         {
             Int32 percentIndex = connectorString.IndexOf('%');
             Proxy proxy;
@@ -178,16 +316,16 @@ namespace More.Net
             }
             else
             {
-                proxy = ParseProxy(limit, connectorString.Remove(percentIndex));
+                proxy = ParseProxy(connectorString.Remove(percentIndex), dnsPriorityQuery);
                 connectorString = connectorString.Substring(percentIndex + 1);
             }
-            return HostWithOptionalProxy.FromIPOrHostWithPort(connectorString, proxy);
+            return InternetHost.FromIPOrHostWithOptionalPort(connectorString, defaultPort, dnsPriorityQuery, proxy);
         }
         /// <summary>
         /// A connector is a hostname/port combo with an option proxy specifier prefix of the format:
         ///   [proxy-type:proxy-ip-or-hostname:proxy-port%]ip-or-hostname:port
         /// </summary>
-        public static HostWithOptionalProxy ParseConnectorWithOptionalPortAndProxy(AddressFamily limit, String connectorString, UInt16 defaultPort)
+        public static InternetHost ParseConnectorWithNoPortAndOptionalProxy(String connectorString, UInt16 port, PriorityQuery<IPAddress> dnsPriorityQuery)
         {
             Int32 percentIndex = connectorString.IndexOf('%');
             Proxy proxy;
@@ -197,30 +335,12 @@ namespace More.Net
             }
             else
             {
-                proxy = ParseProxy(limit, connectorString.Remove(percentIndex));
+                proxy = ParseProxy(connectorString.Remove(percentIndex), dnsPriorityQuery);
                 connectorString = connectorString.Substring(percentIndex + 1);
             }
-            return HostWithOptionalProxy.FromIPOrHostWithOptionalPort(connectorString, defaultPort, proxy);
+            return new InternetHost(connectorString, port, dnsPriorityQuery, proxy);
         }
-        /// <summary>
-        /// A connector is a hostname/port combo with an option proxy specifier prefix of the format:
-        ///   [proxy-type:proxy-ip-or-hostname:proxy-port%]ip-or-hostname:port
-        /// </summary>
-        public static HostWithOptionalProxy ParseConnectorWithNoPortAndOptionalProxy(AddressFamily limit, String connectorString, UInt16 port)
-        {
-            Int32 percentIndex = connectorString.IndexOf('%');
-            Proxy proxy;
-            if (percentIndex < 0)
-            {
-                proxy = default(Proxy);
-            }
-            else
-            {
-                proxy = ParseProxy(limit, connectorString.Remove(percentIndex));
-                connectorString = connectorString.Substring(percentIndex + 1);
-            }
-            return new HostWithOptionalProxy(connectorString, port, proxy);
-        }
+        */
 
         /*
         //
@@ -246,57 +366,6 @@ namespace More.Net
             }
         }
         */
-
-        /// <summary>
-        /// Use limitAddressFamily = AddressFamily.Unspecified to not limit address family
-        /// </summary>
-        /// <param name="limitAddressFamily"></param>
-        /// <param name="proxyString"></param>
-        /// <returns></returns>
-        public static Proxy ParseProxy(AddressFamily specificFamily, String proxySpecifier)
-        {
-            // format
-            // http:<ip-or-host>:<port>
-            // socks4:<ip-or-host>:<port>
-            if (proxySpecifier == null || proxySpecifier.Length <= 0) return default(Proxy);
-
-            String[] splitStrings = proxySpecifier.Split(':');
-            if (splitStrings.Length != 3)
-                throw new FormatException(String.Format("Invalid proxy '{0}', expected 'http:<host>:<port>', 'socks4:<host>:<port>' or 'socks5:<host>:<port>'", proxySpecifier));
-
-            String proxyTypeString = splitStrings[0];
-            String ipOrHost        = splitStrings[1];
-            String portString      = splitStrings[2];
-
-            UInt16 port;
-            if (!UInt16Parser.TryParse(portString, out port))
-                throw new FormatException(String.Format("Invalid port '{0}'", portString));
-
-            IPEndPoint ipEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(specificFamily, ipOrHost), port);
-
-            if (proxyTypeString.Equals("socks4", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return new Socks4Proxy(ipOrHost,ipEndPoint, null);
-            }
-            else if (proxyTypeString.Equals("socks5", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return new Socks5NoAuthenticationConnectSocket(ipOrHost,ipEndPoint);
-            }
-            else if (proxyTypeString.Equals("http", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return new HttpProxy(ipOrHost,ipEndPoint);
-            }
-            else if (proxyTypeString.Equals("gateway", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return new GatewayProxy(ipOrHost,ipEndPoint);
-            }
-            else if (proxyTypeString.Equals("httpconnect", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return new HttpConnectProxyProxy(ipOrHost,ipEndPoint);
-            }
-
-            throw new FormatException(String.Format("Unexpected proxy type '{0}', expected 'gateway', 'http', 'httpconnect', 'socks4' or 'socks5'", proxyTypeString));
-        }
     }
     public enum ProxyType
     {
@@ -323,43 +392,37 @@ namespace More.Net
     /// </summary>
     public class GatewayProxy : Proxy
     {
-        public GatewayProxy(String ipOrHost, IPEndPoint endPoint)
-            : base(ipOrHost, endPoint)
+        public GatewayProxy(InternetHost host)
+            : base(host)
         {
         }
         public override ProxyType Type
         {
             get { return ProxyType.Gateway; }
         }
-        public override void PrepareEndPoint(ref StringEndPoint endPoint)
-        {
-        }
-        public override void ProxyConnectTcp(Socket socket, StringEndPoint endpoint,
+        public override void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf)
         {
         }
-        public override void ProxyConnectUdp(Socket socket, StringEndPoint endpoint)
+        public override void ProxyConnectUdp(Socket socket, ref StringEndPoint endPoint)
         {
         }
     }
     public class HttpConnectProxyProxy : Proxy
     {
-        public HttpConnectProxyProxy(String ipOrHost, IPEndPoint endPoint)
-            : base(ipOrHost, endPoint)
+        public HttpConnectProxyProxy(InternetHost host)
+            : base(host)
         {
         }
         public override ProxyType Type
         {
             get { return ProxyType.HttpConnect; }
         }
-        public override void PrepareEndPoint(ref StringEndPoint endPoint)
-        {
-        }
-        public override void ProxyConnectUdp(Socket socket, StringEndPoint endpoint)
+        public override void ProxyConnectUdp(Socket socket, ref StringEndPoint endPoint)
         {
             throw new NotSupportedException("The Http Connect protocol does not support Udp (as far as I know)");
         }
-        public override void ProxyConnectTcp(Socket socket, StringEndPoint endpoint,
+        public override void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf)
         {
             throw new NotImplementedException();
@@ -436,22 +499,19 @@ namespace More.Net
     public class HttpProxy : Proxy
     {
         Buf buf;
-        public HttpProxy(String ipOrHost, IPEndPoint endPoint)
-            : base(ipOrHost, endPoint)
+        public HttpProxy(InternetHost host)
+            : base(host)
         {
         }
         public override ProxyType Type
         {
             get { return ProxyType.Http; }
         }
-        public override void PrepareEndPoint(ref StringEndPoint endPoint)
-        {
-        }
-        public override void ProxyConnectUdp(Socket socket, StringEndPoint endpoint)
+        public override void ProxyConnectUdp(Socket socket, ref StringEndPoint endPoint)
         {
             throw new NotSupportedException("The Http protocol does not support Udp (as far as I know)");
         }
-        public override void ProxyConnectTcp(Socket socket, StringEndPoint endpoint,
+        public override void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf)
         {
             if ((options & ProxyConnectOptions.ContentIsRawHttp) == 0)

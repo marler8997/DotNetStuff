@@ -5,6 +5,8 @@ using System.Threading;
 
 namespace More
 {
+    // I think this class might be obselete
+    [Obsolete]
     public class SelectTunnelsThread
     {
         class SocketPair

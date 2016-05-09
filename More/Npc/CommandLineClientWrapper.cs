@@ -27,7 +27,7 @@ namespace More
             String serverIPOrHostAndOptionalPort = args[0];
 
             IPEndPoint serverEndPoint = EndPoints.ParseIPOrResolveHostWithOptionalPort(
-                AddressFamily.InterNetwork, serverIPOrHostAndOptionalPort, defaultPort);
+                serverIPOrHostAndOptionalPort, defaultPort, DnsPriority.IPv4ThenIPv6);
             CommandLineClient client = new CommandLineClient(serverEndPoint, interfaceMapping);
 
             String line;

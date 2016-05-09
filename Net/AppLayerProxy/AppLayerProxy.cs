@@ -15,6 +15,7 @@ namespace More.Net
         public readonly CLGenericArgument<IPAddress> listenIP;
         public readonly CLStringArgument forwardProxy;
         public readonly CLGenericArgument<UInt16> backlog;
+        public readonly CLInt32Argument bufferSize;
         public readonly CLSwitch help;
         public AppLayerProxyOptions()
         {
@@ -28,6 +29,10 @@ namespace More.Net
             backlog = new CLGenericArgument<UInt16>(UInt16.Parse, 'b', "backlog", "Listen socket backlog");
             backlog.SetDefault(32);
             Add(backlog);
+
+            bufferSize = new CLInt32Argument("buffer-size", "Size of the buffer used for receiving data from the client");
+            bufferSize.SetDefault(8192);
+            Add(bufferSize);
 
             help = new CLSwitch('h', "help", "Show the usage");
             Add(help);
@@ -67,6 +72,8 @@ namespace More.Net
             ListenPort = UInt16.Parse(nonOptionArgs[0]);
             var listenIP = options.listenIP.ArgValue;
 
+            SelectServer selectServer = new SelectServer(false, new Buf(8192));
+
             Socket listenSocket = new Socket(listenIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             listenSocket.Bind(new IPEndPoint(listenIP, ListenPort));
             listenSocket.Listen(options.backlog.ArgValue);
@@ -74,7 +81,6 @@ namespace More.Net
             SelectControl selectControl = new SelectControl(true);
             selectControl.AddListenSocket(listenSocket, AcceptProxyClient);
 
-            SelectServer selectServer = new SelectServer(selectControl, new Buf(4096));
             selectServer.Run();
         }
         public static void AcceptProxyClient(ref SelectControl selectControl, Socket listenSocket, Buf safeBuffer)

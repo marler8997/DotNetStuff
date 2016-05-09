@@ -8,6 +8,9 @@ using System.Diagnostics;
 
 using More;
 
+// I THINK THIS ENTIRE PROGRAM IS REPLACED BY NETWORK ADAPTER
+class A { static void Main() { } }
+#if COMMENT
 namespace More.Net
 {
     class TunnelOptions : CLParser
@@ -217,8 +220,8 @@ namespace More.Net
     }
     class TcpCallback
     {
-        HostWithOptionalProxy serverHost;
-        public TcpCallback(HostWithOptionalProxy serverHost)
+        InternetHost serverHost;
+        public TcpCallback(InternetHost serverHost)
         {
             this.serverHost = serverHost;
         }
@@ -402,3 +405,4 @@ namespace More.Net
     */
 
 }
+#endif

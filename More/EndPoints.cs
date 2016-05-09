@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
 #if WindowsCE
 using IPParser = System.Net.MissingInCEIPParser;
@@ -26,41 +28,81 @@ namespace More
     /// This structure is especially useful for proxies since some proxies require
     /// an ip address and some do not.  The proxy can then decide whether or not to resolve
     /// the ip or leave it as a raw string.
+    /// 
+    /// NOTE: since this is a struct with non-readonly members, alway use 'ref' when passing it to functions
+    /// and never make it a readonly member of a struct/class.
     /// </summary>
     public struct StringEndPoint
     {
-        public readonly String unparsedIPOrHost;
+        public readonly String ipOrHost;
         public readonly UInt16 port;
+        public readonly Boolean stringIsAnIP;
+        public IPEndPoint ipEndPoint;
 
-        /// <summary>
-        /// If parsedOrResolvedIP is null, that means there has been no need
-        /// to resolve this endpoint's ip address.
-        /// </summary>
-        public IPEndPoint parsedOrResolvedIP;
-
-        public StringEndPoint(String unparsedIPOrHost, UInt16 port)
+        public StringEndPoint(String ipOrHost, UInt16 port)
         {
-            this.unparsedIPOrHost = unparsedIPOrHost;
+            this.ipOrHost = ipOrHost;
             this.port = port;
-            this.parsedOrResolvedIP = null;
-        }
-        public StringEndPoint(StringEndPoint other, UInt16 overridePort)
-        {
-            this.unparsedIPOrHost = other.unparsedIPOrHost;
-            this.port = overridePort;
-            if (other.parsedOrResolvedIP == null)
+
+            IPAddress ip;
+            if(IPParser.TryParse(ipOrHost, out ip))
             {
-                this.parsedOrResolvedIP = null;
+                this.stringIsAnIP = true;
+                this.ipEndPoint = new IPEndPoint(ip, port);
             }
             else
             {
-                this.parsedOrResolvedIP = new IPEndPoint(other.parsedOrResolvedIP.Address, overridePort);
+                this.stringIsAnIP = false;
+                this.ipEndPoint = null;
             }
         }
+        public StringEndPoint(StringEndPoint other, UInt16 port)
+        {
+            this.ipOrHost = other.ipOrHost;
+            this.port = port;
+            this.stringIsAnIP = other.stringIsAnIP;
+            if (other.ipEndPoint == null)
+            {
+                this.ipEndPoint = null;
+            }
+            else
+            {
+                this.ipEndPoint = new IPEndPoint(other.ipEndPoint.Address, port);
+            }
+        }
+
         /// <summary>
-        /// Only call this if you know it has not been called before.
-        /// You can tell if the hostname was an ip by checking whether or not
-        /// parsedOrResolvedIP is no longer null.
+        /// Note: Since this is a struct and this function can modify the fields of the struct,
+        /// make sure you are calling this on a "ref" version of the struct, and if it's a member
+        /// of another object, make sure it IS NOT readonly.
+        /// </summary>
+        /// <param name="dnsPriorityQuery">Callback that determines priority to select an address from Dns record.
+        ///   Use DnsPriority.(QueryName) for standard queries.</param>
+        public void ForceIPResolution(PriorityQuery<IPAddress> dnsPriorityQuery)
+        {
+            if (ipEndPoint == null)
+            {
+                ipEndPoint = new IPEndPoint(EndPoints.DnsResolve(ipOrHost, dnsPriorityQuery), port);
+            }
+        }
+        /*
+        public void ParseOrResolve(DnsPriority dnsPriority)
+        {
+            ParseOrResolve(dnsPriority.GetQuery());
+        }
+        public void ParseOrResolve(PriorityQuery<IPAddress> dnsPriorityQuery)
+        {
+            if (ipEndPoint == null)
+            {
+                ipEndPoint = new IPEndPoint(EndPoints.DnsResolve(ipOrHost, dnsPriorityQuery), port);
+            }
+        }
+        */
+
+        /*
+        /// <summary>
+        /// If the CurrentIPEndPoint is null, will attempt to parse the OriginalIPOrHost as
+        /// an ip address. Success is determined by checking if CurrentEndPoint is null afterwards.
         /// </summary>
         public void Parse()
         {
@@ -74,167 +116,157 @@ namespace More
             }
         }
         /// <summary>
-        /// After calling this, parsedOrResolvedIP will not be null
+        /// Forces host to be parsed or resolved to an ip address.
         /// </summary>
-        public void ForceIPResolution(AddressFamily specificFamily)
+        public void ForceIPResolution(DnsPriority dnsPriority)
+        {
+            ForceIPResolution(dnsPriority.GetQuery());
+        }
+        /// <summary>
+        /// Forces host to be parsed or resolved to an ip address.
+        /// </summary>
+        public void ForceIPResolution(PriorityQuery<IPAddress> dnsPriorityQuery)
         {
             if (parsedOrResolvedIP != null)
             {
-                if (specificFamily != AddressFamily.Unspecified &&
-                    specificFamily != parsedOrResolvedIP.AddressFamily)
-                    throw new InvalidOperationException(String.Format("This endpoint has already resolved it's ip to a {0} type address, but you requested to resolve it to a {1} type address",
-                        parsedOrResolvedIP.AddressFamily, specificFamily));
+                if (dnsPriorityQuery(parsedOrResolvedIP.Address).IsIgnore)
+                {
+                    throw new InvalidOperationException(String.Format("This endpoint has already resolved it's ip to a {0} (AddressFamily {1}), the given priority query says this address should have been ignored!",
+                        parsedOrResolvedIP, parsedOrResolvedIP.AddressFamily));
+                }
+                return;
             }
 
             IPAddress address;
             if (!IPParser.TryParse(unparsedIPOrHost, out address))
             {
-                Console.WriteLine("[DEBUG] Resolving '{0}'...", unparsedIPOrHost);
-                address = EndPoints.DnsResolve(specificFamily, unparsedIPOrHost);
-                Console.WriteLine("[DEBUG] Resolved '{0}' to {1}", unparsedIPOrHost, address);
+                address = EndPoints.DnsResolve(unparsedIPOrHost, dnsPriorityQuery);
             }
             this.parsedOrResolvedIP = new IPEndPoint(address, port);
         }
         public override String ToString()
         {
-            if (parsedOrResolvedIP == null)
+            if (ipEndPoint == null)
             {
-                return unparsedIPOrHost + ":" + port.ToString();
+                return String.Format("UNRESOLVED({0}:{1})", unparsedIPOrHost, port);
             }
             else
             {
-                return parsedOrResolvedIP.ToString();
+                return String.Format("RESOLVED({0})", parsedOrResolvedIP.ToString());
             }
         }
+        */
     }
-    /*
-    public struct IPOrHostEndPoint
+
+    public static class DnsPriority
     {
-        /// <summary>
-        /// Note: host should not be an IP Address
-        /// </summary>
-        /// <param name="host"></param>
-        /// <param name="port"></param>
-        /// <returns></returns>
-        public static IPOrHostEndPoint FromHostThasIsNotAnIP(String host, UInt16 port)
+        public static Priority IPv4ThenIPv6(IPAddress address)
         {
-            return new IPOrHostEndPoint(host, port);
-        }
-        public static IPOrHostEndPoint FromIPOrHost(String ipOrHost, UInt16 port)
-        {
-            IPAddress address;
-            return IPParser.TryParse(ipOrHost, out address) ?
-                new IPOrHostEndPoint(new IPEndPoint(address, port)) :
-                new IPOrHostEndPoint(ipOrHost, port);
-        }
-        public static IPOrHostEndPoint FromIPOrHostAndPort(String ipOrHostAndPort)
-        {
-            Int32 colonIndex = ipOrHostAndPort.IndexOf(':');
-            if (colonIndex < 0)
-                throw new FormatException(String.Format("Missing colon to designate the port on '{0}'", ipOrHostAndPort));
-
-            String ipOrHost = ipOrHostAndPort.Remove(colonIndex);
-            // NOTE: I could parse this without creating another string
-            String portString = ipOrHostAndPort.Substring(colonIndex + 1);
-            UInt16 port;
-            if (!UInt16Parser.TryParse(portString, out port))
+            switch (address.AddressFamily)
             {
-                throw new FormatException(String.Format("Port '{0}' could not be parsed as a 2 byte unsigned integer", portString));
-            }
-
-            return FromIPOrHost(ipOrHost, port);
-
-        }
-        public static IPOrHostEndPoint FromIPOrHostAndOptionalPort(String ipOrHostAndOptionalPort, UInt16 defaultPort)
-        {
-            Int32 colonIndex = ipOrHostAndOptionalPort.IndexOf(':');
-
-            String ipOrHost;
-            UInt16 port;
-
-            if (colonIndex < 0)
-            {
-                ipOrHost = ipOrHostAndOptionalPort;
-                port = (UInt16)defaultPort;
-            }
-            else
-            {
-                ipOrHost = ipOrHostAndOptionalPort.Remove(colonIndex);
-
-                String portString = ipOrHostAndOptionalPort.Substring(colonIndex + 1);
-                if (!UInt16Parser.TryParse(portString, out port))
-                {
-                    throw new FormatException(String.Format("Port '{0}' could not be parsed as a 2 byte unsigned integer", portString));
-                }
-            }
-
-            return FromIPOrHost(ipOrHost, port);
-        }
-
-        public readonly IPEndPoint ipEndPoint;
-        public readonly String hostName;
-        public readonly UInt16 port;
-        public IPOrHostEndPoint(IPEndPoint ipEndPoint)
-        {
-            this.ipEndPoint = ipEndPoint;
-            this.hostName = null;
-            this.port = (UInt16)ipEndPoint.Port;
-        }
-        // Note: hostName should never be an ip address
-        private IPOrHostEndPoint(String hostName, UInt16 port)
-        {
-            this.ipEndPoint = null;
-            this.hostName = hostName;
-            this.port = port;
-        }
-        // The end point is going to be whatever the ProxyEndPoint
-        // was originally.
-        public IPOrHostEndPoint(StringEndPoint stringEndPoint)
-        {
-            IPAddress address;
-            if(IPParser.TryParse(stringEndPoint.unparsedIPOrHost, out address))
-            {
-                this.ipEndPoint = (stringEndPoint.parsedOrResolvedIP == null) ?
-                    new IPEndPoint(address, stringEndPoint.port) :
-                    stringEndPoint.parsedOrResolvedIP;
-                this.hostName = null;
-                this.port = (UInt16)ipEndPoint.Port;
-            }
-            else
-            {
-                this.ipEndPoint = null;
-                this.hostName = stringEndPoint.unparsedIPOrHost;
-                this.port = stringEndPoint.port;
+                case AddressFamily.InterNetwork  : return Priority.Highest;
+                case AddressFamily.InterNetworkV6: return Priority.SecondHighest;
+                default: return Priority.Ignore;
             }
         }
-        public IPOrHostEndPoint(IPOrHostEndPoint other, UInt16 overridePort)
+        public static Priority IPv4Only(IPAddress address)
         {
-            if (other.ipEndPoint == null)
+            switch (address.AddressFamily)
             {
-                this.ipEndPoint = null;
-                this.hostName = other.hostName;
-                this.port = overridePort;
-            }
-            else
-            {
-                this.ipEndPoint = new IPEndPoint(other.ipEndPoint.Address, overridePort);
-                this.hostName = null;
-                this.port = overridePort;
+                case AddressFamily.InterNetwork  : return Priority.Highest;
+                default: return Priority.Ignore;
             }
         }
-        public AddressFamily AddressFamily { get { return AddressFamily.InterNetwork; } }
-        public IPEndPoint GetOrResolveToIPEndPoint()
+        public static Priority IPv6ThenIPv4(IPAddress address)
         {
-            return (ipEndPoint != null) ? ipEndPoint : new IPEndPoint(EndPoints.DnsResolve(hostName), port);
+            switch (address.AddressFamily)
+            {
+                case AddressFamily.InterNetwork  : return Priority.SecondHighest;
+                case AddressFamily.InterNetworkV6: return Priority.Highest;
+                default: return Priority.Ignore;
+            }
         }
-        public override string ToString()
+        public static Priority IPv6Only(IPAddress address)
         {
-            return (ipEndPoint == null) ? hostName + ":" + port.ToString() : ipEndPoint.ToString();
+            switch (address.AddressFamily)
+            {
+                case AddressFamily.InterNetworkV6: return Priority.Highest;
+                default: return Priority.Ignore;
+            }
+        }
+        public static Priority IPv4ThenIPv6ThenOther(IPAddress address)
+        {
+            switch (address.AddressFamily)
+            {
+                case AddressFamily.InterNetwork  : return Priority.Highest;
+                case AddressFamily.InterNetworkV6: return Priority.SecondHighest;
+                default: return new Priority(Priority.HighestValue - 2);
+            }
+        }
+        public static Priority IPv6ThenIPv4ThenOther(IPAddress address)
+        {
+            switch (address.AddressFamily)
+            {
+                case AddressFamily.InterNetwork  : return Priority.SecondHighest;
+                case AddressFamily.InterNetworkV6: return Priority.Highest;
+                default: return new Priority(Priority.HighestValue - 2);
+            }
         }
     }
-    */
     public static class EndPoints
     {
+        /// <summary>
+        /// Resolves the DNS host name, and uses the given <paramref name="dnsPriorityQuery"/> to determine which address to use.
+        /// </summary>
+        /// <param name="host">host to resolve</param>
+        /// <param name="dnsPriorityQuery">Callback that determines priority to select an address from Dns record.
+        ///   Use DnsPriority.(QueryName) for standard queries.</param>
+        /// <returns>The resolved ip address and it's priority</returns>
+        public static IPAddress DnsResolve(String host, PriorityQuery<IPAddress> dnsPriorityQuery)
+        {
+            IPHostEntry hostEntry = Dns.GetHostEntry(host);
+            IPAddress[] addresses = hostEntry.AddressList;
+            if (hostEntry == null || addresses == null || addresses.Length <= 0)
+            {
+                throw new DnsException("host");
+            }
+            var priorityValue = addresses.PrioritySelect(dnsPriorityQuery);
+            if (priorityValue.value == null)
+            {
+                throw new NoSuitableAddressesException(host, addresses);
+            }
+            return priorityValue.value;
+        }
+
+        /// <summary>
+        /// Resolves the DNS host name, and uses the given <paramref name="dnsPriorityQuery"/> to determine which address to use.
+        /// Note: in order to distinguish between dns resolution errors and having no suitable addresses,
+        /// it is recommended to not ignore any addresses in your priority query, but instead,
+        /// give them low priority and check if the address family is suitable in the return value.
+        /// </summary>
+        /// <param name="host">host to resolve</param>
+        /// <param name="dnsPriorityQuery">Callback that determines priority to select an address from Dns record.
+        ///   Use DnsPriority.(QueryName) for standard queries.</param>
+        /// <returns>The resolved ip address with the highest priority</returns>
+        public static PriorityValue<IPAddress> TryDnsResolve(String host, PriorityQuery<IPAddress> dnsPriorityQuery)
+        {
+            IPHostEntry hostEntry = Dns.GetHostEntry(host);
+            IPAddress[] addresses = hostEntry.AddressList;
+            if (hostEntry == null || addresses == null || addresses.Length <= 0)
+            {
+                return new PriorityValue<IPAddress>(Priority.Ignore, null);
+            }
+            return addresses.PrioritySelect(dnsPriorityQuery);
+        }
+
+        /// <summary>
+        /// Removes and parses the ':port' prefix from the given string.
+        /// </summary>
+        /// <param name="ipOrHostAndPort">IP or Hostname with a ':port' postfix</param>
+        /// <param name="port">The port number parsed from the host ':port' postfix.</param>
+        /// <returns><paramref name="ipOrHostAndPort"/> with the ':port' postix removed.
+        /// Also returns the ':port' postix in the form of a parsed port number.</returns>
+        /// <exception cref="FormatException">If no ':port' postfix or if port is invalid.</exception>
         public static String SplitIPOrHostAndPort(String ipOrHostAndPort, out UInt16 port)
         {
             Int32 colonIndex = ipOrHostAndPort.IndexOf(':');
@@ -250,93 +282,62 @@ namespace More
             }
             return ipOrHostAndPort.Remove(colonIndex);
         }
-        public static String RemoveOptionalPort(String ipOrHostAndOptionalPort)
+        /// <summary>
+        /// Removes and parses the optional ':port' prefix from the given string.
+        /// </summary>
+        /// <param name="ipOrHostAndPort">IP or Hostname with a ':port' postfix</param>
+        /// <param name="port">The port number parsed from the host ':port' postfix.</param>
+        /// <returns><paramref name="ipOrHostAndPort"/> with the ':port' postix removed.
+        /// Also returns the ':port' postix in the form of a parsed port number.</returns>
+        /// <exception cref="FormatException">If no ':port' postfix or if port is invalid.</exception>
+        public static String SplitIPOrHostAndOptionalPort(String ipOrHostOptionalPort, ref UInt16 port)
         {
-            Int32 colonIndex = ipOrHostAndOptionalPort.IndexOf(':');
-
-            if (colonIndex < 0) return ipOrHostAndOptionalPort;
-            return ipOrHostAndOptionalPort.Remove(colonIndex);
-        }
-        /*
-        // Deprecated: Use IPOrHostEndPoint instead
-        public static EndPoint EndPointFromIPOrHostAndPort(String ipOrHostAndPort)
-        {
-            Int32 colonIndex = ipOrHostAndPort.IndexOf(':');
-            
+            Int32 colonIndex = ipOrHostOptionalPort.IndexOf(':');
             if (colonIndex < 0)
             {
-                throw new FormatException(String.Format("Missing colon to designate the port on '{0}'", ipOrHostAndPort));
+                return ipOrHostOptionalPort;
             }
 
-            String ipOrHost = ipOrHostAndPort.Remove(colonIndex);
-
-            String portString = ipOrHostAndPort.Substring(colonIndex + 1);
-            UInt16 port;
+            String portString = ipOrHostOptionalPort.Substring(colonIndex + 1);
             if (!UInt16Parser.TryParse(portString, out port))
             {
                 throw new FormatException(String.Format("Port '{0}', could not be parsed as a 2 byte unsigned integer", portString));
             }
-
-            return EndPoints.EndPointFromIPOrHost(ipOrHost, port);
-
+            return ipOrHostOptionalPort.Remove(colonIndex);
         }
-        // Deprecated: Use IPOrHostEndPoint instead
-        public static EndPoint EndPointFromIPOrHostAndOptionalPort(String ipOrHostAndOptionalPort, UInt16 defaultPort)
-        {
-            Int32 colonIndex = ipOrHostAndOptionalPort.IndexOf(':');
 
-            String ipOrHost;
-            UInt16 port;
-
-            if (colonIndex < 0)
-            {
-                ipOrHost = ipOrHostAndOptionalPort;
-                port = (UInt16)defaultPort;
-            }
-            else
-            {
-                ipOrHost = ipOrHostAndOptionalPort.Remove(colonIndex);
-
-                String portString = ipOrHostAndOptionalPort.Substring(colonIndex + 1);
-                if (!UInt16Parser.TryParse(portString, out port))
-                {
-                    throw new FormatException(String.Format("Port '{0}', could not be parsed as a 2 byte unsigned integer", portString));
-                }
-            }
-
-            return EndPoints.EndPointFromIPOrHost(ipOrHost, port);
-        }
-        */
-        /*
-        public static IPEndPoint ParseOrResolve(String ipOrHost, UInt16 port)
-        {
-            IPAddress address;
-            if (IPParser.TryParse(ipOrHost, out address)) return new IPEndPoint(address, port);
-            return new IPEndPoint(DnsResolve(ipOrHost), port);
-        }
-        public static EndPoint EndPointFromIPOrHost(String ipOrHost, UInt16 port)
-        {
-            IPAddress address;
-            if (IPParser.TryParse(ipOrHost, out address)) return new IPEndPoint(address, port);
-            return new DnsEndPoint(ipOrHost, port, false);
-        }
-        */
-        public static IPAddress ParseIPOrResolveHost(AddressFamily specificFamily, String ipOrHost)
+        /// <summary>
+        /// Tries to parse the string as an IPAddress.  If that fails, it will resolve
+        /// it as a host name and select the best address using the given priority query.
+        /// </summary>
+        /// <param name="ipOrHost">An ip address or host name</param>
+        /// <param name="dnsPriorityQuery">Callback that determines priority to select an address from Dns record.
+        ///   Use DnsPriority.(QueryName) for standard queries.</param>
+        /// <returns>The parsed or resolved ip address.</returns>
+        public static IPAddress ParseIPOrResolveHost(String ipOrHost, PriorityQuery<IPAddress> dnsPriorityQuery)
         {
             IPAddress ip;
             if (IPParser.TryParse(ipOrHost, out ip)) return ip;
-            return DnsResolve(specificFamily, ipOrHost);
+            return DnsResolve(ipOrHost, dnsPriorityQuery);
         }
-        public static IPEndPoint ParseIPOrResolveHost(AddressFamily specificFamily, String ipOrHostOptionalPort, UInt16 port)
-        {
-            return new IPEndPoint(ParseIPOrResolveHost(specificFamily, ipOrHostOptionalPort), port);
-        }
-        public static IPEndPoint ParseIPOrResolveHostWithOptionalPort(AddressFamily specificFamily, String ipOrHostOptionalPort, UInt16 defaultPort)
+
+        /// <summary>
+        /// It will check if <paramref name="ipOrHostOptionalPort"/>
+        /// has a ':port' postfix.  If it does, it will parse that port number and use that instead of <paramref name="defaultPort"/>.
+        /// Then tries to parse the string as an IPAddress.  If that fails, it will resolve
+        /// it as a host name and select the best address using the given priority query.
+        /// </summary>
+        /// <param name="ipOrHostOptionalPort">IP or Hostname with an optional ':port' postfix</param>
+        /// <param name="defaultPort">The default port to use if there is no ':port' postfix</param>
+        /// <param name="dnsPriorityQuery">Callback that determines priority to select an address from Dns record.
+        ///   Use DnsPriority.(QueryName) for standard queries.</param>
+        /// <returns></returns>
+        public static IPEndPoint ParseIPOrResolveHostWithOptionalPort(String ipOrHostOptionalPort, UInt16 defaultPort, PriorityQuery<IPAddress> dnsPriorityQuery)
         {
             Int32 colonIndex = ipOrHostOptionalPort.IndexOf(':');
             if (colonIndex >= 0)
             {
-                // NOTE: I could parse this without creating another string
+                // NOTE: It would be nice to parse this without creating another string
                 String portString = ipOrHostOptionalPort.Substring(colonIndex + 1);
                 if (!UInt16Parser.TryParse(portString, out defaultPort))
                 {
@@ -345,60 +346,50 @@ namespace More
                 ipOrHostOptionalPort = ipOrHostOptionalPort.Remove(colonIndex);
             }
 
-            return new IPEndPoint(ParseIPOrResolveHost(specificFamily, ipOrHostOptionalPort), defaultPort);
+            return new IPEndPoint(ParseIPOrResolveHost(ipOrHostOptionalPort, dnsPriorityQuery), defaultPort);
         }
-        /*
-        public static IPAddress DnsResolve(this String domainName)
-        {
-            return DnsResolve(domainName, AddressFamily.Unspecified);
-        }
-        */
-        public static IPAddress DnsResolve(AddressFamily specificFamily, String host)
-        {
-            IPHostEntry hostEntry = Dns.GetHostEntry(host);
-            if (hostEntry == null || hostEntry.AddressList == null || hostEntry.AddressList.Length <= 0)
-                throw new NoAddresForDomainNameException(host);
-
-            if (specificFamily == AddressFamily.Unspecified)
-                return hostEntry.AddressList[0];
-
-            for(int i = 0; i < hostEntry.AddressList.Length; i++)
-            {
-                var address = hostEntry.AddressList[i];
-                if (address.AddressFamily == specificFamily)
-                    return address;
-                Console.WriteLine("[DEBUG] skipping {0} address '{1}'", address.AddressFamily, address);
-            }
-            throw new NoAddresForDomainNameException(String.Format("No ip address of family '{0}' found for '{1}'",
-                specificFamily, host), host);
-        }
-        /*
-        public static IPEndPoint ToIPEndPoint(this EndPoint endPoint)
-        {
-            IPEndPoint ipEndPoint = endPoint as IPEndPoint;
-            if (ipEndPoint != null) return ipEndPoint;
-
-            DnsEndPoint dnsEndPoint = endPoint as DnsEndPoint;
-            if (dnsEndPoint != null) return dnsEndPoint.IPEndPoint;
-
-            // TODO: maybe try converting the end point to a string and perform a dns resolve
-
-            throw new InvalidOperationException("Could not convert end point to an IP address");
-        }
-        */
     }
-    public class NoAddresForDomainNameException : Exception
+    public class DnsException : Exception
     {
-        public readonly String domainName;
-        public NoAddresForDomainNameException(String domainName)
-            : base(String.Format("No address found for domain name '{0}'", domainName))
+        public readonly String host;
+        public DnsException(String host)
+            : base(String.Format("DNS found no addresses for '{0}'", host))
         {
-            this.domainName = domainName;
+            this.host = host;
         }
-        public NoAddresForDomainNameException(String message, String domainName)
-            : base(message)
+    }
+    public class NoSuitableAddressesException : Exception
+    {
+        public static String GetAddressFamilyStrings(IEnumerable<IPAddress> addresses)
         {
-            this.domainName = domainName;
+            if (addresses == null)
+            {
+                return "";
+            }
+            StringBuilder builder = new StringBuilder();
+            HashSet<AddressFamily> found = new HashSet<AddressFamily>();
+            foreach(var address in addresses)
+            {
+                if (!found.Contains(address.AddressFamily))
+                {
+                    if (builder.Length > 0)
+                    {
+                        builder.Append(", ");
+                    }
+                    builder.Append(address.AddressFamily);
+                    found.Add(address.AddressFamily);
+                }
+            }
+            return builder.ToString();
+        }
+
+        public readonly String host;
+        public readonly IPAddress[] unsuitableAddresses;
+        public NoSuitableAddressesException(String host, IPAddress[] unsuitableAddresses)
+            : base(String.Format("DNS for '{0}' succeeded, but no suitable address were found in the set ({1})", host, GetAddressFamilyStrings(unsuitableAddresses)))
+        {
+            this.host = host;
+            this.unsuitableAddresses = unsuitableAddresses;
         }
     }
     /// <summary>
@@ -414,9 +405,9 @@ namespace More
     /// </summary>
     public class DnsEndPoint : EndPoint
     {
-        public readonly AddressFamily specificFamily;
         public readonly String domainName;
         public readonly Int32 port;
+        public readonly PriorityQuery<IPAddress> dnsPriorityQuery;
         public readonly Int64 millisecondRefreshTime;
 
         Int64 lastRefreshStopwatchTicks;
@@ -424,15 +415,14 @@ namespace More
         IPAddress lastRefreshIPAddress;
         IPEndPoint lastRefreshEndPoint;
 
-        public DnsEndPoint(AddressFamily specificFamily, String domainName, Int32 port)
-            : this(domainName, port, 0)
+        public DnsEndPoint(String domainName, Int32 port, PriorityQuery<IPAddress> dnsPriorityQuery)
+            : this(domainName, port, dnsPriorityQuery, 0)
         {
-            this.specificFamily = specificFamily;
         }
 
         // neverRefresh: true to never refresh, false to always refresh
-        public DnsEndPoint(String domainName, Int32 port, Boolean neverRefresh)
-            : this(domainName, port, neverRefresh ? 0 : -1)
+        public DnsEndPoint(String domainName, Int32 port, PriorityQuery<IPAddress> dnsPriorityQuery, Boolean neverRefresh)
+            : this(domainName, port, dnsPriorityQuery, neverRefresh ? 0 : -1)
         {
         }
 
@@ -441,10 +431,11 @@ namespace More
         // millisecondsRefreshTime:        0 Never refresh
         // millisecondsRefreshTime: positive Refresh after this many milliseconds
         // 
-        public DnsEndPoint(String domainName, Int32 port, Int64 millisecondRefreshTime)
+        public DnsEndPoint(String domainName, Int32 port, PriorityQuery<IPAddress> dnsPriorityQuery, Int64 millisecondRefreshTime)
         {
             this.domainName = domainName;
             this.port = port;
+            this.dnsPriorityQuery = dnsPriorityQuery;
             this.millisecondRefreshTime = millisecondRefreshTime;
 
             this.lastRefreshStopwatchTicks = 0;
@@ -452,7 +443,7 @@ namespace More
         }
         public void DnsRefreshAddress()
         {
-            IPAddress newAddress = EndPoints.DnsResolve(specificFamily, domainName);
+            IPAddress newAddress = EndPoints.DnsResolve(domainName, dnsPriorityQuery);
             if (lastRefreshEndPoint == null || !lastRefreshIPAddress.Equals(newAddress))
             {
                 //if (lastRefreshEndPoint != null)

@@ -9,7 +9,7 @@ namespace More.Net
 {
     public class ClientServer
     {
-        readonly HostWithOptionalProxy server;
+        readonly InternetHost server;
         readonly String clientSideServerLogString;
 
         readonly PortSet listenPorts;
@@ -17,12 +17,12 @@ namespace More.Net
         public readonly Int32 readBufferSize;
         readonly Boolean logData;
 
-        public ClientServer(HostWithOptionalProxy server, ClientConnectWaitMode clientWaitMode,
+        public ClientServer(InternetHost server, ClientConnectWaitMode clientWaitMode,
             PortSet listenPorts, Int32 socketBackLog, Int32 readBufferSize,
             Boolean logData)
         {
             this.server = server;
-            this.clientSideServerLogString = server.TargetString();
+            this.clientSideServerLogString = server.CreateTargetString();
 
             this.listenPorts = listenPorts;
             this.socketBackLog = socketBackLog;
@@ -40,7 +40,13 @@ namespace More.Net
         public void AcceptedNewClient(UInt32 socketID, UInt16 port, IncomingConnection incomingConnection)
         {
             Socket clientSideSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            clientSideSocket.ConnectTcpSocketThroughProxy(server, ProxyConnectOptions.None);
+
+            BufStruct dataLeftOverFromServer = default(BufStruct);
+            clientSideSocket.Connect(server, DnsPriority.IPv4ThenIPv6, ProxyConnectOptions.None, ref dataLeftOverFromServer);
+            if (dataLeftOverFromServer.contentLength > 0)
+            {
+                throw new NotImplementedException(String.Format("There are {0} bytes left over from negotiating proxy with the server, this is not implemented", dataLeftOverFromServer.contentLength));
+            }
 
             ConnectionMessageLogger messageLogger = ConnectionMessageLogger.NullConnectionMessageLogger;
             IConnectionDataLogger dataLogger = logData ? new ConnectionDataLoggerPrettyLog(socketID, ConsoleDataLogger.Instance,

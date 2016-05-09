@@ -1583,32 +1583,28 @@ namespace More
             }
         }
         */
-        // This is a convenience function but it is recomended that you resolve the
-        // endpoint ip address and call a different function
-        public static void Connect(this Socket socket, StringEndPoint endpoint)
+        public static void Connect(this Socket socket, ref StringEndPoint endpoint, PriorityQuery<IPAddress> dnsPriorityQuery)
         {
-            if (endpoint.parsedOrResolvedIP == null)
+            if (endpoint.ipEndPoint == null)
             {
-                socket.Connect(endpoint.unparsedIPOrHost, endpoint.port);
+                endpoint.ipEndPoint = new IPEndPoint(EndPoints.DnsResolve(endpoint.ipOrHost, dnsPriorityQuery), endpoint.port);
             }
-            else
-            {
-                socket.Connect(endpoint.parsedOrResolvedIP);
-            }
+            socket.Connect(endpoint.ipEndPoint);
         }
-        public static void ConnectTcpSocketThroughProxy(this Socket socket, More.Net.HostWithOptionalProxy host,
-            More.Net.ProxyConnectOptions options, ref BufStruct buf)
+        public static void Connect(this Socket socket, More.Net.InternetHost host, PriorityQuery<IPAddress> dnsPriorityQuery,
+            More.Net.ProxyConnectOptions proxyOptions, ref BufStruct buf)
         {
             if (host.proxy == null)
             {
-                socket.Connect(host.endPoint);
+                host.targetEndPoint.ForceIPResolution(dnsPriorityQuery);
+                socket.Connect(host.targetEndPoint.ipEndPoint);
             }
             else
             {
-                socket.Connect(host.proxy.endPoint);
-                host.proxy.ProxyConnectTcp(socket, host.endPoint, options, ref buf);
+                host.proxy.ProxyConnectTcp(socket, ref host.targetEndPoint, proxyOptions, ref buf);
             }
         }
+        /*
         public static void ConnectUdpSocketThroughProxy(this Socket socket, More.Net.HostWithOptionalProxy host)
         {
             if (host.proxy == null)
@@ -1621,6 +1617,7 @@ namespace More
                 host.proxy.ProxyConnectUdp(socket, host.endPoint);
             }
         }
+        */
         public static String SafeLocalEndPointString(this Socket socket)
         {
             try { return socket.LocalEndPoint.ToString(); }

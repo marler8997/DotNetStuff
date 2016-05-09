@@ -1,4 +1,6 @@
-﻿using System;
+﻿// I think this class is probably not very useful
+#if COMMENT
+using System;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
@@ -219,3 +221,4 @@ namespace More.Net
         }
     }
 }
+#endif

@@ -143,7 +143,7 @@ namespace More.Net
     public interface ICdpServerHandler : ICdpClientHandler
     {
         //NOTE: if you are the initial controller, this method will not be called because the SendAndGiveControl method will just return instead
-        ServerInstruction GotControl(CdpTransmitter transmitter, out Int32 sendBufferOffsetLimit, out Boolean requestImmediateAck); // After it returns the handler calls SendAndGiveControl
+        void GotControl(CdpTransmitter transmitter, out Int32 sendBufferOffsetLimit, out Boolean requestImmediateAck); // After it returns the handler calls SendAndGiveControl
     }
     public interface ICdpTimeout
     {

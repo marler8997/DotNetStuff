@@ -155,7 +155,7 @@ namespace More.Net
                     String domainName = Encoding.UTF8.GetString(buffer, 5, domainLength);
                     port = (buffer[domainLength + 5] << 8 | buffer[domainLength + 6]);
 
-                    return new DnsEndPoint(domainName, port, true);
+                    return new DnsEndPoint(domainName, port, DnsPriority.IPv4ThenIPv6, true);
 
                 case (Byte)SocksAddressType.IPv6:
 
@@ -312,8 +312,8 @@ namespace More.Net
     public class Socks4Proxy : Proxy
     {
         readonly Byte[] userID;
-        public Socks4Proxy(String ipOrHost, IPEndPoint endPoint, byte[] userID)
-            : base(ipOrHost, endPoint)
+        public Socks4Proxy(InternetHost host, byte[] userID)
+            : base(host)
         {
             this.userID = userID;
         }
@@ -321,26 +321,20 @@ namespace More.Net
         {
             get { return ProxyType.Socks4; }
         }
-        public override void PrepareEndPoint(ref StringEndPoint endPoint)
-        {
-            // Parse the endpoint because this proxy will do something
-            // different depending on if the host is an ip or a string
-            endPoint.Parse();
-        }
-        public override void ProxyConnectUdp(Socket socket, StringEndPoint endpoint)
+        public override void ProxyConnectUdp(Socket socket, ref StringEndPoint endPoint)
         {
             throw new NotImplementedException();
         }
-        public override void ProxyConnectTcp(Socket socket, StringEndPoint endpoint,
+        public override void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf)
         {
-            if (endpoint.parsedOrResolvedIP == null)
+            if (endPoint.stringIsAnIP)
             {
-                SetupProxyWithHost(socket, endpoint.unparsedIPOrHost, endpoint.port);
+                SetupProxyWithIP(socket, endPoint.ipEndPoint);
             }
             else
             {
-                SetupProxyWithIP(socket, endpoint.parsedOrResolvedIP);
+                SetupProxyWithHost(socket, endPoint.ipOrHost, endPoint.port);
             }
         }
         public Socket ListenAndAccept(UInt16 port)
@@ -364,8 +358,15 @@ namespace More.Net
             //
             // Connect to the proxy server
             //
-            Socket socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(endPoint);
+            Socket socket = new Socket(host.GetAddressFamilyForTcp(), SocketType.Stream, ProtocolType.Tcp);
+
+            BufStruct dataLeftOverFromProxyReceive = default(BufStruct);
+            host.Connect(socket, host.dnsPriorityQuery, ProxyConnectOptions.None, ref dataLeftOverFromProxyReceive);
+            if (dataLeftOverFromProxyReceive.contentLength > 0)
+            {
+                throw new NotImplementedException("Data left over from proxy negotiation not implemented");
+            }
+
             socket.Send(bindRequest);
             socket.ReadFullSize(replyBuffer, 0, 8);
 
@@ -479,30 +480,23 @@ namespace More.Net
     {
         private readonly Byte[] buffer;
 
-        public Socks5NoAuthenticationConnectSocket(String ipOrHost, IPEndPoint endPoint)
-            : base(ipOrHost, endPoint)
+        public Socks5NoAuthenticationConnectSocket(InternetHost host)
+            : base(host)
         {
             //int maxAuthenticationBuffer = 3 + usernameBytes.Length + passwordBytes.Length;
             this.buffer = new Byte[21];
         }
         public override ProxyType Type { get { return ProxyType.Socks5; } }
-        public override void PrepareEndPoint(ref StringEndPoint endPoint)
-        {
-            // Parse the endpoint because this proxy will do something
-            // different depending on if the host is an ip or a string
-            endPoint.Parse();
-        }
-        public override void ProxyConnectTcp(Socket socket, StringEndPoint endpoint,
+        public override void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf)
         {
-            if (endpoint.parsedOrResolvedIP == null)
+            if (endPoint.stringIsAnIP)
             {
-                ProxyConnectTcpUsingHost(socket, endpoint.unparsedIPOrHost, endpoint.port);
+                ProxyConnectTcpUsingIP(socket, endPoint.ipEndPoint.Address, endPoint.port);
             }
             else
             {
-                ProxyConnectTcpUsingIP(socket, endpoint.parsedOrResolvedIP.Address,
-                    endpoint.parsedOrResolvedIP.Port);
+                ProxyConnectTcpUsingHost(socket, endPoint.ipOrHost, endPoint.port);
             }
         }
         public void ProxyConnectTcpUsingHost(Socket socket, String asciiHostName, UInt16 port)
@@ -536,7 +530,7 @@ namespace More.Net
             //
             Socks5.ReadAndIgnoreAddress(socket, buffer);
         }
-        void ProxyConnectTcpUsingIP(Socket socket, IPAddress ip, Int32 port)
+        void ProxyConnectTcpUsingIP(Socket socket, IPAddress ip, UInt16 port)
         {
             //
             // 1. Send Initial Greeting
@@ -566,19 +560,22 @@ namespace More.Net
             Socks5.ReadAndIgnoreAddress(socket, buffer);
         }
 
-        public override void ProxyConnectUdp(Socket socket, StringEndPoint endpoint)
+        public override void ProxyConnectUdp(Socket socket, ref StringEndPoint endPoint)
         {
-            if (endpoint.parsedOrResolvedIP == null)
+            if (endPoint.stringIsAnIP)
             {
-                ProxyConnectUdpUsingHost(socket, endpoint.unparsedIPOrHost, endpoint.port);
+                throw new NotImplementedException();
             }
             else
             {
-                throw new NotImplementedException();
+                ProxyConnectUdpUsingHost(socket, endPoint.ipOrHost, endPoint.port);
             }
         }
         public void ProxyConnectUdpUsingHost(Socket socket, String asciiHostName, Int32 port)
         {
+            throw new NotImplementedException();
+
+            /*
             Socket proxySocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             proxySocket.Connect(endPoint);
 
@@ -613,6 +610,7 @@ namespace More.Net
 
             Console.WriteLine("[Socks5Debug] Udp Associate '{0}'", udpEndPoint);
             socket.Connect(udpEndPoint);
+            */
         }
     }
 

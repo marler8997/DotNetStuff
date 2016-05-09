@@ -7,6 +7,11 @@ namespace More
     {
         public Byte[] buf;
         public UInt32 contentLength;
+        public BufStruct(Byte[] buf)
+        {
+            this.buf = buf;
+            this.contentLength = 0;
+        }
     }
 
 

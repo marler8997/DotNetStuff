@@ -9,7 +9,7 @@ namespace More.Net
 {
     public class AccessorConnection
     {
-        HostWithOptionalProxy accessorHost;
+        InternetHost accessorHost;
         public readonly String accessorHostString;
 
         Socket accessorSocket;
@@ -41,20 +41,31 @@ namespace More.Net
 
         public AccessorConnection(String connectorString)
         {
-            this.accessorHost = ConnectorParser.ParseConnectorWithOptionalPortAndProxy(connectorString, Tmp.DefaultPort);
-            this.accessorHostString = accessorHost.TargetString();
+            Proxy proxy;
+            String ipOrHostOptionalPort = Proxy.StripAndParseProxies(connectorString, DnsPriority.IPv4ThenIPv6, out proxy);
+            UInt16 port = Tmp.DefaultPort;
+            String ipOrHost = EndPoints.SplitIPOrHostAndOptionalPort(ipOrHostOptionalPort, ref port);
+            this.accessorHost = new InternetHost(ipOrHost, port, DnsPriority.IPv4ThenIPv6, proxy);
+            this.accessorHostString = accessorHost.CreateTargetString();
         }
         public Socket MakeNewSocketAndConnect()
         {
-            Socket socket = new Socket(accessorHost.directEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.ConnectTcpSocketThroughProxy(accessorHost);
-            return socket;
+            return NewSocketConnection(ref accessorHost);
         }
         public Socket MakeNewSocketAndConnectOnPort(UInt16 port)
         {
-            HostWithOptionalProxy newHost = new HostWithOptionalProxy(accessorHost, port);
-            Socket socket = new Socket(newHost.directEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            socket.ConnectTcpSocketThroughProxy(newHost);
+            InternetHost tempHost = new InternetHost(accessorHost, port);
+            return NewSocketConnection(ref tempHost);
+        }
+        public static Socket NewSocketConnection(ref InternetHost host)
+        {
+            Socket socket = new Socket(host.GetAddressFamilyForTcp(), SocketType.Stream, ProtocolType.Tcp);
+            BufStruct dataLeftOverFromProxyConnect = default(BufStruct);
+            host.Connect(socket, DnsPriority.IPv4ThenIPv6, ProxyConnectOptions.None, ref dataLeftOverFromProxyConnect);
+            if (dataLeftOverFromProxyConnect.contentLength > 0)
+            {
+                throw new NotImplementedException();
+            }
             return socket;
         }
         public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, Buf sendBuffer, ServerInfo serverInfo, SelectTunnelsThread tunnelsThread)
@@ -62,12 +73,9 @@ namespace More.Net
             if (Connected) throw new InvalidOperationException(String.Format(
                 "You called Connect() on accessor '{0}' but its already connected", accessorHostString));
 
-            Socket socket = new Socket(accessorHost.directEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             try
             {
-                socket.ConnectTcpSocketThroughProxy(accessorHost);
-
-                this.accessorSocket = socket;
+                accessorSocket = NewSocketConnection(ref accessorHost);
 
                 //
                 // Send initial connection information
@@ -76,21 +84,21 @@ namespace More.Net
 
                 Byte[] connectionInfoPacket = new Byte[] {Tmp.CreateConnectionInfoFromTmpServerToAccessor(
                     tlsSettings.requireTlsForTmpConnections, false)};
-                socket.Send(connectionInfoPacket);
+                accessorSocket.Send(connectionInfoPacket);
 
                 //
                 // Only receive packet if tls was not required
                 //
                 if (!tlsSettings.requireTlsForTmpConnections)
                 {
-                    int bytesRead = socket.Receive(connectionInfoPacket, 0, 1, SocketFlags.None);
+                    int bytesRead = accessorSocket.Receive(connectionInfoPacket, 0, 1, SocketFlags.None);
                     if (bytesRead <= 0) throw new SocketException();
 
                     setupTls = Tmp.ReadTlsRequirementFromAccessorToTmpServer(connectionInfoPacket[0]);
                 }
 
 
-                DataHandler accessorSendHandler = new SocketSendDataHandler(socket).HandleData;
+                DataHandler accessorSendHandler = new SocketSendDataHandler(accessorSocket).HandleData;
                 this.accessorReceiveHandler = new DataFilterHandler(new FrameProtocolFilter(),
                         new TmpServerHandler(this, tlsSettings, tunnelsThread));
 

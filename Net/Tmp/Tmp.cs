@@ -156,8 +156,8 @@ namespace More.Net
     //
     public static class Tmp
     {
-        public const UInt16 DefaultPort                = 2029;
-        public const UInt16 DefaultAccessorControlPort = 2030;
+        public const UInt16 DefaultPort              = 2029;
+        public const UInt16 DefaultNpcControlPort    = 2030;
 
 
         public const UInt16 DefaultHeartbeatSeconds = 60;

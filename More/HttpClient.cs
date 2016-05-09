@@ -180,7 +180,7 @@ namespace More.Net
             }
             else
             {
-                builder.AppendAscii(client.IPORHost);
+                builder.AppendAscii(client.IPOrHost);
                 if (client.Port != 80 || forcePortInHostHeader)
                 {
                     builder.AppendAscii(':');
@@ -500,48 +500,50 @@ namespace More.Net
         Socket socket;
 
         StringEndPoint serverEndPoint;
-
         Proxy proxy;
 
         Callback requestLogger;
         public Callback RequestLogger { set { this.requestLogger = value; } }
 
-        public String IPORHost { get { return serverEndPoint.unparsedIPOrHost; } }
+        public String IPOrHost { get { return serverEndPoint.ipOrHost; } }
         public UInt16 Port { get { return serverEndPoint.port; } }
 
+        PriorityQuery<IPAddress> dnsPriorityQuery = DnsPriority.IPv4ThenIPv6;
+        public PriorityQuery<IPAddress> DnsPriorityQuery
+        {
+            get { return dnsPriorityQuery; }
+            set { dnsPriorityQuery = value; }
+        }
         public HttpClient(String ipOrHost, UInt16 port)
         {
             this.serverEndPoint = new StringEndPoint(ipOrHost, port);
+        }
+        public HttpClient(StringEndPoint serverEndPoint)
+        {
+            this.serverEndPoint = serverEndPoint;
         }
         public Proxy Proxy
         {
             set
             {
                 if (socket != null && socket.Connected)
-                    throw new InvalidOperationException("Cannot set Proxy while the HttpClient is connected");
-
-                serverEndPoint.parsedOrResolvedIP = null;
-
-                this.proxy = value;
-                if (proxy != null)
                 {
-                    this.proxy.PrepareEndPoint(ref serverEndPoint);
+                    throw new InvalidOperationException("Cannot set Proxy while the HttpClient is connected");
                 }
+                proxy = value;
             }
         }
-        void Open(Buf buf)
+        void Open(BufStruct buf)
         {
             if (socket == null || !socket.Connected)
             {
                 if (proxy == null)
                 {
-                    socket.Connect(serverEndPoint.unparsedIPOrHost, serverEndPoint.port);
+                    socket.Connect(ref serverEndPoint, dnsPriorityQuery);
                 }
                 else
                 {
-                    throw new NotImplementedException();
-                    //socket.Connect(proxy.endPoint);
-                    //proxy.ProxyConnectTcp(socket, serverEndPoint, ProxyConnectOptions.ContentIsRawHttp);
+                    proxy.ProxyConnectTcp(socket, ref serverEndPoint, ProxyConnectOptions.ContentIsRawHttp, ref buf);
                 }
             }
         }
@@ -582,7 +584,7 @@ namespace More.Net
             UInt32 retryCount = 0;
 
         RETRY:
-            Open(null);
+            Open(default(BufStruct));
 
             Boolean clearedRequest = false;
             UInt32 responseContentOffset;

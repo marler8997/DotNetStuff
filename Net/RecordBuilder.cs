@@ -22,12 +22,14 @@ namespace More.Net
             LengthReceived
         };
 
+        readonly String clientString;
         State state;
         Byte[] copiedFragmentData;
         UInt32 copiedFramentDataLength;
 
-        public RecordBuilder(RecordHandler recordHandler)
+        public RecordBuilder(String clientString, RecordHandler recordHandler)
         {
+            this.clientString = clientString;
             this.state = State.Initial;
             this.recordHandler = recordHandler;
         }
@@ -38,7 +40,18 @@ namespace More.Net
         }
 
         // This function is highly tested
-        public void HandleData(String clientString, Socket socket, Byte[] bytes, UInt32 offset, UInt32 offsetLimit)
+        public void DataCallback(ref SelectControl control, Socket socket, Buf safeBuffer)
+        {
+            int bytesRead = socket.Receive(safeBuffer.array);
+            if (bytesRead <= 0)
+            {
+                control.RemoveReceiveSocket(socket);
+                return;
+            }
+
+            HandleData(socket, safeBuffer.array, 0, (uint)bytesRead);
+        }
+        public void HandleData(Socket socket, Byte[] bytes, UInt32 offset, UInt32 offsetLimit)
         {
             switch (state)
             {
