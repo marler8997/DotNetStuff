@@ -156,8 +156,124 @@ namespace More
                 String typeDefinition = enumType.SosTypeDefinition();
                 Console.WriteLine("Verifying " + typeDefinition);
                 Assert.AreEqual(enumType,
-                    SosTypes.ParseSosEnumTypeDefinition(typeDefinition, 4).GetAndVerifyType(enumType.AssemblyQualifiedName));
+                    SosTypes.ParseSosEnumTypeDefinition(typeDefinition, 4).GetAndVerifyType(enumType.AssemblyQualifiedName, 0));
             }
+        }
+
+
+        enum OneGoodValueEnum
+        {
+            FirstValue = 0,
+        }
+        enum ThreeGoodValuesEnum
+        {
+            FirstValue = 0,
+            SecondValue = 1,
+            ThirdValue = 2,
+        }
+        enum BadValueEnum
+        {
+            FirstValue = 0,
+            SecondValue = 2, // bad value
+        }
+
+        enum LessAndExtraEnum
+        {
+            FirstValue = 0,
+            ThirdValue = 3,
+        }
+        [TestMethod]
+        public void TestEnumDefinitionVerifyCriteria()
+        {
+            SosEnumDefinition enumDefinition = new SosEnumDefinition();
+            enumDefinition.Add("FirstValue", 0);
+            enumDefinition.Add("SecondValue", 1);
+
+            enumDefinition.VerifyType(typeof(OneGoodValueEnum), SosVerifyCriteria.AllowExtraEnumValuesInDefinition);
+            enumDefinition.VerifyType(typeof(ThreeGoodValuesEnum), SosVerifyCriteria.AllowExtraEnumValuesInType);
+
+            //
+            try
+            {
+                enumDefinition.VerifyType(typeof(OneGoodValueEnum), 0);
+                Assert.Fail("Expected exception but did not get one");
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine("Got expected exception: {0}", e.Message);
+            }
+            try
+            {
+                enumDefinition.VerifyType(typeof(OneGoodValueEnum), SosVerifyCriteria.AllowExtraEnumValuesInType);
+                Assert.Fail("Expected exception but did not get one");
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine("Got expected exception: {0}", e.Message);
+            }
+
+            //
+            try
+            {
+                enumDefinition.VerifyType(typeof(ThreeGoodValuesEnum), 0);
+                Assert.Fail("Expected exception but did not get one");
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine("Got expected exception: {0}", e.Message);
+            }
+            try
+            {
+                enumDefinition.VerifyType(typeof(ThreeGoodValuesEnum), SosVerifyCriteria.AllowExtraEnumValuesInDefinition);
+                Assert.Fail("Expected exception but did not get one");
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine("Got expected exception: {0}", e.Message);
+            }
+
+            //
+            try
+            {
+                enumDefinition.VerifyType(typeof(BadValueEnum), 0);
+                Assert.Fail("Expected exception but did not get one");
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine("Got expected exception: {0}", e.Message);
+            }
+
+            //
+            enumDefinition.VerifyType(typeof(LessAndExtraEnum), SosVerifyCriteria.AllowExtraEnumValuesInDefinition | SosVerifyCriteria.AllowExtraEnumValuesInType);
+            try
+            {
+                enumDefinition.VerifyType(typeof(LessAndExtraEnum), 0);
+                Assert.Fail("Expected exception but did not get one");
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine("Got expected exception: {0}", e.Message);
+            }
+            try
+            {
+                enumDefinition.VerifyType(typeof(LessAndExtraEnum), SosVerifyCriteria.AllowExtraEnumValuesInDefinition);
+                Assert.Fail("Expected exception but did not get one");
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine("Got expected exception: {0}", e.Message);
+            }
+            try
+            {
+                enumDefinition.VerifyType(typeof(LessAndExtraEnum), SosVerifyCriteria.AllowExtraEnumValuesInType);
+                Assert.Fail("Expected exception but did not get one");
+            }
+            catch (InvalidOperationException e)
+            {
+                Console.WriteLine("Got expected exception: {0}", e.Message);
+            }
+
+
         }
         [TestMethod]
         public void TestFailedEnumDefinitionVerification()
@@ -172,7 +288,7 @@ namespace More
         {
             try
             {
-                SosTypes.ParseSosEnumTypeDefinition(incorrectTypeDefinitino, 4).VerifyType(type);
+                SosTypes.ParseSosEnumTypeDefinition(incorrectTypeDefinitino, 4).VerifyType(type, 0);
                 Assert.Fail("Expected InvalidOperationException");
             }
             catch (InvalidOperationException e)

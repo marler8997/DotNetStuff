@@ -55,6 +55,16 @@ namespace More
         }
     }
 
+    /// <summary>
+    /// Note: can be cast to SosVerifyCriteria
+    /// </summary>
+    [Flags]
+    public enum NpcVerifyCriteria
+    {
+        AllowExtraEnumValuesOnServer      = SosVerifyCriteria.AllowExtraEnumValuesInDefinition,
+        AllowExtraEnumValuesOnClient      = SosVerifyCriteria.AllowExtraEnumValuesInType,
+        AllowExtraValuesOnClientAndServer = SosVerifyCriteria.AllowExtraEnumValuesInDefinition | SosVerifyCriteria.AllowExtraEnumValuesInType,
+    }
 
     //
     // Note that this class is NOT thread safe
@@ -413,6 +423,10 @@ namespace More
 
         public void UpdateAndVerifyEnumAndObjectTypes()
         {
+            UpdateAndVerifyEnumAndObjectTypes(0);
+        }
+        public void UpdateAndVerifyEnumAndObjectTypes(NpcVerifyCriteria criteria)
+        {
             if (threadSafe) Monitor.Enter(serverEndPoint);
             try
             {
@@ -421,53 +435,61 @@ namespace More
                 // fail until after a send and a receive...so the socket should be reconnected and the request should
                 // be repeated only once.
                 //
-                Boolean retryOnSocketException = true;
-            RETRY_LOCATION:
-                try
+                for (UInt32 attempt = 0; ; attempt++)
                 {
-                    Connect();
-                    socketLineReader.socket.Send(Encoding.UTF8.GetBytes(":type\n"));
-
-                    enumAndObjectTypes.Clear();
-
-                    while (true)
+                    try
                     {
-                        String typeDefinitionLine = socketLineReader.ReadLine();
-                        if (typeDefinitionLine == null) throw UnexpectedClose();
-                        if (typeDefinitionLine.Length == 0) break; // empty line
+                        Connect();
+                        socketLineReader.socket.Send(Encoding.UTF8.GetBytes(":type\n"));
 
-                        Int32 spaceIndex = typeDefinitionLine.IndexOf(' ');
-                        String sosTypeName = typeDefinitionLine.Remove(spaceIndex);
-                        String typeDefinition = typeDefinitionLine.Substring(spaceIndex + 1);
+                        enumAndObjectTypes.Clear();
 
-                        Type type = GetTypeFromSosTypeName(sosTypeName);
-
-                        if (typeDefinition.StartsWith("Enum"))
+                        while (true)
                         {
-                            SosEnumDefinition enumDefinition = SosTypes.ParseSosEnumTypeDefinition(typeDefinition, 4);
-                            enumDefinition.VerifyType(type);
+                            String typeDefinitionLine = socketLineReader.ReadLine();
+                            if (typeDefinitionLine == null)
+                            {
+                                if (attempt == 0)
+                                {
+                                    Dispose();
+                                    continue; // Retry
+                                }
+                                throw UnexpectedClose();
+                            }
+                            if (typeDefinitionLine.Length == 0) break; // empty line
+
+                            Int32 spaceIndex = typeDefinitionLine.IndexOf(' ');
+                            String sosTypeName = typeDefinitionLine.Remove(spaceIndex);
+                            String typeDefinition = typeDefinitionLine.Substring(spaceIndex + 1);
+
+                            Type type = GetTypeFromSosTypeName(sosTypeName);
+                            if (typeDefinition.StartsWith("Enum"))
+                            {
+                                SosEnumDefinition enumDefinition = SosTypes.ParseSosEnumTypeDefinition(typeDefinition, 4);
+                                enumDefinition.VerifyType(type, (SosVerifyCriteria)criteria);
+                            }
+                            else
+                            {
+                                SosObjectDefinition objectDefinition = SosTypes.ParseSosObjectTypeDefinition(typeDefinition, 0);
+                                objectDefinition.VerifyType(type);
+                            }
+                            enumAndObjectTypes.Add(type);
                         }
-                        else
+                        return;
+                    }
+                    catch (SocketException)
+                    {
+                        if (socketLineReader != null)
                         {
-                            SosObjectDefinition objectDefinition = SosTypes.ParseSosObjectTypeDefinition(typeDefinition, 0);
-                            objectDefinition.VerifyType(type);
+                            socketLineReader.Dispose();
+                            socketLineReader = null;
                         }
-                        enumAndObjectTypes.Add(type);
+                        if (attempt == 0)
+                        {
+                            continue; // Retry
+                        }
+                        throw;
                     }
-                }
-                catch (SocketException)
-                {
-                    if (socketLineReader != null)
-                    {
-                        socketLineReader.Dispose();
-                        socketLineReader = null;
-                    }
-                    if (retryOnSocketException)
-                    {
-                        retryOnSocketException = false;
-                        goto RETRY_LOCATION;
-                    }
-                    throw;
                 }
             }
             finally

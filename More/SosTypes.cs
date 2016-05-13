@@ -96,42 +96,112 @@ namespace More
 
             return enumBuilder.ToString();
         }
-        public Type GetAndVerifyType(String enumTypeName)
+        public Type GetAndVerifyType(String enumTypeName, SosVerifyCriteria criteria)
         {
             Type enumType = Type.GetType(enumTypeName);
             if (enumType == null)
                 throw new InvalidOperationException(String.Format("Enum type '{0}' does not exist", enumTypeName));
-            VerifyType(enumType);
+            VerifyType(enumType, criteria);
             return enumType;
-        }   
-        public void VerifyType(Type enumType)
+        }
+        // allowNewEnumValues
+        public void VerifyType(Type enumType, SosVerifyCriteria criteria)
         {
             if (!enumType.IsEnum)
-                throw new InvalidOperationException(String.Format("Type '{0}' is not an enum type", enumType.FullName));
-
-            Array enumValues = EnumReflection.GetValues(enumType);
-
-            if (enumValues.Length != values.Count)
-                throw new InvalidOperationException(String.Format(
-                    "Enum Definition for {0} has {1} values but actual enum has {2} values", enumType.FullName, values.Count, enumValues.Length));
-
-            for (int i = 0; i < enumValues.Length; i++)
             {
-                Enum enumValue = (Enum)enumValues.GetValue(i);
+                throw new InvalidOperationException(String.Format("Type '{0}' is not an enum type", enumType.FullName));
+            }
+
+            Array localEnumValues = EnumReflection.GetValues(enumType);
+
+            if ((criteria & SosVerifyCriteria.AllowExtraEnumValuesInDefinition) == SosVerifyCriteria.AllowExtraEnumValuesInDefinition)
+            {
+                if ((criteria & SosVerifyCriteria.AllowExtraEnumValuesInType) == SosVerifyCriteria.AllowExtraEnumValuesInType)
+                {
+                    // do not verify counts
+                }
+                else
+                {
+                    if (localEnumValues.Length > values.Count)
+                    {
+                        throw new InvalidOperationException(String.Format(
+                            "Enum Type {0} has more values ({1} values) then the definition ({2} values)", enumType.FullName, localEnumValues.Length, values.Count));
+                    }
+                }
+            }
+            else
+            {
+                if ((criteria & SosVerifyCriteria.AllowExtraEnumValuesInType) == SosVerifyCriteria.AllowExtraEnumValuesInType)
+                {
+                    if (values.Count > localEnumValues.Length)
+                    {
+                        throw new InvalidOperationException(String.Format(
+                            "Enum Type {0} has less values ({1} values) then the definition ({2} values)", enumType.FullName, localEnumValues.Length, values.Count));
+                    }
+                    foreach (var valueFromDefinition in values)
+                    {
+                        int enumValueAsInt;
+                        try
+                        {
+                            enumValueAsInt = Convert.ToInt32(Enum.Parse(enumType, valueFromDefinition.Key));
+                        }
+                        catch (ArgumentException)
+                        {
+                            throw new InvalidOperationException(String.Format(
+                                "Enum Type '{0}' is missing value {1}",
+                                enumType.FullName, valueFromDefinition.Key));
+                        }
+                        if (enumValueAsInt != valueFromDefinition.Value)
+                        {
+                            throw new InvalidOperationException(String.Format("Enum Type '{0}' value '{1}' is '{2}' but the value from the definition is '{3}'",
+                                enumType.FullName, valueFromDefinition.Key, enumValueAsInt, valueFromDefinition.Value));
+                        }
+                    }
+                }
+                else
+                {
+                    if (localEnumValues.Length != values.Count)
+                    {
+                        throw new InvalidOperationException(String.Format(
+                            "Enum Type {0} has {1} value(s) but definition has {2}", enumType.FullName, localEnumValues.Length, values.Count));
+                    }
+                }
+            }
+
+
+            for (int i = 0; i < localEnumValues.Length; i++)
+            {
+                Enum localEnumValue = (Enum)localEnumValues.GetValue(i);
 
                 Int32 valueFromEnumDefinition;
-                if (!values.TryGetValue(enumValue.ToString(), out valueFromEnumDefinition))
-                    throw new InvalidOperationException(String.Format(
-                        "Enum Type '{0}' has value '{1}' but the definition does not have that value",
-                        enumType.FullName, enumValue.ToString()));
-
-                Int32 enumValueAsInt32 = Convert.ToInt32(enumValue);
-                if (enumValueAsInt32 != valueFromEnumDefinition)
-                    throw new InvalidOperationException(String.Format("Enum Type '{0}' value '{1}' is '{2}' but the value from the definition is '{3}'",
-                        enumType.FullName, enumValue.ToString(), enumValueAsInt32, valueFromEnumDefinition));
+                if (values.TryGetValue(localEnumValue.ToString(), out valueFromEnumDefinition))
+                {
+                    Int32 enumValueAsInt32 = Convert.ToInt32(localEnumValue);
+                    if (enumValueAsInt32 != valueFromEnumDefinition)
+                    {
+                        throw new InvalidOperationException(String.Format("Enum Type '{0}' value '{1}' is '{2}' but the value from the definition is '{3}'",
+                            enumType.FullName, localEnumValue.ToString(), enumValueAsInt32, valueFromEnumDefinition));
+                    }
+                }
+                else
+                {
+                    if ((criteria & SosVerifyCriteria.AllowExtraEnumValuesInType) == 0)
+                    {
+                        throw new InvalidOperationException(String.Format(
+                            "Enum Type '{0}' has value '{1}' but the definition does not have that value",
+                            enumType.FullName, localEnumValue.ToString()));
+                    }
+                }
             }
         }
     }
+    [Flags]
+    public enum SosVerifyCriteria
+    {
+        AllowExtraEnumValuesInDefinition = 0x01,
+        AllowExtraEnumValuesInType       = 0x02,
+    }
+
     public class SosObjectDefinition
     {
         public static readonly SosObjectDefinition Empty = new SosObjectDefinition();
@@ -205,7 +275,6 @@ namespace More
         public void VerifyType(Type objectType)
         {
             FieldInfo[] fieldInfos = objectType.GetSerializedFields();
-
             if (fieldInfos == null || fieldInfos.Length <= 0)
             {
                 if (fieldNamesToFieldTypes.Count > 0)
@@ -223,14 +292,18 @@ namespace More
 
                 String fieldTypeNameFromDefinition;
                 if (!fieldNamesToFieldTypes.TryGetValue(fieldInfo.Name, out fieldTypeNameFromDefinition))
+                {
                     throw new InvalidOperationException(String.Format(
                         "Object Type '{0}' has field '{1}' but the remote object definition does not have that field",
                         objectType.FullName, fieldInfo.Name));
+                }
 
                 String fieldSosTypeName = fieldInfo.FieldType.SosTypeName();
                 if (!fieldSosTypeName.Equals(fieldTypeNameFromDefinition))
+                {
                     throw new InvalidOperationException(String.Format("Object Type '{0}' has field '{1}' of type '{2}', but the remote object type of that field is '{3}'",
                         objectType.FullName, fieldInfo.Name, fieldSosTypeName, fieldTypeNameFromDefinition));
+                }
             }
         }
     }
