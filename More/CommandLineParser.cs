@@ -53,14 +53,6 @@ namespace More
 
         public Boolean set;
 
-        protected CLOption(Char letter, Boolean hasArg, String description)
-            : this(letter, null, hasArg, description)
-        {
-        }
-        protected CLOption(String name, Boolean hasArg, String description)
-            : this('\0', name, hasArg, description)
-        {
-        }
         protected CLOption(Char letter, String name, Boolean hasArg, String description)
         {
             this.letter = letter;
@@ -109,7 +101,7 @@ namespace More
         {
         }
         public CLSwitch(String name, String description)
-            : base(name, false, description)
+            : base('\0', name, false, description)
         {
         }
         public CLSwitch(Char letter, String name, String description)
@@ -130,11 +122,11 @@ namespace More
         String defaultValue;
         String value;
         public CLStringArgument(Char letter, String description)
-            : base(letter, true, description)
+            : base(letter, null, true, description)
         {
         }
         public CLStringArgument(String name, String description)
-            : base(name, true, description)
+            : base('\0', name, true, description)
         {
         }
         public CLStringArgument(Char letter, String name, String description)
@@ -166,11 +158,11 @@ namespace More
         Int32 defaultValue;
         Int32 value;
         public CLInt32Argument(Char letter, String description)
-            : base(letter, true, description)
+            : base(letter, null, true, description)
         {
         }
         public CLInt32Argument(String name, String description)
-            : base(name, true, description)
+            : base('\0', name, true, description)
         {
         }
         public CLInt32Argument(Char letter, String name, String description)
@@ -197,17 +189,32 @@ namespace More
             this.value = Int32.Parse(arg);
         }
     }
+    public class CLUInt32Argument : CLGenericArgument<UInt32>
+    {
+        public CLUInt32Argument(Char letter, String description)
+            : base(UInt32.Parse, letter, null, description)
+        {
+        }
+        public CLUInt32Argument(String name, String description)
+            : base(UInt32.Parse, '\0', name, description)
+        {
+        }
+        public CLUInt32Argument(Char letter, String name, String description)
+            : base(UInt32.Parse, letter, name, description)
+        {
+        }
+    }
     public class CLEnumArgument<EnumType> : CLOption
     {
         Boolean hasDefault;
         EnumType defaultValue;
         EnumType value;
         public CLEnumArgument(Char letter, String description)
-            : base(letter, true, description)
+            : base(letter, null, true, description)
         {
         }
         public CLEnumArgument(String name, String description)
-            : base(name, true, description)
+            : base('\0', name, true, description)
         {
         }
         public CLEnumArgument(Char letter, String name, String description)
@@ -260,12 +267,12 @@ namespace More
         T value;
         
         public CLGenericArgument(Parser<T> parser, Char letter, String description)
-            : base(letter, true, description)
+            : base(letter, null, true, description)
         {
             this.parser = parser;
         }
         public CLGenericArgument(Parser<T> parser, String name, String description)
-            : base(name, true, description)
+            : base('\0', name, true, description)
         {
             this.parser = parser;
         }

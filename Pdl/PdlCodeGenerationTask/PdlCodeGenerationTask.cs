@@ -11,19 +11,19 @@ namespace More.Pdl
     {
         public readonly String name;
         public readonly String contents;
-        public InputFileObject(String name, Byte[] readBuffer, StringBuilder builder, Sha1 sha, Encoding encoding)
+        public InputFileObject(String name, Byte[] readBuffer, StringBuilder builder, Sha1Builder shaBuilder, Encoding encoding)
         {
             this.name = name;
 
             // Read the file
             builder.Length = 0;
-            using (FileStream stream = new FileStream(name, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream stream = new FileStream(name, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 while (true)
                 {
                     Int32 bytesRead = stream.Read(readBuffer, 0, readBuffer.Length);
                     if (bytesRead <= 0) break;
-                    sha.Add(readBuffer, 0, bytesRead);
+                    shaBuilder.Add(readBuffer, 0, bytesRead);
 
                     String str = encoding.GetString(readBuffer, 0, bytesRead);
                     builder.Append(str);
@@ -46,6 +46,7 @@ namespace More.Pdl
         String @namespace;
 
         Boolean forceCodeGeneration = false;
+        Boolean generateStructs = false;
 
         public IBuildEngine BuildEngine
         {
@@ -81,6 +82,12 @@ namespace More.Pdl
             get { return forceCodeGeneration; }
             set { this.forceCodeGeneration = value; }
         }
+
+        public Boolean GenerateStructs
+        {
+            get { return generateStructs; }
+            set { this.generateStructs = value; }
+        }
         
         void Log(MessageImportance importance, String message)
         {
@@ -100,40 +107,58 @@ namespace More.Pdl
             LogError(String.Format(fmt, obj));
         }
 
-        public UInt32[] TryGetSavedInputHash(String outputFile, out String savedInputHashString)
+        /// <returns>Null if it could not retrieve an input hash</returns>
+        public String TryGetSavedInputHash(String outputFile, out Sha1 savedInputHash)
         {
-            if (!File.Exists(outputFile)) { savedInputHashString = null; return null; }
+            if (!File.Exists(outputFile))
+            {
+                savedInputHash = default(Sha1);
+                return null;
+            }
 
             String firstLine;
             using (StreamReader reader = new StreamReader(new FileStream(outputFile, FileMode.Open, FileAccess.Read, FileShare.Read), true))
             {
                 firstLine = reader.ReadLine();
             }
-            if (firstLine == null) { savedInputHashString = null; return null; } // Output file is empty
+
+            // Output file is empty
+            if (firstLine == null)
+            {
+                savedInputHash = default(Sha1);
+                return null;
+            }
 
             Int32 inputShaIndex = firstLine.IndexOf(PdlFile.InputShaPrefix);
-            if (inputShaIndex < 0) { savedInputHashString = null; return null; } // First line does not contain hash
+            if (inputShaIndex < 0)
+            {
+                // First line does not contain hash
+                buildEngine.LogWarningEvent(new BuildWarningEventArgs(null, null, outputFile, 1, inputShaIndex, 1, firstLine.Length,
+                    String.Format("Expected first line to contain InputSha but it was '{0}'", firstLine), null, null));
+                savedInputHash = default(Sha1);
+                return null;
+            }
 
             inputShaIndex += PdlFile.InputShaPrefix.Length;
-            savedInputHashString = firstLine.Substring(inputShaIndex);
+            String savedInputHashString = firstLine.Substring(inputShaIndex);
             if (savedInputHashString.Length != PdlFile.ShaHexStringLength)
             {
                 buildEngine.LogWarningEvent(new BuildWarningEventArgs(null, null, outputFile, 1, inputShaIndex, 1, firstLine.Length,
                     String.Format("Expected the InputSha of the output file to be 40 characters but it was {0}", savedInputHashString.Length), null, null));
-                savedInputHashString = null;
+                savedInputHash = default(Sha1);
                 return null;
             }
 
             try
             {
-                UInt32[] savedInputHash;
-                Sha1.Parse(savedInputHashString, 0, out savedInputHash);
-                return savedInputHash;
+                savedInputHash = Sha1.ParseHex(savedInputHashString, 0);
+                return savedInputHashString;
             }
             catch (Exception e)
             {
                 buildEngine.LogWarningEvent(new BuildWarningEventArgs(null, null, outputFile, 1, inputShaIndex, 1, firstLine.Length,
                     String.Format("Exception occured while parsing InputSha of the output file '{0}': {1}", savedInputHashString, e.Message), null, null));
+                savedInputHash = default(Sha1);
                 return null;
             }
         }
@@ -144,7 +169,6 @@ namespace More.Pdl
             // Check Options
             //
             if (buildEngine == null) throw new ArgumentNullException("BuildEngine");
-
 
             if (inputFiles == null || inputFiles.Length <= 0)
             {
@@ -187,30 +211,29 @@ namespace More.Pdl
             InputFileObject[] inputFileObjects = new InputFileObject[inputFiles.Length];
 
             Byte[] fileBuffer = new Byte[1024];
-            Sha1 inputSha = new Sha1();
+            Sha1Builder inputShaBuilder = new Sha1Builder();
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < inputFileObjects.Length; i++)
             {
-                inputFileObjects[i] = new InputFileObject(inputFiles[i], fileBuffer, builder, inputSha, Encoding.UTF8);
+                inputFileObjects[i] = new InputFileObject(inputFiles[i], fileBuffer, builder, inputShaBuilder, Encoding.UTF8);
             }
-            UInt32[] inputHash = inputSha.Finish();
-            String inputHashString = Sha1.HashString(inputHash);
-
+            Sha1 inputHash = inputShaBuilder.Finish(false);
+            String inputHashString = inputHash.ToString();
 
             if (forceCodeGeneration)
             {
-                Log(MessageImportance.Normal, "Skipping the InputHash check because ForceCodeGeneration is set to true");
+                Log(MessageImportance.High, "Skipping the InputHash check because ForceCodeGeneration is set to true");
             }
             else
             {
                 //
                 // Try to get the saved hash from output file
                 //
-                String savedInputHashString;
-                UInt32[] savedInputHash = TryGetSavedInputHash(outputFile, out savedInputHashString);
-                if (savedInputHash != null)
+                Sha1 savedInputHash;
+                String savedInputHashString = TryGetSavedInputHash(outputFile, out savedInputHash);
+                if (savedInputHashString != null)
                 {
-                    if (Sha1.Equals(inputHash, savedInputHash))
+                    if (inputHash.Equals(savedInputHash))
                     {
                         Log(MessageImportance.Normal, "Input hash matches saved input hash, no code generation done");
                         return TaskSucceeded;
@@ -237,7 +260,7 @@ namespace More.Pdl
             {
                 // Save the hash first
                 outputStringWriter.WriteLine("// {0}{1}", PdlFile.InputShaPrefix, inputHashString);
-                PdlCodeGenerator.GenerateCode(outputStringWriter, pdlFile, @namespace);
+                PdlCodeGenerator.GenerateCode(outputStringWriter, pdlFile, @namespace, generateStructs);
             }
 
             String outputContents = outputStringBuilder.ToString();

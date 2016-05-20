@@ -141,6 +141,43 @@ namespace More.Net
                 proxy.ProxyConnectTcp(socket, ref targetEndPoint, proxyOptions, ref buf);
             }
         }
+
+        /*
+        /// <returns>trus if operation is pending, false if it completed</returns>
+        public Boolean ConnectAsync(Socket socket, PriorityQuery<IPAddress> dnsPriorityQuery, ProxyConnectOptions proxyOptions, ref BufStruct buf)
+        {
+            if (proxy == null)
+            {
+                targetEndPoint.ForceIPResolution(dnsPriorityQuery);
+                SocketAsyncEventArgs asyncArgs = new SocketAsyncEventArgs();
+                asyncArgs.RemoteEndPoint = targetEndPoint.ipEndPoint;
+                return socket.ConnectAsync(asyncArgs);
+            }
+            else
+            {
+
+                return proxy.ProxyConnectAsyncTcp(socket, ref targetEndPoint, proxyOptions, ref buf);
+            }
+        }
+        */
+        /*
+        /// <returns>trus if operation is pending, false if it completed</returns>
+        public Boolean ConnectAsync(Socket socket, PriorityQuery<IPAddress> dnsPriorityQuery, ProxyConnectOptions proxyOptions, ref BufStruct buf)
+        {
+            if (proxy == null)
+            {
+                targetEndPoint.ForceIPResolution(dnsPriorityQuery);
+                SocketAsyncEventArgs asyncArgs = new SocketAsyncEventArgs();
+                asyncArgs.RemoteEndPoint = targetEndPoint.ipEndPoint;
+                return socket.ConnectAsync(asyncArgs);
+            }
+            else
+            {
+
+                return proxy.ProxyConnectAsyncTcp(socket, ref targetEndPoint, proxyOptions, ref buf);
+            }
+        }
+        */
     }
     public abstract class Proxy
     {
@@ -271,6 +308,11 @@ namespace More.Net
         /// <param name="ipEndPoint">The final destination, retreived from calling proxy.CreateEndpoint(...).</param>
         public abstract void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf);
+
+
+        public abstract Boolean ProxyConnectAsyncTcp(Socket socket, ref StringEndPoint endPoint,
+            ProxyConnectOptions options, ref BufStruct buf); 
+
         /// <summary>
         /// Setup a UDP proxy.
         /// </summary>
@@ -403,6 +445,13 @@ namespace More.Net
         public override void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf)
         {
+            endPoint.ForceIPResolution(DnsPriority.IPv4ThenIPv6);
+            socket.Connect(endPoint.ipEndPoint);
+        }
+        public override Boolean ProxyConnectAsyncTcp(Socket socket, ref StringEndPoint endPoint,
+            ProxyConnectOptions options, ref BufStruct buf)
+        {
+            throw new NotImplementedException();
         }
         public override void ProxyConnectUdp(Socket socket, ref StringEndPoint endPoint)
         {
@@ -491,6 +540,11 @@ namespace More.Net
             }
             */
         }
+        public override Boolean ProxyConnectAsyncTcp(Socket socket, ref StringEndPoint endPoint,
+            ProxyConnectOptions options, ref BufStruct buf)
+        {
+            throw new NotImplementedException();
+        }
     }
     /// <summary>
     /// A Gateway proxy is just a proxy that works with no handshake.  Typically it only
@@ -518,6 +572,11 @@ namespace More.Net
             {
                 throw new NotImplementedException();
             }
+        }
+        public override Boolean ProxyConnectAsyncTcp(Socket socket, ref StringEndPoint endPoint,
+            ProxyConnectOptions options, ref BufStruct buf)
+        {
+            throw new NotImplementedException();
         }
     }
 }

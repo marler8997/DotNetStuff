@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Net;
 using System.Text;
 
 using More;
@@ -71,5 +73,23 @@ namespace More.Net
         }
     }
 
+    public class PcapLogger
+    {
+        readonly Stream stream;
+        public readonly UInt32 snaplen;
+        public PcapLogger(Stream stream, UInt32 snaplen)
+        {
+            this.stream = stream;
+            this.snaplen = snaplen;
+        }
+        public void WriteHeader()
+        {
+            PcapGlobalHeader header = new PcapGlobalHeader(0, 0, snaplen, PcapDataLinkType.Ethernet);
+        }
+        public void LogTcpData(IPEndPoint src, IPEndPoint dst, Byte[] data, UInt32 offset, UInt32 length)
+        {
+
+        }
+    }
 
 }

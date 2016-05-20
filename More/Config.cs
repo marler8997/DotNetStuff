@@ -179,4 +179,25 @@ namespace More
             writer.WriteLine(templateArgs);
         }
     }
+
+    public abstract class LfdConfig : LfdCallbackParser
+    {
+        readonly List<Config> configs = new List<Config>();
+
+        public void Add(Config config)
+        {
+            configs.Add(config);
+            Add(config.name, config.Handle);
+        }
+
+        public void WriteTemplate(TextWriter writer)
+        {
+            foreach (Config config in configs)
+            {
+                writer.WriteLine();
+                config.WriteTemplate("# ", writer);
+            }
+        }
+    }
+
 }

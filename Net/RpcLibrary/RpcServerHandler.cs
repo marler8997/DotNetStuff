@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.IO;
 
@@ -8,18 +9,47 @@ using More;
 
 namespace More.Net
 {
-    /*
-    public abstract class RpcServerHandler : StreamSelectServerCallback, DatagramSelectServerCallback
+    public class RpcServerConnectionHandler
+    {
+        public readonly RpcServerHandler server;
+        public readonly Socket socket;
+        public readonly RecordBuilder recordBuilder;
+        public RpcServerConnectionHandler(RpcServerHandler server, Socket socket)
+        {
+            this.server = server;
+            this.socket = socket;
+            this.recordBuilder = new RecordBuilder(socket.SafeRemoteEndPointString(), server.HandleTcpRecord);
+        }
+        public void HandleData(ref SelectControl control, Socket sock, Buf safeBuffer)
+        {
+            int bytesReceived;
+            try
+            {
+                bytesReceived = sock.Receive(safeBuffer.array);
+            }
+            catch (SocketException)
+            {
+                bytesReceived = -1;
+            }
+            if (bytesReceived <= 0)
+            {
+                sock.ShutdownSafe();
+                control.DisposeAndRemoveReceiveSocket(sock);
+                return;
+            }
+
+            recordBuilder.HandleData(socket, safeBuffer.array, 0, (uint)bytesReceived);
+        }
+    }
+
+    public abstract class RpcServerHandler
     {
         public readonly String serviceName;
-        readonly Dictionary<Socket, RecordBuilder> socketToRecordParser;
-
-        private readonly Buf sendBuffer;
+        public readonly Buf sendBuffer;
 
         public RpcServerHandler(String serviceName, Buf sendBuffer)
         {
             this.serviceName = serviceName;
-            this.socketToRecordParser = new Dictionary<Socket, RecordBuilder>();
             this.sendBuffer = sendBuffer;
         }
 
@@ -29,77 +59,63 @@ namespace More.Net
             Byte[] callParameters, UInt32 callOffset, UInt32 callMaxOffset,
             out ISerializer replyParameters);
 
-        public void ServerListening(Socket listenSocket)
+        public void AcceptCallback(ref SelectControl control, Socket listenSock, Buf safeBuffer)
         {
+            Socket newSocket = listenSock.Accept();
+            RpcServerConnectionHandler connection = new RpcServerConnectionHandler(this, newSocket);
+            control.AddReceiveSocket(newSocket, connection.HandleData);
         }
-        public void ServerStopped()
-        {
-            Console.WriteLine("[{0}] The server has stopped", serviceName);
-        }
-        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
-        {
-            Console.WriteLine("[{0}] The listen socket closed", serviceName);
-            return ServerInstruction.StopServer;
-        }
-        public ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket)
-        {
-            //Console.WriteLine("[{0}] New Client '{1}'", serviceName, socket.RemoteEndPoint);
-            socketToRecordParser.Add(socket, new RecordBuilder(HandleTcpRecord));
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket)
-        {
-            //Console.WriteLine("[{0}] Close Client", serviceName);
-            socketToRecordParser.Remove(socket);
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)
-        {
-            String clientString = String.Format("TCP:{0}", socket.SafeRemoteEndPointString());
 
-            RecordBuilder recordBuilder;
-            if (!socketToRecordParser.TryGetValue(socket, out recordBuilder))
+        EndPoint from = new IPEndPoint(IPAddress.Any, 0);
+        public void DatagramRecvHandler(ref SelectControl control, Socket sock, Buf safeBuffer)
+        {
+            int bytesReceived = sock.ReceiveFrom(safeBuffer.array, ref from);
+            if (bytesReceived <= 0)
             {
-                Console.WriteLine("[{0}] No entry in dictionary for client '{1}'", serviceName, clientString);
-                return ServerInstruction.CloseClient;
+                if (bytesReceived < 0)
+                {
+                    throw new InvalidOperationException(String.Format("ReceiveFrom on UDP socket returned {0}", bytesReceived));
+                }
+                return; // TODO: how to handle neg
             }
 
-            recordBuilder.HandleData(clientString, socket, bytes, 0, bytesRead);
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction DatagramPacket(System.Net.EndPoint endPoint, Socket socket, Byte[] bytes, UInt32 bytesRead)
-        {
-            String clientString = String.Format("UDP:{0}", endPoint);
+            String clientString = "?";
+            try
+            {
+                clientString = from.ToString();
+            }
+            catch (Exception) { }
 
             UInt32 parametersOffset;
-            RpcMessage callMessage = new RpcMessage(bytes, 0, bytesRead, out parametersOffset);
+            RpcMessage callMessage = new RpcMessage(safeBuffer.array, 0, (uint)bytesReceived, out parametersOffset);
 
             if (callMessage.messageType != RpcMessageType.Call)
+            {
                 throw new InvalidOperationException(String.Format("Received an Rpc reply from '{0}' but only expecting Rpc calls", clientString));
+            }
             if (!ProgramHeaderSupported(callMessage.call.programHeader))
             {
-                new RpcMessage(callMessage.transmissionID, new RpcReply(RpcVerifier.None, RpcAcceptStatus.ProgramUnavailable)).SendUdp(endPoint, socket, sendBuffer, null);
-                return ServerInstruction.NoInstruction;
+                new RpcMessage(callMessage.transmissionID, new RpcReply(RpcVerifier.None, RpcAcceptStatus.ProgramUnavailable)).SendUdp(from, sock, safeBuffer, null);
+                return;
             }
 
             ISerializer replyParameters;
-            RpcReply reply = Call(clientString, callMessage.call, bytes, parametersOffset, bytesRead, out replyParameters);
+            RpcReply reply = Call(clientString, callMessage.call, safeBuffer.array, parametersOffset, (uint)bytesReceived, out replyParameters);
 
             if (reply != null)
             {
-                new RpcMessage(callMessage.transmissionID, reply).SendUdp(endPoint, socket, sendBuffer, replyParameters);
+                new RpcMessage(callMessage.transmissionID, reply).SendUdp(from, sock, safeBuffer, replyParameters);
             }
-
-            return ServerInstruction.NoInstruction;
         }
-
-        void HandleTcpRecord(String clientString, Socket socket, Byte[] record, UInt32 recordOffset, UInt32 recordOffsetLimit)
+        public void HandleTcpRecord(String clientString, Socket socket, Byte[] record, UInt32 recordOffset, UInt32 recordOffsetLimit)
         {
             UInt32 parametersOffset;
             RpcMessage callMessage = new RpcMessage(record, recordOffset, recordOffsetLimit, out parametersOffset);
 
             if (callMessage.messageType != RpcMessageType.Call)
+            {
                 throw new InvalidOperationException(String.Format("Received an Rpc reply from '{0}' but only expecting Rpc calls", clientString));
+            }
 
             if (!ProgramHeaderSupported(callMessage.call.programHeader))
             {
@@ -115,5 +131,4 @@ namespace More.Net
             }
         }
     }
-    */
 }

@@ -39,10 +39,18 @@ namespace More.Net
             this.copiedFramentDataLength = 0;
         }
 
-        // This function is highly tested
-        public void DataCallback(ref SelectControl control, Socket socket, Buf safeBuffer)
+        /*
+        public void TcpSocketRecvCallback(ref SelectControl control, Socket socket, Buf safeBuffer)
         {
-            int bytesRead = socket.Receive(safeBuffer.array);
+            int bytesRead;
+            try
+            {
+                bytesRead = socket.Receive(safeBuffer.array);
+            }
+            catch (SocketException)
+            {
+                bytesRead = -1;
+            }
             if (bytesRead <= 0)
             {
                 control.RemoveReceiveSocket(socket);
@@ -51,6 +59,8 @@ namespace More.Net
 
             HandleData(socket, safeBuffer.array, 0, (uint)bytesRead);
         }
+        */
+        // This function is highly tested
         public void HandleData(Socket socket, Byte[] bytes, UInt32 offset, UInt32 offsetLimit)
         {
             switch (state)

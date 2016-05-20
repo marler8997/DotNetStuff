@@ -11,12 +11,12 @@ using More.Net.TmpCommand;
 
 namespace More.Net
 {
-    class TmpAccessorOptions : CLParser
+    class Options : CLParser
     {
         public readonly CLGenericArgument<UInt16> tmpListenPort;
         public readonly CLSwitch disableNpc;
 
-        public TmpAccessorOptions()
+        public Options()
         {
             tmpListenPort = new CLGenericArgument<UInt16>(UInt16.Parse, 't', "tmp-port", "The TMP (Tunnel Manipulation Protocol) listen port");
             tmpListenPort.SetDefault(Tmp.DefaultPort);
@@ -36,13 +36,14 @@ namespace More.Net
     {
         static void Main(string[] args)
         {
-            TmpAccessorOptions options = new TmpAccessorOptions();
+            Options options = new Options();
             List<String> nonOptionArgs = options.Parse(args);
 
             //
             // Initialize Static Data
             //
             TmpAccessorServer.GlobalTlsSettings = new TlsSettings(false);
+            TmpAccessorServer.SelectServer = new SelectServer(false, new Buf(8192));
 
             //
             // Add Tunnel Listeners from command line arguments
@@ -81,8 +82,6 @@ namespace More.Net
                 }
             }
 
-            SelectServer selectServer = new SelectServer(false, new Buf(8192));
-
             //
             // Setup NPC Server so long as it isn't disabled
             //
@@ -95,7 +94,7 @@ namespace More.Net
                 Socket npcSocket = new Socket(listenIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 npcSocket.Bind(new IPEndPoint(listenIP, Tmp.DefaultNpcControlPort));
                 npcSocket.Listen(8);
-                selectServer.control.AddListenSocket(npcSocket, NpcAcceptCallback);
+                TmpAccessorServer.SelectServer.control.AddListenSocket(npcSocket, NpcAcceptCallback);
             }
 
             //
@@ -106,10 +105,10 @@ namespace More.Net
                 Socket listenSocket = new Socket(listenIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 listenSocket.Bind(new IPEndPoint(listenIP, Tmp.DefaultPort));
                 listenSocket.Listen(8);
-                selectServer.control.AddListenSocket(listenSocket, TmpAccessorServer.AcceptCallback);
+                TmpAccessorServer.SelectServer.control.AddListenSocket(listenSocket, TmpAccessorServer.AcceptCallback);
             }
 
-            selectServer.Run();
+            TmpAccessorServer.SelectServer.Run();
         }
 
 
@@ -158,6 +157,7 @@ namespace More.Net
         // Static Data
         //
         public static TlsSettings GlobalTlsSettings;
+        public static SelectServer SelectServer;
 
         static readonly List<TmpControlConnection> tmpControlConnections = new List<TmpControlConnection>();
         static readonly Dictionary<String, TmpControlConnection> serverNameToControlConnection = new Dictionary<String, TmpControlConnection>();
@@ -390,16 +390,20 @@ namespace More.Net
         }
         public static void AddTunnelListener(String serverName, Boolean requireTls, String targetHost, UInt16 targetPort, UInt16 listenPort)
         {
-            Socket listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            listenSocket.Bind(new IPEndPoint(IPAddress.Any, listenPort));
+            IPAddress listenIP = IPAddress.Any;
+
+            Socket listenSocket = new Socket(listenIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            listenSocket.Bind(new IPEndPoint(listenIP, listenPort));
 
             AddTunnelListener(serverName, requireTls, targetHost, targetPort, listenSocket, DefaultTunnelListenerBacklog);
         }
         public static UInt16 AddTunnelListener(String serverName, Boolean requireTls, String targetHost, UInt16 targetPort)
         {
-            Socket listenSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            IPAddress listenIP = IPAddress.Any;
 
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, 0);
+            Socket listenSocket = new Socket(listenIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            IPEndPoint endPoint = new IPEndPoint(listenIP, 0);
             listenSocket.Bind(endPoint);
             UInt16 listenPort = (UInt16)((IPEndPoint)listenSocket.LocalEndPoint).Port;
 
@@ -410,7 +414,7 @@ namespace More.Net
         static void AddTunnelListener(String serverName, Boolean requireTls, String targetHost, UInt16 targetPort, Socket boundSocket, Int32 backlog)
         {
             TunnelListenerHandler tunnelListenerHandler = new TunnelListenerHandler(serverName, targetHost, targetPort, requireTls);
-            //tunnelSelectServer.AddListener(boundSocket, backlog, tunnelListenerHandler.AcceptClientHandler);
+            SelectServer.control.AddListenSocket(boundSocket, tunnelListenerHandler.AcceptClientHandler);
             Console.WriteLine("{0} Added tunnel listener (ServerName={1}, Tls={2}, Target={3}:{4}, ListenPort={5}",
                 DateTime.Now, serverName, requireTls, targetHost, targetPort, ((IPEndPoint)boundSocket.LocalEndPoint).Port);
         }
@@ -611,13 +615,64 @@ namespace More.Net
 
                 this.targetHostBytes = Encoding.ASCII.GetBytes(targetHost);
             }
-            public void AcceptClientHandler(ref SelectControl control, Socket socket, Buf safeBuffer)
+            public void AcceptClientHandler(ref SelectControl control, Socket listenSocket, Buf safeBuffer)
                 //(Socket listenSocket, Socket socket, Buf safeBuffer)
             {
-
-
-
                 //return tmpConnectionManager.AcceptAndInitiateTunnel(this, socket, safeBuffer);
+
+                Socket clientSocket = listenSocket.Accept();
+                Console.WriteLine("{0} [{1}] Received tunnel connection for server '{2}' to connect to target '{3}:{4}'",
+                    DateTime.Now, clientSocket.SafeRemoteEndPointString(), serverName, targetHost, targetPort);
+
+                //
+                // Check if server is connected
+                //
+                TmpControlConnection tmpControlConnection = TryGetTmpControlConnection(serverName);
+                if (tmpControlConnection == null)
+                {
+                    Console.WriteLine("{0} [{1}] Server '{2}' is not currently connected", DateTime.Now, clientSocket.SafeRemoteEndPointString(), serverName);
+                    clientSocket.ShutdownAndDispose();
+                    return;
+                }
+
+                //
+                // Generate a tunnel key
+                //
+                Int32 randomKey = random.Next();
+
+                //
+                // TODO: This would generate an infinite loop if every single key was taken up in the dictionary,
+                //       however, I'm not sure if I should worry about this or not? Maybe there's a better way to do
+                //       this?
+                //
+                while (true)
+                {
+                    if (!incompleteTunnels.ContainsKey(randomKey)) break;
+                    randomKey++;
+                }
+                            
+                DisconnectedTunnel disconnectedTunnel = new DisconnectedTunnel(clientSocket);
+                incompleteTunnels.Add(randomKey, disconnectedTunnel);
+
+                Byte[] tunnelKey = new Byte[4];
+                tunnelKey[0] = (Byte)(randomKey >> 24);
+                tunnelKey[1] = (Byte)(randomKey >> 16);
+                tunnelKey[2] = (Byte)(randomKey >>  8);
+                tunnelKey[3] = (Byte)(randomKey      );
+                
+                //
+                // Send Open Tunnel command to TmpServer
+                //
+                OpenAccessorTunnelRequest request = new OpenAccessorTunnelRequest(0,
+                    targetHostBytes, targetPort, tunnelKey);
+                UInt32 commandLength = Tmp.SerializeCommand<OpenAccessorTunnelRequest>(OpenAccessorTunnelRequest.Serializer,
+                    Tmp.ToServerOpenAccessorTunnelRequestID, request, safeBuffer, 0);
+                tmpControlConnection.dataSender.HandleData(safeBuffer.array, 0, commandLength);
+
+                //
+                // Create a diconnected tunnel handler
+                //
+                control.AddReceiveSocket(clientSocket, disconnectedTunnel.ConnectedSocketReceiveHandler);
             }
         }
 

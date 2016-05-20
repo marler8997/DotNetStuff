@@ -13,12 +13,12 @@ namespace More.Net
     {
         readonly AccessorConnection accessorConnection;
         readonly TlsSettings tlsSettings;
-        readonly SelectTunnelsThread tunnelsThread;
-        public TmpServerHandler(AccessorConnection accessorConnection, TlsSettings tlsSettings, SelectTunnelsThread tunnelsThread)
+        //readonly SelectTunnelsThread tunnelsThread;
+        public TmpServerHandler(AccessorConnection accessorConnection, TlsSettings tlsSettings/*, SelectTunnelsThread tunnelsThread*/)
         {
             this.accessorConnection = accessorConnection;
             this.tlsSettings = tlsSettings;
-            this.tunnelsThread = tunnelsThread;
+            //this.tunnelsThread = tunnelsThread;
         }
         public void HandleHeartbeat()
         {
@@ -42,6 +42,8 @@ namespace More.Net
                         OpenAccessorTunnelRequest request;
                         OpenAccessorTunnelRequest.Serializer.Deserialize(data, offset + 1, offset + length, out request);
 
+                        throw new NotImplementedException();
+#if COMMENT
                         //
                         // Connect to accessor
                         //
@@ -84,6 +86,7 @@ namespace More.Net
                         socketToTarget.Connect(targetEndPoint);
 
                         tunnelsThread.Add(socketToAccessor, socketToTarget);
+#endif
                     }
                     catch(Exception e)
                     {

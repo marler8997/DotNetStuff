@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 
 namespace More
 {
@@ -190,4 +191,232 @@ namespace More
         }
     }
 
+
+    public class SortedNumberSet : IEnumerable<int>, ICollection<int>
+    {
+        public struct LimitRange
+        {
+            public int start;
+            public int limit;
+            public LimitRange(int start, int limit)
+            {
+                this.start = start;
+                this.limit = limit;
+            }
+        }
+
+        List<LimitRange> sortedRanges = new List<LimitRange>();
+        UInt32 count;
+        public SortedNumberSet()
+        {
+        }
+
+        public void Clear()
+        {
+            this.sortedRanges.Clear();
+            this.count = 0;
+        }
+
+        public bool Contains(int item)
+        {
+            throw new NotImplementedException();
+        }
+        public void CopyTo(int[] array, int arrayIndex)
+        {
+            throw new NotImplementedException();
+        }
+        public int Count
+        {
+            get { return (int)count; }
+        }
+        public bool IsReadOnly
+        {
+            get { throw new NotImplementedException(); }
+        }
+        public bool Remove(int item)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public void Add(int value)
+        {
+            TryAdd(value);
+        }
+
+        /// <returns>True if the value was added</returns>
+        public Boolean TryAdd(int value)
+        {
+            for (int i = 0; i < sortedRanges.Count; i++)
+            {
+                var range = sortedRanges[i];
+                if (value < range.start)
+                {
+                    if (value + 1 == range.start)
+                    {
+                        sortedRanges[i] = new LimitRange(value, range.limit);
+                    }
+                    else
+                    {
+                        sortedRanges.Insert(i, new LimitRange(value, value + 1));
+                    }
+                    count++;
+                    return true; // was added
+                }
+
+                if (value.Equals(range.start))
+                {
+                    return false; // was already added
+                }
+            }
+
+            if (sortedRanges.Count == 0)
+            {
+                sortedRanges.Add(new LimitRange(value, value + 1));
+                count++;
+                return true;
+            }
+
+            var lastRange = sortedRanges[sortedRanges.Count - 1];
+            if (lastRange.limit < value)
+            {
+                sortedRanges.Add(new LimitRange(value, value + 1));
+                count++;
+                return true; // was added
+            }
+            if (lastRange.limit == value)
+            {
+                sortedRanges[sortedRanges.Count - 1] = new LimitRange(lastRange.start, value + 1);
+                count++;
+                return true; // was added
+            }
+            return false; // was already added
+        }
+
+        void CombineRanges(int startRangeIndex, int limit)
+        {
+            var startRange = sortedRanges[startRangeIndex];
+            if (limit > startRange.limit)
+            {
+                var previousRange = startRange;
+                for (int ii = startRangeIndex + 1; ; ii++)
+                {
+                    if (ii >= sortedRanges.Count)
+                    {
+                        if (ii > startRangeIndex)
+                        {
+                            sortedRanges.RemoveRange(startRangeIndex + 1, ii - 1);
+                        }
+                        count += (uint)(limit - previousRange.limit);
+                        sortedRanges[startRangeIndex] = new LimitRange(startRange.start, limit);
+                        return;
+                    }
+                    var range = sortedRanges[ii];
+                    if (limit < range.start)
+                    {
+                        if (ii > startRangeIndex)
+                        {
+                            sortedRanges.RemoveRange(startRangeIndex + 1, ii - 1);
+                        }
+                        count += (uint)(limit - previousRange.limit);
+                        sortedRanges[startRangeIndex] = new LimitRange(startRange.start, limit);
+                        return;
+                    }
+                    count += (uint)(range.start - previousRange.limit);
+                    if (limit <= range.limit)
+                    {
+                        if (ii > startRangeIndex)
+                        {
+                            sortedRanges.RemoveRange(startRangeIndex + 1, ii);
+                        }
+                        sortedRanges[startRangeIndex] = new LimitRange(startRange.start, range.limit);
+                        return;
+                    }
+                    previousRange = range;
+                }
+            }
+        }
+
+        public void AddRange(int start, int limit)
+        {
+            if (start >= limit)
+            {
+                throw new ArgumentException(String.Format("start ({0}) cannot be >= to limit ({1})", start, limit));
+            }
+
+            for (int i = 0; i < sortedRanges.Count; i++)
+            {
+                var range = sortedRanges[i];
+                if (start <= range.limit)
+                {
+                    if (limit < range.start)
+                    {
+                        sortedRanges.Insert(i, new LimitRange(start, limit));
+                        count += (uint)(limit - start);
+                        return;
+                    }
+
+                    if (start < range.start)
+                    {
+                        count += (uint)(range.start - start);
+                        sortedRanges[i] = new LimitRange(start, range.limit);
+                    }
+                    CombineRanges(i, limit);
+                    return;
+                }
+            }
+
+            if (sortedRanges.Count == 0)
+            {
+                sortedRanges.Add(new LimitRange(start, limit));
+                count += (uint)(limit - start);
+                return;
+            }
+
+            var lastRange = sortedRanges[sortedRanges.Count - 1];
+            if (lastRange.limit < start)
+            {
+                sortedRanges.Add(new LimitRange(start, limit));
+                count += (uint)(limit - start);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+        public IEnumerator<int> GetEnumerator()
+        {
+            foreach (var range in sortedRanges)
+            {
+                for (var value = range.start; value < range.limit; value++)
+                {
+                    yield return value;
+                }
+            }
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+        public String RangeString()
+        {
+            StringBuilder builder = new StringBuilder();
+            Boolean atFirst = true;
+            foreach (var range in sortedRanges)
+            {
+                if(atFirst) { atFirst = false; } else { builder.Append(","); }
+                if(range.limit == range.start + 1)
+                {
+                    builder.Append(range.start);
+                }
+                else
+                {
+                    builder.Append(range.start);
+                    builder.Append('-');
+                    builder.Append(range.limit - 1);
+                }
+            }
+            return builder.ToString();
+        }
+    }
 }

@@ -9,9 +9,10 @@ using More;
 
 namespace More.Net
 {
+#if COMMENT
     public class ServerServer
     {
-        readonly SelectTunnelsThread tunnelsThread;
+        //readonly SelectTunnelsThread tunnelsThread;
 
         private readonly TunnelList tunnelList;
         public readonly Int32 socketBackLog;
@@ -27,7 +28,7 @@ namespace More.Net
         {
             if (tunnelSet == null) throw new ArgumentNullException("tunnelSet");
 
-            this.tunnelsThread = new SelectTunnelsThread(2048);
+            //this.tunnelsThread = new SelectTunnelsThread(2048);
 
             this.tunnelList = tunnelSet;
             this.socketBackLog = socketBackLog;
@@ -39,6 +40,7 @@ namespace More.Net
             this.connectionList = new List<IncomingConnection>();
         }
 
+        /*
         public void Start()
         {
             if (threads != null) throw new InvalidOperationException("There are already threads running");
@@ -53,6 +55,7 @@ namespace More.Net
                 thread.Start();
             }
         }
+        */
 
         public void Interrupt()
         {
@@ -115,7 +118,7 @@ namespace More.Net
                 newConnection.socket, matchedConnection.socket, readBufferSize, messageLogger, dataLogger);
             new Thread(socketTunnel.StartOneAndRunOne).Start();
             */
-            tunnelsThread.Add(newConnection.socket, matchedConnection.socket);
+            //tunnelsThread.Add(newConnection.socket, matchedConnection.socket);
 
         }
 
@@ -206,5 +209,5 @@ namespace More.Net
         }
 
     }
-
+#endif
 }

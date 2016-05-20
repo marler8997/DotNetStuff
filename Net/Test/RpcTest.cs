@@ -63,14 +63,14 @@ namespace More.Net
         public void TestRpcRecordParser()
         {
             RecordChecker checker = new RecordChecker();
-            RecordBuilder recordBuilder = new RecordBuilder(checker.HandleRecord);
+            RecordBuilder recordBuilder = new RecordBuilder("TestClient", checker.HandleRecord);
             Byte[] record;
 
             //
             // Empty Record
             //
             checker.Add(new Byte[0], 0, 0);
-            recordBuilder.HandleData(null, null, new Byte[] { 0x80, 0, 0, 0 }, 0, 4);
+            recordBuilder.HandleData(null, new Byte[] { 0x80, 0, 0, 0 }, 0, 4);
             checker.Finish();
 
             //
@@ -78,12 +78,12 @@ namespace More.Net
             //
             record = new Byte[] { 0x80, 0, 0, 1, 0xF3 };
             checker.Add(new Byte[] { 0xF3 });
-            recordBuilder.HandleData(null, null, record, 0, 5);
+            recordBuilder.HandleData(null, record, 0, 5);
 
             record = new Byte[] { 0x80, 0, 0, 1, 0xA7 };
             checker.Add(new Byte[] { 0xA7 });
-            recordBuilder.HandleData(null, null, record, 0, 4);
-            recordBuilder.HandleData(null, null, record, 4, 5);
+            recordBuilder.HandleData(null, record, 0, 4);
+            recordBuilder.HandleData(null, record, 4, 5);
             checker.Finish();
 
             //
@@ -91,18 +91,18 @@ namespace More.Net
             //
             record = new Byte[] { 0x80, 0, 0, 2, 0x58, 0x28 };
             checker.Add(new Byte[] { 0x58, 0x28 });
-            recordBuilder.HandleData(null, null, record, 0, 6);
+            recordBuilder.HandleData(null, record, 0, 6);
 
             record = new Byte[] { 0x80, 0, 0, 2, 0x1C, 0x68 };
             checker.Add(new Byte[] { 0x1C, 0x68 });
-            recordBuilder.HandleData(null, null, record, 0, 4);
-            recordBuilder.HandleData(null, null, record, 4, 6);
+            recordBuilder.HandleData(null, record, 0, 4);
+            recordBuilder.HandleData(null, record, 4, 6);
 
             record = new Byte[] { 0x80, 0, 0, 2, 0xE2, 0x55 };
             checker.Add(new Byte[] { 0xE2, 0x55 });
-            recordBuilder.HandleData(null, null, record, 0, 4);
-            recordBuilder.HandleData(null, null, record, 4, 5);
-            recordBuilder.HandleData(null, null, record, 5, 6);
+            recordBuilder.HandleData(null, record, 0, 4);
+            recordBuilder.HandleData(null, record, 4, 5);
+            recordBuilder.HandleData(null, record, 5, 6);
             checker.Finish();
 
             //
@@ -112,7 +112,7 @@ namespace More.Net
                                   0x80, 0, 0, 4, 0x56, 0x78, 0x89, 0xAB };
             checker.Add(new Byte[] { 0x12, 0x34 });
             checker.Add(new Byte[] { 0x56, 0x78, 0x89, 0xAB });
-            recordBuilder.HandleData(null, null, record, 0, 14);
+            recordBuilder.HandleData(null, record, 0, 14);
             checker.Finish();
 
             //
@@ -147,7 +147,7 @@ namespace More.Net
                 while (true)
                 {
                     Console.WriteLine("    Handling Offset: {0}", totalDataBytesHandled);
-                    recordBuilder.HandleData(null, null, data, totalDataBytesHandled, totalDataBytesHandled + handleLength);
+                    recordBuilder.HandleData(null, data, totalDataBytesHandled, totalDataBytesHandled + handleLength);
                     totalDataBytesHandled += handleLength;
 
                     if (totalDataBytesHandled + handleLength > data.Length) break;
@@ -157,7 +157,7 @@ namespace More.Net
                 if (bytesLeft > 0)
                 {
                     Console.WriteLine("    Handling Offset: {0} Length: {1}", totalDataBytesHandled, bytesLeft);
-                    recordBuilder.HandleData(null, null, data, totalDataBytesHandled, totalDataBytesHandled + bytesLeft);
+                    recordBuilder.HandleData(null, data, totalDataBytesHandled, totalDataBytesHandled + bytesLeft);
                 }
 
                 checker.Finish();

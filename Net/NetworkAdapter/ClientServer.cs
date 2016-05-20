@@ -1,61 +1,124 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Net.Sockets;
-using System.Threading;
+using System.IO;
 using System.Net;
+using System.Net.Sockets;
 
 namespace More.Net
 {
     public class ClientServer
     {
-        readonly InternetHost server;
-        readonly String clientSideServerLogString;
+        static InternetHost server; // can't be readonly because it's a struct with non-readonly fields
+        static PcapLogger pcapLogger;
+        static TextWriter log;
 
-        readonly PortSet listenPorts;
-        public readonly Int32 socketBackLog;
-        public readonly Int32 readBufferSize;
-        readonly Boolean logData;
-
-        public ClientServer(InternetHost server, ClientConnectWaitMode clientWaitMode,
-            PortSet listenPorts, Int32 socketBackLog, Int32 readBufferSize,
-            Boolean logData)
+        public static Int32 Run(Options options, List<String> nonOptionArgs)
         {
-            this.server = server;
-            this.clientSideServerLogString = server.CreateTargetString();
+            log = Console.Out;
 
-            this.listenPorts = listenPorts;
-            this.socketBackLog = socketBackLog;
+            //
+            // Options
+            //
+            if (nonOptionArgs.Count < 2) return options.ErrorAndUsage("Not enough arguments");
 
-            this.readBufferSize = readBufferSize;
-            this.logData = logData;
-        }
+            String clientSideConnector = nonOptionArgs[0];
+            String listenPortsString = nonOptionArgs[1];
 
-        public void Start()
-        {
-            PortSetListener listener = new PortSetListener(listenPorts, AcceptedNewClient, socketBackLog);
-            listener.Start();
-        }
-
-        public void AcceptedNewClient(UInt32 socketID, UInt16 port, IncomingConnection incomingConnection)
-        {
-            Socket clientSideSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-            BufStruct dataLeftOverFromServer = default(BufStruct);
-            clientSideSocket.Connect(server, DnsPriority.IPv4ThenIPv6, ProxyConnectOptions.None, ref dataLeftOverFromServer);
-            if (dataLeftOverFromServer.contentLength > 0)
             {
-                throw new NotImplementedException(String.Format("There are {0} bytes left over from negotiating proxy with the server, this is not implemented", dataLeftOverFromServer.contentLength));
+                Proxy proxy;
+                String ipOrHostAndPort = Proxy.StripAndParseProxies(clientSideConnector, DnsPriority.IPv4ThenIPv6, out proxy);
+                UInt16 port;
+                String ipOrHost = EndPoints.SplitIPOrHostAndPort(ipOrHostAndPort, out port);
+                server = new InternetHost(ipOrHost, port, DnsPriority.IPv4ThenIPv6, proxy);
+            }
+            SortedNumberSet listenPortSet = PortSet.ParsePortSet(listenPortsString);
+
+            SelectServer selectServer = new SelectServer(false, new Buf(options.readBufferSize.ArgValue));
+            IPAddress listenIP = IPAddress.Any;
+
+            foreach (var port in listenPortSet)
+            {
+                IPEndPoint listenEndPoint = new IPEndPoint(listenIP, port);
+                Socket socket = new Socket(listenEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                socket.Bind(listenEndPoint);
+                socket.Listen(options.socketBackLog.ArgValue);
+                selectServer.control.AddListenSocket(socket, AcceptCallback);
             }
 
-            ConnectionMessageLogger messageLogger = ConnectionMessageLogger.NullConnectionMessageLogger;
-            IConnectionDataLogger dataLogger = logData ? new ConnectionDataLoggerPrettyLog(socketID, ConsoleDataLogger.Instance,
-                clientSideServerLogString, incomingConnection.endPointName) :
-                ConnectionDataLogger.Null;
+            selectServer.Run();
+            return 0;
+        }
 
-            TwoWaySocketTunnel socketTunnel = new TwoWaySocketTunnel(
-                clientSideSocket, incomingConnection.socket, readBufferSize, messageLogger, dataLogger);
-            new Thread(socketTunnel.StartOneAndRunOne).Start();
+        static void AcceptCallback(ref SelectControl control, Socket listenSock, Buf safeBuffer)
+        {
+            Socket newSock = listenSock.Accept();
+            if (log != null)
+            {
+                log.WriteLine("Accepted new client {0}", newSock.SafeRemoteEndPointString());
+            }
+
+            Socket clientSideSocket = new Socket(server.GetAddressFamilyForTcp(), SocketType.Stream, ProtocolType.Tcp);
+
+            BufStruct leftOver = new BufStruct(safeBuffer.array);
+            clientSideSocket.Connect(server, DnsPriority.IPv4ThenIPv6, ProxyConnectOptions.None, ref leftOver);
+            if (leftOver.contentLength > 0)
+            {
+                newSock.Send(leftOver.buf, 0, (int)leftOver.contentLength, SocketFlags.None);
+                if (pcapLogger != null)
+                {
+                    //pcapLogger.LogTcpData(leftOver.buf, 0, leftOver.contentLength);
+                }
+            }
+
+            SelectSocketTunnel tunnel = new SelectSocketTunnel(newSock, clientSideSocket);
+            control.AddReceiveSocket(newSock, tunnel.ReceiveCallback);
+            control.AddReceiveSocket(clientSideSocket, tunnel.ReceiveCallback);
+        }
+        public class SelectSocketTunnel
+        {
+            public readonly Socket a;
+            public readonly Socket b;
+            public SelectSocketTunnel(Socket a, Socket b)
+            {
+                this.a = a;
+                this.b = b;
+            }
+            public void ReceiveCallback(ref SelectControl control, Socket sock, Buf safeBuffer)
+            {
+                Socket other = (sock == a) ? b : a;
+
+                int bytesReceived;
+                try
+                {
+                    bytesReceived = sock.Receive(safeBuffer.array);
+                }
+                catch (SocketException)
+                {
+                    bytesReceived = -1;
+                }
+
+                if (bytesReceived <= 0)
+                {
+                    other.ShutdownSafe();
+                    control.DisposeAndRemoveReceiveSocket(sock);
+                }
+                else
+                {
+                    try
+                    {
+                        other.Send(safeBuffer.array, bytesReceived, SocketFlags.None);
+                        if (pcapLogger != null)
+                        {
+                            //pcapLogger.Log(safeBuffer.array, 0, (uint)bytesReceived);
+                        }
+                    }
+                    catch (SocketException)
+                    {
+                        sock.ShutdownSafe();
+                        control.DisposeAndRemoveReceiveSocket(sock);
+                    }
+                }
+            }
         }
     }
 }

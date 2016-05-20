@@ -21,7 +21,6 @@ namespace More.Net
             if (status != Nfs3Procedure.Status.Ok) throw new InvalidOperationException(String.Format("Nfs Command Failed (status={0})", status));
         }
 
-
         static void Main(string[] args)
         {
             if (args.Length != 2)
@@ -36,7 +35,7 @@ namespace More.Net
             Boolean forceMountToUsePrivelegedSourcePort = false;
             Boolean forceNfsToUsePrivelegedSourcePort = false;
 
-            String serverHost = args[0];
+            IPAddress serverHost = EndPoints.ParseIPOrResolveHost(args[0], DnsPriority.IPv4ThenIPv6);
             String remoteMountDirectory = args[1];
 
             //
@@ -62,7 +61,7 @@ namespace More.Net
                 //
                 // Make connection to portmap service
                 //
-                portmapConnection = new RpcTcpClientConnection(new TcpSocket(AddressFamily.InterNetwork),
+                portmapConnection = new RpcTcpClientConnection(new Socket(serverHost.AddressFamily, SocketType.Stream, ProtocolType.Tcp),
                     PortMap2.ProgramHeader, portmapCredentials, RpcVerifier.None);
                 //IPEndPoint portmapEndPoint = new IPEndPoint(serverHost, 111);
                 portmapConnection.socket.Connect(serverHost, 111);
@@ -97,7 +96,7 @@ namespace More.Net
                 //
                 // Connect to NFS Service
                 //
-                nfsConnection = new RpcTcpClientConnection(new TcpSocket(AddressFamily.InterNetwork),
+                nfsConnection = new RpcTcpClientConnection(new Socket(serverHost.AddressFamily, SocketType.Stream, ProtocolType.Tcp),
                     Nfs3.ProgramHeader, nfsCredentials, RpcVerifier.None);
                 if (forceNfsToUsePrivelegedSourcePort)
                 {
@@ -127,7 +126,7 @@ namespace More.Net
                 //
                 // Connect to Mount Service
                 //
-                mountConnection = new RpcTcpClientConnection(new TcpSocket(AddressFamily.InterNetwork),
+                mountConnection = new RpcTcpClientConnection(new Socket(serverHost.AddressFamily, SocketType.Stream, ProtocolType.Tcp),
                     Mount3.ProgramHeader, mountCredentials, RpcVerifier.None);
                 if (forceMountToUsePrivelegedSourcePort)
                 {

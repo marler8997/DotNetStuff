@@ -539,10 +539,13 @@ namespace More.Net
             {
                 if (proxy == null)
                 {
-                    socket.Connect(ref serverEndPoint, dnsPriorityQuery);
+                    serverEndPoint.ForceIPResolution(DnsPriority.IPv4ThenIPv6);
+                    socket = new Socket(serverEndPoint.ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    socket.Connect(serverEndPoint.ipEndPoint);
                 }
                 else
                 {
+                    socket = new Socket(proxy.host.GetAddressFamilyForTcp(), SocketType.Stream, ProtocolType.Tcp);
                     proxy.ProxyConnectTcp(socket, ref serverEndPoint, ProxyConnectOptions.ContentIsRawHttp, ref buf);
                 }
             }

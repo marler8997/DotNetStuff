@@ -15,7 +15,7 @@ namespace More.Pdl
         // Enum Definitions
         //
         readonly Dictionary<String, EnumOrFlagsDefinition> enumOrFlagsDefinitionMap =
-            new Dictionary<String, EnumOrFlagsDefinition>();
+            new Dictionary<String, EnumOrFlagsDefinition>(StringComparer.OrdinalIgnoreCase);
         readonly List<EnumOrFlagsDefinition> enumDefinitions = new List<EnumOrFlagsDefinition>();
         readonly List<EnumOrFlagsDefinition> flagsDefinitions = new List<EnumOrFlagsDefinition>();
 
@@ -30,7 +30,8 @@ namespace More.Pdl
         // Object Definitions
         //
         readonly List<NamedObjectDefinition> objectDefinitions = new List<NamedObjectDefinition>();
-        readonly Dictionary<String, NamedObjectDefinition> objectDefinitionMap = new Dictionary<String, NamedObjectDefinition>();
+        readonly Dictionary<String, NamedObjectDefinition> objectDefinitionMap =
+            new Dictionary<String, NamedObjectDefinition>(StringComparer.OrdinalIgnoreCase);
         public IEnumerable<NamedObjectDefinition> ObjectDefinitions { get { return objectDefinitions; } }
 
         // returns definition key
@@ -50,10 +51,10 @@ namespace More.Pdl
             }
         }
 
-        public EnumOrFlagsDefinition TryGetEnumOrFlagsDefinition(NamedObjectDefinition currentObject, String typeNameLowerInvariant)
+        public EnumOrFlagsDefinition TryGetEnumOrFlagsDefinition(NamedObjectDefinition currentObject, String typeName)
         {
             EnumOrFlagsDefinition definition;
-            String nameFromCurrentObject = currentObject.globalReferenceNameLowerInvariant + "." + typeNameLowerInvariant;
+            String nameFromCurrentObject = currentObject.globalReferenceNameLowerInvariant + "." + typeName;
 
             // Try to get the defintion from any enum defined in the current object
             if (enumOrFlagsDefinitionMap.TryGetValue(nameFromCurrentObject, out definition))
@@ -61,7 +62,7 @@ namespace More.Pdl
                 return definition;
             }
             // Try to get the definition from a global enum definition
-            if (enumOrFlagsDefinitionMap.TryGetValue(typeNameLowerInvariant, out definition))
+            if (enumOrFlagsDefinitionMap.TryGetValue(typeName, out definition))
             {
                 return definition;
             }
@@ -81,10 +82,10 @@ namespace More.Pdl
             objectDefinitionMap.Add(objectDefinition.globalReferenceNameLowerInvariant, objectDefinition);
             objectDefinitions.Add(objectDefinition);
         }
-        public NamedObjectDefinition TryGetObjectDefinition(NamedObjectDefinition currentObject, String typeNameLowerInvariant)
+        public NamedObjectDefinition TryGetObjectDefinition(NamedObjectDefinition currentObject, String typeName)
         {
             NamedObjectDefinition definition;
-            String nameFromCurrentObject = currentObject.globalReferenceNameLowerInvariant + "." + typeNameLowerInvariant;
+            String nameFromCurrentObject = currentObject.globalReferenceNameLowerInvariant + "." + typeName;
 
             // Try to get the defintion from any object defined in the current object
             if (objectDefinitionMap.TryGetValue(nameFromCurrentObject, out definition))
@@ -92,7 +93,7 @@ namespace More.Pdl
                 return definition;
             }
             // Try to get the definition from a global object definition
-            if (objectDefinitionMap.TryGetValue(typeNameLowerInvariant, out definition))
+            if (objectDefinitionMap.TryGetValue(typeName, out definition))
             {
                 return definition;
             }

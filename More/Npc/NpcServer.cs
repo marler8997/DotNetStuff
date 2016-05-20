@@ -148,6 +148,38 @@ namespace More
             }
         }
     }
+    public class NpcSelectServerHandler
+    {
+        public readonly INpcServerCallback callback;
+        public readonly NpcExecutor npcExecutor;
+        public readonly INpcHtmlGenerator htmlGenerator;
+
+        public NpcSelectServerHandler(INpcServerCallback callback, NpcExecutor npcExecutor, INpcHtmlGenerator htmlGenerator)
+        {
+            if (callback == null) throw new ArgumentNullException("callback");
+            if (npcExecutor == null) throw new ArgumentNullException("npcExecutor");
+            if (htmlGenerator == null) throw new ArgumentNullException("htmlGenerator");
+
+            this.callback = callback;
+            this.npcExecutor = npcExecutor;
+            this.htmlGenerator = htmlGenerator;
+        }
+        public void AcceptCallback(ref SelectControl selectControl, Socket listenSocket, Buf safeBuffer)
+        {
+            Socket clientSocket = listenSocket.Accept();
+            if (clientSocket.Connected)
+            {
+                String clientLogString = clientSocket.SafeRemoteEndPointString();
+
+                var dataHandler = new NpcSocketHandler(clientLogString, callback, npcExecutor, htmlGenerator);
+                selectControl.AddReceiveSocket(clientSocket, dataHandler.InitialRecvHandler);
+            }
+            else
+            {
+                clientSocket.Close();
+            }
+        }
+    }
     public class NpcServerLoggerCallback : INpcServerCallback
     {
         private readonly TextWriter log;

@@ -337,6 +337,11 @@ namespace More.Net
                 SetupProxyWithHost(socket, endPoint.ipOrHost, endPoint.port);
             }
         }
+        public override Boolean ProxyConnectAsyncTcp(Socket socket, ref StringEndPoint endPoint,
+            ProxyConnectOptions options, ref BufStruct buf)
+        {
+            throw new NotImplementedException();
+        }
         public Socket ListenAndAccept(UInt16 port)
         {
             Byte[] bindRequest = new Byte[9];
@@ -611,6 +616,11 @@ namespace More.Net
             Console.WriteLine("[Socks5Debug] Udp Associate '{0}'", udpEndPoint);
             socket.Connect(udpEndPoint);
             */
+        }
+        public override Boolean ProxyConnectAsyncTcp(Socket socket, ref StringEndPoint endPoint,
+            ProxyConnectOptions options, ref BufStruct buf)
+        {
+            throw new NotImplementedException();
         }
     }
 

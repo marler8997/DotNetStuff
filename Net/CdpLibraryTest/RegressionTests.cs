@@ -322,7 +322,7 @@ namespace More.Net
                 this.transmitter = transmitter;
             }
 
-            public ServerInstruction GotControl(CdpTransmitter transmitter, out int sendBufferOffsetLimit, out bool requestImmediateAck)
+            public void GotControl(CdpTransmitter transmitter, out int sendBufferOffsetLimit, out bool requestImmediateAck)
             {
                 throw new NotImplementedException();
             }

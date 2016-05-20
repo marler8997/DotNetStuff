@@ -18,8 +18,8 @@ namespace More.Net
         public readonly Byte[] fileHandleBytes;
         public readonly Nfs3Procedure.OptionalFileHandle optionalFileHandleClass;
 
-        public readonly FileAttributes fileAttributes;
-        public readonly Nfs3Procedure.OptionalFileAttributes optionalFileAttributes;
+        public FileAttributes fileAttributes;
+        public Nfs3Procedure.OptionalFileAttributes optionalFileAttributes;
 
         public ShareObject(FileType fileType, UInt64 fileID, Byte[] fileHandleBytes, String localPathAndName, String shareLeafName)
         {

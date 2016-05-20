@@ -9,10 +9,11 @@ namespace More.Net
 {
     public class AccessorConnection
     {
-        InternetHost accessorHost;
-        public readonly String accessorHostString;
+        public InternetHost accessorHost; // Cannot be readonly because it is a struct with non-readonly fields
+
 
         Socket accessorSocket;
+        readonly SocketAsyncEventArgs connectAsyncArgs = new SocketAsyncEventArgs();
         DataFilterHandler accessorReceiveHandler;
 
         public Boolean Connected
@@ -46,8 +47,10 @@ namespace More.Net
             UInt16 port = Tmp.DefaultPort;
             String ipOrHost = EndPoints.SplitIPOrHostAndOptionalPort(ipOrHostOptionalPort, ref port);
             this.accessorHost = new InternetHost(ipOrHost, port, DnsPriority.IPv4ThenIPv6, proxy);
-            this.accessorHostString = accessorHost.CreateTargetString();
         }
+
+
+#if COMMENT
         public Socket MakeNewSocketAndConnect()
         {
             return NewSocketConnection(ref accessorHost);
@@ -68,7 +71,7 @@ namespace More.Net
             }
             return socket;
         }
-        public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, Buf sendBuffer, ServerInfo serverInfo, SelectTunnelsThread tunnelsThread)
+        public Boolean TryConnectAndInitialize(TlsSettings tlsSettings, Buf sendBuffer, ServerInfo serverInfo/*, SelectTunnelsThread tunnelsThread*/)
         {
             if (Connected) throw new InvalidOperationException(String.Format(
                 "You called Connect() on accessor '{0}' but its already connected", accessorHostString));
@@ -100,7 +103,7 @@ namespace More.Net
 
                 DataHandler accessorSendHandler = new SocketSendDataHandler(accessorSocket).HandleData;
                 this.accessorReceiveHandler = new DataFilterHandler(new FrameProtocolFilter(),
-                        new TmpServerHandler(this, tlsSettings, tunnelsThread));
+                        new TmpServerHandler(this, tlsSettings/*, tunnelsThread*/));
 
                 //
                 // Initiate a tls connection if required
@@ -163,6 +166,47 @@ namespace More.Net
                 {
                     accessorReceiveHandler.HandleData(receiveBuffer, 0, (UInt32)bytesRead);
                 }
+            }
+        }
+#endif
+
+
+        public void StartConnect(ref SelectControl control, Buf safeBuffer)
+        {
+            if (accessorSocket != null)
+            {
+                throw new InvalidOperationException("CodeBug: StartConnect called but socket is not null");
+            }
+
+            accessorSocket = new Socket(accessorHost.GetAddressFamilyForTcp(), SocketType.Stream, ProtocolType.Tcp);
+            accessorSocket.Blocking = false;
+
+            if(accessorHost.proxy != null)
+            {
+                throw new NotImplementedException("accessor host through proxy not implemented");
+            }
+            accessorHost.targetEndPoint.ForceIPResolution(DnsPriority.IPv4ThenIPv6);
+            connectAsyncArgs.RemoteEndPoint = accessorHost.targetEndPoint.ipEndPoint;
+
+            Console.WriteLine("{0} Connecting to {1}:{2}", DateTime.Now,
+                accessorHost.targetEndPoint.ipOrHost, accessorHost.targetEndPoint.port);
+            if (accessorSocket.ConnectAsync(connectAsyncArgs))
+            {
+                control.AddConnectSocket(accessorSocket, ConnectHandler);
+            }
+            else
+            {
+                throw new NotImplementedException("immediate connect not implemented");
+            }
+        }
+        void ConnectHandler(ref SelectControl control, Socket socket, Buf safeBuffer)
+        {
+            throw new NotImplementedException();
+            if (socket.Connected)
+            {
+            }
+            else
+            {
             }
         }
     }

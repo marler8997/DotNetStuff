@@ -17,7 +17,7 @@ namespace More
     //public delegate void LfdConfigHandler(ILineReader reader, List<String> fields);
     public delegate void LfdLineConfigHandler(LfdLine line);
     public delegate LfdLine LfdConfigHandler(LfdReader reader, LfdLine line);
-    public class LfdConfiguration
+    public class LfdCallbackParser
     {
         readonly Dictionary<String, LfdLineConfigHandler> lineParsers =
             new Dictionary<String, LfdLineConfigHandler>(StringComparer.OrdinalIgnoreCase);

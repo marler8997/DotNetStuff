@@ -87,10 +87,15 @@ namespace More.Net
                 return -1;
             }
 
-            HostWithOptionalProxy? serverHost;
+            InternetHost? serverHost;
             if (nonOptionArgs.Count == 1)
             {
-                serverHost.Value = ConnectorParser.ParseConnectorWithOptionalPortAndProxy(nonOptionArgs[0], DefaultPort);
+                String connectorString = nonOptionArgs[0];
+                Proxy proxy;
+                String ipOrHostOptionalPort = Proxy.StripAndParseProxies(connectorString, DnsPriority.IPv4ThenIPv6, out proxy);
+                UInt16 port = DefaultPort;
+                String ipOrHost = EndPoints.SplitIPOrHostAndOptionalPort(ipOrHostOptionalPort, ref port);
+                serverHost = new InternetHost(ipOrHost, port, DnsPriority.IPv4ThenIPv6, proxy);
             }
             else
             {
@@ -102,7 +107,12 @@ namespace More.Net
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             if (serverHost != null)
             {
-                socket.ConnectTcpSocketAndProxy(serverHost.Value);
+                BufStruct leftOver = default(BufStruct);
+                socket.Connect(serverHost.Value, DnsPriority.IPv4ThenIPv6, ProxyConnectOptions.None, ref leftOver);
+                if (leftOver.contentLength > 0)
+                {
+                    Console.WriteLine(Encoding.UTF8.GetString(leftOver.buf, 0, (int)leftOver.contentLength));
+                }
             }
 
             client.Run(socket);

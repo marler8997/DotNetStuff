@@ -324,7 +324,7 @@ namespace More.Net.Nfs3Procedure
         }
     }
     */
-    public class BeforeAndAfterAttributes
+    public struct BeforeAndAfterAttributes
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
@@ -337,15 +337,7 @@ namespace More.Net.Nfs3Procedure
                 VoidReflector.Reflectors),            
         });
 
-        private static BeforeAndAfterAttributes none = null;
-        public static BeforeAndAfterAttributes None
-        {
-            get
-            {
-                if (none == null) none = new BeforeAndAfterAttributes(null, null);
-                return none;
-            }
-        }
+        public static readonly BeforeAndAfterAttributes None = new BeforeAndAfterAttributes(false);
 
         public Boolean beforeIncluded;
         public SizeAndTimes before;
@@ -353,13 +345,53 @@ namespace More.Net.Nfs3Procedure
         public Boolean afterIncluded;
         public FileAttributes after;
 
-        public BeforeAndAfterAttributes(SizeAndTimes before, FileAttributes after)
+        private BeforeAndAfterAttributes(Boolean ignore)
         {
-            this.beforeIncluded = (before == null) ? false : true;
+            this.beforeIncluded = false;
+            this.before = default(SizeAndTimes);
+
+            this.afterIncluded = false;
+            this.after = default(FileAttributes);
+        }
+        public BeforeAndAfterAttributes(SizeAndTimes before)
+        {
+            this.beforeIncluded = true;
             this.before = before;
 
-            this.afterIncluded = (after == null) ? false : true;
+            this.afterIncluded = false;
+            this.after = default(FileAttributes);
+        }
+        public BeforeAndAfterAttributes(FileAttributes after)
+        {
+            this.beforeIncluded = false;
+            this.before = default(SizeAndTimes);
+
+            this.afterIncluded = true;
             this.after = after;
+        }
+        public BeforeAndAfterAttributes(SizeAndTimes? before, FileAttributes? after)
+        {
+            if (before.HasValue)
+            {
+                this.beforeIncluded = true;
+                this.before = before.Value;
+            }
+            else
+            {
+                this.beforeIncluded = false;
+                this.before = default(SizeAndTimes);
+            }
+
+            if (after.HasValue)
+            {
+                this.afterIncluded = true;
+                this.after = after.Value;
+            }
+            else
+            {
+                this.afterIncluded = false;
+                this.after = default(FileAttributes);
+            }
         }
     }
     public class OptionalFileAttributes
@@ -380,19 +412,12 @@ namespace More.Net.Nfs3Procedure
         private OptionalFileAttributes()
         {
             this.fileAttributesIncluded = false;
-            this.fileAttributes = null;
+            this.fileAttributes = default(FileAttributes);
         }
         public OptionalFileAttributes(FileAttributes fileAttributes)
         {
-            if (fileAttributes == null)
-            {
-                this.fileAttributesIncluded = false;
-            }
-            else
-            {
-                this.fileAttributesIncluded = true;
-                this.fileAttributes = fileAttributes;
-            }
+            this.fileAttributesIncluded = true;
+            this.fileAttributes = fileAttributes;
         }
     }
     public class OptionalFileHandle
@@ -423,36 +448,36 @@ namespace More.Net.Nfs3Procedure
             this.fileHandle = fileHandle;
         }
     }
-    public class SetAttributesStruct
+    public struct SetAttributesStruct
     {
         public static readonly Reflectors memberSerializers = new Reflectors(new IReflector[] {
             new XdrBooleanDescriminateReflector(
-                new XdrBooleanReflector          (typeof(SetAttributesStruct), "setMode"),
-                new Reflectors(new XdrEnumReflector             (typeof(SetAttributesStruct), "mode", typeof(ModeFlags))),
+                new XdrBooleanReflector(typeof(SetAttributesStruct), "setMode"),
+                new Reflectors(new XdrEnumReflector(typeof(SetAttributesStruct), "mode", typeof(ModeFlags))),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
-                new XdrBooleanReflector          (typeof(SetAttributesStruct), "setUid"),
-                new Reflectors(new BigEndianUInt32Reflector           (typeof(SetAttributesStruct), "uid")),
+                new XdrBooleanReflector(typeof(SetAttributesStruct), "setUid"),
+                new Reflectors(new BigEndianUInt32Reflector(typeof(SetAttributesStruct), "uid")),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
-                new XdrBooleanReflector          (typeof(SetAttributesStruct), "setGid"),
-                new Reflectors(new BigEndianUInt32Reflector           (typeof(SetAttributesStruct), "gid")),
+                new XdrBooleanReflector(typeof(SetAttributesStruct), "setGid"),
+                new Reflectors(new BigEndianUInt32Reflector(typeof(SetAttributesStruct), "gid")),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
-                new XdrBooleanReflector          (typeof(SetAttributesStruct), "setSize"),
-                new Reflectors(new BigEndianUInt64Reflector           (typeof(SetAttributesStruct), "size")),
+                new XdrBooleanReflector(typeof(SetAttributesStruct), "setSize"),
+                new Reflectors(new BigEndianUInt64Reflector(typeof(SetAttributesStruct), "size")),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
-                new XdrBooleanReflector          (typeof(SetAttributesStruct), "setLastAccessTime"),
+                new XdrBooleanReflector(typeof(SetAttributesStruct), "setLastAccessTime"),
                 new Reflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastAccessTime", AutoExtensions.TimeReflector)),
                 VoidReflector.Reflectors
             ),
             new XdrBooleanDescriminateReflector(
-                new XdrBooleanReflector          (typeof(SetAttributesStruct), "setLastModifyTime"),
+                new XdrBooleanReflector(typeof(SetAttributesStruct), "setLastModifyTime"),
                 new Reflectors(new ClassFieldReflectors<Time>(typeof(SetAttributesStruct), "lastModifyTime", AutoExtensions.TimeReflector)),
                 VoidReflector.Reflectors
             ),
@@ -476,16 +501,13 @@ namespace More.Net.Nfs3Procedure
         public Boolean setLastModifyTime;
         public Time lastModifyTime;
 
-        public SetAttributesStruct()
-        {
-        }
         public SetAttributesStruct(
             Boolean setMode, ModeFlags mode,
             Boolean setUid, Uid uid,
             Boolean setGid, Gid gid,
             Boolean setSize, Size size,
-            Time lastAccessTime,
-            Time lastModifyTime
+            Time? lastAccessTime,
+            Time? lastModifyTime
             )
         {
             this.setMode = setMode; this.mode = mode;
@@ -493,11 +515,27 @@ namespace More.Net.Nfs3Procedure
             this.setGid = setGid; this.gid = gid;
             this.setSize = setSize; this.size = size;
 
-            this.setLastAccessTime = (lastAccessTime != null);
-            this.lastAccessTime = lastAccessTime;
+            if (lastAccessTime.HasValue)
+            {
+                this.setLastAccessTime = true;
+                this.lastAccessTime = lastAccessTime.Value;
+            }
+            else
+            {
+                this.setLastAccessTime = false;
+                this.lastAccessTime = default(Time);
+            }
 
-            this.setLastModifyTime = (lastModifyTime != null);
-            this.lastModifyTime = lastModifyTime;
+            if (lastModifyTime.HasValue)
+            {
+                this.setLastModifyTime = true;
+                this.lastModifyTime = lastModifyTime.Value;
+            }
+            else
+            {
+                this.setLastModifyTime = false;
+                this.lastModifyTime = default(Time);
+            }
         }
     }
 
@@ -574,18 +612,18 @@ namespace More.Net.Nfs3Procedure
         {
             memberSerializers.Deserialize(this, data, offset, offsetLimit);
         }
-        public SetFileAttributesCall(Byte[] fileHandle, SetAttributesStruct setAttributes, Time guardTime)
+        public SetFileAttributesCall(Byte[] fileHandle, SetAttributesStruct setAttributes, Time? guardTime)
         {
             this.fileHandle = fileHandle;
             this.setAttributes = setAttributes;
-            if (guardTime == null)
+            if (guardTime.HasValue)
             {
                 this.checkGuardTime = false;
+                this.guardTime = guardTime.Value;
             }
             else
             {
                 this.checkGuardTime = false;
-                this.guardTime = guardTime;
             }
         }
     }

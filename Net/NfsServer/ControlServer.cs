@@ -7,105 +7,88 @@ using System.Text;
 
 namespace More.Net
 {
-    class DebugClientData : IDisposable
+    public class ControlServer
     {
-        public readonly LineParser lineParser;
-        public readonly StreamWriter writer;
-        public DebugClientData(Socket socket)
+        public void AcceptCallback(ref SelectControl control, Socket listenSock, Buf safeBuffer)
         {
-            this.lineParser = new LineParser(Encoding.ASCII, 64, 128);
-            this.writer = new StreamWriter(new NetworkStream(socket));
-        }
-        public void Dispose()
-        {
-            writer.Dispose();
-        }
-    }
+            Socket newSock = listenSock.Accept();
 
-    public class ControlServer : StreamSelectServerCallback
-    {
-        readonly Dictionary<Socket, DebugClientData> clientMap = new Dictionary<Socket, DebugClientData>();
-
-        public ControlServer()
-        {
+            DebugClientData clientData = new DebugClientData(newSock);
+            control.AddReceiveSocket(newSock, clientData.DataCallback);
+            clientData.SendPrompt();
         }
-
-        void SendPrompt(DebugClientData clientData)
+        class DebugClientData : IDisposable
         {
-            clientData.writer.Write("NfsServerDebug> ");
-            clientData.writer.Flush();
-        }
-
-        public void ServerListening(Socket listenSocket)
-        {
-        }
-        public void ServerStopped()
-        {
-        }
-        public ServerInstruction ListenSocketClosed(UInt32 clientCount)
-        {
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction ClientOpenCallback(UInt32 clientCount, Socket socket)
-        {
-            DebugClientData clientData = new DebugClientData(socket);
-            clientMap.Add(socket, new DebugClientData(socket));
-
-            SendPrompt(clientData);
-
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction ClientCloseCallback(UInt32 clientCount, Socket socket)
-        {
-            DebugClientData clientData;
-            if (clientMap.TryGetValue(socket, out clientData))
+            public readonly LineParser lineParser;
+            public readonly StreamWriter writer;
+            public DebugClientData(Socket socket)
             {
-                clientData.Dispose();
-                clientMap.Remove(socket);
+                this.lineParser = new LineParser(Encoding.ASCII, 64, 128);
+                this.writer = new StreamWriter(new NetworkStream(socket));
             }
-            return ServerInstruction.NoInstruction;
-        }
-        public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)
-        {
-            DebugClientData clientData;
-            if (!clientMap.TryGetValue(socket, out clientData)) return ServerInstruction.CloseClient;
-
-            clientData.lineParser.Add(bytes, 0, bytesRead);
-
-            while (true)
+            public void SendPrompt()
             {
-                String line = clientData.lineParser.GetLine();
-                if (line == null) break;
-
-
-                if (line[0] == 'd' || line[0] == 'D')
+                writer.Write("NfsServerDebug> ");
+                writer.Flush();
+            }
+            public void DataCallback(ref SelectControl control, Socket socket, Buf safeBuffer)
+            {
+                int bytesReceived;
+                try
                 {
-                    if (NfsServerLog.performanceLog == null)
+                    bytesReceived = socket.Receive(safeBuffer.array);
+                }
+                catch (SocketException)
+                {
+                    bytesReceived = -1;
+                }
+                if (bytesReceived <= 0)
+                {
+                    socket.ShutdownSafe();
+                    control.DisposeAndRemoveReceiveSocket(socket);
+                }
+
+                lineParser.Add(safeBuffer.array, 0, (uint)bytesReceived);
+
+                while (true)
+                {
+                    String line = lineParser.GetLine();
+                    if (line == null) break;
+
+
+                    if (line[0] == 'd' || line[0] == 'D')
                     {
-                        clientData.writer.Write("Cannot dump performance log because it was not enabled");
+                        if (NfsServerLog.performanceLog == null)
+                        {
+                            writer.Write("Cannot dump performance log because it was not enabled");
+                        }
+                        else
+                        {
+                            NfsServerLog.performanceLog.DumpLog(writer);
+                        }
+                    }
+                    else if (line[0] == 'h' || line[0] == 'H')
+                    {
+                        writer.WriteLine("Commands: dump, help");
+                    }
+                    else if (line[0] == 'e' || line[0] == 'E')
+                    {
+                        socket.ShutdownSafe();
+                        control.DisposeAndRemoveReceiveSocket(socket);
                     }
                     else
                     {
-                        NfsServerLog.performanceLog.DumpLog(clientData.writer);
+                        writer.WriteLine("UnknownCommand '{0}'", line);
+                        writer.WriteLine("Commands: dump, help, exit");
                     }
+                    SendPrompt();
                 }
-                else if (line[0] == 'h' || line[0] == 'H')
-                {
-                    clientData.writer.WriteLine("Commands: dump, help");
-                }
-                else if (line[0] == 'e' || line[0] == 'E')
-                {
-                    return ServerInstruction.CloseClient;
-                }
-                else
-                {
-                    clientData.writer.WriteLine("UnknownCommand '{0}'", line);
-                    clientData.writer.WriteLine("Commands: dump, help, exit");
-                }
-                SendPrompt(clientData);
             }
-
-            return ServerInstruction.NoInstruction;
+            public void Dispose()
+            {
+                writer.Dispose();
+            }
         }
+
     }
 }

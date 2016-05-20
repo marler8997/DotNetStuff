@@ -19,7 +19,6 @@ namespace More.Pdl
 
             List<String> nonOptionArgs = options.Parse(args);
 
-
             if(nonOptionArgs.Count != 2)
             {
                 return options.ErrorAndUsage("Expected 2 non-option arguments but got {0}", nonOptionArgs.Count);
@@ -34,7 +33,7 @@ namespace More.Pdl
                 pdlFile = PdlFileParser.ParsePdlFile(reader);
             }
 
-            PdlCodeGenerator.GenerateCode(Console.Out, pdlFile, @namespace);
+            PdlCodeGenerator.GenerateCode(Console.Out, pdlFile, @namespace, false);
 
             return 0;
         }

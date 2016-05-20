@@ -8,6 +8,7 @@ namespace More.Net
     [TestClass]
     public class PortSetTest
     {
+#if COMMENT
         public void ValidatePortSetSingle(PortSet portSet, UInt16 port)
         {
             // Verify is right class type
@@ -91,7 +92,6 @@ namespace More.Net
                 Assert.IsTrue(portSet[i] > portSet[i - 1]);
             }
         }
-
         [TestMethod]
         public void PortSetSingleTest()
         {
@@ -226,7 +226,7 @@ namespace More.Net
                 new UInt16[] { 1, 3, 5, 7 }, new UInt16[] { 2, 4, 6, 8 }),
                 1, 2, 3, 4, 5, 6, 7, 8);
         }
-
+#endif
 
     }
 }

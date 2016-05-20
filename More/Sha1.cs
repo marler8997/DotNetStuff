@@ -48,6 +48,19 @@ namespace More
         {
             return String.Format("{0:X8}{1:X8}{2:X8}{3:X8}{4:X8}", _0, _1, _2, _3, _4);
         }
+        public String ToHex()
+        {
+            return ToString();
+        }
+        public static Sha1 ParseHex(String hexString, UInt32 offset)
+        {
+            return new Sha1(
+                (Byte)((hexString[(int)offset + 0].HexValue() << 4) | hexString[(int)(offset + 1)].HexValue()),
+                (Byte)((hexString[(int)offset + 2].HexValue() << 4) | hexString[(int)(offset + 3)].HexValue()),
+                (Byte)((hexString[(int)offset + 4].HexValue() << 4) | hexString[(int)(offset + 5)].HexValue()),
+                (Byte)((hexString[(int)offset + 6].HexValue() << 4) | hexString[(int)(offset + 7)].HexValue()),
+                (Byte)((hexString[(int)offset + 8].HexValue() << 4) | hexString[(int)(offset + 9)].HexValue()));
+        }
     }
     public class Sha1Builder
     {

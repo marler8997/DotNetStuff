@@ -46,6 +46,7 @@
     <Compile Include="BetterBitArrayTest.cs" />
     <Compile Include="BufferTests.cs" />
     <Compile Include="BuildersTest.cs" />
+    <Compile Include="CollectionTests.cs" />
     <Compile Include="DataWriterTests.cs" />
     <Compile Include="EncodingTest.cs" />
     <Compile Include="EnumeratorTests.cs" />

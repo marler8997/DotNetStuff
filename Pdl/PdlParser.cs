@@ -48,19 +48,18 @@ namespace More.Pdl
             //
             // Check if it is only a definition (enum or flag)
             //
-            if (fieldLine.idLowerInvariantCase.Equals("enum"))
+            if (fieldLine.id.Equals("enum", StringComparison.OrdinalIgnoreCase))
             {
                 ParseEnumOrFlagsDefinition(pdlFile, reader, containingNamedObject, fieldLine, out nextLine, false);
                 return;
             }
-            if (fieldLine.idLowerInvariantCase.Equals("flags"))
+            if (fieldLine.id.Equals("flags", StringComparison.OrdinalIgnoreCase))
             {
                 ParseEnumOrFlagsDefinition(pdlFile, reader, containingNamedObject, fieldLine, out nextLine, true);
                 return;
             }
 
-            String typeString = fieldLine.idOriginalCase;
-            String typeStringLowerInvariant = fieldLine.idLowerInvariantCase;
+            String typeString = fieldLine.id;
 
             //
             // The rest of the fields can have arrayParse the Array Size Type
@@ -77,7 +76,6 @@ namespace More.Pdl
                 String arraySizeTypeString = typeString.Substring(indexOfOpenBracket + 1);
 
                 typeString = typeString.Remove(indexOfOpenBracket);
-                typeStringLowerInvariant = typeStringLowerInvariant.Remove(indexOfOpenBracket);
 
                 int indexOfCloseBracket = arraySizeTypeString.IndexOf(']');
                 if (indexOfCloseBracket < 0)
@@ -92,7 +90,7 @@ namespace More.Pdl
             //
             // Parse object inline definition
             //
-            if (typeStringLowerInvariant.Equals("object"))
+            if (typeString.Equals("object", StringComparison.OrdinalIgnoreCase))
             {
                 VerifyFieldCount(fieldLine, 1);
 
@@ -110,7 +108,7 @@ namespace More.Pdl
             //
             // Check if it is a serializer
             //
-            if (fieldLine.idLowerInvariantCase.Equals("serializer"))
+            if (fieldLine.id.Equals("serializer", StringComparison.OrdinalIgnoreCase))
             {
                 VerifyFieldCount(fieldLine, 2);
                 String serializerLengthTypeString = fieldLine.fields[0];
@@ -126,7 +124,7 @@ namespace More.Pdl
             //
             // Check if it is an 'if' type
             //
-            if (typeStringLowerInvariant.Equals("if"))
+            if (typeString.Equals("if", StringComparison.OrdinalIgnoreCase))
             {
                 VerifyFieldCount(fieldLine, 1);
 
@@ -140,7 +138,7 @@ namespace More.Pdl
             //
             // Check if it is a switch type
             //
-            if (typeStringLowerInvariant.Equals("switch"))
+            if (typeString.Equals("switch", StringComparison.OrdinalIgnoreCase))
             {
                 VerifyFieldCount(fieldLine, 1);
 
@@ -158,7 +156,7 @@ namespace More.Pdl
 
 
 
-            EnumOrFlagsDefinition enumDefinition = pdlFile.TryGetEnumOrFlagsDefinition(containingNamedObject, typeStringLowerInvariant);
+            EnumOrFlagsDefinition enumDefinition = pdlFile.TryGetEnumOrFlagsDefinition(containingNamedObject, typeString);
             if (enumDefinition != null)
             {
                 VerifyFieldCount(fieldLine, 1);
@@ -168,7 +166,7 @@ namespace More.Pdl
             }
 
             // Check if it is an object type
-            NamedObjectDefinition objectDefinition = pdlFile.TryGetObjectDefinition(containingNamedObject, typeStringLowerInvariant);
+            NamedObjectDefinition objectDefinition = pdlFile.TryGetObjectDefinition(containingNamedObject, typeString);
             if (objectDefinition != null)
             {
                 if (fieldLine.fields == null || fieldLine.fields.Length <= 0)
@@ -198,7 +196,7 @@ namespace More.Pdl
             //
             // Check if it a string type
             //
-            if (typeStringLowerInvariant.Equals("ascii"))
+            if (typeString.Equals("ascii", StringComparison.OrdinalIgnoreCase))
             {
                 VerifyFieldCount(fieldLine, 1);
                 containingObject.AddField(new ObjectDefinitionField(
@@ -237,7 +235,7 @@ namespace More.Pdl
                 underlyingIntegerType, enumDefinitionLine.fields[1]); }
             catch (FormatException e) { throw new ParseException(enumDefinitionLine, e.Message); }
 
-            Debug("  Entering {0} '{1}' (IntegerType={2})", enumOrFlagsString, enumDefinitionLine.idOriginalCase, definition.underlyingIntegerType);
+            Debug("  Entering {0} '{1}' (IntegerType={2})", enumOrFlagsString, enumDefinitionLine.id, definition.underlyingIntegerType);
 
             //
             // Read enum values
@@ -247,15 +245,15 @@ namespace More.Pdl
             {
                 LfdLine enumValueLine = nextLine;
                 VerifyFieldCount(enumValueLine, 1);
-                Debug("    {0} {1} {2}", enumOrFlagsString, enumValueLine.idOriginalCase, enumValueLine.fields[0]);
+                Debug("    {0} {1} {2}", enumOrFlagsString, enumValueLine.id, enumValueLine.fields[0]);
 
                 if (isFlagsDefinition)
                 {
-                    definition.Add(new FlagsValueDefinition(enumValueLine.fields[0], Byte.Parse(enumValueLine.idOriginalCase)));
+                    definition.Add(new FlagsValueDefinition(enumValueLine.fields[0], Byte.Parse(enumValueLine.id)));
                 }
                 else
                 {
-                    definition.Add(new EnumValueDefinition(enumValueLine.idOriginalCase, enumValueLine.fields[0]));
+                    definition.Add(new EnumValueDefinition(enumValueLine.id, enumValueLine.fields[0]));
                 }
 
                 nextLine = reader.ReadLineIgnoreComments();
@@ -304,7 +302,7 @@ namespace More.Pdl
             trueCaseObjectDefinition.CalculateFixedSerializationLength();
             trueCase = new Case(conditionString, trueCaseObjectDefinition);
 
-            if (nextLine != null && nextLine.idLowerInvariantCase.Equals("else"))
+            if (nextLine != null && nextLine.id.Equals("else", StringComparison.OrdinalIgnoreCase))
             {
                 LfdLine falseCaseLine = nextLine;
                 ObjectDefinition falseCaseObjectDefinition = new ObjectDefinition(pdlFile);
@@ -330,8 +328,8 @@ namespace More.Pdl
             nextLine = reader.ReadLineIgnoreComments();
             while (nextLine != null && nextLine.parent == switchLine)
             {
-                Boolean isCase = nextLine.idLowerInvariantCase.Equals("case");
-                if(!isCase && !nextLine.idLowerInvariantCase.Equals("default"))
+                Boolean isCase = nextLine.id.Equals("case", StringComparison.OrdinalIgnoreCase);
+                if (!isCase && !nextLine.id.Equals("default", StringComparison.OrdinalIgnoreCase))
                     throw new FormatException(String.Format("Expected 'Case' or 'Default' but got '{0}'", nextLine));
 
                 VerifyFieldCount(nextLine, isCase ? 1 : 0);
@@ -382,11 +380,11 @@ namespace More.Pdl
             LfdLine nextLine = reader.ReadLineIgnoreComments();
             while (nextLine != null)
             {
-                if (nextLine.idLowerInvariantCase.Equals("enum", StringComparison.InvariantCulture))
+                if (nextLine.id.Equals("enum", StringComparison.OrdinalIgnoreCase))
                 {
                     ParseEnumOrFlagsDefinition(pdlFile, reader, null, nextLine, out nextLine, false);
                 }
-                else if (nextLine.idLowerInvariantCase.Equals("flags"))
+                else if (nextLine.id.Equals("flags", StringComparison.OrdinalIgnoreCase))
                 {
                     ParseEnumOrFlagsDefinition(pdlFile, reader, null, nextLine, out nextLine, true);
                 }
@@ -395,7 +393,7 @@ namespace More.Pdl
                     LfdLine currentCommandLine = nextLine;
 
                     VerifyFieldCount(currentCommandLine, 0);
-                    NamedObjectDefinition objectDefinition = ParseObjectDefinition(pdlFile, reader, currentCommandLine, null, currentCommandLine.idOriginalCase, out nextLine);
+                    NamedObjectDefinition objectDefinition = ParseObjectDefinition(pdlFile, reader, currentCommandLine, null, currentCommandLine.id, out nextLine);
                 }
             }
         }

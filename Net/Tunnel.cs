@@ -6,7 +6,7 @@ namespace More.Net
 {
     public interface IPortTunnel
     {
-        PortSet FullPortSet { get; }
+        SortedNumberSet FullPortSet { get; }
         Boolean IsValidTunnel(UInt16 port1, UInt16 port2);
     }
 
@@ -20,15 +20,16 @@ namespace More.Net
     public class TunnelOnSinglePort : IPortTunnel
     {
         public readonly UInt16 port;
-        public readonly PortSetSingle fullPortSet;
+        public readonly SortedNumberSet fullPortSet;
 
         public TunnelOnSinglePort(UInt16 port)
         {
             this.port = port;
-            this.fullPortSet = new PortSetSingle(port);
+            this.fullPortSet = new SortedNumberSet();
+            this.fullPortSet.Add(port);
         }
 
-        PortSet IPortTunnel.FullPortSet { get { return fullPortSet; } }
+        SortedNumberSet IPortTunnel.FullPortSet { get { return fullPortSet; } }
 
         Boolean IPortTunnel.IsValidTunnel(UInt16 port1, UInt16 port2)
         {
@@ -44,17 +45,19 @@ namespace More.Net
     public class TunnelOneInOneOut : IPortTunnel
     {
         public readonly UInt16 port1, port2;
-        public readonly PortSet fullPortSet;
+        public readonly SortedNumberSet fullPortSet;
 
         public TunnelOneInOneOut(UInt16 port1, UInt16 port2)
         {
             if (port1 == port2) throw new ArgumentException(String.Format("port1 and port2 ({0}) cannot be the same, you must have wanted a TunnelOnSinglePort", port1));
             this.port1 = port1;
             this.port2 = port2;
-            this.fullPortSet = new PortSetDouble(port1, port2);
+            this.fullPortSet = new SortedNumberSet();
+            this.fullPortSet.Add(port1);
+            this.fullPortSet.Add(port2);
         }
 
-        PortSet IPortTunnel.FullPortSet { get { return fullPortSet; } }
+        SortedNumberSet IPortTunnel.FullPortSet { get { return fullPortSet; } }
 
         Boolean IPortTunnel.IsValidTunnel(UInt16 port1, UInt16 port2)
         {
@@ -69,14 +72,14 @@ namespace More.Net
             return String.Format("{0}-{1}", port1, port2);
         }
     }
-
+    /*
     public class TunnelOneInMultipleOut : IPortTunnel
     {
         public readonly UInt16 port;
-        public readonly PortSet portSet;
-        public readonly PortSet fullPortSet;
+        public readonly SortedNumberSet portSet;
+        public readonly SortedNumberSet fullPortSet;
 
-        public TunnelOneInMultipleOut(UInt16 port, PortSet portSet)
+        public TunnelOneInMultipleOut(UInt16 port, SortedNumberSet portSet)
         {
             if (portSet == null) throw new ArgumentNullException("portSet");
             this.port = port;
@@ -84,7 +87,7 @@ namespace More.Net
             this.fullPortSet = portSet.Combine(port);
         }
 
-        PortSet IPortTunnel.FullPortSet { get { return fullPortSet; } }
+        SortedNumberSet IPortTunnel.FullPortSet { get { return fullPortSet; } }
 
         Boolean IPortTunnel.IsValidTunnel(UInt16 port1, UInt16 port2)
         {
@@ -104,10 +107,10 @@ namespace More.Net
 
     public class TunnelMultipleInAndOut : IPortTunnel
     {
-        public readonly PortSet portSet1, portSet2;
-        public readonly PortSet fullPortSet;
+        public readonly SortedNumberSet portSet1, portSet2;
+        public readonly SortedNumberSet fullPortSet;
 
-        public TunnelMultipleInAndOut(PortSet portSet1, PortSet portSet2)
+        public TunnelMultipleInAndOut(SortedNumberSet portSet1, SortedNumberSet portSet2)
         {
             if (portSet1 == null) throw new ArgumentNullException("portSet1");
             if (portSet2 == null) throw new ArgumentNullException("portSet2");
@@ -116,7 +119,7 @@ namespace More.Net
             this.fullPortSet = portSet1.Combine(portSet2);
         }
 
-        PortSet IPortTunnel.FullPortSet { get { return fullPortSet; } }
+        SortedNumberSet IPortTunnel.FullPortSet { get { return fullPortSet; } }
 
         Boolean IPortTunnel.IsValidTunnel(UInt16 port1, UInt16 port2)
         {
@@ -132,4 +135,5 @@ namespace More.Net
             return String.Format("{0}-{1}", portSet1, portSet2);
         }
     }
+    */
 }

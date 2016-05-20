@@ -13,17 +13,31 @@ namespace More.Net
     public class RpcServicesManager
     {
         Int64 serverStartTimeStopwatchTicks;
-        MultipleListenersSelectServer selectServer;
+        SelectServer selectServer;
 
         public RpcServicesManager()
         {
+        }
+
+
+        static void AddRpcServer(SelectServer selectServer, EndPoint endPoint, RpcServerHandler handler, int backlog)
+        {
+            Socket tcpAcceptSocket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            tcpAcceptSocket.Bind(endPoint);
+            tcpAcceptSocket.Listen(backlog);
+            selectServer.control.AddListenSocket(tcpAcceptSocket, handler.AcceptCallback);
+
+            Socket udpSocket = new Socket(endPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+            udpSocket.Bind(endPoint);
+            selectServer.control.AddReceiveSocket(udpSocket, handler.DatagramRecvHandler);
         }
 
         public void Run(TextWriter selectServerEventLog, IPEndPoint debugServerEndPoint, IPEndPoint npcServerEndPoint,
             IPAddress listenIPAddress, Int32 backlog, SharedFileSystem sharedFileSystem,
             Int32 portmapPort, Int32 mountPort, Int32 nfsPort, UInt32 readSizeMax, UInt32 suggestedReadSizeMultiple)
         {
-            Buf sendBuffer = new Buf(4096, 1024);
+            Buf sendBuffer = new Buf(4096);
+            Buf recvBuffer = new Buf(4096);
 
             //
             // Create Mappings List
@@ -50,41 +64,53 @@ namespace More.Net
             //
             // Create Endpoints
             //
-            if (listenIPAddress == null) listenIPAddress = IPAddress.Any;
+            if (listenIPAddress == null)
+            {
+                listenIPAddress = IPAddress.Any;
+            }
             IPEndPoint portMapEndPoint = new IPEndPoint(listenIPAddress, portmapPort);
             IPEndPoint mountEndPoint = new IPEndPoint(listenIPAddress, mountPort);
             IPEndPoint nfsEndPoint = new IPEndPoint(listenIPAddress, nfsPort);
 
+            selectServer = new SelectServer(false, recvBuffer);
 
-            selectServer = new MultipleListenersSelectServer();
-            selectServer.PrepareToRun();
-
-            this.serverStartTimeStopwatchTicks = Stopwatch.GetTimestamp();
-
-            List<TcpSelectListener> tcpListeners = new List<TcpSelectListener>();
-            tcpListeners.Add(new TcpSelectListener(portMapEndPoint, backlog, portMapServer));
-            tcpListeners.Add(new TcpSelectListener(mountEndPoint  , backlog, mountServer));
-            tcpListeners.Add(new TcpSelectListener(nfsEndPoint    , backlog, nfsServer));
+            AddRpcServer(selectServer, portMapEndPoint, portMapServer, backlog);
+            AddRpcServer(selectServer, mountEndPoint, mountServer, backlog);
+            AddRpcServer(selectServer, nfsEndPoint, nfsServer, backlog);
 
             if (debugServerEndPoint != null)
             {
-                tcpListeners.Add(new TcpSelectListener(debugServerEndPoint, 0, new ControlServer()));
+                Socket tcpAcceptSocket = new Socket(debugServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                tcpAcceptSocket.Bind(debugServerEndPoint);
+                tcpAcceptSocket.Listen(4);
+                selectServer.control.AddListenSocket(tcpAcceptSocket, new ControlServer().AcceptCallback);
             }
+
             if (npcServerEndPoint != null)
             {
 #if !WindowsCE
-                Nfs3Server.NfsServerManager nfsServerManager = new Nfs3Server.NfsServerManager(nfsServer);
-                NpcReflector reflector = new NpcReflector(
-                    new NpcExecutionObject(nfsServerManager, "Nfs3ServerManager", null, null),
-                    new NpcExecutionObject(nfsServer, "Nfs3Server", null, null),
-                    new NpcExecutionObject(portMapServer, "Portmap2Server", null, null),
-                    new NpcExecutionObject(mountServer, "Mount1And3Server", null, null)
-                    );
-                tcpListeners.Add(new TcpSelectListener(npcServerEndPoint, 32, new NpcStreamSelectServerCallback(
-                    NpcCallback.Instance, reflector, new DefaultNpcHtmlGenerator("NfsServer", reflector))));
+                NpcSelectServerHandler npcServerHandler;
+                {
+                    Nfs3Server.NfsServerManager nfsServerManager = new Nfs3Server.NfsServerManager(nfsServer);
+                    NpcReflector reflector = new NpcReflector(
+                        new NpcExecutionObject(nfsServerManager, "Nfs3ServerManager", null, null),
+                        new NpcExecutionObject(nfsServer, "Nfs3Server", null, null),
+                        new NpcExecutionObject(portMapServer, "Portmap2Server", null, null),
+                        new NpcExecutionObject(mountServer, "Mount1And3Server", null, null)
+                        );
+                    npcServerHandler = new NpcSelectServerHandler(NpcCallback.Instance, reflector, new DefaultNpcHtmlGenerator("NfsServer", reflector));
+                }
+
+                Socket tcpAcceptSocket = new Socket(npcServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                tcpAcceptSocket.Bind(npcServerEndPoint);
+                tcpAcceptSocket.Listen(4);
+
+                selectServer.control.AddListenSocket(tcpAcceptSocket, npcServerHandler.AcceptCallback);
 #endif
             }
 
+            this.serverStartTimeStopwatchTicks = Stopwatch.GetTimestamp();
+            /*
             selectServer.Run(selectServerEventLog, new byte[1024], tcpListeners.ToArray(),
                 new UdpSelectListener[]{
                     new UdpSelectListener(portMapEndPoint, portMapServer),
@@ -92,6 +118,8 @@ namespace More.Net
                     new UdpSelectListener(nfsEndPoint    , nfsServer),
                 }
             );
+            */
+            selectServer.Run();
         }
 
         /*

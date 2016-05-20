@@ -52,7 +52,6 @@
     <Compile Include="HttpResponse.cs" />
     <Compile Include="IncomingConnection.cs" />
     <Compile Include="Odp.cs" />
-    <Compile Include="ParseUtilities.cs" />
     <Compile Include="PathExtensions.cs" />
     <Compile Include="Pcap.cs" />
     <Compile Include="PortSet.cs" />

@@ -7,4 +7,4 @@ REM .\CopyProject\bin\Debug\CopyProject.exe -n More:HP.Libraries -t dst:HP.Libra
 
 .\CopyProject\bin\Debug\CopyProject.exe -n More:HP.Libraries -t dst:NpcClientGenerator.template More\Npc\NpcClientGenerator\NpcClientGenerator.csproj ..\esmodeling\Source\HP\Libraries\Npc\NpcClientGenerator\NpcClientGenerator.csproj
 
-REM .\CopyProject\bin\Debug\CopyProject.exe -n More:HP.Libraries -t dst:HP.Libraries.Lfd.template More\Lfd\More.Lfd.csproj ..\esmodeling\Source\HP\Libraries\Lfd\HP.Libraries.Lfd.csproj
+.\CopyProject\bin\Debug\CopyProject.exe -n More:HP.Libraries -t dst:HP.Libraries.Shell.template Shell\More.Shell.csproj ..\esmodeling\Source\HP\Libraries\Shell\HP.Libraries.Shell.csproj

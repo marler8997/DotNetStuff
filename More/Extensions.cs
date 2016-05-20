@@ -1115,7 +1115,7 @@ namespace More
             while (hexStringOffset < hexStringLimit)
             {
                 bytes[offset++] = (Byte)(
-                    (hexString[hexStringOffset    ].HexValue() << 4) +
+                    (hexString[hexStringOffset    ].HexValue() << 4) |
                      hexString[hexStringOffset + 1].HexValue()       );
                 hexStringOffset += 2;
             }
@@ -1654,6 +1654,22 @@ namespace More
                 }
             }
         }
+        public static void ShutdownSafe(this Socket socket)
+        {
+            if (socket != null)
+            {
+                try
+                {
+                    if (socket.Connected)
+                    {
+                        socket.Shutdown(SocketShutdown.Both);
+                    }
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
         public static void ShutdownAndDispose(this Socket socket)
         {
             if (socket != null)
@@ -1661,6 +1677,17 @@ namespace More
                 try { if (socket.Connected) { socket.Shutdown(SocketShutdown.Both); } }
                 catch (Exception) { }
                 socket.Close();
+            }
+        }
+        public static int ReceiveNoThrow(this Socket socket, Byte[] buffer, int offset, int length, SocketFlags flags)
+        {
+            try
+            {
+                return socket.Receive(buffer, offset, length, flags);
+            }
+            catch (SocketException)
+            {
+                return -1;
             }
         }
     }

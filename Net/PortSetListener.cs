@@ -7,17 +7,18 @@ using System.Net;
 
 namespace More.Net
 {
+    /*
     public delegate void PortSetListenerCallback(UInt32 socketID, UInt16 port, IncomingConnection incomingConnection);
-
+    
     public class PortSetListener
     {
-        private readonly PortSet portSet;
+        private readonly SortedNumberSet portSet;
         private readonly PortSetListenerCallback callback;
         public readonly Int32 socketBackLog;
 
         private Thread[] listenThreads;
 
-        public PortSetListener(PortSet portSet, PortSetListenerCallback callback, Int32 socketBackLog)
+        public PortSetListener(SortedNumberSet portSet, PortSetListenerCallback callback, Int32 socketBackLog)
         {
             if (portSet == null) throw new ArgumentNullException("portSet");
             if (callback == null) throw new ArgumentNullException("callback");
@@ -104,4 +105,5 @@ namespace More.Net
             }
         }
     }
+    */
 }

@@ -1,15 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
-using More;
 
 namespace More
 {
+    public class ErrorMessageException : Exception
+    {
+        public ErrorMessageException(String msg)
+            : base(msg)
+        {
+        }
+    }
     public class UnbufferedStreamReader : TextReader
     {
         Stream stream;
@@ -54,7 +62,7 @@ namespace More
                 length++;
             }
         }
-        // Read works differently than the `Read()` method of a 
+        // Read works differently than the `Read()` method of a
         // TextReader. It reads the next BYTE rather than the next character
         public override int Read()
         {
@@ -89,10 +97,14 @@ namespace More
     class ProgramOptions : CLParser
     {
         public readonly CLSwitch template;
+        public readonly CLUInt32Argument connectTimeoutSeconds;
         public ProgramOptions()
         {
             template = new CLSwitch('t', "template", "Generate a NpcClient template file");
             Add(template);
+            connectTimeoutSeconds = new CLUInt32Argument("timeout", "The number of seconds to keep retrying to connect to the server");
+            connectTimeoutSeconds.SetDefault(0);
+            Add(connectTimeoutSeconds);
         }
         public override void PrintUsageHeader()
         {
@@ -101,8 +113,7 @@ namespace More
         }
     }
 
-
-    public class CustomObjectConfiguration : LfdConfiguration
+    public class CustomObjectConfiguration : LfdCallbackParser
     {
         public readonly ConfigString name;
         public readonly ConfigSwitch useObjectName;
@@ -139,9 +150,7 @@ namespace More
             }
         }
     }
-
-    
-    public class NpcClientGenerationConfiguration : LfdConfiguration
+    public class NpcClientGenerationConfiguration : LfdCallbackParser
     {
         //
         // Generic Configuration Options
@@ -176,7 +185,7 @@ namespace More
         readonly CustomObjectConfiguration customObjectConfiguration;
         public readonly List<CustomObjectConfiguration> customObjects = new List<CustomObjectConfiguration>();
 
-        
+
         readonly List<Config> configs = new List<Config>();
         void Add(Config config)
         {
@@ -252,7 +261,7 @@ namespace More
                 writer.WriteLine("// #");
                 config.WriteTemplate("// # ", writer);
             }
-            
+
             writer.WriteLine("// #");
             writer.WriteLine("// # CustomObject {");
             customObjectConfiguration.WriteTemplate(writer);
@@ -261,7 +270,6 @@ namespace More
             writer.WriteLine("// end");
         }
     }
-
 
     public class NpcClientConfigurationReader : ILineReader
     {
@@ -315,9 +323,6 @@ namespace More
             reader.Dispose();
         }
     }
-
-
-
 
 
     public class Filter
@@ -404,7 +409,7 @@ namespace More
             Console.WriteLine(fmt, args);
             return 1;
         }
-        static Filter GetFilterFromConfiguration(String option, String filterType, IList<String> filters)
+        public static Filter GetFilterFromConfiguration(String option, String filterType, IList<String> filters)
         {
             if (filters == null || filters.Count <= 0) return null;
 
@@ -437,12 +442,8 @@ namespace More
 
         public static Int32 Main(String[] args)
         {
-            //
-            // Command line arguments
-            //
             ProgramOptions options = new ProgramOptions();
             List<String> nonOptionArgs = options.Parse(args);
-
 
             NpcClientGenerationConfiguration configuration = new NpcClientGenerationConfiguration();
             if (options.template.set)
@@ -458,7 +459,7 @@ namespace More
                     {
                         writer = Console.Out;
                     }
-                    
+
                     configuration.WriteTemplate(writer);
                     return 0;
                 }
@@ -472,9 +473,7 @@ namespace More
             {
                 return options.ErrorAndUsage("Not enough non-option arguments");
             }
-
-            String filename = nonOptionArgs[0];
-
+            String templateFile = nonOptionArgs[0];
             String serverHost = null;
             UInt16 port = 0;
 
@@ -487,82 +486,129 @@ namespace More
                 }
             }
 
-            FileStream stream = new FileStream(filename, FileMode.Open, FileAccess.ReadWrite);
+            Connector connector = StandardConnector;
+            if (options.connectTimeoutSeconds.ArgValue > 0)
+            {
+                connector = new ConnectWithTimeout(options.connectTimeoutSeconds.ArgValue * 1000).Connect;
+            }
+
+            try
+            {
+                return GenerateClient(configuration, templateFile, serverHost, port, connector);
+            }
+            catch(ErrorMessageException e)
+            {
+                Console.WriteLine(e.Message);
+                return 1;
+            }
+            catch(Exception exc)
+            {
+                Console.WriteLine(exc);
+                return 1;
+            }
+        }
+
+        public delegate Socket Connector(EndPoint endPoint);
+        static Socket StandardConnector(EndPoint endPoint)
+        {
+            Socket sock = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            sock.Connect(endPoint);
+            return sock;
+        }
+        class ConnectWithTimeout
+        {
+            readonly UInt32 timeoutMilliseconds;
+            public ConnectWithTimeout(UInt32 timeoutMilliseconds)
+            {
+                this.timeoutMilliseconds = timeoutMilliseconds;
+            }
+            public Socket Connect(EndPoint endPoint)
+            {
+                Int64 startTime = Stopwatch.GetTimestamp();
+                for (UInt32 attempt = 1; ; attempt++)
+                {
+                    try
+                    {
+                        return StandardConnector(endPoint);
+                    }
+                    catch (Exception)
+                    {
+                        var elapsedMilliseconds = (Stopwatch.GetTimestamp() - startTime).StopwatchTicksAsUInt32Milliseconds();
+                        if (elapsedMilliseconds >= timeoutMilliseconds)
+                        {
+                            throw new ErrorMessageException(String.Format("Failed to connect to npc server after {0} attempts ({1} milliseconds)",
+                                    attempt, elapsedMilliseconds));
+                        }
+                    }
+                    Console.WriteLine("Attempt {0}: Failed to connect to npc server, will retry in 300 milliseconds", attempt);
+                    Thread.Sleep(300);
+                }
+            }
+        }
+
+        public static Int32 GenerateClient(NpcClientGenerationConfiguration configuration,
+            String templateFile, String serverHost, UInt16 port, Connector connector)
+        {
+            using (FileStream stream = new FileStream(templateFile, FileMode.Open, FileAccess.ReadWrite))
             {
                 NpcClientConfigurationReader reader = new NpcClientConfigurationReader(stream);
                 LfdReader lfdReader = new LfdReader(reader);
                 configuration.Parse(lfdReader);
-            }
 
-            //
-            // Determine Server Hostname
-            //
-            if (serverHost == null)
-            {
-                serverHost = configuration.defaultServer.value;
-                if (serverHost == null)
-                    return ConfigurationError("No host was provided and the client configuration had no default host");
-            }
-
-            if (port == 0)
-            {
-                if (!configuration.defaultPort.set)
-                    return ConfigurationError("No port was provided and the client configuration had no default port");
-
-                port = configuration.defaultPort.value;
-            }
-
-            //
-            //
-            //
-            // Check that Configuration is Valid
-            //
-            //
-            //
-            Filter typeFilter = GetFilterFromConfiguration("Type",
-                configuration.typeFilterType.value,
-                configuration.typeFilter.strings);
-
-            Filter defaultObjectFilter = GetFilterFromConfiguration("DefaultObject",
-                configuration.defaultObjectFilterType.value,
-                configuration.defaultObjectFilter.strings);
-
-
-            // Reset File Stream
-            StreamWriter output = new StreamWriter(stream);
-
-            //
-            // Attempt to connect to Npc Server
-            //
-            EndPoint npcServerEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(serverHost, DnsPriority.IPv4ThenIPv6), port);
-            Socket npcServerSocket = new Socket(npcServerEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-            try
-            {
-                Console.WriteLine("Connecting to {0}:{1}...", serverHost, port);
-                npcServerSocket.Connect(npcServerEndPoint);
-                Console.WriteLine("Connected");
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Failed to connect to npc server '{0}' on port {1}", serverHost, port);
-                return 1;
-            }
-
-            try
-            {
-                Int32 returnValue = GenerateClient(configuration, output, npcServerSocket, typeFilter, defaultObjectFilter);
-                if (returnValue == 0)
+                if (String.IsNullOrEmpty(serverHost))
                 {
-                    stream.SetLength(stream.Position + 1);
+                    serverHost = configuration.defaultServer.value;
+                    if (String.IsNullOrEmpty(serverHost))
+                    {
+                        throw new ErrorMessageException("No host was provided and the client configuration had no default host");
+                    }
                 }
-                return returnValue;
-            }
-            finally
-            {
-                output.Dispose();
+                if (port == 0)
+                {
+                    if (!configuration.defaultPort.set)
+                    {
+                        throw new ErrorMessageException("No port was provided and the client configuration had no default port");
+                    }
+                    port = configuration.defaultPort.value;
+                }
+                Filter typeFilter = GetFilterFromConfiguration("Type",
+                    configuration.typeFilterType.value,
+                    configuration.typeFilter.strings);
+                Filter defaultObjectFilter = GetFilterFromConfiguration("DefaultObject",
+                    configuration.defaultObjectFilterType.value,
+                    configuration.defaultObjectFilter.strings);
+
+                //
+                // Attempt to connect to Npc Server
+                //
+                EndPoint npcServerEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(serverHost, DnsPriority.IPv4ThenIPv6), port);
+
+                Console.WriteLine("Connecting to {0}:{1}...", serverHost, port);
+                Socket npcServerSocket = connector(npcServerEndPoint);
+                Console.WriteLine("Connected");
+
+                // Reset File Stream
+                using (StreamWriter output = new StreamWriter(stream))
+                {
+
+                    try
+                    {
+                        Int32 returnValue = GenerateClientHelper(configuration, output, npcServerSocket, typeFilter, defaultObjectFilter);
+                        if (returnValue == 0)
+                        {
+                            stream.SetLength(stream.Position + 1);
+                        }
+                        return returnValue;
+                    }
+                    finally
+                    {
+                        output.Dispose();
+                    }
+                }
             }
         }
+
+
         static String SwitchNamespace(TextWriter output, String currentNamespace, String newNamespace)
         {
             if (String.IsNullOrEmpty(newNamespace))
@@ -580,7 +626,7 @@ namespace More
             }
             return newNamespace;
         }
-        static Int32 GenerateClient(NpcClientGenerationConfiguration configuration, TextWriter output, Socket socket,
+        static Int32 GenerateClientHelper(NpcClientGenerationConfiguration configuration, TextWriter output, Socket socket,
             Filter typeFilter, Filter defaultObjectFilter)
         {
             output.WriteLine();
@@ -595,7 +641,7 @@ namespace More
 
             Boolean xmlComments = configuration.xmlCommments.value;
             String objectNamespace = configuration.objectNamespace.value;
-            
+
             //
             // Extra Using Statements
             //
@@ -633,7 +679,7 @@ namespace More
             {
                 socket.Send(Encoding.ASCII.GetBytes(":type\n"));
                 //Console.WriteLine("[ToServer]   :type");
-                
+
                 while (true)
                 {
                     String typeDefinitionLine = socketLineReader.ReadLine();
@@ -722,7 +768,7 @@ namespace More
             currentNamespace = SwitchNamespace(output, currentNamespace, objectNamespace);
 
             Dictionary<String,RemoteNpcInterface> serverInterfaces;
-            List<RemoteNpcObject> remoteNpcObjects = NpcClient.GetServerInterface(socketLineReader, out serverInterfaces);            
+            List<RemoteNpcObject> remoteNpcObjects = NpcClient.GetServerInterface(socketLineReader, out serverInterfaces);
 
             //
             // Generate Interfaces Definitions
@@ -956,7 +1002,7 @@ namespace More
                 output.WriteLine("    /// <summary>An NpcClient wrapper</summary>");
             }
             output.Write("    public class {0}", className);
-            
+
             Boolean atFirstInterface = true;
             if (npcObjectName != null)
             {
@@ -1121,7 +1167,7 @@ namespace More
                     SosMethodDefinition methodDefinition = npcInterface.methods[methodIndex];
 
                     String clientMethodName = methodDefinition.methodName;
-                    
+
                     Boolean methodNameChanged = false;
                     if (methodDefinition.methodName.Equals("Dispose"))
                     {

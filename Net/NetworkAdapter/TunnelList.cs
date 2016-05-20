@@ -4,10 +4,11 @@ using System.Text;
 
 namespace More.Net
 {
+    /*
     public class TunnelList
     {
         private readonly IPortTunnel[] tunnels;
-        public readonly PortSet fullPortSet;
+        public readonly SortedNumberSet fullPortSet;
         private readonly Dictionary<UInt16, Boolean> portsToSendConnectRequests;
 
         public TunnelList(IPortTunnel[] tunnels, UInt16[] portsToSendConnectRequestsArray)
@@ -68,4 +69,5 @@ namespace More.Net
         }
 
     }
+    */
 }

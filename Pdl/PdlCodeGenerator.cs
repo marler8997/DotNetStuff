@@ -52,8 +52,10 @@ namespace More.Pdl
                 writer.WriteLine("{");
             }
         }
-        public static void GenerateCode(TextWriter writer, PdlFile pdlFile, String @namespace)
+        public static void GenerateCode(TextWriter writer, PdlFile pdlFile, String @namespace, Boolean generateStructs)
         {
+            String commandObject = generateStructs ? "struct" : "class";
+
             //
             // Write Code Generation Information
             //
@@ -93,7 +95,7 @@ namespace More.Pdl
 
                 UInt32 tabs;
 
-                writer.WriteLine("    public class {0}", objectDefinition.name);
+                writer.WriteLine("    public {0} {1}", commandObject, objectDefinition.name);
                 writer.WriteLine("    {");
                 if (fixedSerializationLength != UInt32.MaxValue)
                 {
@@ -497,7 +499,10 @@ namespace More.Pdl
                 //
                 // Print No-Parameter Constructor
                 //
-                writer.WriteLine("        public {0}() {{ }}", objectDefinition.name);
+                if (!generateStructs)
+                {
+                    writer.WriteLine("        public {0}() {{ }}", objectDefinition.name);
+                }
 
                 //
                 // Print Parameter Constructor
