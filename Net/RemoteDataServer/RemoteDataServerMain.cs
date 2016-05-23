@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 
 using More.Net;
 
@@ -156,16 +157,28 @@ namespace More
             //
             // Create Endpoints
             //
-            if (listenIPAddress == null) listenIPAddress = IPAddress.Any;
-            IPEndPoint remoteDataEndPoint = new IPEndPoint(listenIPAddress, RemoteData.DefaultPort);
 
-
-            MultipleListenersSelectServer selectServer = new MultipleListenersSelectServer();
+            SelectServer selectServer = new SelectServer(false, new Buf(4096, 4096));
 
             //this.serverStartTimeStopwatchTicks = Stopwatch.GetTimestamp();
 
-            List<TcpSelectListener> tcpListeners = new List<TcpSelectListener>();
-            tcpListeners.Add(new TcpSelectListener(remoteDataEndPoint, backlog, remoteDataServer));
+            {
+                if (listenIPAddress == null) listenIPAddress = IPAddress.Any;
+                IPEndPoint remoteDataEndPoint = new IPEndPoint(listenIPAddress, RemoteData.DefaultPort);
+                {
+                    Socket tcpSocket = new Socket(remoteDataEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    tcpSocket.Bind(remoteDataEndPoint);
+                    tcpSocket.Listen(backlog);
+                    selectServer.control.AddReceiveSocket(tcpSocket, remoteDataServer.AcceptCallback);
+                }
+                {
+                    Socket udpSocket = new Socket(remoteDataEndPoint.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
+                    udpSocket.Bind(remoteDataEndPoint);
+                    selectServer.control.AddReceiveSocket(udpSocket, remoteDataServer.DatagramHandler);
+                }
+            }
+
+
 
             /*
             if (npcServerEndPoint != null)
@@ -184,12 +197,7 @@ namespace More
             }
             */
 
-            selectServer.PrepareToRun();
-            selectServer.Run(null, new Byte[1024], tcpListeners.ToArray(),
-                new UdpSelectListener[]{
-                    new UdpSelectListener(remoteDataEndPoint, remoteDataServer),
-                }
-            );         
+            selectServer.Run();
         }
     }
 }

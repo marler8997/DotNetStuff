@@ -31,7 +31,7 @@ namespace More
             Socket dataSocket = socket.Accept();
             //Console.WriteLine("[{0}] New Client '{1}'", serviceName, socket.RemoteEndPoint);
             control.AddReceiveSocket(dataSocket, new RecordBuilder(dataSocket.SafeRemoteEndPointString(),
-                HandleTcpRecord).DataCallback);
+                HandleTcpRecord).TcpSocketRecvCallback);
         }
         /* 
         public ServerInstruction ClientDataCallback(Socket socket, Byte[] bytes, UInt32 bytesRead)

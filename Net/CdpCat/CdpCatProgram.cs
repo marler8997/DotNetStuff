@@ -47,7 +47,7 @@ namespace More.Net
                 }
 
                 UInt16 port = UInt16.Parse(nonOptionArgs[1]);
-                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHost(nonOptionArgs[0], port);
+                EndPoint serverEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(nonOptionArgs[0], DnsPriority.IPv4ThenIPv6), port);
 
                 UdpConnectedClientTransmitter udpTransmitter = new UdpConnectedClientTransmitter(serverEndPoint);
                 CdpTransmitter transmitter = new CdpTransmitter(udpTransmitter);
@@ -169,7 +169,7 @@ namespace More.Net
             this.transmitter = transmitter;
         }
 
-        public ServerInstruction GotControl(CdpTransmitter transmitter, out int sendBufferOffsetLimit, out bool requestImmediateAck)
+        public void GotControl(CdpTransmitter transmitter, out int sendBufferOffsetLimit, out bool requestImmediateAck)
         {
             throw new NotImplementedException();
         }

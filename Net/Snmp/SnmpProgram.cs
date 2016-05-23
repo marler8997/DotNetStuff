@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
+using More.Net;
+
 namespace More
 {
     public class Options : CLParser
@@ -42,8 +44,8 @@ namespace More
             }
             String hostString = nonOptionArgs[1];
             String oidString = nonOptionArgs[2];
-            
-            EndPoint endPoint = EndPoints.EndPointFromIPOrHostAndOptionalPort(hostString, 161);
+
+            IPEndPoint endPoint = EndPoints.ParseIPOrResolveHostWithOptionalPort(hostString, 161, DnsPriority.IPv4ThenIPv6);
 
             List<Byte> oidBytes = new List<Byte>();
             Snmp.ParseOid(oidString, oidBytes);

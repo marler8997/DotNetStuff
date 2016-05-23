@@ -19,9 +19,7 @@ namespace More.Net
         readonly Int32 sendFileBufferSize;
         readonly Int32 recvBufferSize;
 
-        Boolean HostSet { get { return endPoint.unparsedIPOrHost != null; } }
-        StringEndPoint endPoint;
-        Proxy proxy;
+        InternetHost serverHost;
 
         MessageLogger messageLogger;
         IConnectionDataLogger connectionLogger;
@@ -31,14 +29,13 @@ namespace More.Net
         private Socket socket;
         Boolean keepRunning;
 
-        public ConsoleClient(Int32 sendFileBufferSize, Int32 recvBufferSize, StringEndPoint endPoint,
-            Proxy proxy, MessageLogger messageLogger, IConnectionDataLogger connectionLogger)
+        public ConsoleClient(Int32 sendFileBufferSize, Int32 recvBufferSize, InternetHost serverHost,
+            MessageLogger messageLogger, IConnectionDataLogger connectionLogger)
         {
             this.sendFileBufferSize = sendFileBufferSize;
             this.recvBufferSize = recvBufferSize;
 
-            this.endPoint = endPoint;
-            this.proxy = proxy;
+            this.serverHost = serverHost;
 
             this.messageLogger = messageLogger;
             this.connectionLogger = connectionLogger;
@@ -97,23 +94,13 @@ namespace More.Net
         }
         void Connect()
         {
+            Console.WriteLine("[Connecting to {0}...]", serverHost);
+
             BufStruct bufStruct = default(BufStruct);
-            if (proxy == null)
+            serverHost.Connect(socket, DnsPriority.IPv4ThenIPv6, ProxyConnectOptions.None, ref bufStruct);
+            if (bufStruct.contentLength > 0)
             {
-                Console.WriteLine("[Connecting to {0}...]", endPoint);
-                // TODO: Add option to make AddressFamily one type of family
-                // Note: when the user changes the family type, I might need to
-                //       unset the serverHost ip address
-                endPoint.ForceIPResolution(AddressFamily.Unspecified);
-                socket = new Socket(endPoint.parsedOrResolvedIP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                socket.Connect(endPoint.parsedOrResolvedIP);
-            }
-            else
-            {
-                Console.WriteLine("[Connecting to {0} through {1}...]", endPoint, proxy);
-                socket = new Socket(proxy.endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                socket.Connect(proxy.endPoint);
-                proxy.ProxyConnectTcp(socket, endPoint, ProxyConnectOptions.None, ref bufStruct);
+                throw new NotImplementedException();
             }
 
             Console.WriteLine("[Connected]");
@@ -126,7 +113,7 @@ namespace More.Net
         }
         public void Run()
         {
-            if (HostSet)
+            if (!String.IsNullOrEmpty(serverHost.targetEndPoint.ipOrHost))
             {
                 Connect();
             }
@@ -194,7 +181,7 @@ namespace More.Net
             String server = line.Peel(out line);
             if (String.IsNullOrEmpty(server))
             {
-                if (endPoint.unparsedIPOrHost == null)
+                if (String.IsNullOrEmpty(serverHost.targetEndPoint.ipOrHost))
                 {
                     Console.WriteLine("Error: missing server and port");
                     return;
@@ -218,10 +205,10 @@ namespace More.Net
                     Console.WriteLine("Error: invalid port '{0}'", line);
                     return;
                 }
-                HostWithOptionalProxy host = ConnectorParser.ParseConnectorWithNoPortAndOptionalProxy(
-                    AddressFamily.Unspecified, server, port);
-                this.endPoint = host.endPoint;
-                this.proxy = host.proxy;
+
+                Proxy proxy;
+                String ipOrHost = Proxy.StripAndParseProxies(server, DnsPriority.IPv4ThenIPv6, out proxy);
+                serverHost = new InternetHost(ipOrHost, port, DnsPriority.IPv4ThenIPv6, proxy);
             }
             Open();
         }
@@ -301,7 +288,7 @@ namespace More.Net
         }
         public void ProxyCommand(String line)
         {
-            proxy = ConnectorParser.ParseProxy(AddressFamily.Unspecified, line);
+            serverHost = new InternetHost(serverHost, Proxy.ParseProxy(line, DnsPriority.IPv4ThenIPv6, null));
         }
         public void HelpCommand(String line)
         {

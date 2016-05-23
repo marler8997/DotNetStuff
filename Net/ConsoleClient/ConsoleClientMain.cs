@@ -18,7 +18,7 @@ namespace More.Net
             ConsoleClientOptions optionsParser = new ConsoleClientOptions();
             List<String> nonOptionArgs = optionsParser.Parse(args);
 
-            HostWithOptionalProxy host;
+            InternetHost host;
 
             if (nonOptionArgs.Count > 0)
             {
@@ -28,15 +28,17 @@ namespace More.Net
                     optionsParser.PrintUsage();
                     return -1;
                 }
-                host = ConnectorParser.ParseConnectorWithNoPortAndOptionalProxy(
-                    AddressFamily.Unspecified, args[0], UInt16.Parse(args[1]));
+
+                Proxy proxy;
+                String ipOrHost = Proxy.StripAndParseProxies(args[0], DnsPriority.IPv4ThenIPv6, out proxy);
+                host = new InternetHost(ipOrHost, UInt16.Parse(args[1]), DnsPriority.IPv4ThenIPv6, proxy);
             }
             else
             {
-                host = default(HostWithOptionalProxy);
+                host = default(InternetHost);
             }
 
-            ConsoleClient commandClient = new ConsoleClient(1024, 1024, host.endPoint, host.proxy, new ConsoleMessageLogger("Connection"),
+            ConsoleClient commandClient = new ConsoleClient(1024, 1024, host, new ConsoleMessageLogger("Connection"),
                 new ConnectionDataLoggerSingleLog(ConsoleDataLogger.Instance, "[SendData]", "[RecvData]"));
             commandClient.RunPrepare();
             commandClient.Run();

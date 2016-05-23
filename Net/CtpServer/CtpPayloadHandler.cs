@@ -44,21 +44,17 @@ namespace More.Net
         {
             throw new NotImplementedException();
         }
-        public ServerInstruction GotControl(CdpTransmitter transmitter, out int sendBufferOffsetLimit, out bool requestImmediateAck)
+        public void GotControl(CdpTransmitter transmitter, out int sendBufferOffsetLimit, out bool requestImmediateAck)
         {
             CtpRequest request;
             if(!clients.TryGetValue(transmitter, out request))
                 throw new InvalidOperationException(String.Format("Got control from client '{0}' without an entry in the dictionary", transmitter.RemoteEndPoint));
 
 
-
             CtpResponse response = new CtpResponse();
             response.flags      = 0;
             response.encoding   = CtpEncoding.None;
             response.setCookies = null;
-
-
-
 
             if(request.resources != null)
             {
@@ -74,7 +70,6 @@ namespace More.Net
 
             sendBufferOffsetLimit = 0;
             requestImmediateAck = false;
-            return ServerInstruction.NoInstruction;
         }
         public Boolean Close() { return false; }
         public void Halt() { }

@@ -27,14 +27,15 @@ namespace More.Net
                 return -1;
             }
 
-            ISocketConnector connector = null;
-            EndPoint endPoint = null;
+            InternetHost host;
             if (nonOptionArgs.Count == 1)
             {
-                String ipOrHostAndPort = ConnectorParser.ParseAndStripProxy(nonOptionArgs[0], out connector);
-                endPoint = EndPoints.EndPointFromIPOrHostAndPort(ipOrHostAndPort);
+                Proxy proxy;
+                String ipOrHostAndPort = Proxy.StripAndParseProxies(nonOptionArgs[0], DnsPriority.IPv4ThenIPv6, out proxy);
+                UInt16 port;
+                String ipOrHost = EndPoints.SplitIPOrHostAndPort(ipOrHostAndPort, out port);
+                host = new InternetHost(ipOrHost, port, DnsPriority.IPv4ThenIPv6, proxy);
             }
-
 
             Byte[] packet = new Byte[1024];
             UInt32 offset = 0;

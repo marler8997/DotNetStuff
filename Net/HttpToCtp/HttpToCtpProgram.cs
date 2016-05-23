@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
@@ -41,24 +42,25 @@ namespace More.Net
             Int32 listenPort = 8080;
             IPAddress listenIP = null;
 
-            Byte[] readBytes = new Byte[4096];
-
-            HttpToCtp.proxySelector = new SingleConnectorSelector(
-                new GatewayProxy(new DnsEndPoint("proxy.houston.hp.com", 8080, true)));
-
+            //HttpToCtp.proxySelector = new SingleConnectorSelector(
+            //    new GatewayProxy(new DnsEndPoint("proxy.houston.hp.com", 8080, true)));
 
             IPEndPoint listenEndPoint = (listenIP == null) ?
-                new IPEndPoint(IPAddress.Parse("0.0.0.0"), listenPort) :
+                new IPEndPoint(IPAddress.Any, listenPort) :
                 new IPEndPoint(listenIP, listenPort);
 
+            SelectServer selectServer = new SelectServer(false, new Buf(4096, 4096));
 
-            TcpSelectServer selectServer = new TcpSelectServer();
+            {
+                Socket listenSock = new Socket(listenEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                listenSock.Bind(listenEndPoint);
+                listenSock.Listen(backlog);
+                
+                HttpToCtpSelectServerHandler server = new HttpToCtpSelectServerHandler();
+                selectServer.control.AddReceiveSocket(listenSock, server.AcceptCallback);
+            }
 
-            HttpToCtpSelectServerHandler selectServerHandler =
-                new HttpToCtpSelectServerHandler(selectServer);
-
-            selectServer.PrepareToRun();
-            selectServer.Run(null, listenEndPoint, backlog, readBytes, selectServerHandler);
+            selectServer.Run();
         }
     }
 
@@ -68,7 +70,7 @@ namespace More.Net
         public static readonly Byte[] ConnectionEstablishedAsBytes = Encoding.UTF8.GetBytes(
             "HTTP/1.1 200 Connection established\r\n\r\n");
 
-        public static IProxySelector proxySelector = null;
+        //public static IProxySelector proxySelector = null;
     }
     public static class HttpToCtpLogger
     {

@@ -70,6 +70,12 @@ namespace More.Net
             this.dnsPriorityQuery = other.dnsPriorityQuery;
             this.proxy = other.proxy;
         }
+        public InternetHost(InternetHost other, Proxy proxy)
+        {
+            this.targetEndPoint = other.targetEndPoint;
+            this.dnsPriorityQuery = other.dnsPriorityQuery;
+            this.proxy = proxy;
+        }
         public AddressFamily GetAddressFamilyForTcp()
         {
             if (proxy == null)

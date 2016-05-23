@@ -180,9 +180,9 @@ namespace More.Net
             {
                 serverSocket.Blocking = true;
                 BufStruct buf = default(BufStruct);
-                AppLayerProxy.ForwardProxy.ProxyConnectTcp(serverSocket, serverEndPointForProxy,
+                AppLayerProxy.ForwardProxy.ProxyConnectTcp(serverSocket, ref serverEndPointForProxy,
                     isConnect ? 0 : ProxyConnectOptions.ContentIsRawHttp, ref buf);
-                if (buf.buf != null)
+                if (buf.contentLength > 0)
                 {
                     throw new NotImplementedException("The proxy connection left over some data from the server, this is not currently being handled");
                 }
@@ -234,9 +234,8 @@ namespace More.Net
                         }
                         else
                         {
-                            AppLayerProxy.Logger.WriteLine("{0} > {1} Failed to connect to proxy server '{2}:{3}'..Closing Client",
-                                clientLogString, serverLogString, AppLayerProxy.ForwardProxy.ipOrHost,
-                                AppLayerProxy.ForwardProxy.endPoint.Port);
+                            AppLayerProxy.Logger.WriteLine("{0} > {1} Failed to connect to proxy server '{2}'..Closing Client",
+                                clientLogString, serverLogString, AppLayerProxy.ForwardProxy.host.CreateTargetString());
                         }
                     }
                     clientSocket.ShutdownAndDispose(); // Should already removed from selectControl
@@ -343,7 +342,7 @@ namespace More.Net
                 IPAddress serverIP;
                 try
                 {
-                    serverIP = EndPoints.ParseIPOrResolveHost(AddressFamily.InterNetwork, serverIPOrHost);
+                    serverIP = EndPoints.ParseIPOrResolveHost(serverIPOrHost, DnsPriority.IPv4ThenIPv6);
                 }
                 catch (SocketException)
                 {
@@ -362,13 +361,12 @@ namespace More.Net
             else
             {
                 this.serverEndPointForProxy = new StringEndPoint(serverIPOrHost, serverPort);
-                AppLayerProxy.ForwardProxy.PrepareEndPoint(ref this.serverEndPointForProxy);
 
-                Console.WriteLine("[DEBUG] Connecting to proxy '{0}:{1}'", AppLayerProxy.ForwardProxy.ipOrHost,
-                    AppLayerProxy.ForwardProxy.endPoint.Port);
-                serverSocket = new Socket(AppLayerProxy.ForwardProxy.endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                Console.WriteLine("[DEBUG] Connecting to proxy '{0}'", AppLayerProxy.ForwardProxy.host.CreateTargetString());
+                serverSocket = new Socket(AppLayerProxy.ForwardProxy.host.GetAddressFamilyForTcp(), SocketType.Stream, ProtocolType.Tcp);
                 serverSocket.Blocking = false;
-                needToConnect = NonBlockingSocket.ConnectNonBlocking(serverSocket, AppLayerProxy.ForwardProxy.endPoint);
+                throw new NotImplementedException();
+                //needToConnect = NonBlockingSocket.ConnectNonBlocking(serverSocket, AppLayerProxy.ForwardProxy.endPoint);
             }
 
             //Console.WriteLine("[DEBUG] {0} > {1} Connecting...", clientLogString, serverLogString);

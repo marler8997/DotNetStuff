@@ -5,20 +5,27 @@ using System.IO;
 
 namespace More.Net
 {
-    public class HttpToCtpSelectServerHandler : StreamSelectServerCallback
+    public class HttpToCtpSelectServerHandler
     {
-        public readonly TcpSelectServer selectServer;
+        //readonly Dictionary<Socket, HttpToCdpClient> clients;
+        //public readonly Dictionary<Socket, Socket> serverSocketsToClientSockets;
 
-        readonly Dictionary<Socket, HttpToCdpClient> clients;
-        public readonly Dictionary<Socket, Socket> serverSocketsToClientSockets;
-
-        public HttpToCtpSelectServerHandler(TcpSelectServer selectServer)
+        public HttpToCtpSelectServerHandler()
         {
-            this.selectServer = selectServer;
-            this.clients = new Dictionary<Socket, HttpToCdpClient>();
-            this.serverSocketsToClientSockets = new Dictionary<Socket, Socket>();
+            //this.clients = new Dictionary<Socket, HttpToCdpClient>();
+            //this.serverSocketsToClientSockets = new Dictionary<Socket, Socket>();
         }
 
+        public void AcceptCallback(ref SelectControl control, Socket listenSock, Buf safeBuffer)
+        {
+            Socket newSock = listenSock.Accept();
+            String clientEndPointString = newSock.SafeRemoteEndPointString();
+            Console.WriteLine("[{0}] New Connection", clientEndPointString);
+            //clients.Add(socket, newClient);
+            control.AddReceiveSocket(newSock, new HttpToCdpClient(clientEndPointString, newSock, this).TcpRecvHandler);
+        }
+
+        /*
         public void ServerListening(Socket listenSocket)
         {
         }
@@ -127,5 +134,6 @@ namespace More.Net
             Console.WriteLine("[Warning] Received close for a client '{0}' that wasn't in the client dictionary or the server dictionary", socket.RemoteEndPoint);
             return ServerInstruction.CloseClient;
         }
+        */
     }
 }

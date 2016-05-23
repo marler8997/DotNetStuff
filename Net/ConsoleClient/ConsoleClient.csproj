@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{DE654D2A-208E-4DA4-9073-BB7415C29AA3}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -38,7 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConsoleClient.cs" />
-    <Compile Include="ConsoleClientProgram.cs" />
+    <Compile Include="ConsoleClientMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

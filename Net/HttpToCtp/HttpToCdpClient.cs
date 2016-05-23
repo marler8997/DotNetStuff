@@ -14,96 +14,143 @@ namespace More.Net
         public const String proxyConnectionHeaderSearchString = "\nProxy-Connection: ";
         public readonly Char[] newlineSet = new Char[] { '\r', '\n' };
 
+        readonly String clientEndPointString;
         readonly Socket clientSocket;
         readonly HttpToCtpSelectServerHandler serverHandler;
-        public readonly String clientEndPointString;
 
         public Socket serverSocket;
 
         private StringBuilder httpHeaderBuilders;
 
-        public HttpToCdpClient(Socket clientSocket, HttpToCtpSelectServerHandler serverHandler)
+        public HttpToCdpClient(String clientEndPointString, Socket clientSocket, HttpToCtpSelectServerHandler serverHandler)
         {
+            this.clientEndPointString = clientEndPointString;
             this.clientSocket = clientSocket;
             this.serverHandler = serverHandler;
-            this.clientEndPointString = clientSocket.RemoteEndPoint.ToString();
             this.httpHeaderBuilders = new StringBuilder();
         }
-        public ServerInstruction Data(Byte[] bytes, UInt32 bytesRead)
+
+
+        public void DataRecvHandler(ref SelectControl control, Socket sock, Buf safeBuffer)
         {
+            Socket otherSocket = (sock == serverSocket) ? clientSocket : serverSocket;
+
+            int bytesReceived = sock.ReceiveNoThrow(safeBuffer.array, 0, safeBuffer.array.Length, SocketFlags.None);
+            if (bytesReceived <= 0)
+            {
+                if (otherSocket != null)
+                {
+                    otherSocket.ShutdownSafe();
+                }
+                control.RemoveReceiveSocket(sock);
+                return;
+            }
+
+            if (otherSocket != null)
+            {
+                try
+                {
+                    otherSocket.Send(safeBuffer.array, bytesReceived, SocketFlags.None);
+                    return;
+                }
+                catch (SocketException)
+                {
+                    sock.ShutdownSafe();
+                    control.DisposeAndRemoveReceiveSocket(sock);
+                }
+            }
+        }
+
+
+        public void TcpRecvHandler(ref SelectControl control, Socket sock, Buf safeBuffer)
+        {
+            int bytesReceived = sock.ReceiveNoThrow(safeBuffer.array, 0, safeBuffer.array.Length, SocketFlags.None);
+            if (bytesReceived <= 0)
+            {
+                if (serverSocket != null)
+                {
+                    serverSocket.ShutdownSafe();
+                }
+                control.RemoveReceiveSocket(sock);
+                return;
+            }
+
             if (serverSocket != null)
             {
                 try
                 {
-                    serverSocket.Send(bytes, (Int32)bytesRead, SocketFlags.None);
-                    return ServerInstruction.NoInstruction;
+                    serverSocket.Send(safeBuffer.array, bytesReceived, SocketFlags.None);
+                    return;
                 }
                 catch (SocketException)
                 {
-                    return ServerInstruction.CloseClient;
+                    sock.ShutdownSafe();
+                    control.DisposeAndRemoveReceiveSocket(sock);
+                    return;
                 }
             }
-            if (bytesRead > 0)
-            {
-                httpHeaderBuilders.Append(Encoding.UTF8.GetString(bytes, 0, (Int32)bytesRead));
-                //
-                // Check if you have received all the headers
-                //
-                Int32 totalLength = httpHeaderBuilders.Length;                
-                if(totalLength > 3)
-                {
-                    if(
-                        httpHeaderBuilders[totalLength - 1] == '\n' &&
-                        (
-                          (httpHeaderBuilders[totalLength - 2] == '\n') ||
-                          (httpHeaderBuilders[totalLength - 2] == '\r' &&
-                           httpHeaderBuilders[totalLength - 3] == '\n' &&
-                           httpHeaderBuilders[totalLength - 4] == '\r'))
-                        )
-                    {
-                        String headers = httpHeaderBuilders.ToString();
-                        httpHeaderBuilders = null;
-                        return HandleHeaders(headers);
-                    }
-                }
-            }
-            return ServerInstruction.NoInstruction;
-        }
 
-        ServerInstruction HandleHeaders(String headers)
+            httpHeaderBuilders.Append(Encoding.ASCII.GetString(safeBuffer.array, 0, bytesReceived));
+            //
+            // Check if you have received all the headers
+            //
+            Int32 totalLength = httpHeaderBuilders.Length;                
+            if(totalLength > 3)
+            {
+                if(
+                    httpHeaderBuilders[totalLength - 1] == '\n' &&
+                    (
+                      (httpHeaderBuilders[totalLength - 2] == '\n') ||
+                      (httpHeaderBuilders[totalLength - 2] == '\r' &&
+                       httpHeaderBuilders[totalLength - 3] == '\n' &&
+                       httpHeaderBuilders[totalLength - 4] == '\r'))
+                    )
+                {
+                    String headers = httpHeaderBuilders.ToString();
+                    httpHeaderBuilders = null;
+                    HandleHeaders(ref control, sock, headers);
+                }
+            }
+        }
+        void HandleHeaders(ref SelectControl control, Socket sock, String headers)
         {
             if (headers.StartsWith("CONNECT"))
             {
                 UInt16 serverPort;
                 String serverString = ParseConnectLine(headers.Remove(headers.IndexOfAny(newlineSet)), out serverPort);
-                if (serverString == null) return ServerInstruction.NoInstruction;
+                if (serverString == null)
+                {
+                    return;
+                }
 
                 //
                 // Make the forward connection
                 //
                 if (HttpToCtpLogger.logger != null)
+                {
                     HttpToCtpLogger.logger.WriteLine("[{0}] CONNECT {1}:{2}", clientEndPointString, serverString, serverPort);
+                }
 
                 //
                 // Create and connect the socket
                 //
-                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHost(serverString, serverPort);
+                IPEndPoint serverEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(serverString, DnsPriority.IPv4ThenIPv6), serverPort);
 
-                serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-                if (HttpToCtp.proxySelector == null)
-                {
-                    serverSocket.Connect(serverEndPoint);
-                }
-                else
-                {
-                    HttpToCtp.proxySelector.Connect(serverSocket, serverEndPoint);
-                }
+                serverSocket = new Socket(serverEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                //if (HttpToCtp.proxySelector == null)
+                //{
+                //    serverSocket.Connect(serverEndPoint);
+                //}
+                //else
+                //{
+                //    HttpToCtp.proxySelector.Connect(serverSocket, serverEndPoint);
+                //}
+                serverSocket.Connect(serverEndPoint);
 
                 //
                 // Send positive connect response
                 //
-                clientSocket.Send(HttpToCtp.ConnectionEstablishedAsBytes);
+                sock.Send(HttpToCtp.ConnectionEstablishedAsBytes);
             }
             else
             {
@@ -115,8 +162,12 @@ namespace More.Net
                 if (hostIndex < 0)
                 {
                     if (HttpToCtpLogger.errorLogger != null)
+                    {
                         HttpToCtpLogger.errorLogger.WriteLine("[{0}] Missing Host header '{1}'", clientEndPointString, headers);
-                    return ServerInstruction.CloseClient;
+                    }
+                    sock.ShutdownSafe();
+                    control.DisposeAndRemoveReceiveSocket(sock);
+                    return;
                 }
                 hostIndex += hostHeaderSearchString.Length;
 
@@ -151,10 +202,14 @@ namespace More.Net
                     if (!UInt16.TryParse(portString, out serverPort))
                     {
                         if (HttpToCtpLogger.errorLogger != null)
+                        {
                             HttpToCtpLogger.errorLogger.WriteLine(
                                 "[{0}] The HTTP Host header value '{1}' contained an invalid string after the colon in the host value. Expected a port number but got '{2}'",
                             clientEndPointString, hostHeaderValue, portString);
-                        return ServerInstruction.CloseClient;
+                        }
+                        sock.ShutdownSafe();
+                        control.DisposeAndRemoveReceiveSocket(sock);
+                        return;
                     }
                 }
 
@@ -167,17 +222,18 @@ namespace More.Net
                 //
                 // Create and connect the socket
                 //
-                EndPoint serverEndPoint = EndPoints.EndPointFromIPOrHost(serverString, serverPort);
+                IPEndPoint serverEndPoint = new IPEndPoint(EndPoints.ParseIPOrResolveHost(serverString, DnsPriority.IPv4ThenIPv6), serverPort);
 
                 serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                if (HttpToCtp.proxySelector == null)
-                {
-                    serverSocket.Connect(serverEndPoint);
-                }
-                else
-                {
-                    HttpToCtp.proxySelector.Connect(serverSocket, serverEndPoint);
-                }
+                //if (HttpToCtp.proxySelector == null)
+                //{
+                //    serverSocket.Connect(serverEndPoint);
+                //}
+                //else
+                //{
+                //    HttpToCtp.proxySelector.Connect(serverSocket, serverEndPoint);
+                //}
+                serverSocket.Connect(serverEndPoint);
 
                 //Console.Write("New Headers '{0}'", headers);
                 serverSocket.Send(Encoding.UTF8.GetBytes(headers));
@@ -185,14 +241,12 @@ namespace More.Net
 
 
             if (HttpToCtpLogger.logger != null)
+            {
                 HttpToCtpLogger.logger.WriteLine("[{0}] Adding Server Socket '{1}'", clientEndPointString, serverSocket.RemoteEndPoint);
-            serverHandler.serverSocketsToClientSockets.Add(serverSocket, clientSocket);
-            serverHandler.selectServer.AddReadSocket(serverSocket);
-            
-            return ServerInstruction.NoInstruction;
+            }
+            control.UpdateHandler(sock, DataRecvHandler);
+            control.AddReceiveSocket(serverSocket, DataRecvHandler);
         }
-
-
 
         // returns the host name to connect to and sets the forward port
         private String ParseConnectLine(String connectLine, out UInt16 forwardPort)

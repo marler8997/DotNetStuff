@@ -65,8 +65,8 @@ namespace More.Net
 
             if (options.forwardProxy.set)
             {
-                AppLayerProxy.ForwardProxy = ConnectorParser.ParseProxy(AddressFamily.InterNetwork,
-                    options.forwardProxy.ArgValue);
+                AppLayerProxy.ForwardProxy = Proxy.ParseProxy(options.forwardProxy.ArgValue,
+                    DnsPriority.IPv4ThenIPv6, null);
             }
 
             ListenPort = UInt16.Parse(nonOptionArgs[0]);
