@@ -192,7 +192,7 @@ namespace System.Net.Sockets
     {
         public static void Connect(this Socket socket, String host, Int32 port)
         {
-            var ip = EndPoints.ParseIPOrResolveHost(AddressFamily.Unspecified, host);
+            var ip = EndPoints.ParseIPOrResolveHost(host, DnsPriority.IPv4ThenIPv6);
             socket.Connect(new IPEndPoint(ip, port));
         }
     }

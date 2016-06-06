@@ -143,7 +143,7 @@ namespace More
                         int enumValueAsInt;
                         try
                         {
-                            enumValueAsInt = Convert.ToInt32(Enum.Parse(enumType, valueFromDefinition.Key));
+                            enumValueAsInt = Convert.ToInt32(Enum.Parse(enumType, valueFromDefinition.Key, true));
                         }
                         catch (ArgumentException)
                         {

@@ -94,11 +94,11 @@ namespace More
         }
         public static unsafe implicit operator BytePtr(GCHandle handle)
         {
-            return GCHandle.ToIntPtr(handle);
+            return (IntPtr)handle;
         }
         public static unsafe implicit operator GCHandle(BytePtr ptr)
         {
-            return GCHandle.FromIntPtr(ptr);
+            return (GCHandle)ptr;
         }
         //
         // Explicit Cast Operators
