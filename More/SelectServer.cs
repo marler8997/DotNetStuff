@@ -172,6 +172,13 @@ namespace More.Net
             connectList.Add(socket);
             map.Add(socket, handler);
         }
+        public void DisposeAndRemoveListenSocket(Socket socket)
+        {
+            try { socket.Close(); }
+            catch { }
+            listenSockets.Remove(socket);
+            map.Remove(socket);
+        }
         // Note: does not call shutdown
         public void DisposeAndRemoveReceiveSocket(Socket socket)
         {
