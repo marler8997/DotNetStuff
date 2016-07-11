@@ -13,6 +13,111 @@ namespace More
     [TestClass]
     public class RegressionTests
     {
+        void Test(String lfdText, params ExpectedLine[] expectedLines)
+        {
+            //
+            // Test using LfdReader
+            //
+            using (var reader = new LfdReader(new StringReader(lfdText)))
+            {
+                for(int i = 0; i < expectedLines.Length; i++)
+                {
+                    var line = reader.ReadLine();
+                    Assert.AreEqual(expectedLines[i].id, line.id);
+                    if (expectedLines[i].fields == null || expectedLines[i].fields.Length == 0)
+                    {
+                        Assert.IsNull(line.fields);
+                    }
+                    else
+                    {
+                        Assert.AreEqual(expectedLines[i].fields.Length, line.fields.Length);
+                        for (int fieldIndex = 0; fieldIndex < line.fields.Length; fieldIndex++)
+                        {
+                            Assert.AreEqual(expectedLines[i].fields[fieldIndex], line.fields[fieldIndex]);
+                        }
+                    }
+                }
+                Assert.IsNull(reader.ReadLine());
+            }
+
+
+            Byte[] linesAsBytes = Encoding.UTF8.GetBytes(lfdText);
+
+            //
+            // Test using LineParser
+            //
+            for (uint initialBufferSize = 1; initialBufferSize <= lfdText.Length; initialBufferSize++)
+            {
+                for (uint expandBufferSize = 1; expandBufferSize + initialBufferSize <= lfdText.Length; expandBufferSize++)
+                {
+                    OffsetLineParser lineParser = new OffsetLineParser(new Buf(initialBufferSize, expandBufferSize));
+                    lineParser.Add(linesAsBytes, linesAsBytes.Length);
+
+                    List<String> fields = new List<String>();
+                    Byte[] lineBuffer;
+                    Int32 lineOffset = 0, lineLength = 0;
+
+                    for (int i = 0; i < expectedLines.Length; i++)
+                    {
+                        do
+                        {
+                            lineBuffer = lineParser.GetLine(ref lineOffset, ref lineLength);
+                            Assert.IsNotNull(lineBuffer);
+                            fields.Clear();
+                            LfdLine.ParseLine(fields, lineBuffer, lineOffset, lineOffset + lineLength);
+                        } while (fields.Count == 0);
+
+                        Assert.AreEqual(expectedLines[i].id, fields[0]);
+                        if (expectedLines[i].fields == null || expectedLines[i].fields.Length == 0)
+                        {
+                            Assert.AreEqual(1, fields.Count);
+                        }
+                        else
+                        {
+                            Assert.AreEqual(expectedLines[i].fields.Length, fields.Count - 1);
+                            for (int fieldIndex = 0; fieldIndex < fields.Count - 1; fieldIndex++)
+                            {
+                                Assert.AreEqual(expectedLines[i].fields[fieldIndex], fields[fieldIndex+1]);
+                            }
+                        }
+                    }
+                    Assert.IsNull(lineParser.GetLine(ref lineOffset, ref lineLength));
+                }
+            }
+        }
+
+        struct ExpectedLine
+        {
+            public String id;
+            public String[] fields;
+            public ExpectedLine(String id, params String[] fields)
+            {
+                this.id = id;
+                this.fields = fields;
+            }
+        }
+
+        [TestMethod]
+        public void GenericTestMethod2()
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("");
+            builder.AppendLine("LineWithNoValues \t  ");
+            builder.AppendLine("Line1Fields \t field1  \t\t");
+            builder.AppendLine("Line2Fields \t field1  \t\tfield2  ");
+            builder.AppendLine("LineFieldWithWhitespace \t\t  \t \"this ; is a long field\"  \t");
+            builder.AppendLine("LineWithEmptyFields \t\t\"\"  \"\"  \t");
+
+            Test(builder.ToString(), new ExpectedLine[] {
+                new ExpectedLine("LineWithNoValues"),
+                new ExpectedLine("Line1Fields", "field1"),
+                new ExpectedLine("Line2Fields", "field1", "field2"),
+                new ExpectedLine("LineFieldWithWhitespace", "this ; is a long field"),
+                new ExpectedLine("LineWithEmptyFields", String.Empty, ""),
+            });
+        }
+
+
         [TestMethod]
         public void GenericTestMethod()
         {

@@ -31,6 +31,7 @@
     <FileAlignment>512</FileAlignment>
     <WarningLevel>4</WarningLevel>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -43,6 +44,7 @@
     <FileAlignment>512</FileAlignment>
     <WarningLevel>4</WarningLevel>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -84,12 +86,12 @@
     <Compile Include="Pdl.cs" />
     <Compile Include="PlatformPath.cs" />
     <Compile Include="Ports.cs" />
+    <Compile Include="PriorityLogic.cs" />
     <Compile Include="ProcessExecutor.cs" />
     <Compile Include="ProgramSettings.cs" />
     <Compile Include="Proxies.cs" />
     <Compile Include="RollingLog.cs" />
     <Compile Include="SelectServer.cs" />
-    <Compile Include="SelectSocketTunnels.cs" />
     <Compile Include="Serialization.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Sha1.cs" />
@@ -109,6 +111,7 @@
     <Compile Include="SortedList.cs" />
     <Compile Include="Threads.cs" />
     <Compile Include="ThreadWatcher.cs" />
+    <Compile Include="Unicode.cs" />
     <Compile Include="UniqueIndexObjectDictionary.cs" />
     <Compile Include="WaitActions.cs" />
     <Compile Include="WorkerThread.cs" />

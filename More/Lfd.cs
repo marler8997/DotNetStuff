@@ -124,27 +124,21 @@ namespace More
                         offset++;
                     }
                 }
-                else
+                else // Quoted String
                 {
                     nextFieldStart++;
-                    if (nextFieldStart >= offsetPlusLength)
-                    {
-                        fields.Add(String.Empty);
-                    }
-
-                    offset = nextFieldStart + 1;
+                    offset = nextFieldStart;
                     while (true)
                     {
                         if (offset >= offsetPlusLength)
                         {
-                            fields.Add(Encoding.UTF8.GetString(line, nextFieldStart, offset - nextFieldStart));
-                            return;
+                            throw new FormatException("string missing closing quote");
                         }
                         c = line[offset];
                         if (c == '"')
                         {
                             fields.Add(Encoding.UTF8.GetString(line, nextFieldStart, offset - nextFieldStart));
-                            nextFieldStart = offset + 1;
+                            offset++;
                             break;
                         }
                         offset++;

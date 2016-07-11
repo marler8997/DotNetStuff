@@ -2,6 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
+#if WindowsCE
+using UInt16Parser = System.MissingInCEUInt16Parser;
+#else
+using UInt16Parser = System.UInt16;
+#endif
+
 namespace More.Net
 {
     public static class PortSet
@@ -28,7 +34,7 @@ namespace More.Net
                     {
                         String portString = ports.Substring((int)lastStartOffset, (int)(offset - lastStartOffset));
                         UInt16 port;
-                        if (!UInt16.TryParse(portString, out port))
+                        if (!UInt16Parser.TryParse(portString, out port))
                         {
                             throw new FormatException(String.Format("Failed to parse '{0}' as a port", portString));
                         }
@@ -43,7 +49,7 @@ namespace More.Net
                 {
                     String portString = ports.Substring((int)lastStartOffset, (int)(offset - lastStartOffset));
                     UInt16 port;
-                    if (!UInt16.TryParse(portString, out port))
+                    if (!UInt16Parser.TryParse(portString, out port))
                     {
                         throw new FormatException(String.Format("Failed to parse '{0}' as a port", portString));
                     }

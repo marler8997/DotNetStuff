@@ -6,7 +6,6 @@ using System.IO;
 
 using More;
 
-
 namespace More.Net
 {
     public class RpcServerConnectionHandler
