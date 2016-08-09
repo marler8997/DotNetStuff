@@ -328,6 +328,13 @@ namespace More.Net
         public override void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf)
         {
+            BufStruct forwardBufStruct = default(BufStruct);
+            host.Connect(socket, DnsPriority.IPv4ThenIPv6, ProxyConnectOptions.None, ref forwardBufStruct);
+            if (forwardBufStruct.contentLength > 0)
+            {
+                throw new NotImplementedException();
+            }
+
             if (endPoint.stringIsAnIP)
             {
                 SetupProxyWithIP(socket, endPoint.ipEndPoint);
@@ -495,6 +502,13 @@ namespace More.Net
         public override void ProxyConnectTcp(Socket socket, ref StringEndPoint endPoint,
             ProxyConnectOptions options, ref BufStruct buf)
         {
+            BufStruct forwardBufStruct = default(BufStruct);
+            host.Connect(socket, DnsPriority.IPv4ThenIPv6, ProxyConnectOptions.None, ref forwardBufStruct);
+            if (forwardBufStruct.contentLength > 0)
+            {
+                throw new NotImplementedException();
+            }
+
             if (endPoint.stringIsAnIP)
             {
                 ProxyConnectTcpUsingIP(socket, endPoint.ipEndPoint.Address, endPoint.port);
